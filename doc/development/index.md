@@ -1,4 +1,4 @@
-# Adonis & Svelte Starter Kit - Development Documentation
+# Essaimons-V1 - Development Documentation
 
 ### Development links
 
@@ -12,7 +12,7 @@
 
 - `make up` - Starts the Docker containers in detached mode.
 - `make stop` - Stops all Docker containers and removes orphans.
-- `make rm` - Fully stops and resets **Adonis & Svelte Starter Kit** containers and volumes.
+- `make rm` - Fully stops and resets **Essaimons-V1** containers and volumes.
 - `make db` - Resets and seeds the database
 - `make start` - Runs `make rm`, builds the containers, then run `make db`.
 - `make format` - Formats the codebase using Prettier.

@@ -1,16 +1,13 @@
 import { DateTime } from 'luxon';
 import hash from '@adonisjs/core/services/hash';
 import { compose } from '@adonisjs/core/helpers';
-import { afterCreate, beforeFind, beforeFetch, BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm';
+import { afterCreate, beforeFind, beforeFetch, BaseModel, belongsTo, column } from '@adonisjs/lucid/orm';
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid';
-import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations';
+import type { BelongsTo } from '@adonisjs/lucid/types/relations';
 import SerializedUser from '#types/serialized/serialized_user';
 import { AccessToken, DbAccessTokensProvider } from '@adonisjs/auth/access_tokens';
 import File from '#models/file';
 import UserRoleEnum from '#types/enum/user_role_enum';
-import Friend from '#models/friend';
-import BlockedUser from '#models/blocked_user';
-import PendingFriend from '#models/pending_friend';
 import LogUser from '#models/log_user';
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
@@ -55,15 +52,6 @@ export default class User extends compose(BaseModel, AuthFinder) {
         foreignKey: 'profilePictureId',
     })
     declare profilePicture: BelongsTo<typeof File>;
-
-    @hasMany((): typeof PendingFriend => PendingFriend)
-    declare pendingFriends: HasMany<typeof PendingFriend>;
-
-    @hasMany((): typeof Friend => Friend)
-    declare friends: HasMany<typeof Friend>;
-
-    @hasMany((): typeof BlockedUser => BlockedUser)
-    declare blockedUsers: HasMany<typeof BlockedUser>;
 
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime;

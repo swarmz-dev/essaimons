@@ -57,7 +57,7 @@
         },
         "consent": "J'accepte les termes et conditions",
         "logo": {
-            "alt": "Logo de Adonis & Svelte Starter Kit"
+            "alt": "Logo de Essaimons-V1"
         }
     },
     "open-graph": {
@@ -80,9 +80,9 @@
         "title": "Profil",
         "description": "Mettez à jour votre profil",
         "meta": {
-            "title": "Modifier le profil – Adonis & Svelte Starter Kit",
-            "description": "Mettez à jour votre nom d’utilisateur et votre photo de profil facilement sur Adonis & Svelte Starter Kit. Gérez vos informations personnelles en toute sécurité.",
-            "keywords": "modifier profil, changer nom d’utilisateur, changer photo de profil, paramètres utilisateur, Adonis & Svelte Starter Kit"
+            "title": "Modifier le profil – Essaimons-V1",
+            "description": "Mettez à jour votre nom d’utilisateur et votre photo de profil facilement sur Essaimons-V1. Gérez vos informations personnelles en toute sécurité.",
+            "keywords": "modifier profil, changer nom d’utilisateur, changer photo de profil, paramètres utilisateur, Essaimons-V1"
         },
         "reset-password": "Réinitialiser le mot de passe",
         "profile-picture": {
@@ -93,25 +93,25 @@
     "reset-password": {
         "title": "Réinitialiser le mot de passe",
         "meta": {
-            "title": "Réinitialiser le mot de passe – Adonis & Svelte Starter Kit",
+            "title": "Réinitialiser le mot de passe – Essaimons-V1",
             "description": "Entrez votre email pour recevoir un lien de réinitialisation du mot de passe. Le champ email est prérempli si vous êtes connecté.",
-            "keywords": "réinitialiser mot de passe, récupération mot de passe, mot de passe oublié, email réinitialisation, Adonis & Svelte Starter Kit"
+            "keywords": "réinitialiser mot de passe, récupération mot de passe, mot de passe oublié, email réinitialisation, Essaimons-V1"
         },
         "confirm": {
             "title": "Finaliser la réinitialisation du mot de passe",
             "meta": {
-                "title": "Confirmation de réinitialisation de mot de passe – Adonis & Svelte Starter Kit",
+                "title": "Confirmation de réinitialisation de mot de passe – Essaimons-V1",
                 "description": "Confirmez la réinitialisation de votre mot de passe en cliquant sur le lien envoyé par email. Mettez à jour votre mot de passe en toute sécurité et retrouvez l’accès à votre compte.",
-                "keywords": "confirmation réinitialisation mot de passe, réinitialiser mot de passe, vérification email, Adonis & Svelte Starter Kit"
+                "keywords": "confirmation réinitialisation mot de passe, réinitialiser mot de passe, vérification email, Essaimons-V1"
             }
         }
     },
     "home": {
         "title": "Accueil",
         "meta": {
-            "title": "Bienvenue sur Adonis & Svelte Starter Kit – Votre solution starter full-stack",
-            "description": "Démarrez rapidement avec Adonis & Svelte Starter Kit, un template full-stack puissant combinant backend Adonis et frontend Svelte. Construisez vos projets plus vite et mieux.",
-            "keywords": "template starter Adonis, template starter Svelte, full-stack, développement web, backend, frontend, Adonis & Svelte Starter Kit"
+            "title": "Bienvenue sur Essaimons-V1 – Votre solution starter full-stack",
+            "description": "Démarrez rapidement avec Essaimons-V1, un template full-stack puissant combinant backend Adonis et frontend Svelte. Construisez vos projets plus vite et mieux.",
+            "keywords": "template starter Adonis, template starter Svelte, full-stack, développement web, backend, frontend, Essaimons-V1"
         }
     },
     "login": {
@@ -120,25 +120,25 @@
         "forgot-password": "Mot de passe oublié ?",
         "create-account": "Pas encore inscrit ?",
         "meta": {
-            "title": "Connexion – Adonis & Svelte Starter Kit",
-            "description": "Connectez-vous à Adonis & Svelte Starter Kit avec votre email et mot de passe, ou rapidement via OAuth Google, GitHub ou Discord.",
-            "keywords": "connexion, login, se connecter, email, mot de passe, OAuth, connexion Google, connexion GitHub, connexion Discord, Adonis & Svelte Starter Kit"
+            "title": "Connexion – Essaimons-V1",
+            "description": "Connectez-vous à Essaimons-V1 avec votre email et mot de passe, ou rapidement via OAuth Google, GitHub ou Discord.",
+            "keywords": "connexion, login, se connecter, email, mot de passe, OAuth, connexion Google, connexion GitHub, connexion Discord, Essaimons-V1"
         }
     },
     "create-account": {
         "title": "Créer un compte",
         "meta": {
-            "title": "Créer votre compte – Adonis & Svelte Starter Kit",
-            "description": "Inscrivez-vous sur Adonis & Svelte Starter Kit en créant un compte avec nom d'utilisateur, email et mot de passe. Ou connectez-vous rapidement via Google, Discord ou GitHub.",
-            "keywords": "créer un compte, inscription, nom d'utilisateur, email, mot de passe, OAuth, connexion Google, connexion Discord, connexion GitHub, Adonis & Svelte Starter Kit"
+            "title": "Créer votre compte – Essaimons-V1",
+            "description": "Inscrivez-vous sur Essaimons-V1 en créant un compte avec nom d'utilisateur, email et mot de passe. Ou connectez-vous rapidement via Google, Discord ou GitHub.",
+            "keywords": "créer un compte, inscription, nom d'utilisateur, email, mot de passe, OAuth, connexion Google, connexion Discord, connexion GitHub, Essaimons-V1"
         }
     },
     "logout": {
         "title": "Déconnexion",
         "meta": {
-            "title": "Confirmer la déconnexion – Adonis & Svelte Starter Kit",
-            "description": "Êtes-vous sûr de vouloir vous déconnecter ? Confirmez votre déconnexion pour terminer votre session en toute sécurité sur Adonis & Svelte Starter Kit.",
-            "keywords": "confirmer déconnexion, confirmation logout, terminer session, Adonis & Svelte Starter Kit"
+            "title": "Confirmer la déconnexion – Essaimons-V1",
+            "description": "Êtes-vous sûr de vouloir vous déconnecter ? Confirmez votre déconnexion pour terminer votre session en toute sécurité sur Essaimons-V1.",
+            "keywords": "confirmer déconnexion, confirmation logout, terminer session, Essaimons-V1"
         },
         "modal": {
             "title": "Déconnexion",
@@ -158,94 +158,33 @@
         "title": "Accès refusé",
         "subtitle": "Vous devez être connecté pour accéder à cette partie de l'application.",
         "meta": {
-            "title": "Accès Interdit – Adonis & Svelte Starter Kit",
+            "title": "Accès Interdit – Essaimons-V1",
             "description": "Vous n’avez pas la permission d’accéder à cette page. Si vous pensez qu’il s’agit d’une erreur, veuillez contacter le support.",
-            "keywords": "accès interdit, erreur 403, permission refusée, accès restreint, Adonis & Svelte Starter Kit"
+            "keywords": "accès interdit, erreur 403, permission refusée, accès restreint, Essaimons-V1"
         }
     },
     "not-found": {
         "title": "Page inexistante",
         "meta": {
-            "title": "Page non trouvée – Adonis & Svelte Starter Kit",
-            "description": "La page que vous recherchez n’existe pas. Vérifiez l’URL ou retournez à la page d’accueil de Adonis & Svelte Starter Kit.",
-            "keywords": "erreur 404, page non trouvée, page manquante, Adonis & Svelte Starter Kit"
+            "title": "Page non trouvée – Essaimons-V1",
+            "description": "La page que vous recherchez n’existe pas. Vérifiez l’URL ou retournez à la page d’accueil de Essaimons-V1.",
+            "keywords": "erreur 404, page non trouvée, page manquante, Essaimons-V1"
         }
     },
     "already-connected": {
         "title": "Déjà connecté",
         "meta": {
-            "title": "Déjà connecté – Accédez à votre tableau de bord | Adonis & Svelte Starter Kit",
-            "description": "Vous êtes déjà connecté à Adonis & Svelte Starter Kit. Accédez à votre tableau de bord ou retournez à la page d'accueil pour découvrir toutes les fonctionnalités.",
-            "keywords": "déjà connecté, session utilisateur, tableau de bord, page d'accueil, Adonis & Svelte Starter Kit"
+            "title": "Déjà connecté – Accédez à votre tableau de bord | Essaimons-V1",
+            "description": "Vous êtes déjà connecté à Essaimons-V1. Accédez à votre tableau de bord ou retournez à la page d'accueil pour découvrir toutes les fonctionnalités.",
+            "keywords": "déjà connecté, session utilisateur, tableau de bord, page d'accueil, Essaimons-V1"
         }
     },
     "unknown-error": {
         "title": "Erreur inconnue",
         "meta": {
-            "title": "Erreur Inconnue – Une Erreur S’est Produite | Adonis & Svelte Starter Kit",
-            "description": "Une erreur inattendue s’est produite lors de l’utilisation du Adonis & Svelte Starter Kit. Veuillez réessayer plus tard ou retourner à la page d’accueil pour obtenir de l’aide.",
-            "keywords": "erreur inconnue, problème inattendu, gestion des erreurs, dépannage, Adonis & Svelte Starter Kit"
-        }
-    },
-    "social": {
-        "title": "Social",
-        "description": "Gérez vos amis et les utilisateurs bloqués",
-        "meta": {
-            "title": "Espace social – Adonis & Svelte Starter Kit",
-            "description": "Accédez à votre espace social : gérez vos amis, utilisateurs bloqués et paramètres de profil depuis un seul endroit.",
-            "keywords": "espace social, gérer amis, utilisateurs bloqués, profil utilisateur, Adonis & Svelte Starter Kit"
-        },
-        "friends": {
-            "title": "Amis",
-            "description": "Gérez vos amis",
-            "meta": {
-                "title": "Gérez vos amis – Adonis & Svelte Starter Kit",
-                "description": "Ajoutez, supprimez, acceptez les demandes d’amis et bloquez des utilisateurs facilement avec Adonis & Svelte Starter Kit. Gérez vos connexions sociales simplement.",
-                "keywords": "gérer amis, ajouter amis, supprimer amis, demandes d’amis, bloquer utilisateurs, gestion sociale, Adonis & Svelte Starter Kit"
-            },
-            "none": "Pas d'ami trouvé",
-            "search": {
-                "placeholder": "Jean123",
-                "label": "Nom d'utilisateur de l'ami"
-            },
-            "add": {
-                "title": "Inviter un nouvel ami",
-                "none": "Aucun utilisateur disponible",
-                "search": {
-                    "placeholder": "Jean123",
-                    "label": "Pseudonyme de l'utilisateur"
-                }
-            },
-            "remove": {
-                "modal": {
-                    "title": "Retirer un ami",
-                    "text": "{username} sera supprimé de vos amis"
-                }
-            }
-        },
-        "blocked": {
-            "title": "Utilisateurs bloqués",
-            "description": "Gérez les utilisateurs bloqués",
-            "meta": {
-                "title": "Utilisateurs bloqués – Gérer votre liste de blocage | Adonis & Svelte Starter Kit",
-                "description": "Consultez et gérez facilement les utilisateurs que vous avez bloqués sur Adonis & Svelte Starter Kit. Prenez le contrôle de votre expérience sociale et renforcez votre confidentialité.",
-                "keywords": "utilisateurs bloqués, liste de blocage, gérer les utilisateurs bloqués, paramètres sociaux, confidentialité"
-            },
-            "none": "Pas d'utilisateur bloqué trouvé",
-            "search": {
-                "placeholder": "Jean123",
-                "label": "Pseudonyme de l'utilisateur bloqué"
-            },
-            "modal": {
-                "title": "Bloquer l'utilisateur",
-                "text": "{username} sera bloqué"
-            }
-        },
-        "unblock": {
-            "modal": {
-                "title": "Débloquer l'utilisateur",
-                "text": "{username} sera débloqué"
-            }
+            "title": "Erreur Inconnue – Une Erreur S’est Produite | Essaimons-V1",
+            "description": "Une erreur inattendue s’est produite lors de l’utilisation du Essaimons-V1. Veuillez réessayer plus tard ou retourner à la page d’accueil pour obtenir de l’aide.",
+            "keywords": "erreur inconnue, problème inattendu, gestion des erreurs, dépannage, Essaimons-V1"
         }
     },
     "admin": {

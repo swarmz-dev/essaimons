@@ -62,32 +62,9 @@
             }
         }
     },
-    "blocked-user": {
-        "block": {
-            "success": "{username} blocked",
-            "error": "{username} already blocked"
-        },
-        "cancel": {
-            "success": "{username} unblocked",
-            "error": "{username} is not blocked"
-        }
-    },
     "file": {
         "serve-status-profile-picture-file": {
             "error": "User's profile picture not found"
-        }
-    },
-    "friend": {
-        "accept": {
-            "success": "{username} added to friends",
-            "error": "Already friend with {username}"
-        },
-        "refuse": {
-            "success": "Friend request refused"
-        },
-        "remove": {
-            "success": "{username} removed from friends",
-            "error": "You are not friend with {username}"
         }
     },
     "oauth": {
@@ -104,16 +81,6 @@
                 "invalid-token": "Invalid token",
                 "token-expired": "Token expired, please request a new one"
             }
-        }
-    },
-    "pending-friend": {
-        "add": {
-            "success": "Friend request sent to {username}",
-            "error": "Already friend with {username}"
-        },
-        "cancel": {
-            "success": "Friend request cancelled",
-            "error": "You are not related to this request"
         }
     },
     "profile": {

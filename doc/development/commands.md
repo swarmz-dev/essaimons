@@ -1,4 +1,4 @@
-# Adonis & Svelte Starter Kit Development Commands
+# Essaimons-V1 Development Commands
 
 ---
 

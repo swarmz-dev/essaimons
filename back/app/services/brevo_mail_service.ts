@@ -7,7 +7,7 @@ export default class BrevoMailService {
     private apiUrl: string = 'https://api.brevo.com/v3/smtp/email';
 
     private sender: object = {
-        name: 'Adonis & Svelte Starter Kit',
+        name: 'Essaimons V1',
         email: env.get('ACCOUNT_SENDER_EMAIL'),
     };
 

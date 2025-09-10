@@ -1,4 +1,4 @@
-# Adonis & Svelte Starter Kit Sveltekit translations
+# Essaimons-V1 Sveltekit translations
 
 ---
 

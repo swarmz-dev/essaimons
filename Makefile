@@ -84,7 +84,7 @@ migrate-prod:
 	cd back && node ace migration:run && node ace migration:run --connection=logs
 
 start-prod:
-	pm2 describe adonis-svelte-starter-kit-backend > /dev/null
-	pm2 restart adonis-svelte-starter-kit-backend || pm2 start back/build/bin/server.js --name adonis-svelte-starter-kit-backend
+	pm2 describe essaimons-v1-backend > /dev/null
+	pm2 restart essaimons-v1-backend || pm2 start back/build/bin/server.js --name essaimons-v1-backend
 
 deploy: build-prod migrate-prod start-prod

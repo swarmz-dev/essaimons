@@ -1,7 +1,7 @@
-# Adonis & Svelte Starter Kit icons documentation
+# Essaimons-V1 icons documentation
 
 The icons are stored in `front/src/lib/icons` and are imported in `front/src/lib/shared/Icon.svelte`.
-The icons are in SVG format and are used in the frontend of Adonis & Svelte Starter Kit.
+The icons are in SVG format and are used in the frontend of Essaimons-V1.
 
 ## Before creating a full custom icon
 
@@ -49,7 +49,7 @@ The icons are in SVG format and are used in the frontend of Adonis & Svelte Star
 
 ## Usage
 
-### You can use your icons in the frontend of Adonis & Svelte Starter Kit using the following code:
+### You can use your icons in the frontend of Essaimons-V1 using the following code:
 
    ```sveltehtml
    <Icon name="yourIconName" />

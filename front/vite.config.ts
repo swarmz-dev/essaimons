@@ -8,7 +8,7 @@ export default defineConfig({
     server: {
         host: true,
         port: Number(process.env.PUBLIC_PORT),
-        allowedHosts: ['localhost', 'app.adonis-svelte-starter-kit.fr'],
+        allowedHosts: ['localhost', 'app.essaimons.fr'],
         fs: {
             allow: ['.', '../back/app/types'],
         },

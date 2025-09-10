@@ -1,11 +1,11 @@
-# Adonis & Svelte Starter Kit Getting Started
+# Essaimons-V1 Getting Started
 
 ---
 
 ### 1) Clone the repository
 
 ```bash
-  git clone git@github.com:Tassadar921/Adonis-Svelte-starter-kit.git
+  git clone https://codeberg.org/la-ruche/Essaimons_V1.git
 ```
 
 ---

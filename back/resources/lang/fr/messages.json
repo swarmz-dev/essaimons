@@ -62,32 +62,9 @@
             }
         }
     },
-    "blocked-user": {
-        "block": {
-            "success": "{username} bloqué",
-            "error": "{username} déjà bloqué"
-        },
-        "cancel": {
-            "success": "{username} débloqué",
-            "error": "{username} n'est pas bloqué"
-        }
-    },
     "file": {
         "serve-status-profile-picture-file": {
             "error": "Photo de profil de l'utilisateur introuvable"
-        }
-    },
-    "friend": {
-        "accept": {
-            "success": "{username} ajouté aux amis",
-            "error": "Vous êtes déjà ami avec {username}"
-        },
-        "refuse": {
-            "success": "Demande d'ami refusée"
-        },
-        "remove": {
-            "success": "{username} supprimé des amis",
-            "error": "Vous n'êtes pas ami avec {username}"
         }
     },
     "oauth": {
@@ -104,16 +81,6 @@
                 "invalid-token": "Jeton invalide",
                 "token-expired": "Jeton expiré, veuillez en demander un nouveau"
             }
-        }
-    },
-    "pending-friend": {
-        "add": {
-            "success": "Demande d'ami envoyée à {username}",
-            "error": "Vous êtes déjà ami avec {username}"
-        },
-        "cancel": {
-            "success": "Demande d'ami annulée",
-            "error": "Vous n'êtes pas lié à cette demande"
         }
     },
     "profile": {

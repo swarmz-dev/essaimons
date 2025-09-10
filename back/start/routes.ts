@@ -15,11 +15,6 @@ const HealthCheckController = () => import('#controllers/health_checks_controlle
 const AuthController = () => import('#controllers/auth_controller');
 const ProfileController = () => import('#controllers/profile_controller');
 const FileController = () => import('#controllers/file_controller');
-const BlockedUserController = () => import('#controllers/blocked_user_controller');
-const FriendController = () => import('#controllers/friend_controller');
-const NotificationController = () => import('#controllers/notification_controller');
-const PendingFriendController = () => import('#controllers/pending_friend_controller');
-const UserController = () => import('#controllers/user_controller');
 const OauthController = () => import('#controllers/oauth_controller');
 
 router.get('healthcheck', [HealthCheckController]);
@@ -112,38 +107,6 @@ router
                         router.post('/update', [ProfileController, 'updateProfile']);
                     })
                     .prefix('profile');
-
-                router
-                    .group((): void => {
-                        router.get('/', [FriendController, 'search']);
-                        router.get('/add', [UserController, 'searchNotFriends']);
-
-                        router.post('/ask/:userId', [PendingFriendController, 'add']);
-                        router
-                            .group((): void => {
-                                router.get('/', [PendingFriendController, 'search']);
-                                router.delete('/cancel/:userId', [PendingFriendController, 'cancel']);
-                                router.post('/accept/:userId', [FriendController, 'accept']);
-                                router.delete('/refuse/:userId', [FriendController, 'refuse']);
-                            })
-                            .prefix('pending');
-                        router.delete('/remove/:userId', [FriendController, 'remove']);
-                    })
-                    .prefix('friends');
-
-                router
-                    .group((): void => {
-                        router.get('/', [BlockedUserController, 'search']);
-                        router.delete('/cancel/:userId', [BlockedUserController, 'cancel']);
-                    })
-                    .prefix('blocked');
-                router.post('/block/:userId', [BlockedUserController, 'block']);
-
-                router
-                    .group((): void => {
-                        router.get('/pending-friends', [NotificationController, 'getPendingFriends']);
-                    })
-                    .prefix('notifications');
 
                 router
                     .group((): void => {
