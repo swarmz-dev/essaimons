@@ -1,0 +1,30 @@
+FROM node:24
+
+# Set working directory
+WORKDIR /app
+
+# Accept build-time argument
+ARG PORT
+ENV PORT=${PORT}
+
+# Copy dependency declarations
+COPY front/package*.json ./
+COPY front/vite.config.* ./
+COPY front/svelte.config.* ./
+
+# Install deps
+RUN npm install
+
+# Copy the rest of the app, including static assets
+COPY front /app
+
+# Ensure static files are preserved
+# SvelteKit expects them in /app/static
+RUN chown -R node:node /app
+
+EXPOSE ${PORT}
+
+USER node
+
+# Start SvelteKit dev server
+CMD ["npm", "run", "dev", "--", "--host", "--port", "${PORT}"]

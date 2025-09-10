@@ -1,0 +1,22 @@
+# Dependencies and AdonisJS build
+node_modules
+build
+tmp
+
+# Secrets
+.env
+.env.local
+.env.production.local
+.env.development.local
+
+# Assets & compiled code
+static/profile-picture
+static/language-flag
+.persist
+.adonisjs
+
+# Build tools specific
+npm-debug.log
+yarn-error.log
+
+commands/exec_test.ts

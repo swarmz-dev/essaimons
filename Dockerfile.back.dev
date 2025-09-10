@@ -1,0 +1,28 @@
+FROM node:24
+
+# Create app directory
+WORKDIR /app
+
+# Accept the PORT build arg
+ARG PORT
+
+# Copy backend dependencies
+COPY back/package*.json ./
+
+# Install backend deps
+RUN npm install
+
+# Copy backend app code
+COPY back /app
+
+# Also copy root-level shared tools (optional)
+COPY package*.json /shared/
+
+# Permissions
+RUN chown -R node:node /app
+
+EXPOSE ${PORT}
+
+USER node
+
+CMD ["npm", "run", "dev"]

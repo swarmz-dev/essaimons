@@ -1,0 +1,333 @@
+{
+    "common": {
+        "yes": "Yes",
+        "no": "No",
+        "continue": "Continue",
+        "language": "Language",
+        "close": "Close",
+        "edit": "Edit",
+        "update": "Update",
+        "delete": "Delete",
+        "create": "Create",
+        "cancel": "Cancel",
+        "back-to-home": "Back to homepage",
+        "name": "Name",
+        "created-at": "Created at",
+        "updated-at": "Updated at",
+        "public": "Public",
+        "private": "Private",
+        "error": {
+            "default-message": "Something went wrong"
+        },
+        "search": {
+            "label": "Search",
+            "placeholder": "Search..."
+        },
+        "title": {
+            "label": "Title",
+            "placeholder": "Jesus' photo"
+        },
+        "username": {
+            "label": "Username",
+            "placeholder": "John123"
+        },
+        "email": {
+            "label": "Email",
+            "placeholder": "john.smith@gmail.com"
+        },
+        "password": {
+            "label": "Password",
+            "placeholder": "xxx",
+            "match": "Passwords do not match",
+            "length": "Password must be at least 8 characters long",
+            "lowercase": "Password must contain at least one lowercase letter",
+            "uppercase": "Password must contain at least one uppercase letter",
+            "number": "Password must contain at least one number",
+            "special-character": "Password must contain at least one special character"
+        },
+        "confirm-password": {
+            "label": "Confirm password",
+            "placeholder": "xxx"
+        },
+        "reset-password": "Reset password",
+        "submit": "Submit",
+        "file": {
+            "title": "Select a file",
+            "description": "Drag & drop or click to select a file."
+        },
+        "consent": "I agree to the terms and conditions",
+        "logo": {
+            "alt": "Adonis & Svelte Starter Kit's logo"
+        }
+    },
+    "open-graph": {
+        "profile-picture": {
+            "alt": "Profile picture of"
+        }
+    },
+    "toast": {
+        "token-expired": "Your session has expired, please login again"
+    },
+    "menu": {
+        "admin": "Admin",
+        "source-code": "Source code"
+    },
+    "footer": {
+        "navigation": "Navigation",
+        "about": "About"
+    },
+    "profile": {
+        "title": "Profile",
+        "description": "Update your profile",
+        "meta": {
+            "title": "Edit Profile – Adonis & Svelte Starter Kit",
+            "description": "Update your username and profile picture easily on Adonis & Svelte Starter Kit. Manage your personal information securely.",
+            "keywords": "edit profile, update username, change profile picture, user settings, Adonis & Svelte Starter Kit"
+        },
+        "reset-password": "Reset password",
+        "profile-picture": {
+            "title": "Profile picture",
+            "description": "Upload here a profile picture"
+        }
+    },
+    "reset-password": {
+        "title": "Reset password",
+        "meta": {
+            "title": "Reset Password – Adonis & Svelte Starter Kit",
+            "description": "Enter your email to receive a password reset link. The email field is prefilled if you are logged in.",
+            "keywords": "reset password, password recovery, forgot password, password reset email, Adonis & Svelte Starter Kit"
+        },
+        "confirm": {
+            "title": "Finish reset password",
+            "meta": {
+                "title": "Password Reset Confirmation – Adonis & Svelte Starter Kit",
+                "description": "Confirm your password reset by clicking the link sent to your email. Securely update your password and regain access to your account.",
+                "keywords": "password reset confirmation, reset password, email verification, Adonis & Svelte Starter Kit"
+            }
+        }
+    },
+    "home": {
+        "title": "Home",
+        "meta": {
+            "title": "Welcome to Adonis & Svelte Starter Kit – Your Full-Stack Starter Solution",
+            "description": "Get started quickly with Adonis & Svelte Starter Kit, a powerful full-stack starter template combining Adonis backend and Svelte frontend. Build your projects faster and smarter.",
+            "keywords": "Adonis starter kit, Svelte starter kit, full-stack template, web development, backend, frontend, Adonis & Svelte Starter Kit"
+        }
+    },
+    "login": {
+        "title": "Login",
+        "login-with": "Sign in with",
+        "forgot-password": "Forgot password ?",
+        "create-account": "No account yet ?",
+        "meta": {
+            "title": "Login – Adonis & Svelte Starter Kit",
+            "description": "Log in to Adonis & Svelte Starter Kit using your email and password, or quickly via Google, GitHub, or Discord OAuth.",
+            "keywords": "login, sign in, email login, password login, OAuth login, Google login, GitHub login, Discord login, Adonis & Svelte Starter Kit"
+        }
+    },
+    "create-account": {
+        "title": "Create account",
+        "meta": {
+            "title": "Create Your Account – Adonis & Svelte Starter Kit",
+            "description": "Sign up for Adonis & Svelte Starter Kit by creating your account with username, email, and password. Or quickly register using Google, Discord, or GitHub.",
+            "keywords": "create account, sign up, register, username, email, password, OAuth, Google login, Discord login, GitHub login, Adonis & Svelte Starter Kit"
+        }
+    },
+    "logout": {
+        "title": "Logout",
+        "meta": {
+            "title": "Confirm Logout – Adonis & Svelte Starter Kit",
+            "description": "Are you sure you want to log out? Confirm your logout to end your session safely on Adonis & Svelte Starter Kit.",
+            "keywords": "confirm logout, logout confirmation, end session, Adonis & Svelte Starter Kit"
+        },
+        "modal": {
+            "title": "Logout",
+            "text": "Are you sure you want to logout ?"
+        }
+    },
+    "unauthorized": {
+        "title": "Unauthorized",
+        "subtitle": "You are not authorized to view this page.",
+        "meta": {
+            "title": "Unauthorized Access – Adonis & Svelte Starter Kit",
+            "description": "Your credentials do not grant access to this page. Please log in or contact support if you think this is a mistake.",
+            "keywords": "unauthorized access, 401 error, login required, permission denied, Adonis & Svelte Starter Kit"
+        }
+    },
+    "forbidden": {
+        "title": "Forbidden",
+        "subtitle": "You have to be logged to access this app's part.",
+        "meta": {
+            "title": "Access Forbidden – Adonis & Svelte Starter Kit",
+            "description": "You do not have permission to access this page. If you believe this is an error, please contact support.",
+            "keywords": "access forbidden, 403 error, permission denied, restricted access, Adonis & Svelte Starter Kit"
+        }
+    },
+    "not-found": {
+        "title": "Page not found",
+        "meta": {
+            "title": "Page Not Found – Adonis & Svelte Starter Kit",
+            "description": "The page you are looking for does not exist. Check the URL or return to the homepage of Adonis & Svelte Starter Kit.",
+            "keywords": "404 error, page not found, missing page, Adonis & Svelte Starter Kit"
+        }
+    },
+    "already-connected": {
+        "title": "Already connected",
+        "meta": {
+            "title": "Already Logged In – Return to Your Dashboard | Adonis & Svelte Starter Kit",
+            "description": "You're already logged in to Adonis & Svelte Starter Kit. Continue to your dashboard or return to the homepage to explore more features.",
+            "keywords": "already logged in, user session, dashboard, homepage, Adonis & Svelte Starter Kit"
+        }
+    },
+    "unknown-error": {
+        "title": "Unknown error",
+        "meta": {
+            "title": "Unknown Error – Something Went Wrong | Adonis & Svelte Starter Kit",
+            "description": "An unexpected error occurred while using the Adonis & Svelte Starter Kit. Please try again later or return to the homepage for support.",
+            "keywords": "unknown error, unexpected issue, error handling, troubleshooting, Adonis & Svelte Starter Kit"
+        }
+    },
+    "social": {
+        "title": "Social",
+        "description": "Manage your friends & blocked users",
+        "meta": {
+            "title": "Social Hub – Adonis & Svelte Starter Kit",
+            "description": "Access your social dashboard: manage your friends, blocked users, and profile settings from one place.",
+            "keywords": "social hub, manage friends, blocked users, user profile, Adonis & Svelte Starter Kit"
+        },
+        "friends": {
+            "title": "Friends",
+            "description": "Manage your friends",
+            "meta": {
+                "title": "Manage Your Friends – Adonis & Svelte Starter Kit",
+                "description": "Add, remove, accept friend requests, and block users easily with Adonis & Svelte Starter Kit. Manage your social connections seamlessly.",
+                "keywords": "manage friends, add friends, remove friends, friend requests, block users, social management, Adonis & Svelte Starter Kit"
+            },
+            "none": "No friend found",
+            "search": {
+                "placeholder": "John123",
+                "label": "Friend's username"
+            },
+            "add": {
+                "title": "Ask a new friend",
+                "none": "No user available",
+                "search": {
+                    "placeholder": "John123",
+                    "label": "User's username"
+                }
+            },
+            "remove": {
+                "modal": {
+                    "title": "Remove a friend",
+                    "text": "{username} will be removed from your friends"
+                }
+            }
+        },
+        "blocked": {
+            "title": "Blocked users",
+            "description": "Manage your blocked users",
+            "meta": {
+                "title": "Blocked Users - Manage Your Block List | Adonis & Svelte Starter Kit",
+                "description": "Easily view and manage the users you've blocked on Adonis & Svelte Starter Kit. Take control of your social connections and ensure a safer experience.",
+                "keywords": "blocked users, block list, manage blocked users, social settings, privacy control, Adonis & Svelte Starter Kit"
+            },
+            "none": "No blocked user found",
+            "search": {
+                "placeholder": "John123",
+                "label": "Blocked user's username"
+            },
+            "modal": {
+                "title": "Blocking user",
+                "text": "{username} will be blocked"
+            }
+        },
+        "unblock": {
+            "modal": {
+                "title": "Unblocking user",
+                "text": "{username} will be unblocked"
+            }
+        }
+    },
+    "admin": {
+        "title": "Dashboard",
+        "datatable": {
+            "actions": "Actions",
+            "no-result": "No result",
+            "select": {
+                "row": "Select row",
+                "all": "Select all"
+            },
+            "selected-rows": [
+                {
+                    "declarations": ["input count", "input total"],
+                    "match": {
+                        "count=0": "No rows selected",
+                        "count=1": "{count} of {total} row selected",
+                        "count=*": "{count} of {total} rows selected"
+                    }
+                }
+            ],
+            "columns": "Columns"
+        },
+        "user": {
+            "title": "Users",
+            "fields": {
+                "profile-picture": "Profile picture",
+                "username": "Username",
+                "email": "Email",
+                "enabled": "Enabled"
+            },
+            "delete": {
+                "title": "Delete {users}",
+                "text": [
+                    {
+                        "declarations": ["input users", "input count", "local countPlural = count: plural"],
+                        "selectors": ["countPlural"],
+                        "match": {
+                            "countPlural=zero": "Are you sure you want to delete {users} ? This action cannot be undone and will permanently remove the users and all related data.",
+                            "countPlural=one": "Are you sure you want to delete {users} ? This action cannot be undone and will permanently remove the user and all related data.",
+                            "countPlural=other": "Are you sure you want to delete {users} ? This action cannot be undone and will permanently remove the users and all related data."
+                        }
+                    }
+                ]
+            },
+            "new": {
+                "title": "New user",
+                "profile-picture": {
+                    "title": "Profile picture",
+                    "description": "User profile picture (square image recommended)"
+                }
+            }
+        },
+        "language": {
+            "title": "Languages",
+            "fields": {
+                "flag": "Flag",
+                "code": "Code",
+                "name": "Name",
+                "fallback": "Fallback"
+            },
+            "delete": {
+                "title": "Delete {languages}",
+                "text": [
+                    {
+                        "declarations": ["input languages", "input count", "local countPlural = count: plural"],
+                        "selectors": ["countPlural"],
+                        "match": {
+                            "countPlural=zero": "Are you sure you want to delete {languages} ? This action cannot be undone and will permanently remove the languages and all related data.",
+                            "countPlural=one": "Are you sure you want to delete {languages} ? This action cannot be undone and will permanently remove the language and all related data.",
+                            "countPlural=other": "Are you sure you want to delete {languages} ? This action cannot be undone and will permanently remove the languages and all related data."
+                        }
+                    }
+                ]
+            },
+            "new": {
+                "title": "New language",
+                "flag": {
+                    "title": "Flag",
+                    "description": "Language flag (SVG format width=\"24\" height=\"24\" viewBox=\"0 0 36 36\" recommended)"
+                }
+            }
+        }
+    }
+}

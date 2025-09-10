@@ -1,0 +1,134 @@
+{
+    "admin": {
+        "language": {
+            "delete": {
+                "success": "{name} supprimé avec succès",
+                "error": {
+                    "fallback": "Vous ne pouvez pas supprimer la langue par défaut ({name})",
+                    "default": "Une erreur est survenue lors de la suppression de la langue du code {code}"
+                }
+            },
+            "create": {
+                "success": "Langue {name} créée avec succès",
+                "error": {
+                    "already-exists": "Une language avec le code {code} existe déjà"
+                }
+            },
+            "update": {
+                "success": "{name} mis à jour avec succès"
+            }
+        },
+        "user": {
+            "delete": {
+                "success": "Utilisateur {username} supprimé avec succès",
+                "error": {
+                    "current": "Vous ne pouvez pas supprimer votre propre compte depuis le back-office ({username})",
+                    "default": "Erreur lors de la suppression de l’utilisateur avec l’identifiant {frontId}"
+                }
+            },
+            "create": {
+                "success": "Utilisateur {username} ({email}) créé avec succès",
+                "error": {
+                    "already-exists": "Un utilisateur avec l’email {email} existe déjà"
+                }
+            },
+            "update": {
+                "success": "Utilisateur {username} mis à jour avec succès"
+            }
+        }
+    },
+    "auth": {
+        "login": {
+            "success": "Connexion réussie",
+            "error": "Échec de la connexion, veuillez vérifier vos identifiants"
+        },
+        "logout": {
+            "success": "Déconnexion réussie"
+        },
+        "send-account-creation-email": {
+            "subject": "Création de compte",
+            "success": "Vérifiez vos e-mails pour confirmer la création du compte",
+            "error": {
+                "consent-required": "Vous devez accepter les conditions d'utilisation pour créer un compte",
+                "email-already-in-use": "Cet e-mail est déjà utilisé",
+                "mail-not-sent": "Une erreur s'est produite lors de l'envoi de l'e-mail, veuillez réessayer plus tard"
+            }
+        },
+        "confirm-account-creation": {
+            "success": "Compte activé avec succès",
+            "error": {
+                "invalid-token": "Jeton invalide",
+                "token-expired": "Jeton expiré, veuillez en demander un nouveau"
+            }
+        }
+    },
+    "blocked-user": {
+        "block": {
+            "success": "{username} bloqué",
+            "error": "{username} déjà bloqué"
+        },
+        "cancel": {
+            "success": "{username} débloqué",
+            "error": "{username} n'est pas bloqué"
+        }
+    },
+    "file": {
+        "serve-status-profile-picture-file": {
+            "error": "Photo de profil de l'utilisateur introuvable"
+        }
+    },
+    "friend": {
+        "accept": {
+            "success": "{username} ajouté aux amis",
+            "error": "Vous êtes déjà ami avec {username}"
+        },
+        "refuse": {
+            "success": "Demande d'ami refusée"
+        },
+        "remove": {
+            "success": "{username} supprimé des amis",
+            "error": "Vous n'êtes pas ami avec {username}"
+        }
+    },
+    "oauth": {
+        "callback": {
+            "error": {
+                "access-denied": "L'accès a été refusé par l'utilisateur",
+                "state-mismatch": "Nous ne pouvons pas vérifier la requête. Veuillez réessayer",
+                "default": "Erreur inconnue du fournisseur OAuth"
+            }
+        },
+        "confirm": {
+            "success": "Connexion réussie avec {provider}",
+            "error": {
+                "invalid-token": "Jeton invalide",
+                "token-expired": "Jeton expiré, veuillez en demander un nouveau"
+            }
+        }
+    },
+    "pending-friend": {
+        "add": {
+            "success": "Demande d'ami envoyée à {username}",
+            "error": "Vous êtes déjà ami avec {username}"
+        },
+        "cancel": {
+            "success": "Demande d'ami annulée",
+            "error": "Vous n'êtes pas lié à cette demande"
+        }
+    },
+    "profile": {
+        "subject": "Réinitialisation de votre mot de passe",
+        "send-reset-password-email": {
+            "success": "Vérifiez vos e-mails pour réinitialiser votre mot de passe",
+            "error": {
+                "mail-not-sent": "Une erreur s'est produite lors de l'envoi de l'e-mail, veuillez réessayer plus tard"
+            }
+        },
+        "reset": {
+            "success": "Mot de passe réinitialisé avec succès"
+        },
+        "update-profile": {
+            "success": "Profil mis à jour avec succès"
+        }
+    }
+}

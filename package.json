@@ -1,0 +1,24 @@
+{
+    "name": "adonis-svelte-starter-kit",
+    "private": true,
+    "license": "MIT",
+    "type": "module",
+    "workspaces": [
+        "back",
+        "front"
+    ],
+    "devDependencies": {
+        "lint-staged": "^16.1.5",
+        "npm-check-updates": "^18.0.1",
+        "prettier": "^3.5.3",
+        "simple-git-hooks": "^2.13.1",
+        "svelte-meta-tags": "^4.3.0"
+    },
+    "simple-git-hooks": {
+        "pre-commit": "npx lint-staged"
+    },
+    "dependencies": {
+        "micromatch": "^4.0.8",
+        "process": "^0.11.10"
+    }
+}

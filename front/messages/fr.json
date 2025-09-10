@@ -1,0 +1,333 @@
+{
+    "common": {
+        "yes": "Oui",
+        "no": "Non",
+        "continue": "Continuer",
+        "language": "Langue",
+        "close": "Fermer",
+        "edit": "Modifier",
+        "update": "Mettre à jour",
+        "delete": "Supprimer",
+        "create": "Créer",
+        "cancel": "Annuler",
+        "back-to-home": "Retour à la page d'accueil",
+        "name": "Nom",
+        "created-at": "Créé le",
+        "updated-at": "Mis à jour le",
+        "public": "Public",
+        "private": "Privé",
+        "error": {
+            "default-message": "Quelque chose s'est mal passé"
+        },
+        "search": {
+            "label": "Rechercher",
+            "placeholder": "Rechercher..."
+        },
+        "title": {
+            "label": "Titre",
+            "placeholder": "Photo de Jésus"
+        },
+        "username": {
+            "label": "Nom d'utilisateur",
+            "placeholder": "Jean123"
+        },
+        "email": {
+            "label": "Email",
+            "placeholder": "jean.dupont@gmail.com"
+        },
+        "password": {
+            "label": "Mot de passe",
+            "placeholder": "xxx",
+            "match": "Les mots de passe ne correspondent pas",
+            "length": "Le mot de passe doit contenir au moins 8 caractères",
+            "lowercase": "Le mot de passe doit contenir au moins une lettre minuscule",
+            "uppercase": "Le mot de passe doit contenir au moins une lettre majuscule",
+            "number": "Le mot de passe doit contenir au moins un chiffre",
+            "special-character": "Le mot de passe doit contenir au moins un caractère spécial"
+        },
+        "confirm-password": {
+            "label": "Confirmer le mot de passe",
+            "placeholder": "xxx"
+        },
+        "reset-password": "Réinitialiser le mot de passe",
+        "submit": "Envoyer",
+        "file": {
+            "title": "Sélectionnez un fichier",
+            "description": "Glissez-déposez ou cliquez pour sélectionner un fichier."
+        },
+        "consent": "J'accepte les termes et conditions",
+        "logo": {
+            "alt": "Logo de Adonis & Svelte Starter Kit"
+        }
+    },
+    "open-graph": {
+        "profile-picture": {
+            "alt": "Photo de profil de"
+        }
+    },
+    "toast": {
+        "token-expired": "Votre session a expiré, veuillez vous reconnecter"
+    },
+    "menu": {
+        "admin": "Admin",
+        "source-code": "Code source"
+    },
+    "footer": {
+        "navigation": "Navigation",
+        "about": "À propos"
+    },
+    "profile": {
+        "title": "Profil",
+        "description": "Mettez à jour votre profil",
+        "meta": {
+            "title": "Modifier le profil – Adonis & Svelte Starter Kit",
+            "description": "Mettez à jour votre nom d’utilisateur et votre photo de profil facilement sur Adonis & Svelte Starter Kit. Gérez vos informations personnelles en toute sécurité.",
+            "keywords": "modifier profil, changer nom d’utilisateur, changer photo de profil, paramètres utilisateur, Adonis & Svelte Starter Kit"
+        },
+        "reset-password": "Réinitialiser le mot de passe",
+        "profile-picture": {
+            "title": "Photo de profil",
+            "description": "Uploadez ici une photo de profil"
+        }
+    },
+    "reset-password": {
+        "title": "Réinitialiser le mot de passe",
+        "meta": {
+            "title": "Réinitialiser le mot de passe – Adonis & Svelte Starter Kit",
+            "description": "Entrez votre email pour recevoir un lien de réinitialisation du mot de passe. Le champ email est prérempli si vous êtes connecté.",
+            "keywords": "réinitialiser mot de passe, récupération mot de passe, mot de passe oublié, email réinitialisation, Adonis & Svelte Starter Kit"
+        },
+        "confirm": {
+            "title": "Finaliser la réinitialisation du mot de passe",
+            "meta": {
+                "title": "Confirmation de réinitialisation de mot de passe – Adonis & Svelte Starter Kit",
+                "description": "Confirmez la réinitialisation de votre mot de passe en cliquant sur le lien envoyé par email. Mettez à jour votre mot de passe en toute sécurité et retrouvez l’accès à votre compte.",
+                "keywords": "confirmation réinitialisation mot de passe, réinitialiser mot de passe, vérification email, Adonis & Svelte Starter Kit"
+            }
+        }
+    },
+    "home": {
+        "title": "Accueil",
+        "meta": {
+            "title": "Bienvenue sur Adonis & Svelte Starter Kit – Votre solution starter full-stack",
+            "description": "Démarrez rapidement avec Adonis & Svelte Starter Kit, un template full-stack puissant combinant backend Adonis et frontend Svelte. Construisez vos projets plus vite et mieux.",
+            "keywords": "template starter Adonis, template starter Svelte, full-stack, développement web, backend, frontend, Adonis & Svelte Starter Kit"
+        }
+    },
+    "login": {
+        "title": "Connexion",
+        "login-with": "Se connecter avec",
+        "forgot-password": "Mot de passe oublié ?",
+        "create-account": "Pas encore inscrit ?",
+        "meta": {
+            "title": "Connexion – Adonis & Svelte Starter Kit",
+            "description": "Connectez-vous à Adonis & Svelte Starter Kit avec votre email et mot de passe, ou rapidement via OAuth Google, GitHub ou Discord.",
+            "keywords": "connexion, login, se connecter, email, mot de passe, OAuth, connexion Google, connexion GitHub, connexion Discord, Adonis & Svelte Starter Kit"
+        }
+    },
+    "create-account": {
+        "title": "Créer un compte",
+        "meta": {
+            "title": "Créer votre compte – Adonis & Svelte Starter Kit",
+            "description": "Inscrivez-vous sur Adonis & Svelte Starter Kit en créant un compte avec nom d'utilisateur, email et mot de passe. Ou connectez-vous rapidement via Google, Discord ou GitHub.",
+            "keywords": "créer un compte, inscription, nom d'utilisateur, email, mot de passe, OAuth, connexion Google, connexion Discord, connexion GitHub, Adonis & Svelte Starter Kit"
+        }
+    },
+    "logout": {
+        "title": "Déconnexion",
+        "meta": {
+            "title": "Confirmer la déconnexion – Adonis & Svelte Starter Kit",
+            "description": "Êtes-vous sûr de vouloir vous déconnecter ? Confirmez votre déconnexion pour terminer votre session en toute sécurité sur Adonis & Svelte Starter Kit.",
+            "keywords": "confirmer déconnexion, confirmation logout, terminer session, Adonis & Svelte Starter Kit"
+        },
+        "modal": {
+            "title": "Déconnexion",
+            "text": "Êtes-vous sûr de vouloir vous déconnecter ?"
+        }
+    },
+    "unauthorized": {
+        "title": "Non autorisé",
+        "subtitle": "Vous n'êtes pas autorisé à accéder à cette page.",
+        "meta": {
+            "title": "Accès non autorisé – Kit de démarrage Adonis & Svelte",
+            "description": "Vos identifiants ne vous permettent pas d'accéder à cette page. Veuillez vous connecter ou contacter le support si vous pensez qu'il s'agit d'une erreur.",
+            "keywords": "accès non autorisé, erreur 401, connexion requise, permission refusée, Kit de démarrage Adonis & Svelte"
+        }
+    },
+    "forbidden": {
+        "title": "Accès refusé",
+        "subtitle": "Vous devez être connecté pour accéder à cette partie de l'application.",
+        "meta": {
+            "title": "Accès Interdit – Adonis & Svelte Starter Kit",
+            "description": "Vous n’avez pas la permission d’accéder à cette page. Si vous pensez qu’il s’agit d’une erreur, veuillez contacter le support.",
+            "keywords": "accès interdit, erreur 403, permission refusée, accès restreint, Adonis & Svelte Starter Kit"
+        }
+    },
+    "not-found": {
+        "title": "Page inexistante",
+        "meta": {
+            "title": "Page non trouvée – Adonis & Svelte Starter Kit",
+            "description": "La page que vous recherchez n’existe pas. Vérifiez l’URL ou retournez à la page d’accueil de Adonis & Svelte Starter Kit.",
+            "keywords": "erreur 404, page non trouvée, page manquante, Adonis & Svelte Starter Kit"
+        }
+    },
+    "already-connected": {
+        "title": "Déjà connecté",
+        "meta": {
+            "title": "Déjà connecté – Accédez à votre tableau de bord | Adonis & Svelte Starter Kit",
+            "description": "Vous êtes déjà connecté à Adonis & Svelte Starter Kit. Accédez à votre tableau de bord ou retournez à la page d'accueil pour découvrir toutes les fonctionnalités.",
+            "keywords": "déjà connecté, session utilisateur, tableau de bord, page d'accueil, Adonis & Svelte Starter Kit"
+        }
+    },
+    "unknown-error": {
+        "title": "Erreur inconnue",
+        "meta": {
+            "title": "Erreur Inconnue – Une Erreur S’est Produite | Adonis & Svelte Starter Kit",
+            "description": "Une erreur inattendue s’est produite lors de l’utilisation du Adonis & Svelte Starter Kit. Veuillez réessayer plus tard ou retourner à la page d’accueil pour obtenir de l’aide.",
+            "keywords": "erreur inconnue, problème inattendu, gestion des erreurs, dépannage, Adonis & Svelte Starter Kit"
+        }
+    },
+    "social": {
+        "title": "Social",
+        "description": "Gérez vos amis et les utilisateurs bloqués",
+        "meta": {
+            "title": "Espace social – Adonis & Svelte Starter Kit",
+            "description": "Accédez à votre espace social : gérez vos amis, utilisateurs bloqués et paramètres de profil depuis un seul endroit.",
+            "keywords": "espace social, gérer amis, utilisateurs bloqués, profil utilisateur, Adonis & Svelte Starter Kit"
+        },
+        "friends": {
+            "title": "Amis",
+            "description": "Gérez vos amis",
+            "meta": {
+                "title": "Gérez vos amis – Adonis & Svelte Starter Kit",
+                "description": "Ajoutez, supprimez, acceptez les demandes d’amis et bloquez des utilisateurs facilement avec Adonis & Svelte Starter Kit. Gérez vos connexions sociales simplement.",
+                "keywords": "gérer amis, ajouter amis, supprimer amis, demandes d’amis, bloquer utilisateurs, gestion sociale, Adonis & Svelte Starter Kit"
+            },
+            "none": "Pas d'ami trouvé",
+            "search": {
+                "placeholder": "Jean123",
+                "label": "Nom d'utilisateur de l'ami"
+            },
+            "add": {
+                "title": "Inviter un nouvel ami",
+                "none": "Aucun utilisateur disponible",
+                "search": {
+                    "placeholder": "Jean123",
+                    "label": "Pseudonyme de l'utilisateur"
+                }
+            },
+            "remove": {
+                "modal": {
+                    "title": "Retirer un ami",
+                    "text": "{username} sera supprimé de vos amis"
+                }
+            }
+        },
+        "blocked": {
+            "title": "Utilisateurs bloqués",
+            "description": "Gérez les utilisateurs bloqués",
+            "meta": {
+                "title": "Utilisateurs bloqués – Gérer votre liste de blocage | Adonis & Svelte Starter Kit",
+                "description": "Consultez et gérez facilement les utilisateurs que vous avez bloqués sur Adonis & Svelte Starter Kit. Prenez le contrôle de votre expérience sociale et renforcez votre confidentialité.",
+                "keywords": "utilisateurs bloqués, liste de blocage, gérer les utilisateurs bloqués, paramètres sociaux, confidentialité"
+            },
+            "none": "Pas d'utilisateur bloqué trouvé",
+            "search": {
+                "placeholder": "Jean123",
+                "label": "Pseudonyme de l'utilisateur bloqué"
+            },
+            "modal": {
+                "title": "Bloquer l'utilisateur",
+                "text": "{username} sera bloqué"
+            }
+        },
+        "unblock": {
+            "modal": {
+                "title": "Débloquer l'utilisateur",
+                "text": "{username} sera débloqué"
+            }
+        }
+    },
+    "admin": {
+        "title": "Tableau de bord",
+        "datatable": {
+            "actions": "Actions",
+            "no-result": "Pas de résultat",
+            "select": {
+                "row": "Sélectionner la ligne",
+                "all": "Tout sélectionner"
+            },
+            "selected-rows": [
+                {
+                    "declarations": ["input count", "input total"],
+                    "match": {
+                        "count=0": "Aucune ligne sélectionnée",
+                        "count=1": "{count} sur {total} ligne sélectionnée",
+                        "count=*": "{count} sur {total} lignes sélectionnées"
+                    }
+                }
+            ],
+            "columns": "Colonnes"
+        },
+        "user": {
+            "title": "Utilisateurs",
+            "fields": {
+                "profile-picture": "Image de profil",
+                "username": "Pseudonyme",
+                "email": "Email",
+                "enabled": "Activé"
+            },
+            "delete": {
+                "title": "Supprimer {users}",
+                "text": [
+                    {
+                        "declarations": ["input users", "input count", "local countPlural = count: plural"],
+                        "selectors": ["countPlural"],
+                        "match": {
+                            "countPlural=zero": "Êtes-vous sûr de vouloir supprimer {users} ? Cette action est irréversible et supprimera définitivement les utilisateurs ainsi que toutes les données associées.",
+                            "countPlural=one": "Êtes-vous sûr de vouloir supprimer {users} ? Cette action est irréversible et supprimera définitivement l'utilisateur ainsi que toutes les données associées.",
+                            "countPlural=other": "Êtes-vous sûr de vouloir supprimer {users} ? Cette action est irréversible et supprimera définitivement les utilisateurs ainsi que toutes les données associées."
+                        }
+                    }
+                ]
+            },
+            "new": {
+                "title": "Nouvel utilisateur",
+                "profile-picture": {
+                    "title": "Image de profil",
+                    "description": "Image de profil de l'utilisateur (format carré recommandé)"
+                }
+            }
+        },
+        "language": {
+            "title": "Langues",
+            "fields": {
+                "flag": "Drapeau",
+                "code": "Code",
+                "name": "Nom",
+                "fallback": "Valeur par défaut"
+            },
+            "delete": {
+                "title": "Supprimer {languages}",
+                "text": [
+                    {
+                        "declarations": ["input languages", "input count", "local countPlural = count: plural"],
+                        "selectors": ["countPlural"],
+                        "match": {
+                            "countPlural=zero": "Êtes-vous sûr de vouloir supprimer {languages} ? Cette action est irréversible et supprimera définitivement les langues ainsi que toutes les données associées.",
+                            "countPlural=one": "Êtes-vous sûr de vouloir supprimer {languages} ? Cette action est irréversible et supprimera définitivement la langue ainsi que toutes les données associées.",
+                            "countPlural=other": "Êtes-vous sûr de vouloir supprimer {languages} ? Cette action est irréversible et supprimera définitivement les langues ainsi que toutes les données associées."
+                        }
+                    }
+                ]
+            },
+            "new": {
+                "title": "Nouvelle langue",
+                "flag": {
+                    "title": "Drapeau",
+                    "description": "Drapeau de la langue (format SVG width=\"24\" height=\"24\" viewBox=\"0 0 36 36\" recommandé)"
+                }
+            }
+        }
+    }
+}
