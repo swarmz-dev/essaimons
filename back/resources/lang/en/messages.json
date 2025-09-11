@@ -1,0 +1,101 @@
+{
+    "admin": {
+        "language": {
+            "delete": {
+                "success": "Successfully deleted {name}",
+                "error": {
+                    "fallback": "You cannot delete the default language ({name})",
+                    "default": "Error while deleting language with code {code}"
+                }
+            },
+            "create": {
+                "success": "Successfully created language {name}",
+                "error": {
+                    "already-exists": "Language with code {code} already exists"
+                }
+            },
+            "update": {
+                "success": "Successfully updated language {name}"
+            }
+        },
+        "user": {
+            "delete": {
+                "success": "Successfully deleted {username}",
+                "error": {
+                    "current": "You cannot delete your own account from back-office ({username})",
+                    "default": "Error while deleting user with identifier {frontId}"
+                }
+            },
+            "create": {
+                "success": "Successfully created user {username} ({email})",
+                "error": {
+                    "already-exists": "User with email {email} already exists"
+                }
+            },
+            "update": {
+                "success": "Successfully updated {username}"
+            }
+        }
+    },
+    "auth": {
+        "login": {
+            "success": "Logged in",
+            "error": "Login failed, please check your credentials"
+        },
+        "logout": {
+            "success": "Logged out"
+        },
+        "send-account-creation-email": {
+            "subject": "Account creation",
+            "success": "Check your mails to confirm account creation",
+            "error": {
+                "consent-required": "You must accept the terms of service to create an account",
+                "email-already-in-use": "This email is already in use",
+                "mail-not-sent": "An error occurred while sending the email, please try again later"
+            }
+        },
+        "confirm-account-creation": {
+            "success": "Account successfully enabled",
+            "error": {
+                "invalid-token": "Invalid token",
+                "token-expired": "Token expired, please request a new one"
+            }
+        }
+    },
+    "file": {
+        "serve-status-profile-picture-file": {
+            "error": "User's profile picture not found"
+        }
+    },
+    "oauth": {
+        "callback": {
+            "error": {
+                "access-denied": "Access was denied by the user",
+                "state-mismatch": "We are unable to verify the request. Please try again",
+                "default": "Unknown error from OAuth provider"
+            }
+        },
+        "confirm": {
+            "success": "Successfully connected with {provider}",
+            "error": {
+                "invalid-token": "Invalid token",
+                "token-expired": "Token expired, please request a new one"
+            }
+        }
+    },
+    "profile": {
+        "send-reset-password-email": {
+            "subject": "Reset your password",
+            "success": "Check your mails to reset your password",
+            "error": {
+                "mail-not-sent": "An error occurred while sending the email, please try again later"
+            }
+        },
+        "reset": {
+            "success": "Password successfully reset"
+        },
+        "update-profile": {
+            "success": "Profile successfully updated"
+        }
+    }
+}

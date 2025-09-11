@@ -1,0 +1,272 @@
+{
+    "common": {
+        "yes": "Yes",
+        "no": "No",
+        "continue": "Continue",
+        "language": "Language",
+        "close": "Close",
+        "edit": "Edit",
+        "update": "Update",
+        "delete": "Delete",
+        "create": "Create",
+        "cancel": "Cancel",
+        "back-to-home": "Back to homepage",
+        "name": "Name",
+        "created-at": "Created at",
+        "updated-at": "Updated at",
+        "public": "Public",
+        "private": "Private",
+        "error": {
+            "default-message": "Something went wrong"
+        },
+        "search": {
+            "label": "Search",
+            "placeholder": "Search..."
+        },
+        "title": {
+            "label": "Title",
+            "placeholder": "Jesus' photo"
+        },
+        "username": {
+            "label": "Username",
+            "placeholder": "John123"
+        },
+        "email": {
+            "label": "Email",
+            "placeholder": "john.smith@gmail.com"
+        },
+        "password": {
+            "label": "Password",
+            "placeholder": "xxx",
+            "match": "Passwords do not match",
+            "length": "Password must be at least 8 characters long",
+            "lowercase": "Password must contain at least one lowercase letter",
+            "uppercase": "Password must contain at least one uppercase letter",
+            "number": "Password must contain at least one number",
+            "special-character": "Password must contain at least one special character"
+        },
+        "confirm-password": {
+            "label": "Confirm password",
+            "placeholder": "xxx"
+        },
+        "reset-password": "Reset password",
+        "submit": "Submit",
+        "file": {
+            "title": "Select a file",
+            "description": "Drag & drop or click to select a file."
+        },
+        "consent": "I agree to the terms and conditions",
+        "logo": {
+            "alt": "Essaimons-V1's logo"
+        }
+    },
+    "open-graph": {
+        "profile-picture": {
+            "alt": "Profile picture of"
+        }
+    },
+    "toast": {
+        "token-expired": "Your session has expired, please login again"
+    },
+    "menu": {
+        "admin": "Admin",
+        "source-code": "Source code"
+    },
+    "footer": {
+        "navigation": "Navigation",
+        "about": "About"
+    },
+    "profile": {
+        "title": "Profile",
+        "description": "Update your profile",
+        "meta": {
+            "title": "Edit Profile – Essaimons-V1",
+            "description": "Update your username and profile picture easily on Essaimons-V1. Manage your personal information securely.",
+            "keywords": "edit profile, update username, change profile picture, user settings, Essaimons-V1"
+        },
+        "reset-password": "Reset password",
+        "profile-picture": {
+            "title": "Profile picture",
+            "description": "Upload here a profile picture"
+        }
+    },
+    "reset-password": {
+        "title": "Reset password",
+        "meta": {
+            "title": "Reset Password – Essaimons-V1",
+            "description": "Enter your email to receive a password reset link. The email field is prefilled if you are logged in.",
+            "keywords": "reset password, password recovery, forgot password, password reset email, Essaimons-V1"
+        },
+        "confirm": {
+            "title": "Finish reset password",
+            "meta": {
+                "title": "Password Reset Confirmation – Essaimons-V1",
+                "description": "Confirm your password reset by clicking the link sent to your email. Securely update your password and regain access to your account.",
+                "keywords": "password reset confirmation, reset password, email verification, Essaimons-V1"
+            }
+        }
+    },
+    "home": {
+        "title": "Home",
+        "meta": {
+            "title": "Welcome to Essaimons-V1 – Your Full-Stack Starter Solution",
+            "description": "Get started quickly with Essaimons-V1, a powerful full-stack starter template combining Adonis backend and Svelte frontend. Build your projects faster and smarter.",
+            "keywords": "Adonis starter kit, Svelte starter kit, full-stack template, web development, backend, frontend, Essaimons-V1"
+        }
+    },
+    "login": {
+        "title": "Login",
+        "login-with": "Sign in with",
+        "forgot-password": "Forgot password ?",
+        "create-account": "No account yet ?",
+        "meta": {
+            "title": "Login – Essaimons-V1",
+            "description": "Log in to Essaimons-V1 using your email and password, or quickly via Google, GitHub, or Discord OAuth.",
+            "keywords": "login, sign in, email login, password login, OAuth login, Google login, GitHub login, Discord login, Essaimons-V1"
+        }
+    },
+    "create-account": {
+        "title": "Create account",
+        "meta": {
+            "title": "Create Your Account – Essaimons-V1",
+            "description": "Sign up for Essaimons-V1 by creating your account with username, email, and password. Or quickly register using Google, Discord, or GitHub.",
+            "keywords": "create account, sign up, register, username, email, password, OAuth, Google login, Discord login, GitHub login, Essaimons-V1"
+        }
+    },
+    "logout": {
+        "title": "Logout",
+        "meta": {
+            "title": "Confirm Logout – Essaimons-V1",
+            "description": "Are you sure you want to log out? Confirm your logout to end your session safely on Essaimons-V1.",
+            "keywords": "confirm logout, logout confirmation, end session, Essaimons-V1"
+        },
+        "modal": {
+            "title": "Logout",
+            "text": "Are you sure you want to logout ?"
+        }
+    },
+    "unauthorized": {
+        "title": "Unauthorized",
+        "subtitle": "You are not authorized to view this page.",
+        "meta": {
+            "title": "Unauthorized Access – Essaimons-V1",
+            "description": "Your credentials do not grant access to this page. Please log in or contact support if you think this is a mistake.",
+            "keywords": "unauthorized access, 401 error, login required, permission denied, Essaimons-V1"
+        }
+    },
+    "forbidden": {
+        "title": "Forbidden",
+        "subtitle": "You have to be logged to access this app's part.",
+        "meta": {
+            "title": "Access Forbidden – Essaimons-V1",
+            "description": "You do not have permission to access this page. If you believe this is an error, please contact support.",
+            "keywords": "access forbidden, 403 error, permission denied, restricted access, Essaimons-V1"
+        }
+    },
+    "not-found": {
+        "title": "Page not found",
+        "meta": {
+            "title": "Page Not Found – Essaimons-V1",
+            "description": "The page you are looking for does not exist. Check the URL or return to the homepage of Essaimons-V1.",
+            "keywords": "404 error, page not found, missing page, Essaimons-V1"
+        }
+    },
+    "already-connected": {
+        "title": "Already connected",
+        "meta": {
+            "title": "Already Logged In – Return to Your Dashboard | Essaimons-V1",
+            "description": "You're already logged in to Essaimons-V1. Continue to your dashboard or return to the homepage to explore more features.",
+            "keywords": "already logged in, user session, dashboard, homepage, Essaimons-V1"
+        }
+    },
+    "unknown-error": {
+        "title": "Unknown error",
+        "meta": {
+            "title": "Unknown Error – Something Went Wrong | Essaimons-V1",
+            "description": "An unexpected error occurred while using the Essaimons-V1. Please try again later or return to the homepage for support.",
+            "keywords": "unknown error, unexpected issue, error handling, troubleshooting, Essaimons-V1"
+        }
+    },
+    "admin": {
+        "title": "Dashboard",
+        "datatable": {
+            "actions": "Actions",
+            "no-result": "No result",
+            "select": {
+                "row": "Select row",
+                "all": "Select all"
+            },
+            "selected-rows": [
+                {
+                    "declarations": ["input count", "input total"],
+                    "match": {
+                        "count=0": "No rows selected",
+                        "count=1": "{count} of {total} row selected",
+                        "count=*": "{count} of {total} rows selected"
+                    }
+                }
+            ],
+            "columns": "Columns"
+        },
+        "user": {
+            "title": "Users",
+            "fields": {
+                "profile-picture": "Profile picture",
+                "username": "Username",
+                "email": "Email",
+                "enabled": "Enabled"
+            },
+            "delete": {
+                "title": "Delete {users}",
+                "text": [
+                    {
+                        "declarations": ["input users", "input count", "local countPlural = count: plural"],
+                        "selectors": ["countPlural"],
+                        "match": {
+                            "countPlural=zero": "Are you sure you want to delete {users} ? This action cannot be undone and will permanently remove the users and all related data.",
+                            "countPlural=one": "Are you sure you want to delete {users} ? This action cannot be undone and will permanently remove the user and all related data.",
+                            "countPlural=other": "Are you sure you want to delete {users} ? This action cannot be undone and will permanently remove the users and all related data."
+                        }
+                    }
+                ]
+            },
+            "new": {
+                "title": "New user",
+                "profile-picture": {
+                    "title": "Profile picture",
+                    "description": "User profile picture (square image recommended)"
+                }
+            }
+        },
+        "language": {
+            "title": "Languages",
+            "fields": {
+                "flag": "Flag",
+                "code": "Code",
+                "name": "Name",
+                "fallback": "Fallback"
+            },
+            "delete": {
+                "title": "Delete {languages}",
+                "text": [
+                    {
+                        "declarations": ["input languages", "input count", "local countPlural = count: plural"],
+                        "selectors": ["countPlural"],
+                        "match": {
+                            "countPlural=zero": "Are you sure you want to delete {languages} ? This action cannot be undone and will permanently remove the languages and all related data.",
+                            "countPlural=one": "Are you sure you want to delete {languages} ? This action cannot be undone and will permanently remove the language and all related data.",
+                            "countPlural=other": "Are you sure you want to delete {languages} ? This action cannot be undone and will permanently remove the languages and all related data."
+                        }
+                    }
+                ]
+            },
+            "new": {
+                "title": "New language",
+                "flag": {
+                    "title": "Flag",
+                    "description": "Language flag (SVG format width=\"24\" height=\"24\" viewBox=\"0 0 36 36\" recommended)"
+                }
+            }
+        }
+    }
+}

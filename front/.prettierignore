@@ -1,0 +1,6 @@
+node_modules/
+dist/
+build/
+src/paraglide/
+src/lib/paraglide/
+.sveltekit/
