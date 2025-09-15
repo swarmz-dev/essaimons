@@ -64,6 +64,10 @@ export default await Env.create(new URL('../', import.meta.url), {
   */
     DISCORD_CLIENT_ID: Env.schema.string(),
     DISCORD_CLIENT_SECRET: Env.schema.string(),
+    GITHUB_CLIENT_ID: Env.schema.string(),
+    GITHUB_CLIENT_SECRET: Env.schema.string(),
+    GOOGLE_CLIENT_ID: Env.schema.string(),
+    GOOGLE_CLIENT_SECRET: Env.schema.string(),
 
     FRONT_PORT: Env.schema.number(),
     GITHUB_REPOSITORY: Env.schema.string(),
