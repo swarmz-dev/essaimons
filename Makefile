@@ -84,18 +84,20 @@ build-prod:
 	cp -r back/app/types/. front/back/app/types/
 
 	# Frontend build
-	cd front && npm install && npm run build
+	cd front && npm install && npx paraglide-js compile && npm run build
 
 migrate-prod:
 	cd back && node ace migration:run && node ace migration:run --connection=logs
 
 start-back-prod:
-	@echo "Starting/restarting essaimons-v1-backend..."
-	@pm2 start back/build/bin/server.js --name essaimons-v1-backend --update-env -f
+	@echo "Restarting essaimons-v1-backend..."
+	@pm2 delete essaimons-v1-backend > /dev/null 2>&1 || true
+	@pm2 start back/build/bin/server.js --name essaimons-v1-backend --update-env
 
 start-front-prod:
-	@echo "Starting/restarting essaimons-v1-frontend..."
-	@pm2 start front/build/index.js --name essaimons-v1-frontend --update-env -f
+	@echo "Restarting essaimons-v1-frontend..."
+	@pm2 delete essaimons-v1-frontend > /dev/null 2>&1 || true
+	@pm2 start front/build/index.js --name essaimons-v1-frontend --update-env
 
 deploy: build-prod migrate-prod start-back-prod start-front-prod
 	@pm2 save
