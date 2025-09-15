@@ -68,18 +68,18 @@ build-prod:
 
 	# Persisted directories restoration
 	[ -d back/.persist/public ] && cp -r back/.persist/public back/build/ || true
-	[ -d back/.persist/static ] && cp -r back/.persist/static/* back/build/static/ || true
+	[ -d back/.persist/static ] && cp -r back/.persist/static/. back/build/static/ || true
 
 	# Fixture clearing
 	mkdir -p back/build/static
-	cp -r back/static/* back/build/static/
+	cp -r back/static/. back/build/static/
 
 	# Clear temporary persisted directories
 	rm -rf back/.persist
 
 	# Copy backend types
 	mkdir -p front/back/app/types
-	cp -r back/app/types/* front/back/app/types/
+	cp -r back/app/types/. front/back/app/types/
 
 	# Frontend build
 	cd front && npm install && npm run build
