@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: format format-check install upgrade list-routes db-fresh db-migrate db-seed init-logs-db db paraglide stop up rm prune build-prod migrate-prod start-prod deploy
+.PHONY: format format-check install upgrade list-routes db-fresh db-migrate db-seed init-logs-db db paraglide stop up rm prune build-prod migrate-prod start-back-prod start-front-prod deploy
 
 format:
 	node ./format/command.js
@@ -89,11 +89,18 @@ build-prod:
 migrate-prod:
 	cd back && node ace migration:run && node ace migration:run --connection=logs
 
-start-prod:
+start-back-prod:
 	@pm2 describe essaimons-v1-backend > /dev/null 2>&1 && \
     		echo "Restarting essaimons-v1-backend..." && \
     		pm2 restart essaimons-v1-backend || \
     		echo "Starting essaimons-v1-backend..." && \
     		pm2 start back/build/bin/server.js --name essaimons-v1-backend
 
-deploy: build-prod migrate-prod start-prod
+start-front-prod:
+	@pm2 describe essaimons-v1-frontend > /dev/null 2>&1 && \
+    		echo "Restarting essaimons-v1-frontend..." && \
+    		pm2 restart essaimons-v1-frontend || \
+    		echo "Starting essaimons-v1-frontend..." && \
+    		pm2 start front/build/index.js --name essaimons-v1-frontend
+
+deploy: build-prod migrate-prod start-back-prod start-front-prod
