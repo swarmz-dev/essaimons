@@ -58,6 +58,8 @@ prune:
 	docker system prune -f
 
 build-prod:
+	mkdir -p back/static
+
 	# Temporary persisted directories creation
 	mkdir -p back/.persist
 	[ -d back/build/public ] && cp -r back/build/public back/.persist/public || true
