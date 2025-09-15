@@ -28,6 +28,7 @@ LOGS_DB_DATABASE=essaimons_db_logs
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
 REDIS_PASSWORD=
+REDIS_DB=0
 
 DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
@@ -66,6 +67,7 @@ API_URI=""
 | `REDIS_HOST`            | 127.0.0.1                                                                   |
 | `REDIS_PORT`            | 6379                                                                        |
 | `REDIS_PASSWORD`        |                                                                             |
+| `REDIS_DB`              | 0                                                                           |
 | `DISCORD_CLIENT_ID`     | **`A valid Discord client ID`**                                             |
 | `DISCORD_CLIENT_SECRET` | **`A valid Discord client secret`**                                         |
 | `GITHUB_CLIENT_ID`      | **`A valid GitHub client ID`**                                              |
@@ -99,14 +101,14 @@ PUBLIC_DEFAULT_IMAGE=/default/image.png
 PUBLIC_TWITTER_HANDLE=""
 ```
 
-| Variable                   | Value                                                    |
-|----------------------------|----------------------------------------------------------|
-| `PUBLIC_FRONT_PORT`        | ""                                                       |
-| `PUBLIC_FRONT_URI`         | ""                                                       |
-| `PUBLIC_API_BASE_URI`      | ""                                                       |
-| `PUBLIC_API_REAL_URI`      | ""                                                       |
-| `PUBLIC_GITHUB_REPOSITORY` | ""                                                       |
-| `PUBLIC_DEFAULT_IMAGE`     | /default/image.png                                 |
+| Variable                   | Value                                                     |
+|----------------------------|-----------------------------------------------------------|
+| `PUBLIC_FRONT_PORT`        | ""                                                        |
+| `PUBLIC_FRONT_URI`         | ""                                                        |
+| `PUBLIC_API_BASE_URI`      | ""                                                        |
+| `PUBLIC_API_REAL_URI`      | ""                                                        |
+| `PUBLIC_GITHUB_REPOSITORY` | ""                                                        |
+| `PUBLIC_DEFAULT_IMAGE`     | /default/image.png                                        |
 | `PUBLIC_TWITTER_HANDLE`    | **`Put your twitter @ here, for example : @Tassadar921`** |
 
 ---
