@@ -90,7 +90,10 @@ migrate-prod:
 	cd back && node ace migration:run && node ace migration:run --connection=logs
 
 start-prod:
-	pm2 describe essaimons-v1-backend > /dev/null
-	pm2 restart essaimons-v1-backend || pm2 start back/build/bin/server.js --name essaimons-v1-backend
+	@pm2 describe essaimons-v1-backend > /dev/null 2>&1 && \
+    		echo "Restarting essaimons-v1-backend..." && \
+    		pm2 restart essaimons-v1-backend || \
+    		echo "Starting essaimons-v1-backend..." && \
+    		pm2 start back/build/bin/server.js --name essaimons-v1-backend
 
 deploy: build-prod migrate-prod start-prod
