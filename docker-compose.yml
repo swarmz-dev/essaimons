@@ -55,7 +55,7 @@ services:
         environment:
             - CHOKIDAR_USEPOLLING=true
             - WATCHPACK_POLLING=true
-            - PUBLIC_PORT=${FRONT_PORT}
+            - PORT=${FRONT_PORT}
             - PUBLIC_FRONT_URI=http://frontend:${FRONT_PORT}
             - PUBLIC_API_BASE_URI=http://backend:${PORT}
             - PUBLIC_API_REAL_URI=http://localhost:${PORT}

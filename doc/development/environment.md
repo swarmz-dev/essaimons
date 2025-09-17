@@ -89,10 +89,10 @@ API_URI=""
 
 Note that `PUBLIC_FRONT_URI` and `PUBLIC_API_BASE_URI` are automatically generated from `FRONT_PORT` and `PORT` backend environment variables respectively by Docker.
 
-`PUBLIC_FRONT_PORT` and `PUBLIC_GITHUB_REPOSITORY` are also injected from backend environment variables.
+`PORT` and `PUBLIC_GITHUB_REPOSITORY` are also injected from backend environment variables.
 
 ```
-PUBLIC_FRONT_PORT=""
+PORT=""
 PUBLIC_FRONT_URI=""
 PUBLIC_API_BASE_URI=""
 PUBLIC_API_REAL_URI=""
@@ -103,7 +103,7 @@ PUBLIC_TWITTER_HANDLE=""
 
 | Variable                   | Value                                                     |
 |----------------------------|-----------------------------------------------------------|
-| `PUBLIC_FRONT_PORT`        | ""                                                        |
+| `PORT`                     | ""                                                        |
 | `PUBLIC_FRONT_URI`         | ""                                                        |
 | `PUBLIC_API_BASE_URI`      | ""                                                        |
 | `PUBLIC_API_REAL_URI`      | ""                                                        |
