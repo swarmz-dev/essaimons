@@ -3,7 +3,6 @@
     import { m } from '#lib/paraglide/messages';
     import { Title } from '#lib/components/ui/title';
     import Meta from '#components/Meta.svelte';
-    import { Handshake } from '@lucide/svelte';
     import type { Component } from 'svelte';
 
     interface Page {
@@ -13,14 +12,7 @@
         description: string;
     }
 
-    const pages: Page[] = [
-        {
-            title: m['social.title'](),
-            icon: Handshake,
-            href: '/social',
-            description: m['social.description'](),
-        },
-    ];
+    const pages: Page[] = [];
 </script>
 
 <Meta title={m['home.meta.title']()} description={m['home.meta.description']()} keywords={m['home.meta.keywords']().split(', ')} pathname="/" />
