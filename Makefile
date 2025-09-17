@@ -97,8 +97,7 @@ start-back-prod:
 start-front-prod:
 	@echo "Restarting essaimons-v1-frontend..."
 	@pm2 delete essaimons-v1-frontend > /dev/null 2>&1 || true
-	@cd front && pm2 start "npm run preview" --name essaimons-v1-frontend --update-env
-	@pm2 status essaimons-v1-frontend
+	@pm2 start front/build/index.js --name essaimons-v1-frontend --update-env
 
 deploy: build-prod migrate-prod start-back-prod start-front-prod
 	@pm2 save
