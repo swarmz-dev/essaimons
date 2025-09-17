@@ -7,7 +7,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
     server: {
         host: true,
-        port: Number(process.env.PUBLIC_PORT),
+        port: Number(process.env.PUBLIC_FRONT_PORT),
         allowedHosts: ['localhost', 'app.essaimons.fr'],
         fs: {
             allow: ['.', '../back/app/types'],
@@ -15,7 +15,7 @@ export default defineConfig({
     },
     preview: {
         host: true,
-        port: Number(process.env.PUBLIC_PORT),
+        port: Number(process.env.PUBLIC_FRONT_PORT),
     },
     plugins: [
         tailwindcss(),
