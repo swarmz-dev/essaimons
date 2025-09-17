@@ -97,7 +97,7 @@ start-back-prod:
 start-front-prod:
 	@echo "Restarting essaimons-v1-frontend..."
 	@pm2 delete essaimons-v1-frontend > /dev/null 2>&1 || true
-	@pm2 start front/build/index.js --name essaimons-v1-frontend --update-env
+	@PORT=4173 pm2 start front/build/index.js --name essaimons-v1-frontend --update-env
 
 deploy: build-prod migrate-prod start-back-prod start-front-prod
 	@pm2 save
