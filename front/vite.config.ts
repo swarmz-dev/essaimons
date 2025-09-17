@@ -13,6 +13,10 @@ export default defineConfig({
             allow: ['.', '../back/app/types'],
         },
     },
+    preview: {
+        host: true,
+        port: Number(process.env.PUBLIC_PORT),
+    },
     plugins: [
         tailwindcss(),
         sveltekit(),
