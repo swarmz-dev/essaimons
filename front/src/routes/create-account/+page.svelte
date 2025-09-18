@@ -15,7 +15,7 @@
             email: zod.email().max(100),
             password: zod.string().min(8).max(100),
             confirmPassword: zod.string().min(8).max(100),
-            consent: zod.boolean().parse(true),
+            consent: zod.literal(true),
         })
         .refine((data) => data.password === data.confirmPassword, {
             message: m['common.password.match'](),
