@@ -25,7 +25,7 @@ export const load: LayoutServerLoad = loadFlash(async (event): Promise<{ user?: 
     const language: LanguageCode | undefined = match ? (match[1] as LanguageCode) : undefined;
 
     if (!language || !locales.includes(language)) {
-        return redirect(307, `/${cookies.get('PARAGLIDE_LOCALE') ?? 'en'}${url.pathname}${url.search}`);
+        return redirect(307, `/${cookies.get('PARAGLIDE_LOCALE') ?? 'fr'}${url.pathname}${url.search}`);
     }
 
     if (language !== cookies.get('PARAGLIDE_LOCALE')) {
