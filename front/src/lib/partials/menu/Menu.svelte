@@ -15,7 +15,7 @@
     let { children }: Props = $props();
 
     let triggerButtonRef: HTMLButtonElement | undefined = $state();
-    let isOpen: boolean = $state(false);
+    let isOpen: boolean = $state(true);
 </script>
 
 <SidebarProvider bind:open={isOpen}>
