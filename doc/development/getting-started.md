@@ -98,7 +98,7 @@ On Debian/Ubuntu machines you can install and start the optional services with:
       npm install
     ```
 
-2. Provision application environment files (see step 2). If you run PostgreSQL or Redis locally, point the backend `.env` to those instances; otherwise keep using the defaults that target the Docker compose services or a managed deployment. Skipping Redis leaves Redis-backed features unavailable until a server is provided.
+2. Provision application environment files (see step 2). If you run PostgreSQL or Redis locally, point the backend `.env` to those instances; otherwise keep using the defaults that target the Docker compose services or a managed deployment. Skipping Redis leaves Redis-backed features unavailable until a server is provided. When iterating locally you can set `MAIL_MOCK=true` to log outgoing emails instead of calling Brevo.
 
 3. Run database migrations (and seeds if required):
 

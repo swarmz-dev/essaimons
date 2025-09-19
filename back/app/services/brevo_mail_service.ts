@@ -17,6 +17,19 @@ export default class BrevoMailService {
         Accept: 'application/json',
     };
 
+    private mockMode: boolean = env.get('MAIL_MOCK', false);
+
+    private async dispatchEmail(payload: Record<string, unknown>): Promise<void> {
+        if (this.mockMode) {
+            console.info('[MAIL MOCK]', JSON.stringify(payload, null, 2));
+            return;
+        }
+
+        await axios.post(this.apiUrl, payload, {
+            headers: this.headers,
+        });
+    }
+
     /**
      * Sends a password reset email to a user with a given URI for resetting.
      *
@@ -26,26 +39,20 @@ export default class BrevoMailService {
      * @returns {Promise<void>} Resolves when the email has been sent.
      */
     public async sendResetPasswordEmail(user: User, uri: string, i18n: I18n): Promise<void> {
-        await axios.post(
-            this.apiUrl,
-            {
-                sender: this.sender,
-                to: [
-                    {
-                        name: user.username,
-                        email: user.email,
-                    },
-                ],
-                templateId: 7,
-                subject: i18n.t('messages.profile.send-reset-password-email.subject'),
-                params: {
-                    uri,
+        await this.dispatchEmail({
+            sender: this.sender,
+            to: [
+                {
+                    name: user.username,
+                    email: user.email,
                 },
+            ],
+            templateId: 7,
+            subject: i18n.t('messages.profile.send-reset-password-email.subject'),
+            params: {
+                uri,
             },
-            {
-                headers: this.headers,
-            }
-        );
+        });
     }
 
     /**
@@ -57,25 +64,19 @@ export default class BrevoMailService {
      * @returns {Promise<void>} Resolves when the email has been sent.
      */
     public async sendAccountCreationEmail(user: User, uri: string, i18n: I18n): Promise<void> {
-        await axios.post(
-            this.apiUrl,
-            {
-                sender: this.sender,
-                to: [
-                    {
-                        name: user.username,
-                        email: user.email,
-                    },
-                ],
-                templateId: 2,
-                subject: i18n.t('messages.auth.send-account-creation-email.subject'),
-                params: {
-                    uri,
+        await this.dispatchEmail({
+            sender: this.sender,
+            to: [
+                {
+                    name: user.username,
+                    email: user.email,
                 },
+            ],
+            templateId: 2,
+            subject: i18n.t('messages.auth.send-account-creation-email.subject'),
+            params: {
+                uri,
             },
-            {
-                headers: this.headers,
-            }
-        );
+        });
     }
 }
