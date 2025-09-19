@@ -43,7 +43,8 @@
             "lowercase": "Password must contain at least one lowercase letter",
             "uppercase": "Password must contain at least one uppercase letter",
             "number": "Password must contain at least one number",
-            "special-character": "Password must contain at least one special character"
+            "special-character": "Password must contain at least one special character",
+            "requirements-title": "Password must include:"
         },
         "confirm-password": {
             "label": "Confirm password",

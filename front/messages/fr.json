@@ -43,7 +43,8 @@
             "lowercase": "Le mot de passe doit contenir au moins une lettre minuscule",
             "uppercase": "Le mot de passe doit contenir au moins une lettre majuscule",
             "number": "Le mot de passe doit contenir au moins un chiffre",
-            "special-character": "Le mot de passe doit contenir au moins un caractère spécial"
+            "special-character": "Le mot de passe doit contenir au moins un caractère spécial",
+            "requirements-title": "Le mot de passe doit contenir :"
         },
         "confirm-password": {
             "label": "Confirmer le mot de passe",
