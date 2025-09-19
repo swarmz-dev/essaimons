@@ -12,6 +12,7 @@ import { cuid } from '@adonisjs/core/helpers';
 import UserToken from '#models/user_token';
 import UserTokenTypeEnum from '#types/enum/user_token_type_enum';
 import UserTokenRepository from '#repositories/user_token_repository';
+import LogUser from '#models/log_user';
 
 @inject()
 export default class AuthController {
@@ -22,21 +23,38 @@ export default class AuthController {
     ) {}
 
     public async login({ request, response, i18n }: HttpContext) {
-        try {
-            const { email, password } = await request.validateUsing(loginValidator);
+        const { identity, password } = await request.validateUsing(loginValidator);
 
-            const user: User = await User.verifyCredentials(email, password);
-
-            const token: AccessToken = await User.accessTokens.create(user);
-
-            return response.ok({
-                message: i18n.t('messages.auth.login.success'),
-                token,
-                user: user.apiSerialize(),
-            });
-        } catch (error: any) {
-            return response.unauthorized({ error: i18n.t('messages.auth.login.error') });
+        const user: User | null = await User.query().where('email', identity).orWhere('username', identity).first();
+        if (!user) {
+            return response.unauthorized({ error: i18n.t('messages.auth.login.error.default') });
         }
+
+        let verifiedUser: User;
+        try {
+            verifiedUser = await User.verifyCredentials(user.email, password);
+        } catch (error: any) {
+            return response.unauthorized({ error: i18n.t('messages.auth.login.error.default') });
+        }
+
+        if (!verifiedUser.enabled) {
+            return response.forbidden({
+                error: i18n.t('messages.auth.login.error.inactive'),
+                meta: {
+                    reason: 'account_inactive',
+                    email: verifiedUser.email,
+                    username: verifiedUser.username,
+                },
+            });
+        }
+
+        const token: AccessToken = await User.accessTokens.create(verifiedUser);
+
+        return response.ok({
+            message: i18n.t('messages.auth.login.success'),
+            token,
+            user: verifiedUser.apiSerialize(),
+        });
     }
 
     public async logout({ auth, response, i18n }: HttpContext) {
@@ -54,6 +72,9 @@ export default class AuthController {
         }
 
         const creationAccountToken: UserToken | null = await this.userTokenRepository.findOneByEmailAndType(email, UserTokenTypeEnum.ACCOUNT_CREATION);
+
+        let newlyCreatedUser: boolean = false;
+        let createdNewToken: boolean = false;
 
         if (creationAccountToken) {
             if (creationAccountToken.user.enabled) {
@@ -81,6 +102,7 @@ export default class AuthController {
                 acceptedTermsAndConditions: true,
             });
             await existingUser.refresh();
+            newlyCreatedUser = true;
         }
 
         try {
@@ -90,9 +112,19 @@ export default class AuthController {
                 token,
                 type: UserTokenTypeEnum.ACCOUNT_CREATION,
             });
+            createdNewToken = true;
 
             await this.mailService.sendAccountCreationEmail(existingUser, encodeURI(`${env.get('FRONT_URI')}/${language.code}/create-account/confirm?token=${token}`), i18n);
         } catch (error: any) {
+            if (createdNewToken) {
+                await UserToken.query().where('user_id', existingUser.id).andWhere('type', UserTokenTypeEnum.ACCOUNT_CREATION).delete();
+            }
+
+            if (newlyCreatedUser) {
+                await LogUser.query().where('email', existingUser.email).delete();
+                await existingUser.delete();
+            }
+
             return response.badGateway({ error: i18n.t('messages.auth.send-account-creation-email.error.mail-not-sent') });
         }
 

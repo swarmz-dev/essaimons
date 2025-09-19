@@ -1,5 +1,6 @@
 <script lang="ts">
     import { enhance } from '$app/forms';
+    import type { SubmitFunction } from '@sveltejs/kit';
     import Icon from '#components/Icon.svelte';
     import { m } from '#lib/paraglide/messages';
     import FormBackground from '#components/background/FormBackground.svelte';
@@ -30,6 +31,16 @@
     let isLoading: boolean = $state(false);
     let isSendButtonDisabled: boolean = $state(false);
 
+    const submitHandler: SubmitFunction<Record<string, any>, Record<string, any>> = async () => {
+        return async ({ result, update }) => {
+            if (result.type === 'failure') {
+                await update({ reset: false });
+            } else {
+                await update();
+            }
+        };
+    };
+
     $effect((): void => {
         isSendButtonDisabled = isLoading || !isValid;
     });
@@ -52,7 +63,7 @@
 
 <div class:mt-20={hasBackground} class={cn('flex items-center justify-center', className)}>
     <Card class="w-10/12 sm:w-lg">
-        <form use:enhance method="POST" enctype="multipart/form-data" class="z-10 flex flex-col gap-3">
+        <form use:enhance={submitHandler} method="POST" enctype="multipart/form-data" class="z-10 flex flex-col gap-3">
             <CardHeader>
                 {@render header?.()}
             </CardHeader>

@@ -105,6 +105,7 @@ On Debian/Ubuntu machines you can install and start the optional services with:
     ```bash
       cd back
       node ace migration:run
+      node ace migration:run --connection logs
       node ace db:seed # optional
     ```
 
@@ -130,6 +131,13 @@ Start the backend and frontend in separate terminals from the repository root:
     ```bash
       npm run dev --workspace front
     ```
+
+If you edit the translation JSON files or add new keys, regenerate the Paraglide runtime before restarting the frontend dev server:
+
+```bash
+  cd front
+  npx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide
+```
 
 The frontend runs on http://localhost:5173 and communicates with the backend port defined in `back/.env` (default http://localhost:3333).
 

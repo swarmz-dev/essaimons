@@ -40,7 +40,10 @@
     "auth": {
         "login": {
             "success": "Connexion réussie",
-            "error": "Échec de la connexion, veuillez vérifier vos identifiants"
+            "error": {
+                "default": "Échec de la connexion, veuillez vérifier vos identifiants",
+                "inactive": "Votre compte n'est pas encore confirmé. Veuillez valider l'e-mail d'activation avant de vous connecter."
+            }
         },
         "logout": {
             "success": "Déconnexion réussie"

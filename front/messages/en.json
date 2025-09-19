@@ -35,6 +35,10 @@
             "label": "Email",
             "placeholder": "john.smith@gmail.com"
         },
+        "identity": {
+            "label": "Email or username",
+            "placeholder": "john.smith@gmail.com / John123"
+        },
         "password": {
             "label": "Password",
             "placeholder": "xxx",
@@ -120,6 +124,10 @@
         "login-with": "Sign in with",
         "forgot-password": "Forgot password ?",
         "create-account": "No account yet ?",
+        "resend": {
+            "info": "Your account is waiting for confirmation. Check your inbox or resend the activation email.",
+            "cta": "Resend confirmation email"
+        },
         "meta": {
             "title": "Login – Essaimons-V1",
             "description": "Log in to Essaimons-V1 using your email and password, or quickly via Google, GitHub, or Discord OAuth.",
