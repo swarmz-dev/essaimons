@@ -1,6 +1,6 @@
 import { Knex } from 'knex';
 import { BaseSchema } from '@adonisjs/lucid/schema';
-import UserRoleEnum from '#types/enum/user_role_enum';
+import { UserRoleEnum } from '#types/enum/user_role_enum';
 
 export default class extends BaseSchema {
     protected tableName: string = 'users';

@@ -1,11 +1,13 @@
 <script lang="ts">
-    import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarInset, SidebarTrigger } from '#lib/components/ui/sidebar';
-    import { adminMenu, mainMenu } from '#lib/services/menuService';
+    import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarTrigger } from '#lib/components/ui/sidebar';
+    import { adminMenu, mainMenu, type MenuItemsListItem } from '#lib/services/menuService';
     import { profile } from '#lib/stores/profileStore';
     import Theme from '#components/Theme.svelte';
     import FlagMenu from '#lib/partials/menu/FlagMenu.svelte';
     import { Link } from '#lib/components/ui/link';
     import { page } from '$app/state';
+    import { cn } from '#lib/utils';
+    import { m } from '#lib/paraglide/messages';
     import type { Snippet } from 'svelte';
 
     type Props = {
@@ -16,55 +18,85 @@
 
     let triggerButtonRef: HTMLButtonElement | undefined = $state();
     let isOpen: boolean = $state(true);
+
+    const brandName = 'Essaimons-V1';
+    let navItems: MenuItemsListItem[] = $state(mainMenu.notConnected);
+
+    $effect(() => {
+        if (!$profile) {
+            navItems = mainMenu.notConnected;
+            return;
+        }
+
+        const isAdminView = $profile.role === 'admin' && page.data.isAdmin;
+        const items = isAdminView ? adminMenu : mainMenu.connected;
+
+        navItems = $profile.role === 'admin' ? items : items.filter((item) => !item.href.startsWith('/admin'));
+    });
+
+    const currentPath = $derived(page.url.pathname);
+
+    const isNavItemActive = (href: string): boolean => {
+        if (!currentPath) {
+            return false;
+        }
+
+        if (href === '/') {
+            return currentPath === href;
+        }
+
+        return currentPath.startsWith(href);
+    };
 </script>
 
 <SidebarProvider bind:open={isOpen}>
-    <Sidebar toggleButtonRef={triggerButtonRef}>
-        <SidebarContent>
+    <Sidebar toggleButtonRef={triggerButtonRef} variant="floating" class="bg-sidebar/85 ring-1 ring-inset ring-sidebar-border/60 backdrop-blur-2xl shadow-2xl">
+        <SidebarContent class="flex h-full flex-col gap-4 px-4 py-5">
             <SidebarGroup>
-                <SidebarGroupContent>
-                    <SidebarMenu>
-                        <div class="flex items-center gap-5 mt-1">
-                            <SidebarTrigger bind:ref={triggerButtonRef} />
-                            <FlagMenu />
-                            <Theme />
-                        </div>
-                        <div class="flex flex-col gap-5 mt-3">
-                            {#if $profile}
-                                {#if $profile.role === 'admin' && page.data.isAdmin}
-                                    {#each adminMenu as item (item.title)}
-                                        {#if !item.href.startsWith('/admin') || $profile.role === 'admin'}
-                                            <SidebarMenuItem>
-                                                <Link href={item.href} class="flex justify-start items-center gap-3">
-                                                    <item.icon class="size-6" />
-                                                    <p class="text-2xl">{item.title}</p>
-                                                </Link>
-                                            </SidebarMenuItem>
-                                        {/if}
-                                    {/each}
-                                {:else}
-                                    {#each mainMenu.connected as item (item.title)}
-                                        {#if !item.href.startsWith('/admin') || $profile.role === 'admin'}
-                                            <SidebarMenuItem>
-                                                <Link href={item.href} class="flex justify-start items-center gap-3">
-                                                    <item.icon class="size-6" />
-                                                    <p class="text-2xl">{item.title}</p>
-                                                </Link>
-                                            </SidebarMenuItem>
-                                        {/if}
-                                    {/each}
-                                {/if}
-                            {:else}
-                                {#each mainMenu.notConnected as item (item.title)}
-                                    <SidebarMenuItem>
-                                        <Link href={item.href} class="flex justify-start items-center gap-3">
-                                            <item.icon class="size-6" />
-                                            <p class="text-2xl">{item.title}</p>
-                                        </Link>
-                                    </SidebarMenuItem>
-                                {/each}
-                            {/if}
-                        </div>
+                <SidebarGroupContent class="space-y-6">
+                    <div
+                        class="flex items-center justify-between gap-3 rounded-3xl border border-sidebar-border/50 bg-white/85 px-3.5 py-2.5 shadow-lg backdrop-blur-xl transition hover:border-primary/60 hover:bg-white/90 dark:bg-slate-950/80"
+                    >
+                        <Link href="/" class="group flex w-full items-center gap-4 text-left">
+                            <span class="grid size-10 place-items-center rounded-2xl bg-primary/15 text-primary shadow-inner">
+                                <img src="/icons/favicon-96x96.png" alt={m['common.logo.alt']()} class="size-7 rounded-xl" />
+                            </span>
+                            <div class="flex min-w-0 flex-col leading-tight">
+                                <span class="truncate text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-muted-foreground">{m['common.logo.alt']()}</span>
+                                <span class="truncate text-base font-semibold text-foreground/90">{brandName}</span>
+                            </div>
+                        </Link>
+                        <SidebarTrigger
+                            bind:ref={triggerButtonRef}
+                            class="flex size-10 items-center justify-center rounded-full border border-transparent bg-white/90 text-foreground shadow-sm transition hover:border-primary/50 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:hidden dark:bg-slate-900"
+                        />
+                    </div>
+
+                    <SidebarMenu class="space-y-1.5">
+                        {#each navItems as item (item.title)}
+                            <SidebarMenuItem>
+                                <Link
+                                    href={item.href}
+                                    class={cn(
+                                        'group/nav flex w-full items-center justify-start gap-3 rounded-2xl border border-transparent px-4 py-3 text-base font-semibold tracking-tight transition-all duration-200',
+                                        'bg-white/65 text-foreground/80 shadow-sm outline-none backdrop-blur-lg dark:bg-slate-950/60 dark:text-slate-200',
+                                        isNavItemActive(item.href)
+                                            ? 'border-primary/70 bg-primary text-primary-foreground shadow-xl ring-1 ring-primary/50'
+                                            : 'hover:border-primary/60 hover:bg-white/85 hover:text-primary dark:hover:bg-slate-900/70'
+                                    )}
+                                >
+                                    <span
+                                        class={cn(
+                                            'grid size-10 place-items-center rounded-2xl bg-primary/15 text-primary transition-all duration-200 group-hover/nav:bg-primary group-hover/nav:text-primary-foreground',
+                                            isNavItemActive(item.href) ? 'bg-primary text-primary-foreground shadow-inner' : ''
+                                        )}
+                                    >
+                                        <item.icon class="size-5" />
+                                    </span>
+                                    <span class="truncate">{item.title}</span>
+                                </Link>
+                            </SidebarMenuItem>
+                        {/each}
                     </SidebarMenu>
                 </SidebarGroupContent>
             </SidebarGroup>
@@ -72,10 +104,42 @@
     </Sidebar>
 
     <SidebarInset>
-        <div class="mt-3">
-            <div class="h-10">
-                <SidebarTrigger class={`${isOpen ? 'hidden' : ''}`} />
+        <div class="flex min-h-screen flex-col gap-10 pb-10">
+            <div class="sticky top-6 z-20 mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between gap-4 rounded-full border border-sidebar-border/50 bg-white/85 px-4 py-3 shadow-xl backdrop-blur-2xl dark:bg-slate-950/80">
+                    <div class="flex flex-1 items-center gap-3">
+                        <SidebarTrigger
+                            class="inline-flex size-11 items-center justify-center rounded-full border border-transparent bg-white/90 text-foreground shadow-md transition hover:border-primary/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:hidden dark:bg-slate-900"
+                        />
+
+                        {#if $profile}
+                            <div class="hidden items-center gap-3 rounded-full border border-transparent bg-white/80 px-3 py-2 shadow-sm backdrop-blur-md md:flex dark:bg-slate-900/70">
+                                <span class="grid size-10 place-items-center rounded-full bg-primary/15 text-base font-semibold text-primary shadow-inner">
+                                    {($profile.username ?? brandName).slice(0, 1).toUpperCase()}
+                                </span>
+                                <div class="flex flex-col leading-tight">
+                                    <span class="text-sm font-semibold text-foreground/85">{$profile.username}</span>
+                                    <Link href="/profile" class="text-xs font-medium !text-muted-foreground hover:!text-primary">
+                                        {m['profile.title']()}
+                                    </Link>
+                                </div>
+                            </div>
+                        {:else}
+                            <Link
+                                href="/login"
+                                class="hidden items-center gap-2 rounded-full border border-sidebar-border/60 bg-white/80 px-4 py-2 text-sm font-semibold !text-foreground/80 shadow-sm transition hover:border-primary/60 hover:!text-primary md:inline-flex dark:bg-slate-900/70"
+                            >
+                                {m['login.title']()}
+                            </Link>
+                        {/if}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <FlagMenu />
+                        <Theme />
+                    </div>
+                </div>
             </div>
+
             {@render children()}
         </div>
     </SidebarInset>

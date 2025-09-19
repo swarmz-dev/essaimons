@@ -8,6 +8,7 @@ export type PageDataError = {
 export type FormError = {
     data: Record<string, any>;
     errors: PageDataError[];
+    meta?: Record<string, any>;
 };
 
 declare global {

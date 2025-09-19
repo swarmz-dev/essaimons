@@ -1,8 +1,8 @@
 import type { HttpContext } from '@adonisjs/core/http';
 import Log from '#models/log';
 import LogUser from '#models/log_user';
-import LogRouteMethodEnum from '#types/enum/log_route_method_enum';
-import LogResponseStatusEnum from '#types/enum/log_response_status_enum';
+import { LogRouteMethodEnum } from '#types/enum/log_route_method_enum';
+import { LogResponseStatusEnum } from '#types/enum/log_response_status_enum';
 import { DateTime } from 'luxon';
 import { inject } from '@adonisjs/core';
 import LogUserRepository from '#repositories/log_user_repository';

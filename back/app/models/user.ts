@@ -4,10 +4,10 @@ import { compose } from '@adonisjs/core/helpers';
 import { afterCreate, beforeFind, beforeFetch, BaseModel, belongsTo, column } from '@adonisjs/lucid/orm';
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid';
 import type { BelongsTo } from '@adonisjs/lucid/types/relations';
-import SerializedUser from '#types/serialized/serialized_user';
+import type { SerializedUser } from '#types/serialized/serialized_user';
 import { AccessToken, DbAccessTokensProvider } from '@adonisjs/auth/access_tokens';
 import File from '#models/file';
-import UserRoleEnum from '#types/enum/user_role_enum';
+import { UserRoleEnum } from '#types/enum/user_role_enum';
 import LogUser from '#models/log_user';
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {

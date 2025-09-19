@@ -84,9 +84,10 @@
     {:else}
         <label
             for={name}
-            class="absolute pointer-events-none z-10 transition-all duration-800 ease-in-out font-medium {isFocused || value
-                ? 'bottom-9 left-1'
-                : 'text-gray-600 dark:text-gray-400 bottom-1.5 left-3'}"
+            class={cn(
+                'pointer-events-none absolute left-5 z-10 transform font-medium transition-all duration-300',
+                isFocused || value ? 'top-0 -translate-y-full rounded-md bg-background px-1 text-xs text-primary dark:bg-slate-950' : 'top-1/2 -translate-y-1/2 text-sm text-muted-foreground'
+            )}
         >
             {label}
             {#if required}
@@ -101,11 +102,11 @@
             onfocus={handleFocus}
             onblur={handleBlur}
             class={cn(
-                'border-input bg-background selection:bg-primary dark:bg-input/30 selection:text-primary-foreground ring-offset-background placeholder:text-muted-foreground shadow-xs flex h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base outline-none transition-[color,box-shadow]',
-                'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+                'border border-white/50 bg-white/85 selection:bg-primary selection:text-primary-foreground shadow-md backdrop-blur-2xl flex h-12 w-full min-w-0 rounded-2xl px-5 text-base font-medium text-foreground outline-none transition-[background,box-shadow,border] duration-300 dark:border-slate-800/70 dark:bg-slate-900/70',
+                'focus-visible:border-primary/70 focus-visible:ring-2 focus-visible:ring-primary/40',
                 'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
-                'disabled:cursor-not-allowed disabled:opacity-50 read-only:cursor-not-allowed read-only:opacity-50',
-                isPassword ? 'pr-10' : '',
+                'disabled:cursor-not-allowed disabled:opacity-60 read-only:cursor-not-allowed read-only:opacity-60',
+                isPassword ? 'pr-12' : '',
                 className
             )}
             {name}
@@ -115,7 +116,7 @@
         />
 
         {#if isPassword}
-            <Button type="button" onclick={togglePasswordVisibility} aria-label="Toggle password visibility" variant="ghost" size="icon" class="absolute -top-0.5 right-0 rounded-full">
+            <Button type="button" onclick={togglePasswordVisibility} aria-label="Toggle password visibility" variant="ghost" size="icon" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full">
                 {#if showPassword}
                     <EyeOff class="size-6" />
                 {:else}

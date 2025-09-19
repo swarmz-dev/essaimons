@@ -31,7 +31,7 @@
     import { language } from '#lib/stores/languageStore';
     import { cn } from '#lib/utils';
 
-    let { children, ref, onclick, onmouseover, onfocus, onblur, onmouseout, href, target = '', class: className = '', ariaLabel, size = 'default' }: LinkProps = $props();
+    let { children, ref, onclick, onmouseover, onfocus, onblur, onmouseout, href, target = '_self', class: className = '', ariaLabel, size = 'default' }: LinkProps = $props();
 
     let isAbsolute: boolean = href.startsWith('http://') || href.startsWith('https://');
 

@@ -39,7 +39,7 @@
             })[0];
 
             if (isSuccess) {
-                onDelete?.([id]);
+                onDelete?.([String(id)]);
             }
         });
     };

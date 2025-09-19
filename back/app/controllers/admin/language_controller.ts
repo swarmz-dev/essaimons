@@ -7,11 +7,11 @@ import cache from '@adonisjs/cache/services/main';
 import app from '@adonisjs/core/services/app';
 import File from '#models/file';
 import path from 'node:path';
-import FileTypeEnum from '#types/enum/file_type_enum';
+import { FileTypeEnum } from '#types/enum/file_type_enum';
 import FileService from '#services/file_service';
 import { MultipartFile } from '@adonisjs/bodyparser/types';
-import PaginatedLanguages from '#types/paginated/paginated_languages';
-import SerializedLanguage from '#types/serialized/serialized_language';
+import type { PaginatedLanguages } from '#types/paginated/paginated_languages';
+import type { SerializedLanguage } from '#types/serialized/serialized_language';
 
 @inject()
 export default class AdminLanguageController {

@@ -78,4 +78,5 @@ export default await Env.create(new URL('../', import.meta.url), {
 
     FRONT_URI: Env.schema.string(), // injected by Docker
     API_URI: Env.schema.string(), // injected by Docker
+    MAIL_MOCK: Env.schema.boolean.optional(),
 });

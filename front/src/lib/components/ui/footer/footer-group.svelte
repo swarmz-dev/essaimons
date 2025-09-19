@@ -15,10 +15,10 @@
     let { children, title, class: className }: FooterGroupProps = $props();
 </script>
 
-<div class={cn('p-1 flex flex-col gap-3 mt-3 items-center', className)}>
-    <h3 class="uppercase font-bold">{title}</h3>
-    <Separator />
-    <ul class="flex flex-col gap-1">
+<div class={cn('flex flex-col gap-4 text-left', className)}>
+    <h3 class="text-sm font-semibold uppercase tracking-[0.28em] text-muted-foreground">{title}</h3>
+    <Separator class="w-12 border border-muted-foreground/30" />
+    <ul class="flex flex-col gap-2">
         {@render children()}
     </ul>
 </div>

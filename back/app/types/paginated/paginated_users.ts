@@ -8,5 +8,3 @@ export type PaginatedUsers = {
     total: number;
     currentPage: number;
 };
-
-export default PaginatedUsers;

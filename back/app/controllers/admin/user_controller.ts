@@ -4,7 +4,7 @@ import cache from '@adonisjs/cache/services/main';
 import app from '@adonisjs/core/services/app';
 import File from '#models/file';
 import path from 'node:path';
-import FileTypeEnum from '#types/enum/file_type_enum';
+import { FileTypeEnum } from '#types/enum/file_type_enum';
 import FileService from '#services/file_service';
 import { MultipartFile } from '@adonisjs/bodyparser/types';
 import UserRepository from '#repositories/user_repository';
@@ -12,8 +12,8 @@ import { createUserValidator, deleteUsersValidator, getAdminUserValidator, searc
 import User from '#models/user';
 import { cuid } from '@adonisjs/core/helpers';
 import SlugifyService from '#services/slugify_service';
-import PaginatedUsers from '#types/paginated/paginated_users';
-import SerializedUser from '#types/serialized/serialized_user';
+import type { PaginatedUsers } from '#types/paginated/paginated_users';
+import type { SerializedUser } from '#types/serialized/serialized_user';
 
 @inject()
 export default class AdminUserController {

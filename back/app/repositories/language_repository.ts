@@ -1,7 +1,7 @@
 import BaseRepository from '#repositories/base/base_repository';
 import Language from '#models/language';
-import SerializedLanguage from '#types/serialized/serialized_language';
-import PaginatedLanguages from '#types/paginated/paginated_languages';
+import type { SerializedLanguage } from '#types/serialized/serialized_language';
+import type { PaginatedLanguages } from '#types/paginated/paginated_languages';
 import { ModelPaginatorContract, ModelQueryBuilderContract } from '@adonisjs/lucid/types/model';
 import FileService from '#services/file_service';
 import { inject } from '@adonisjs/core';

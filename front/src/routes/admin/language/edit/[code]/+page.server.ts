@@ -35,7 +35,12 @@ export const actions: Actions = {
         const { request, cookies, locals, params } = event;
 
         const formData: FormData = await request.formData();
-        formData.set('code', params.code);
+        const codeParam = params.code;
+        if (!codeParam) {
+            fail(400);
+            return;
+        }
+        formData.set('code', codeParam);
 
         let data: any;
         let isSuccess: boolean = true;

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { enhance } from '$app/forms';
+    import type { SubmitFunction } from '@sveltejs/kit';
     import Icon from '#components/Icon.svelte';
     import { m } from '#lib/paraglide/messages';
     import FormBackground from '#components/background/FormBackground.svelte';
@@ -30,6 +31,16 @@
     let isLoading: boolean = $state(false);
     let isSendButtonDisabled: boolean = $state(false);
 
+    const submitHandler: SubmitFunction<Record<string, any>, Record<string, any>> = async () => {
+        return async ({ result, update }) => {
+            if (result.type === 'failure') {
+                await update({ reset: false });
+            } else {
+                await update();
+            }
+        };
+    };
+
     $effect((): void => {
         isSendButtonDisabled = isLoading || !isValid;
     });
@@ -50,22 +61,22 @@
     <FormBackground />
 {/if}
 
-<div class:mt-20={hasBackground} class={cn('flex items-center justify-center', className)}>
-    <Card class="w-10/12 sm:w-lg">
-        <form use:enhance method="POST" enctype="multipart/form-data" class="z-10 flex flex-col gap-3">
+<div class:mt-20={hasBackground} class={cn('relative flex items-center justify-center px-4', className)}>
+    <Card class="w-full max-w-xl md:max-w-2xl">
+        <form use:enhance={submitHandler} method="POST" enctype="multipart/form-data" class="flex flex-col gap-6">
             <CardHeader>
                 {@render header?.()}
             </CardHeader>
             <CardContent>
-                <div class="flex flex-col gap-8">
+                <div class="flex flex-col gap-6">
                     {@render children?.()}
                 </div>
                 {@render links?.()}
             </CardContent>
 
             {#if submittable}
-                <CardFooter class="flex justify-center">
-                    <Button type="submit" disabled={isSendButtonDisabled} size="lg" class="w-11/12 sm:w-md">
+                <CardFooter class="flex justify-center pt-2">
+                    <Button type="submit" disabled={isSendButtonDisabled} size="lg" class="w-full max-w-xs sm:max-w-sm">
                         {#if isLoading}
                             <Icon name="spinner" size={40} />
                         {:else if submitContent}

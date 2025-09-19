@@ -51,9 +51,13 @@ export const actions: Actions = {
                 event
             );
         } else {
+            const formDataRecord = extractFormData(formData);
+            delete formDataRecord.password;
+
             const form: FormError = {
-                data: extractFormData(formData),
+                data: formDataRecord,
                 errors: extractFormErrors(data),
+                meta: data?.meta,
             };
 
             cookies.set('formError', JSON.stringify(form), {

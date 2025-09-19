@@ -33,9 +33,6 @@
         const target = event.target as Node;
 
         if (!containerRef?.contains(target) && !toggleButtonRef?.contains(target)) {
-            if (!sidebar.isMobile && sidebar.state === 'expanded') {
-                sidebar.setOpen(false);
-            }
             if (sidebar.isMobile && sidebar.openMobile) {
                 sidebar.setOpenMobile(false);
             }
@@ -44,11 +41,13 @@
 
     onMount(() => {
         if (!sidebar.isMobile) {
-            document.addEventListener('click', handleClick, true);
-            return () => {
-                document.removeEventListener('click', handleClick, true);
-            };
+            return;
         }
+
+        document.addEventListener('click', handleClick, true);
+        return () => {
+            document.removeEventListener('click', handleClick, true);
+        };
     });
 </script>
 

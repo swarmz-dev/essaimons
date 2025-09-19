@@ -35,6 +35,10 @@
             "label": "Email",
             "placeholder": "jean.dupont@gmail.com"
         },
+        "identity": {
+            "label": "Email ou nom d'utilisateur",
+            "placeholder": "jean.dupont@gmail.com / Jean123"
+        },
         "password": {
             "label": "Mot de passe",
             "placeholder": "xxx",
@@ -43,7 +47,8 @@
             "lowercase": "Le mot de passe doit contenir au moins une lettre minuscule",
             "uppercase": "Le mot de passe doit contenir au moins une lettre majuscule",
             "number": "Le mot de passe doit contenir au moins un chiffre",
-            "special-character": "Le mot de passe doit contenir au moins un caractère spécial"
+            "special-character": "Le mot de passe doit contenir au moins un caractère spécial",
+            "requirements-title": "Le mot de passe doit contenir :"
         },
         "confirm-password": {
             "label": "Confirmer le mot de passe",
@@ -119,6 +124,10 @@
         "login-with": "Se connecter avec",
         "forgot-password": "Mot de passe oublié ?",
         "create-account": "Pas encore inscrit ?",
+        "resend": {
+            "info": "Votre compte n'est pas encore activé. Vérifiez vos emails ou renvoyez le lien d'activation.",
+            "cta": "Renvoyer l'email de confirmation"
+        },
         "meta": {
             "title": "Connexion – Essaimons-V1",
             "description": "Connectez-vous à Essaimons-V1 avec votre email et mot de passe, ou rapidement via OAuth Google, GitHub ou Discord.",

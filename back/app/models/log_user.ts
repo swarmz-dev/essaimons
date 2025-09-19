@@ -2,7 +2,7 @@ import { DateTime } from 'luxon';
 import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm';
 import type { HasMany } from '@adonisjs/lucid/types/relations';
 import Log from '#models/log';
-import SerializedLogUser from '#types/serialized/serialized_log_user';
+import type { SerializedLogUser } from '#types/serialized/serialized_log_user';
 
 export default class LogUser extends BaseModel {
     static connection: string = 'logs';

@@ -1,4 +1,4 @@
-enum RequestLanguagesEnum {
+export enum RequestLanguagesEnum {
     EN = 'en',
     FR = 'fr',
     ES = 'es',
@@ -6,5 +6,3 @@ enum RequestLanguagesEnum {
     IT = 'it',
     US = 'en',
 }
-
-export default RequestLanguagesEnum;

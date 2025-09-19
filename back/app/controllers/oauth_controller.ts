@@ -7,11 +7,11 @@ import { inject } from '@adonisjs/core';
 import app from '@adonisjs/core/services/app';
 import File from '#models/file';
 import User from '#models/user';
-import UserRoleEnum from '#types/enum/user_role_enum';
+import { UserRoleEnum } from '#types/enum/user_role_enum';
 import env from '#start/env';
 import UserRepository from '#repositories/user_repository';
 import { I18n } from '@adonisjs/i18n';
-import FileTypeEnum from '#types/enum/file_type_enum';
+import { FileTypeEnum } from '#types/enum/file_type_enum';
 import { cuid } from '@adonisjs/core/helpers';
 import { confirmOauthConnectionValidator } from '#validators/oauth';
 import { AccessToken } from '@adonisjs/auth/access_tokens';
@@ -19,7 +19,7 @@ import StringService from '#services/string_service';
 import UserTokenRepository from '#repositories/user_token_repository';
 import UserToken from '#models/user_token';
 import { DateTime } from 'luxon';
-import UserTokenTypeEnum from '#types/enum/user_token_type_enum';
+import { UserTokenTypeEnum } from '#types/enum/user_token_type_enum';
 import cache from '@adonisjs/cache/services/main';
 
 @inject()
