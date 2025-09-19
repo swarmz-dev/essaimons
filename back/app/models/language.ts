@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon';
 import { BaseModel, beforeFetch, beforeFind, belongsTo, column } from '@adonisjs/lucid/orm';
-import SerializedLanguage from '#types/serialized/serialized_language';
+import type { SerializedLanguage } from '#types/serialized/serialized_language';
 import File from '#models/file';
 import type { BelongsTo } from '@adonisjs/lucid/types/relations';
 

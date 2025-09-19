@@ -7,5 +7,3 @@ export type SerializedLogUser = {
     updatedAt?: string;
     createdAt?: string;
 };
-
-export default SerializedLogUser;

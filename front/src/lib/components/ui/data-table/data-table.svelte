@@ -8,7 +8,6 @@
     import Search from '#components/Search.svelte';
     import { m } from '#lib/paraglide/messages';
     import Pagination from '#components/Pagination.svelte';
-    import type { SerializedLanguage } from 'backend/types';
     import { wrappedFetch } from '#lib/services/requestService';
     import { location } from '#lib/stores/locationStore';
     import {
@@ -32,16 +31,20 @@
         total: number;
     }
 
+    type TableColumn = ColumnDef<any, any> & {
+        meta?: { headerName?: string };
+    };
+
     type Props = {
         paginatedObject: PaginatedObject;
         data: any[];
-        columns: ColumnDef<any>[];
+        columns: TableColumn[];
         onSearch: () => void;
         query: string;
         selectedRows?: string[];
         batchDeleteTitle?: string;
         batchDeleteText?: string;
-        onBatchDelete?: (ids: string[] | number[]) => void;
+        onBatchDelete?: (ids: string[]) => void;
         onPaginationChange: (page: number, limit: number) => void;
     };
 
@@ -51,7 +54,7 @@
         columns,
         onSearch,
         query = $bindable(''),
-        selectedRows = $bindable([]),
+        selectedRows = $bindable<string[]>([]),
         batchDeleteTitle,
         batchDeleteText,
         onBatchDelete,
@@ -63,6 +66,12 @@
 
     let showModal: boolean = $state(false);
     const deletable: boolean = $state(!!(batchDeleteTitle && batchDeleteText));
+
+    const getRowIdentifier = (row: Row<any>): string | number => {
+        const original = row.original ?? {};
+        const identifier = original.id ?? original.code ?? row.id;
+        return identifier;
+    };
 
     const table = createSvelteTable({
         get data() {
@@ -103,7 +112,7 @@
                 return status.isSuccess;
             });
 
-            table.getFilteredSelectedRowModel().rows.forEach((row: Row<SerializedLanguage>): void => {
+            table.getFilteredSelectedRowModel().rows.forEach((row: Row<any>): void => {
                 row.toggleSelected(false);
             });
 
@@ -114,7 +123,7 @@
     };
 
     $effect((): void => {
-        selectedRows = table.getFilteredSelectedRowModel().rows.map((row: Row<SerializedLanguage>): string => row.original.id);
+        selectedRows = table.getFilteredSelectedRowModel().rows.map((row: Row<any>): string => String(getRowIdentifier(row)));
     });
 </script>
 
@@ -129,8 +138,9 @@
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 {#each table.getAllColumns().filter((col) => col.getCanHide()) as column (column.id)}
+                    {@const headerMeta = column.columnDef.meta as { headerName?: string } | undefined}
                     <DropdownMenuCheckboxItem class="capitalize" bind:checked={() => column.getIsVisible(), (v) => column.toggleVisibility(!!v)}>
-                        {column.columnDef.meta?.headerName}
+                        {headerMeta?.headerName}
                     </DropdownMenuCheckboxItem>
                 {/each}
             </DropdownMenuContent>
@@ -162,7 +172,7 @@
                     >
                         {#each row.getVisibleCells() as cell (cell.id)}
                             <TableCell>
-                                <FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} id={row.original.id} />
+                                <FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} id={getRowIdentifier(row)} />
                             </TableCell>
                         {/each}
                     </TableRow>

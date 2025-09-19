@@ -2,7 +2,7 @@ import { HttpContext } from '@adonisjs/core/http';
 import User from '#models/user';
 import { AccessToken } from '@adonisjs/auth/access_tokens';
 import { inject } from '@adonisjs/core';
-import UserRoleEnum from '#types/enum/user_role_enum';
+import { UserRoleEnum } from '#types/enum/user_role_enum';
 import { DateTime } from 'luxon';
 import UserRepository from '#repositories/user_repository';
 import { confirmAccountCreationValidator, loginValidator, sendAccountCreationEmailValidator } from '#validators/auth';
@@ -10,7 +10,7 @@ import BrevoMailService from '#services/brevo_mail_service';
 import env from '#start/env';
 import { cuid } from '@adonisjs/core/helpers';
 import UserToken from '#models/user_token';
-import UserTokenTypeEnum from '#types/enum/user_token_type_enum';
+import { UserTokenTypeEnum } from '#types/enum/user_token_type_enum';
 import UserTokenRepository from '#repositories/user_token_repository';
 import LogUser from '#models/log_user';
 

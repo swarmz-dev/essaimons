@@ -5,5 +5,3 @@ export enum LogRouteMethodEnum {
     PUT = 'PUT',
     DELETE = 'DELETE',
 }
-
-export default LogRouteMethodEnum;

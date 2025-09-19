@@ -2,7 +2,7 @@ import { BaseSeeder } from '@adonisjs/lucid/seeders';
 import env from '#start/env';
 import User from '#models/user';
 import UserRepository from '#repositories/user_repository';
-import UserRoleEnum from '#types/enum/user_role_enum';
+import { UserRoleEnum } from '#types/enum/user_role_enum';
 import FileService from '#services/file_service';
 import LogUserRepository from '#repositories/log_user_repository';
 import LogRepository from '#repositories/log_repository';

@@ -1,8 +1,8 @@
 import BaseRepository from '#repositories/base/base_repository';
 import User from '#models/user';
 import { ModelPaginatorContract, ModelQueryBuilderContract } from '@adonisjs/lucid/types/model';
-import PaginatedUsers from '#types/paginated/paginated_users';
-import SerializedUser from '#types/serialized/serialized_user';
+import type { PaginatedUsers } from '#types/paginated/paginated_users';
+import type { SerializedUser } from '#types/serialized/serialized_user';
 import { inject } from '@adonisjs/core';
 import FileService from '#services/file_service';
 import LogUserRepository from '#repositories/log_user_repository';

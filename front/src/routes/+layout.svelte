@@ -43,15 +43,16 @@
 <Meta title={m['home.meta.title']()} description={m['home.meta.description']()} keywords={m['home.meta.keywords']().split(', ')} />
 
 <div class="app">
-    <main class="flex flex-col w-screen">
+    <main class="flex min-h-screen flex-col">
         <Menu>
-            <div class:min-h-screen={!page.data.isAdmin} class="px-3.5">
-                {@render children()}
+            <div class:min-h-screen={!page.data.isAdmin} class="px-4 pb-16 pt-12 md:px-8 lg:px-12">
+                <div class="mx-auto w-full max-w-6xl space-y-12">
+                    {@render children()}
+                    {#if !page.data.isAdmin}
+                        <Footer />
+                    {/if}
+                </div>
             </div>
-
-            {#if !page.data.isAdmin}
-                <Footer />
-            {/if}
         </Menu>
     </main>
 </div>

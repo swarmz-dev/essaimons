@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon';
 import { BaseModel, column } from '@adonisjs/lucid/orm';
-import SerializedFile from '#types/serialized/serialized_file';
-import FileTypeEnum from '#types/enum/file_type_enum';
+import type { SerializedFile } from '#types/serialized/serialized_file';
+import { FileTypeEnum } from '#types/enum/file_type_enum';
 
 export default class File extends BaseModel {
     @column({ isPrimary: true })

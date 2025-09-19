@@ -17,5 +17,3 @@ export type SerializedLog = {
     updatedAt?: string;
     createdAt?: string;
 };
-
-export default SerializedLog;
