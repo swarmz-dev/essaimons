@@ -2,7 +2,7 @@ import { loadFlash, redirect } from 'sveltekit-flash-message/server';
 import type { LayoutServerLoad } from './$types';
 import type { SerializedUser } from 'backend/types';
 import { type LanguageCode } from '#lib/stores/languageStore';
-import { locales } from '../paraglide/runtime';
+import { locales } from '#lib/paraglide/runtime';
 import type { FormError } from '../app';
 
 interface OpenedPathName {
