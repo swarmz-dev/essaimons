@@ -1,6 +1,6 @@
 import { HttpContext, Request } from '@adonisjs/core/http';
 import { inject } from '@adonisjs/core';
-import RequestLanguagesEnum from '#types/enum/request_languages_enum';
+import { RequestLanguagesEnum } from '#types/enum/request_languages_enum';
 import LanguageRepository from '#repositories/language_repository';
 import type { NextFn } from '@adonisjs/core/types/http';
 import i18nManager from '@adonisjs/i18n/services/main';

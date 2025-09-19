@@ -2,8 +2,8 @@ import { DateTime } from 'luxon';
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm';
 import type { BelongsTo } from '@adonisjs/lucid/types/relations';
 import LogUser from '#models/log_user';
-import LogRouteMethodEnum from '#types/enum/log_route_method_enum';
-import LogResponseStatusEnum from '#types/enum/log_response_status_enum';
+import { LogRouteMethodEnum } from '#types/enum/log_route_method_enum';
+import { LogResponseStatusEnum } from '#types/enum/log_response_status_enum';
 import type { SerializedLog } from '#types/serialized/serialized_log';
 
 export default class Log extends BaseModel {

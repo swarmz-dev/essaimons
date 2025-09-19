@@ -13,10 +13,10 @@ import SlugifyService from '#services/slugify_service';
 import { resetPasswordParamsValidator, resetPasswordValidator, sendResetPasswordEmailValidator, updateProfileValidator } from '#validators/profile';
 import path from 'node:path';
 import env from '#start/env';
-import FileTypeEnum from '#types/enum/file_type_enum';
+import { FileTypeEnum } from '#types/enum/file_type_enum';
 import cache from '@adonisjs/cache/services/main';
 import UserToken from '#models/user_token';
-import UserTokenTypeEnum from '#types/enum/user_token_type_enum';
+import { UserTokenTypeEnum } from '#types/enum/user_token_type_enum';
 import type { SerializedUser } from '#types/serialized/serialized_user';
 
 @inject()

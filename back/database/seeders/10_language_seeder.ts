@@ -6,7 +6,7 @@ import fsPromises from 'fs/promises';
 import app from '@adonisjs/core/services/app';
 import FileService from '#services/file_service';
 import File from '#models/file';
-import FileTypeEnum from '#types/enum/file_type_enum';
+import { FileTypeEnum } from '#types/enum/file_type_enum';
 import FileRepository from '#repositories/file_repository';
 
 export default class extends BaseSeeder {

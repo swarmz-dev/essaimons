@@ -7,7 +7,7 @@ import cache from '@adonisjs/cache/services/main';
 import app from '@adonisjs/core/services/app';
 import File from '#models/file';
 import path from 'node:path';
-import FileTypeEnum from '#types/enum/file_type_enum';
+import { FileTypeEnum } from '#types/enum/file_type_enum';
 import FileService from '#services/file_service';
 import { MultipartFile } from '@adonisjs/bodyparser/types';
 import type { PaginatedLanguages } from '#types/paginated/paginated_languages';

@@ -1,6 +1,6 @@
 import BaseRepository from '#repositories/base/base_repository';
 import UserToken from '#models/user_token';
-import UserTokenTypeEnum from '#types/enum/user_token_type_enum';
+import { UserTokenTypeEnum } from '#types/enum/user_token_type_enum';
 
 export default class UserTokenRepository extends BaseRepository<typeof UserToken> {
     constructor() {

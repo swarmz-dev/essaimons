@@ -3,5 +3,3 @@ export enum UserTokenTypeEnum {
     PASSWORD_RESET = 'password-reset',
     OAUTH = 'oauth',
 }
-
-export default UserTokenTypeEnum;
