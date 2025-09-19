@@ -72,6 +72,69 @@ You can access the application at http://localhost:5173.
 
 ---
 
+### Local deployment on Linux without Docker
+
+If you prefer running the stack directly on your host machine instead of Docker, follow the steps below.
+
+#### Prerequisites
+
+- Node.js >= 20.6 (see step 3 for installation guidance).
+- Project dependencies installed with workspace support.
+- PostgreSQL service (optional – install if you prefer running the database locally instead of through Docker or a managed instance).
+- Redis service (optional – install if you plan to use features backed by Redis).
+
+On Debian/Ubuntu machines you can install and start the optional services with:
+
+```bash
+  sudo apt install postgresql redis
+  sudo systemctl enable --now postgresql redis-server
+```
+
+#### Setup
+
+1. Install monorepo dependencies from the repository root:
+
+    ```bash
+      npm install
+    ```
+
+2. Provision application environment files (see step 2). If you run PostgreSQL or Redis locally, point the backend `.env` to those instances; otherwise keep using the defaults that target the Docker compose services or a managed deployment. Skipping Redis leaves Redis-backed features unavailable until a server is provided.
+
+3. Run database migrations (and seeds if required):
+
+    ```bash
+      cd back
+      node ace migration:run
+      node ace db:seed # optional
+    ```
+
+4. Mirror the Docker bind mount that exposes backend types to the frontend:
+
+    ```bash
+      mkdir -p front/back/app
+      ln -s "$(realpath back/app/types)" front/back/app/types
+    ```
+
+#### Run services
+
+Start the backend and frontend in separate terminals from the repository root:
+
+- Backend:
+
+    ```bash
+      npm run dev --workspace back
+    ```
+
+- Frontend:
+
+    ```bash
+      npm run dev --workspace front
+    ```
+
+The frontend runs on http://localhost:5173 and communicates with the backend port defined in `back/.env` (default http://localhost:3333).
+
+---
+
 ### Development index documentation
 
 &larr; [Back to index](index.md)
