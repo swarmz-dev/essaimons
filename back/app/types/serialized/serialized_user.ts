@@ -14,5 +14,3 @@ export type SerializedUser = {
     updatedAt?: string;
     createdAt?: string;
 };
-
-export default SerializedUser;

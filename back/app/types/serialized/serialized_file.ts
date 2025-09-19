@@ -10,5 +10,3 @@ export type SerializedFile = {
     createdAt?: string;
     updatedAt?: string;
 };
-
-export default SerializedFile;

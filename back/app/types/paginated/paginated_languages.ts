@@ -1,4 +1,4 @@
-import SerializedLanguage from '#types/serialized/serialized_language';
+import type { SerializedLanguage } from '../serialized/serialized_language.js';
 
 export type PaginatedLanguages = {
     languages: SerializedLanguage[];
@@ -8,5 +8,3 @@ export type PaginatedLanguages = {
     total: number;
     currentPage: number;
 };
-
-export default PaginatedLanguages;

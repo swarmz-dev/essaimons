@@ -1,4 +1,4 @@
-import SerializedFile from '#types/serialized/serialized_file';
+import type { SerializedFile } from './serialized_file.js';
 
 export type SerializedLanguage = {
     name: string;
@@ -8,5 +8,3 @@ export type SerializedLanguage = {
     updatedAt?: string;
     createdAt?: string;
 };
-
-export default SerializedLanguage;
