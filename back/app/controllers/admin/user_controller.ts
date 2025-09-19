@@ -12,8 +12,8 @@ import { createUserValidator, deleteUsersValidator, getAdminUserValidator, searc
 import User from '#models/user';
 import { cuid } from '@adonisjs/core/helpers';
 import SlugifyService from '#services/slugify_service';
-import PaginatedUsers from '#types/paginated/paginated_users';
-import SerializedUser from '#types/serialized/serialized_user';
+import type { PaginatedUsers } from '#types/paginated/paginated_users';
+import type { SerializedUser } from '#types/serialized/serialized_user';
 
 @inject()
 export default class AdminUserController {

@@ -17,7 +17,7 @@ import FileTypeEnum from '#types/enum/file_type_enum';
 import cache from '@adonisjs/cache/services/main';
 import UserToken from '#models/user_token';
 import UserTokenTypeEnum from '#types/enum/user_token_type_enum';
-import SerializedUser from '#types/serialized/serialized_user';
+import type { SerializedUser } from '#types/serialized/serialized_user';
 
 @inject()
 export default class ProfileController {
