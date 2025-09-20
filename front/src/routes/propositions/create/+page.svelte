@@ -428,9 +428,9 @@
                         </div>
                     </div>
 
-                    <input type="hidden" name="categoryIds" value={categoryIds.join(',')} />
-                    <input type="hidden" name="associatedPropositionIds" value={associatedPropositionIds.join(',')} />
-                    <input type="hidden" name="rescueInitiatorIds" value={rescueInitiatorIds.join(',')} />
+                    <input type="hidden" name="categoryIds" value={categoryIds} />
+                    <input type="hidden" name="associatedPropositionIds" value={associatedPropositionIds} />
+                    <input type="hidden" name="rescueInitiatorIds" value={rescueInitiatorIds} />
                 </form>
             </div>
         </div>
