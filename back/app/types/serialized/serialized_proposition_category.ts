@@ -1,4 +1,4 @@
 export type SerializedPropositionCategory = {
-    id: string;
+    id: number;
     name: string;
 };

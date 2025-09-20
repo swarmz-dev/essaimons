@@ -12,6 +12,7 @@ export default class extends BaseSchema {
     public async up(): Promise<void> {
         this.schema.createTable(this.categoriesTable, (table: Knex.CreateTableBuilder): void => {
             table.uuid('id').primary().defaultTo(this.raw('uuid_generate_v4()'));
+            table.specificType('front_id', 'serial').notNullable();
             table.string('name', 255).notNullable().unique();
             table.timestamp('created_at', { useTz: true });
             table.timestamp('updated_at', { useTz: true });
@@ -19,6 +20,7 @@ export default class extends BaseSchema {
 
         this.schema.createTable(this.propositionsTable, (table: Knex.CreateTableBuilder): void => {
             table.uuid('id').primary().defaultTo(this.raw('uuid_generate_v4()'));
+            table.specificType('front_id', 'serial').notNullable();
             table.string('title', 150).notNullable();
             table.string('summary', 300).notNullable();
             table.text('detailed_description').notNullable();

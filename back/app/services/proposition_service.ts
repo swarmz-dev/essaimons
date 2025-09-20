@@ -14,6 +14,8 @@ import { cuid } from '@adonisjs/core/helpers';
 import { FileTypeEnum } from '#types/enum/file_type_enum';
 import { DateTime } from 'luxon';
 import fsPromises from 'node:fs/promises';
+import { TransactionClientContract } from '@adonisjs/lucid/types/database';
+import PropositionCategoryRepository from '#repositories/proposition_category_repository';
 
 interface CreatePropositionPayload {
     title: string;
@@ -28,7 +30,7 @@ interface CreatePropositionPayload {
     voteDeadline: string;
     mandateDeadline: string;
     evaluationDeadline: string;
-    categoryIds: string[];
+    categoryIds: number[];
     associatedPropositionIds?: string[];
     rescueInitiatorIds: number[];
 }
@@ -42,30 +44,31 @@ interface CreatePropositionFiles {
 export default class PropositionService {
     constructor(
         private readonly propositionRepository: PropositionRepository,
+        private readonly propositionCategoryRepository: PropositionCategoryRepository,
         private readonly userRepository: UserRepository,
         private readonly slugifyService: SlugifyService
     ) {}
 
     public async create(payload: CreatePropositionPayload, creator: User, files: CreatePropositionFiles): Promise<Proposition> {
-        const trx = await db.transaction();
+        const trx: TransactionClientContract = await db.transaction();
 
         try {
-            const categories: PropositionCategory[] = await PropositionCategory.query({ client: trx }).whereIn('id', payload.categoryIds);
+            const categories: PropositionCategory[] = await this.propositionCategoryRepository.getMultipleCategories(payload.categoryIds, trx);
             if (categories.length !== payload.categoryIds.length) {
                 throw new Error('messages.proposition.create.invalid-category');
             }
 
-            const rescueUsers: User[] = await this.userRepository.Model.query({ client: trx }).whereIn('front_id', payload.rescueInitiatorIds);
+            const rescueUsers: User[] = await this.userRepository.getRescueUsers(payload.rescueInitiatorIds, trx);
             if (rescueUsers.length !== payload.rescueInitiatorIds.length) {
                 throw new Error('messages.proposition.create.invalid-rescue');
             }
 
-            const uniqueRescueIds: string[] = rescueUsers.map((user: User) => user.id);
+            const uniqueRescueIds: string[] = rescueUsers.map((user: User): string => user.id);
             if (uniqueRescueIds.includes(creator.id)) {
                 throw new Error('messages.proposition.create.rescue-cannot-include-creator');
             }
 
-            const associatedIds: string[] = payload.associatedPropositionIds?.filter((id: string) => id !== '') ?? [];
+            const associatedIds: string[] = payload.associatedPropositionIds?.filter((id: string): boolean => id !== '') ?? [];
             if (associatedIds.includes('')) {
                 associatedIds.splice(associatedIds.indexOf(''), 1);
             }
@@ -84,7 +87,7 @@ export default class PropositionService {
             const mandateDate: DateTime = this.parseIsoDate(payload.mandateDeadline);
             const evaluationDate: DateTime = this.parseIsoDate(payload.evaluationDeadline);
 
-            const proposition: Proposition = await this.propositionRepository.Model.create(
+            const proposition: Proposition = await Proposition.create(
                 {
                     title: payload.title,
                     summary: payload.summary,

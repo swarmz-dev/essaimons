@@ -9,6 +9,9 @@ export default class PropositionCategory extends BaseModel {
     declare id: string;
 
     @column()
+    declare frontId: number;
+
+    @column()
     declare name: string;
 
     @column.dateTime({ autoCreate: true })
@@ -24,7 +27,7 @@ export default class PropositionCategory extends BaseModel {
 
     public apiSerialize(): SerializedPropositionCategory {
         return {
-            id: this.id,
+            id: this.frontId,
             name: this.name,
         };
     }

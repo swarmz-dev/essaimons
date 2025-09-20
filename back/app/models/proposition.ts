@@ -6,10 +6,16 @@ import File from '#models/file';
 import PropositionCategory from '#models/proposition_category';
 import type { SerializedProposition } from '#types/serialized/serialized_proposition';
 import type { SerializedPropositionSummary } from '#types/serialized/serialized_proposition_summary';
+import { SerializedUserSummary } from '#types/serialized/serialized_user_summary';
+import { SerializedPropositionCategory } from '#types/serialized/serialized_proposition_category';
+import { SerializedFile } from '#types/serialized/serialized_file';
 
 export default class Proposition extends BaseModel {
     @column({ isPrimary: true })
     declare id: string;
+
+    @column()
+    declare frontId: number;
 
     @column()
     declare title: string;
@@ -53,38 +59,38 @@ export default class Proposition extends BaseModel {
     @column()
     declare visualFileId?: string | null;
 
-    @belongsTo(() => User, {
+    @belongsTo((): typeof User => User, {
         foreignKey: 'creatorId',
     })
     declare creator: BelongsTo<typeof User>;
 
-    @belongsTo(() => File, {
+    @belongsTo((): typeof File => File, {
         foreignKey: 'visualFileId',
     })
     declare visual: BelongsTo<typeof File>;
 
-    @manyToMany(() => PropositionCategory, {
+    @manyToMany((): typeof PropositionCategory => PropositionCategory, {
         pivotTable: 'proposition_category_pivot',
         pivotForeignKey: 'proposition_id',
         pivotRelatedForeignKey: 'category_id',
     })
     declare categories: ManyToMany<typeof PropositionCategory>;
 
-    @manyToMany(() => User, {
+    @manyToMany((): typeof User => User, {
         pivotTable: 'proposition_rescue_initiators',
         pivotForeignKey: 'proposition_id',
         pivotRelatedForeignKey: 'user_id',
     })
     declare rescueInitiators: ManyToMany<typeof User>;
 
-    @manyToMany(() => Proposition, {
+    @manyToMany((): typeof Proposition => Proposition, {
         pivotTable: 'proposition_associations',
         pivotForeignKey: 'proposition_id',
         pivotRelatedForeignKey: 'related_proposition_id',
     })
     declare associatedPropositions: ManyToMany<typeof Proposition>;
 
-    @manyToMany(() => File, {
+    @manyToMany((): typeof File => File, {
         pivotTable: 'proposition_attachments',
         pivotForeignKey: 'proposition_id',
         pivotRelatedForeignKey: 'file_id',
@@ -106,7 +112,7 @@ export default class Proposition extends BaseModel {
 
     public apiSerialize(): SerializedProposition {
         return {
-            id: this.id,
+            id: this.frontId,
             title: this.title,
             summary: this.summary,
             detailedDescription: this.detailedDescription,
@@ -114,19 +120,19 @@ export default class Proposition extends BaseModel {
             impacts: this.impacts,
             mandatesDescription: this.mandatesDescription,
             expertise: this.expertise,
-            clarificationDeadline: this.clarificationDeadline?.toISODate() ?? '',
-            improvementDeadline: this.improvementDeadline?.toISODate() ?? '',
-            voteDeadline: this.voteDeadline?.toISODate() ?? '',
-            mandateDeadline: this.mandateDeadline?.toISODate() ?? '',
-            evaluationDeadline: this.evaluationDeadline?.toISODate() ?? '',
-            creator: this.creator?.summarySerialize() ?? { id: 0, username: '' },
-            categories: (this.categories ?? []).map((category) => category.apiSerialize()),
-            rescueInitiators: (this.rescueInitiators ?? []).map((user) => user.summarySerialize()),
-            associatedPropositions: (this.associatedPropositions ?? []).map((proposition) => proposition.summarySerialize()),
-            attachments: (this.attachments ?? []).map((file) => file.apiSerialize()),
+            clarificationDeadline: this.clarificationDeadline.toISODate() ?? '',
+            improvementDeadline: this.improvementDeadline.toISODate() ?? '',
+            voteDeadline: this.voteDeadline.toISODate() ?? '',
+            mandateDeadline: this.mandateDeadline.toISODate() ?? '',
+            evaluationDeadline: this.evaluationDeadline.toISODate() ?? '',
+            creator: this.creator.summarySerialize(),
+            categories: (this.categories ?? []).map((category: PropositionCategory): SerializedPropositionCategory => category.apiSerialize()),
+            rescueInitiators: (this.rescueInitiators ?? []).map((user: User): SerializedUserSummary => user.summarySerialize()),
+            associatedPropositions: (this.associatedPropositions ?? []).map((proposition: Proposition): SerializedPropositionSummary => proposition.summarySerialize()),
+            attachments: (this.attachments ?? []).map((file: File): SerializedFile => file.apiSerialize()),
             visual: this.visual?.apiSerialize(),
-            createdAt: this.createdAt?.toISO(),
-            updatedAt: this.updatedAt?.toISO(),
+            createdAt: this.createdAt?.toString(),
+            updatedAt: this.updatedAt?.toString(),
         };
     }
 }

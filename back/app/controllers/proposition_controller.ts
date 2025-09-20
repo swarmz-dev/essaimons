@@ -13,6 +13,9 @@ import type { MultipartFileContract } from '@adonisjs/core/bodyparser';
 import { errors } from '@vinejs/vine';
 import type { SerializedPropositionBootstrap } from '#types/serialized/serialized_proposition_bootstrap';
 import PropositionCategory from '#models/proposition_category';
+import { SerializedUserSummary } from '#types/serialized/serialized_user_summary';
+import { SerializedPropositionSummary } from '#types/serialized/serialized_proposition_summary';
+import { SerializedPropositionCategory } from '#types/serialized/serialized_proposition_category';
 
 @inject()
 export default class PropositionController {
@@ -35,13 +38,11 @@ export default class PropositionController {
 
         logger.debug(`proposition.bootstrap counts => categories:${categories.length} raw:${JSON.stringify(rawCategoryCount)} propositions:${propositions.length} users:${users.length}`);
 
-        const payload: SerializedPropositionBootstrap = {
-            categories: categories.map((category) => category.apiSerialize()),
-            propositions: propositions.map((proposition) => proposition.summarySerialize()),
-            users: users.map((item) => item.summarySerialize()),
-        };
-
-        return response.ok(payload);
+        return response.ok({
+            categories: categories.map((category: PropositionCategory): SerializedPropositionCategory => category.apiSerialize()),
+            propositions: propositions.map((proposition: Proposition): SerializedPropositionSummary => proposition.summarySerialize()),
+            users: users.map((item: User): SerializedUserSummary => item.summarySerialize()),
+        });
     }
 
     public async create(ctx: HttpContext): Promise<void> {
