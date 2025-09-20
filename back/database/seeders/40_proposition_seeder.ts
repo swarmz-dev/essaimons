@@ -314,7 +314,7 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
             const categoryIds = proposal.categories.map((name) => categoryMap.get(name)).filter((value): value is string => Boolean(value));
 
             if (categoryIds.length) {
-                await proposition.related('categories').attach(categoryIds);
+                await proposition.related('categories').sync(categoryIds, false);
             }
 
             const rescueIds = rescueCandidates.slice(index % rescueCandidates.length, (index % rescueCandidates.length) + 2).map((user) => user.id);
@@ -323,7 +323,7 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
                 rescueIds.push(rescueCandidates[0].id);
             }
 
-            await proposition.related('rescueInitiators').attach(rescueIds);
+            await proposition.related('rescueInitiators').sync(rescueIds, false);
 
             createdPropositions.set(proposal.title, proposition);
 
@@ -338,8 +338,16 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
 
             const relatedIds = association.associates.map((title) => createdPropositions.get(title)?.id).filter((id): id is string => Boolean(id));
 
-            if (relatedIds.length) {
-                await source.related('associatedPropositions').attach(relatedIds);
+            if (!relatedIds.length) {
+                continue;
+            }
+
+            const existingIds = new Set((await source.related('associatedPropositions').query().select('propositions.id')).map((related) => related.id as string));
+
+            const idsToAttach = relatedIds.filter((id) => !existingIds.has(id));
+
+            if (idsToAttach.length) {
+                await source.related('associatedPropositions').attach(idsToAttach);
             }
         }
     }

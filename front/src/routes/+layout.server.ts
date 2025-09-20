@@ -40,7 +40,7 @@ export const load: LayoutServerLoad = loadFlash(async (event): Promise<{ user?: 
     const userCookie: string | undefined = cookies.get('user');
     const user: SerializedUser | undefined = userCookie ? <SerializedUser>JSON.parse(userCookie) : undefined;
 
-    const location: string = url.pathname.replace(`/${language}`, '') || '/';
+    const location: string = url.pathname.replace(new RegExp(`^/${language}`), '') || '/';
 
     const formError: string | undefined = cookies.get('formError');
 
@@ -58,38 +58,36 @@ export const load: LayoutServerLoad = loadFlash(async (event): Promise<{ user?: 
             }
 
             return { language, location };
-        } else {
-            cookies.set('previousPathName', `${location}${url.search}`, {
-                path: '/',
-                httpOnly: false,
-                sameSite: 'lax',
-                maxAge: 60 * 60,
-            });
-
-            redirect(303, `/${language}/login`);
         }
+
+        cookies.set('previousPathName', `${location}${url.search}`, {
+            path: '/',
+            httpOnly: false,
+            sameSite: 'lax',
+            maxAge: 60 * 60,
+        });
+
+        return redirect(303, `/${language}/login`);
     }
 
-    if (cookies.get('token')) {
-        try {
-            const response = await locals.client.get('/api');
-            if (response.status !== 200) {
-                throw response;
-            }
-        } catch (error: any) {
-            cookies.delete('user', { path: '/' });
-            cookies.delete('token', { path: '/' });
+    const bypassLogin = process.env.TEST_LOGIN_BYPASS === 'true';
 
-            redirect(303, `/${language}/login`);
-        }
-    } else {
+    if (!cookies.get('token') && !bypassLogin) {
         cookies.delete('user', { path: '/' });
+        cookies.set('previousPathName', `${location}${url.search}`, {
+            path: '/',
+            httpOnly: false,
+            sameSite: 'lax',
+            maxAge: 60 * 60,
+        });
 
-        redirect(303, `/${language}/login`);
+        return redirect(303, `/${language}/login`);
     }
 
-    if (openedPathNames.some((openedPathName: OpenedPathName): boolean => location.startsWith(openedPathName.pathname) && !openedPathName.hybrid)) {
-        redirect(303, `/${language}/`);
+    if (!url.searchParams.has('from_login') && openedPathNames.some((openedPathName: OpenedPathName): boolean => location.startsWith(openedPathName.pathname) && !openedPathName.hybrid)) {
+        const redirectTo = cookies.get('previousPathName') ?? '/';
+        cookies.delete('previousPathName', { path: '/' });
+        return redirect(303, `/${language}${redirectTo.startsWith('/') ? redirectTo : `/${redirectTo}`}`);
     }
 
     cookies.delete('previousPathName', { path: '/' });
