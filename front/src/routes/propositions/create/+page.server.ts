@@ -10,6 +10,7 @@ export const load: PageServerLoad<SerializedPropositionBootstrap> = async ({ loc
         const response = await locals.client.get('api/propositions/bootstrap');
         return response.data;
     } catch (error: any) {
+        console.error('Failed to load proposition bootstrap data', error?.response?.data ?? error);
         return {
             users: [],
             categories: [],

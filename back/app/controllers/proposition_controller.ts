@@ -1,5 +1,6 @@
 import { HttpContext } from '@adonisjs/core/http';
 import { inject } from '@adonisjs/core';
+import logger from '@adonisjs/core/services/logger';
 import PropositionService from '#services/proposition_service';
 import PropositionRepository from '#repositories/proposition_repository';
 import PropositionCategoryRepository from '#repositories/proposition_category_repository';
@@ -10,6 +11,7 @@ import type User from '#models/user';
 import type { MultipartFileContract } from '@adonisjs/core/bodyparser';
 import { errors } from '@vinejs/vine';
 import type { SerializedPropositionBootstrap } from '#types/serialized/serialized_proposition_bootstrap';
+import PropositionCategory from '#models/proposition_category';
 
 @inject()
 export default class PropositionController {
@@ -21,13 +23,16 @@ export default class PropositionController {
     ) {}
 
     public async bootstrap({ response, user }: HttpContext): Promise<void> {
-        const [categories, propositions, users] = await Promise.all([
+        const [categories, propositions, users, rawCategoryCount] = await Promise.all([
             this.propositionCategoryRepository.all(),
             this.propositionRepository.all(),
             this.userRepository.Model.query().if(user, (builder): void => {
                 builder.whereNot('id', (user as User).id);
             }),
+            PropositionCategory.query().count('* as total'),
         ]);
+
+        logger.debug(`proposition.bootstrap counts => categories:${categories.length} raw:${JSON.stringify(rawCategoryCount)} propositions:${propositions.length} users:${users.length}`);
 
         const payload: SerializedPropositionBootstrap = {
             categories: categories.map((category) => category.apiSerialize()),
@@ -88,11 +93,21 @@ export default class PropositionController {
                 attachments,
             });
 
+            logger.info('proposition.create.success', {
+                id: proposition.id,
+                title: proposition.title,
+                creatorId: proposition.creatorId,
+            });
+
             return response.created({
                 message: i18n.t('messages.proposition.create.success', { title: proposition.title }),
                 proposition: proposition.apiSerialize(),
             });
         } catch (error: any) {
+            logger.error('proposition.create.error', {
+                message: error?.message,
+                stack: error?.stack,
+            });
             if (error instanceof errors.E_VALIDATION_ERROR) {
                 return response.badRequest({ errors: error.messages });
             }

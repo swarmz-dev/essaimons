@@ -54,7 +54,7 @@ export default class LogHttpRequest {
             await next();
 
             if (ctx.user) {
-                const logUser: LogUser = await this.logUserRepository.firstOrFail({ email: ctx.user.email });
+                const logUser: LogUser = await LogUser.firstOrCreate({ email: ctx.user.email }, { email: ctx.user.email });
                 log.userId = logUser.id;
             }
         } finally {

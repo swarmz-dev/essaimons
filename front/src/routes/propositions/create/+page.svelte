@@ -26,6 +26,8 @@
 
     const { data } = $props<{ data: SerializedPropositionBootstrap }>();
 
+    console.log('bootstrap data', data);
+
     const userOptions: MultiSelectOption[] = $derived(data.users.map((user: SerializedUserSummary) => ({ value: String(user.id), label: user.username })));
     const categoryOptions: MultiSelectOption[] = $derived(data.categories.map((category: SerializedPropositionCategory) => ({ value: category.id, label: category.name })));
     const propositionOptions: MultiSelectOption[] = $derived(data.propositions.map((proposal: SerializedPropositionSummary) => ({ value: proposal.id, label: proposal.title })));
