@@ -50,6 +50,7 @@
         "axios": "^1.11.0",
         "backend": "file:../back",
         "dotenv": "^16.6.1",
+        "marked": "^16.3.0",
         "mode-watcher": "^1.1.0",
         "svelte-meta-tags": "^4.4.0",
         "toastify-js": "^1.12.0",

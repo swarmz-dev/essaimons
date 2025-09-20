@@ -247,5 +247,112 @@
                 }
             }
         }
+    },
+    "proposition-create": {
+        "title": "Créer une proposition",
+        "menu": "Créer une proposition",
+        "introduction": "Complétez les trois étapes pour structurer la concrétisation, l'horizontalité et la robustesse de la proposition. Les champs marqués d'une astérisque sont obligatoires.",
+        "meta": {
+            "title": "Nouvelle proposition – Essaimons-V1",
+            "description": "Renseignez les informations essentielles, les échéances et les impacts pour formaliser une proposition complète et partageable sur Essaimons-V1.",
+            "keywords": "proposition, création de proposition, objectifs SMART, impacts, échéances, Essaimons-V1"
+        },
+        "tabs": {
+            "concretization": {
+                "title": "Informations de concrétisation",
+                "description": "Définissez le titre, les catégories, la description détaillée et les objectifs SMART pour poser le cadre de la proposition."
+            },
+            "horizontality": {
+                "title": "Informations d’horizontalité",
+                "description": "Précisez le résumé de contexte, les échéances clés et la description des mandatures."
+            },
+            "robustness": {
+                "title": "Informations de robustesse",
+                "description": "Analysez les impacts, identifiez les expertises nécessaires et liez d'autres propositions pertinentes."
+            }
+        },
+        "fields": {
+            "title": {
+                "label": "Titre",
+                "placeholder": "Exemple : Réorganiser les permanences locales",
+                "info": "Le titre de la proposition permet de comprendre à quel objectif ou problématique elle apporte des réponses. Mentionnez une échéance quand cela est utile et évitez les formules génériques comme “Proposition pour…”."
+            },
+            "visual": {
+                "label": "Visuel",
+                "info": "Ajoutez un visuel représentatif pour faciliter l’identification de la proposition dans les espaces de partage. Formats images recommandés (PNG, JPG, WEBP)."
+            },
+            "categories": {
+                "label": "Catégories",
+                "placeholder": "Sélectionnez une ou plusieurs catégories",
+                "info": "L’association de catégories facilite le classement et le traitement de la proposition : niveau (stratégique, tactique…), confidentialité (public, restreint…), légalité ou thématique (terrain, communication…)."
+            },
+            "smart-objectives": {
+                "label": "Objectifs SMART",
+                "info": "Les objectifs SMART décrivent comment la proposition sera évaluée (quantitatif, qualitatif, temporel). Ils permettent de confirmer l’atteinte du résultat attendu."
+            },
+            "attachments": {
+                "label": "Pièces jointes",
+                "info": "Ajoutez des documents complémentaires (analyses, supports méthodologiques, tableaux, etc.) qui éclairent la proposition."
+            },
+            "detailed-description": {
+                "label": "Description détaillée",
+                "info": "Décrivez les scénarios envisagés, les actions, leur articulation et les références documentaires (liens, pièces jointes, données...) qui étayent la proposition."
+            },
+            "summary": {
+                "label": "Résumé (ou contexte)",
+                "info": "Exposez l’origine de la proposition : idée, problématique rencontrée, événement déclencheur, échanges préparatoires ou propositions précédentes."
+            },
+            "mandates-description": {
+                "label": "Description des mandatures",
+                "info": "Précisez pour chaque mandat les actions attendues, les objectifs SMART associés, les moyens estimés, les compétences requises et les modalités d’attribution."
+            },
+            "clarification-deadline": {
+                "label": "Échéance de clarification",
+                "info": "Date limite pour clarifier le contenu initial de la proposition avec les parties prenantes."
+            },
+            "improvement-deadline": {
+                "label": "Échéance d’amélioration",
+                "info": "Date cible pour finaliser les ajustements issus des retours et contributions."
+            },
+            "vote-deadline": {
+                "label": "Échéance de vote",
+                "info": "Date prévue pour soumettre la proposition au vote ou à la décision formelle."
+            },
+            "mandate-deadline": {
+                "label": "Échéance de mise en œuvre des mandatures",
+                "info": "Date à laquelle les mandats doivent être opérationnels si la proposition est retenue."
+            },
+            "evaluation-deadline": {
+                "label": "Échéance d’évaluation",
+                "info": "Date à laquelle les résultats et impacts de la proposition seront évalués."
+            },
+            "impacts": {
+                "label": "Impacts (humain, financier, géographique, organisationnel)",
+                "info": "Identifiez les ressources nécessaires, les publics concernés, les gains espérés et les risques potentiels. Pensez aux différents scénarios et, si besoin, à une analyse de type FFOM."
+            },
+            "expertise": {
+                "label": "Expertises et expériences à solliciter",
+                "info": "Mentionnez les personnes, collectifs ou compétences à mobiliser pour éclairer l’évaluation ou la mise en œuvre de la proposition."
+            },
+            "associated-propositions": {
+                "label": "Propositions associées",
+                "placeholder": "Rechercher une proposition",
+                "info": "Indiquez les propositions dont celle-ci découle, qui la complètent ou qui peuvent entrer en tension. Cela contribue à la cohérence d’ensemble et à l’évaluation des impacts."
+            },
+            "rescue-initiators": {
+                "label": "Initiateurs de secours",
+                "placeholder": "Rechercher un initiateur",
+                "info": "Choisissez au moins un co-responsable capable de prendre le relais en cas d’imprévu. Leur rôle peut être détaillé au sein de la description ou des mandats."
+            }
+        },
+        "navigation": {
+            "previous": "Précédent",
+            "next": "Suivant",
+            "submit": "Publier la proposition",
+            "submitting": "Envoi en cours…",
+            "concretization-hint": "Renseignez le cadre général avant de passer aux aspects collaboratifs.",
+            "horizontality-hint": "Documentez le contexte partagé, les délais et les mandatures associées.",
+            "robustness-hint": "Analysez les impacts, les expertises nécessaires et les liens avec d’autres propositions."
+        }
     }
 }

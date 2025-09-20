@@ -1,6 +1,6 @@
 import { m } from '#lib/paraglide/messages';
 import type { Component } from 'svelte';
-import { House, UserPen, LogOut, Lock, User, UsersRound, ChartColumn, ArrowLeftFromLine } from '@lucide/svelte';
+import { House, UserPen, LogOut, Lock, User, UsersRound, ChartColumn, ArrowLeftFromLine, FilePlus2 } from '@lucide/svelte';
 
 export type MenuItemsListItem = {
     href: string;
@@ -19,6 +19,11 @@ export const mainMenu: MenuItemsList = {
             href: '/',
             icon: House,
             title: m['home.title'](),
+        },
+        {
+            href: '/propositions/create',
+            icon: FilePlus2,
+            title: m['proposition-create.menu'](),
         },
         {
             href: '/profile',

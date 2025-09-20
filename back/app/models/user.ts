@@ -5,6 +5,7 @@ import { afterCreate, beforeFind, beforeFetch, BaseModel, belongsTo, column } fr
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid';
 import type { BelongsTo } from '@adonisjs/lucid/types/relations';
 import type { SerializedUser } from '#types/serialized/serialized_user';
+import type { SerializedUserSummary } from '#types/serialized/serialized_user_summary';
 import { AccessToken, DbAccessTokensProvider } from '@adonisjs/auth/access_tokens';
 import File from '#models/file';
 import { UserRoleEnum } from '#types/enum/user_role_enum';
@@ -79,6 +80,13 @@ export default class User extends compose(BaseModel, AuthFinder) {
         type: 'auth_token',
         tokenSecretLength: 40,
     });
+
+    public summarySerialize(): SerializedUserSummary {
+        return {
+            id: this.frontId,
+            username: this.username,
+        };
+    }
 
     public apiSerialize(): SerializedUser {
         return {

@@ -82,5 +82,18 @@
         "update-profile": {
             "success": "Profil mis à jour avec succès"
         }
+    },
+    "proposition": {
+        "create": {
+            "success": "Proposition \"{title}\" créée avec succès",
+            "invalid-category": "Une ou plusieurs catégories sélectionnées sont introuvables.",
+            "invalid-rescue": "Impossible de trouver tous les initiateurs de secours sélectionnés.",
+            "rescue-cannot-include-creator": "Vous ne pouvez pas vous sélectionner comme initiateur de secours.",
+            "invalid-association": "Certaines propositions associées sont introuvables.",
+            "invalid-date": "Une échéance fournie n'est pas une date valide.",
+            "error": {
+                "default": "Impossible de créer la proposition pour le moment. Veuillez réessayer plus tard."
+            }
+        }
     }
 }

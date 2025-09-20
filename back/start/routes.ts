@@ -15,6 +15,7 @@ const AuthController = () => import('#controllers/auth_controller');
 const ProfileController = () => import('#controllers/profile_controller');
 const FileController = () => import('#controllers/file_controller');
 const OauthController = () => import('#controllers/oauth_controller');
+const PropositionController = () => import('#controllers/proposition_controller');
 
 router.get('healthcheck', [HealthCheckController]);
 
@@ -96,6 +97,13 @@ router
                         router.post('/update', [ProfileController, 'updateProfile']);
                     })
                     .prefix('profile');
+
+                router
+                    .group((): void => {
+                        router.get('/bootstrap', [PropositionController, 'bootstrap']);
+                        router.post('/', [PropositionController, 'create']);
+                    })
+                    .prefix('propositions');
 
                 router
                     .group((): void => {
