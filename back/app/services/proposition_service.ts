@@ -99,6 +99,7 @@ export default class PropositionService {
                     mandateDeadline: mandateDate,
                     evaluationDeadline: evaluationDate,
                     creatorId: creator.id,
+                    visualFileId: null,
                 },
                 { client: trx }
             );
@@ -180,7 +181,9 @@ export default class PropositionService {
             await proposition.load('associatedPropositions');
             await proposition.load('attachments');
             await proposition.load('creator');
-            await proposition.load('visual');
+            if (proposition.visualFileId) {
+                await proposition.load('visual');
+            }
 
             return proposition;
         } catch (error) {

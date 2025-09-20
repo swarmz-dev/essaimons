@@ -1,5 +1,6 @@
 import { HttpContext } from '@adonisjs/core/http';
 import { inject } from '@adonisjs/core';
+import app from '@adonisjs/core/services/app';
 import logger from '@adonisjs/core/services/logger';
 import PropositionService from '#services/proposition_service';
 import PropositionRepository from '#repositories/proposition_repository';
@@ -116,7 +117,14 @@ export default class PropositionController {
                 return response.badRequest({ error: i18n.t(error.message) });
             }
 
-            return response.badRequest({ error: i18n.t('messages.proposition.create.error.default') });
+            const fallbackMessage = i18n.t('messages.proposition.create.error.default');
+
+            const errorDetails: string | undefined = typeof error?.message === 'string' ? error.message : undefined;
+
+            return response.badRequest({
+                error: fallbackMessage,
+                ...(app.inProduction || !errorDetails ? {} : { details: errorDetails }),
+            });
         }
     }
 
@@ -125,13 +133,23 @@ export default class PropositionController {
             return [];
         }
 
-        const entries: string[] = Array.isArray(value) ? value.flatMap((item) => (item ?? '').split(',')) : value.split(',');
+        const toParts = (entry: unknown): string[] => {
+            if (entry === null || entry === undefined) {
+                return [];
+            }
+            return entry
+                .toString()
+                .split(',')
+                .map((part: string) => part.trim())
+                .filter((part) => part.length > 0);
+        };
+
+        const entries: string[] = Array.isArray(value) ? value.flatMap(toParts) : toParts(value);
 
         const seen = new Set<string>();
 
         return entries
-            .map((item) => item.trim())
-            .filter((item) => item.length > 0 && !seen.has(item))
+            .filter((item) => !seen.has(item))
             .map((item) => {
                 seen.add(item);
                 return item;

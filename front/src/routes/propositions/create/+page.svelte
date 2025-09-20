@@ -243,162 +243,156 @@
                 <form method="POST" enctype="multipart/form-data" use:enhance={submitHandler} class="flex flex-col gap-10">
                     <input type="hidden" name="activeTab" value={activeTab} />
 
-                    {#if activeTab === 'concretization'}
-                        <div class="grid gap-6 lg:grid-cols-2">
-                            <div class="space-y-6">
-                                <div class="space-y-2">
-                                    <Input
-                                        name="title"
-                                        id="title"
-                                        label={m['proposition-create.fields.title.label']()}
-                                        bind:value={title}
-                                        placeholder={m['proposition-create.fields.title.placeholder']()}
-                                        required
-                                        max={150}
-                                    />
-                                    <p class="text-xs leading-snug text-muted-foreground">{m['proposition-create.fields.title.info']()}</p>
-                                </div>
-
-                                <FieldLabel forId="visual" label={m['proposition-create.fields.visual.label']()} info={m['proposition-create.fields.visual.info']()}>
-                                    <Input type="file" name="visual" id="visual" accept="image/*" bind:files={visualFiles} />
-                                    {#if visualFiles?.length}
-                                        <p class="mt-2 text-sm text-muted-foreground">{visualFiles[0].name}</p>
-                                    {/if}
-                                </FieldLabel>
-
-                                <FieldLabel forId="categories" label={m['proposition-create.fields.categories.label']()} required info={m['proposition-create.fields.categories.info']()}>
-                                    <MultiSelect placeholder={m['proposition-create.fields.categories.placeholder']()} bind:selectedValues={categoryIds} options={categoryOptions} />
-                                </FieldLabel>
-
-                                <RichTextEditor
-                                    name="smartObjectives"
-                                    label={m['proposition-create.fields.smart-objectives.label']()}
-                                    info={m['proposition-create.fields.smart-objectives.info']()}
-                                    bind:value={smartObjectives}
+                    <div class="grid gap-6 lg:grid-cols-2" hidden={activeTab !== 'concretization'} aria-hidden={activeTab !== 'concretization'}>
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <Input
+                                    name="title"
+                                    id="title"
+                                    label={m['proposition-create.fields.title.label']()}
+                                    bind:value={title}
+                                    placeholder={m['proposition-create.fields.title.placeholder']()}
                                     required
-                                    max={1500}
+                                    max={150}
                                 />
-
-                                <FieldLabel forId="attachments" label={m['proposition-create.fields.attachments.label']()} info={m['proposition-create.fields.attachments.info']()}>
-                                    <Input type="file" name="attachments" id="attachments" multiple bind:files={attachmentFiles} />
-                                    {#if attachmentFiles?.length}
-                                        <ul class="mt-2 list-disc pl-5 text-sm text-muted-foreground">
-                                            {#each Array.from(attachmentFiles) as file (file.name)}
-                                                <li>{file.name}</li>
-                                            {/each}
-                                        </ul>
-                                    {/if}
-                                </FieldLabel>
+                                <p class="text-xs leading-snug text-muted-foreground">{m['proposition-create.fields.title.info']()}</p>
                             </div>
 
-                            <div class="space-y-6">
-                                <RichTextEditor
-                                    name="detailedDescription"
-                                    label={m['proposition-create.fields.detailed-description.label']()}
-                                    info={m['proposition-create.fields.detailed-description.info']()}
-                                    bind:value={detailedDescription}
-                                    required
-                                    max={1500}
-                                />
-                            </div>
+                            <FieldLabel forId="visual" label={m['proposition-create.fields.visual.label']()} info={m['proposition-create.fields.visual.info']()}>
+                                <Input type="file" name="visual" id="visual" accept="image/*" bind:files={visualFiles} />
+                                {#if visualFiles?.length}
+                                    <p class="mt-2 text-sm text-muted-foreground">{visualFiles[0].name}</p>
+                                {/if}
+                            </FieldLabel>
+
+                            <FieldLabel forId="categories" label={m['proposition-create.fields.categories.label']()} required info={m['proposition-create.fields.categories.info']()}>
+                                <MultiSelect placeholder={m['proposition-create.fields.categories.placeholder']()} bind:selectedValues={categoryIds} options={categoryOptions} />
+                            </FieldLabel>
+
+                            <RichTextEditor
+                                name="smartObjectives"
+                                label={m['proposition-create.fields.smart-objectives.label']()}
+                                info={m['proposition-create.fields.smart-objectives.info']()}
+                                bind:value={smartObjectives}
+                                required
+                                max={1500}
+                            />
+
+                            <FieldLabel forId="attachments" label={m['proposition-create.fields.attachments.label']()} info={m['proposition-create.fields.attachments.info']()}>
+                                <Input type="file" name="attachments" id="attachments" multiple bind:files={attachmentFiles} />
+                                {#if attachmentFiles?.length}
+                                    <ul class="mt-2 list-disc pl-5 text-sm text-muted-foreground">
+                                        {#each Array.from(attachmentFiles) as file (file.name)}
+                                            <li>{file.name}</li>
+                                        {/each}
+                                    </ul>
+                                {/if}
+                            </FieldLabel>
                         </div>
-                    {/if}
 
-                    {#if activeTab === 'horizontality'}
-                        <div class="grid gap-6 lg:grid-cols-2">
-                            <div class="space-y-6">
-                                <FieldLabel forId="summary" label={m['proposition-create.fields.summary.label']()} required info={m['proposition-create.fields.summary.info']()}>
-                                    <Textarea name="summary" id="summary" bind:value={summary} max={300} rows={6} required />
-                                </FieldLabel>
-
-                                <RichTextEditor
-                                    name="mandatesDescription"
-                                    label={m['proposition-create.fields.mandates-description.label']()}
-                                    info={m['proposition-create.fields.mandates-description.info']()}
-                                    bind:value={mandatesDescription}
-                                    required
-                                    max={1500}
-                                />
-                            </div>
-
-                            <div class="space-y-6">
-                                <div class="grid gap-4">
-                                    <FieldLabel
-                                        forId="clarificationDeadline"
-                                        label={m['proposition-create.fields.clarification-deadline.label']()}
-                                        required
-                                        info={m['proposition-create.fields.clarification-deadline.info']()}
-                                    >
-                                        <Input type="date" name="clarificationDeadline" id="clarificationDeadline" bind:value={clarificationDeadline} required />
-                                    </FieldLabel>
-                                    <FieldLabel
-                                        forId="improvementDeadline"
-                                        label={m['proposition-create.fields.improvement-deadline.label']()}
-                                        required
-                                        info={m['proposition-create.fields.improvement-deadline.info']()}
-                                    >
-                                        <Input type="date" name="improvementDeadline" id="improvementDeadline" bind:value={improvementDeadline} required />
-                                    </FieldLabel>
-                                    <FieldLabel forId="voteDeadline" label={m['proposition-create.fields.vote-deadline.label']()} required info={m['proposition-create.fields.vote-deadline.info']()}>
-                                        <Input type="date" name="voteDeadline" id="voteDeadline" bind:value={voteDeadline} required />
-                                    </FieldLabel>
-                                    <FieldLabel
-                                        forId="mandateDeadline"
-                                        label={m['proposition-create.fields.mandate-deadline.label']()}
-                                        required
-                                        info={m['proposition-create.fields.mandate-deadline.info']()}
-                                    >
-                                        <Input type="date" name="mandateDeadline" id="mandateDeadline" bind:value={mandateDeadline} required />
-                                    </FieldLabel>
-                                    <FieldLabel
-                                        forId="evaluationDeadline"
-                                        label={m['proposition-create.fields.evaluation-deadline.label']()}
-                                        required
-                                        info={m['proposition-create.fields.evaluation-deadline.info']()}
-                                    >
-                                        <Input type="date" name="evaluationDeadline" id="evaluationDeadline" bind:value={evaluationDeadline} required />
-                                    </FieldLabel>
-                                </div>
-                            </div>
+                        <div class="space-y-6">
+                            <RichTextEditor
+                                name="detailedDescription"
+                                label={m['proposition-create.fields.detailed-description.label']()}
+                                info={m['proposition-create.fields.detailed-description.info']()}
+                                bind:value={detailedDescription}
+                                required
+                                max={1500}
+                            />
                         </div>
-                    {/if}
+                    </div>
 
-                    {#if activeTab === 'robustness'}
-                        <div class="grid gap-6 lg:grid-cols-2">
-                            <div class="space-y-6">
-                                <FieldLabel forId="impacts" label={m['proposition-create.fields.impacts.label']()} required info={m['proposition-create.fields.impacts.info']()}>
-                                    <Textarea name="impacts" id="impacts" bind:value={impacts} max={1500} rows={8} required />
-                                </FieldLabel>
+                    <div class="grid gap-6 lg:grid-cols-2" hidden={activeTab !== 'horizontality'} aria-hidden={activeTab !== 'horizontality'}>
+                        <div class="space-y-6">
+                            <FieldLabel forId="summary" label={m['proposition-create.fields.summary.label']()} required info={m['proposition-create.fields.summary.info']()}>
+                                <Textarea name="summary" id="summary" bind:value={summary} max={300} rows={6} required />
+                            </FieldLabel>
 
-                                <FieldLabel forId="expertise" label={m['proposition-create.fields.expertise.label']()} info={m['proposition-create.fields.expertise.info']()}>
-                                    <Textarea name="expertise" id="expertise" bind:value={expertise} max={150} rows={4} />
-                                </FieldLabel>
+                            <RichTextEditor
+                                name="mandatesDescription"
+                                label={m['proposition-create.fields.mandates-description.label']()}
+                                info={m['proposition-create.fields.mandates-description.info']()}
+                                bind:value={mandatesDescription}
+                                required
+                                max={1500}
+                            />
+                        </div>
 
+                        <div class="space-y-6">
+                            <div class="grid gap-4">
                                 <FieldLabel
-                                    forId="associatedPropositions"
-                                    label={m['proposition-create.fields.associated-propositions.label']()}
-                                    info={m['proposition-create.fields.associated-propositions.info']()}
-                                >
-                                    <MultiSelect
-                                        placeholder={m['proposition-create.fields.associated-propositions.placeholder']()}
-                                        bind:selectedValues={associatedPropositionIds}
-                                        options={propositionOptions}
-                                    />
-                                </FieldLabel>
-                            </div>
-
-                            <div class="space-y-6">
-                                <FieldLabel
-                                    forId="rescueInitiators"
-                                    label={m['proposition-create.fields.rescue-initiators.label']()}
+                                    forId="clarificationDeadline"
+                                    label={m['proposition-create.fields.clarification-deadline.label']()}
                                     required
-                                    info={m['proposition-create.fields.rescue-initiators.info']()}
+                                    info={m['proposition-create.fields.clarification-deadline.info']()}
                                 >
-                                    <MultiSelect placeholder={m['proposition-create.fields.rescue-initiators.placeholder']()} bind:selectedValues={rescueInitiatorIds} options={userOptions} />
+                                    <Input type="date" name="clarificationDeadline" id="clarificationDeadline" bind:value={clarificationDeadline} required />
+                                </FieldLabel>
+                                <FieldLabel
+                                    forId="improvementDeadline"
+                                    label={m['proposition-create.fields.improvement-deadline.label']()}
+                                    required
+                                    info={m['proposition-create.fields.improvement-deadline.info']()}
+                                >
+                                    <Input type="date" name="improvementDeadline" id="improvementDeadline" bind:value={improvementDeadline} required />
+                                </FieldLabel>
+                                <FieldLabel forId="voteDeadline" label={m['proposition-create.fields.vote-deadline.label']()} required info={m['proposition-create.fields.vote-deadline.info']()}>
+                                    <Input type="date" name="voteDeadline" id="voteDeadline" bind:value={voteDeadline} required />
+                                </FieldLabel>
+                                <FieldLabel
+                                    forId="mandateDeadline"
+                                    label={m['proposition-create.fields.mandate-deadline.label']()}
+                                    required
+                                    info={m['proposition-create.fields.mandate-deadline.info']()}
+                                >
+                                    <Input type="date" name="mandateDeadline" id="mandateDeadline" bind:value={mandateDeadline} required />
+                                </FieldLabel>
+                                <FieldLabel
+                                    forId="evaluationDeadline"
+                                    label={m['proposition-create.fields.evaluation-deadline.label']()}
+                                    required
+                                    info={m['proposition-create.fields.evaluation-deadline.info']()}
+                                >
+                                    <Input type="date" name="evaluationDeadline" id="evaluationDeadline" bind:value={evaluationDeadline} required />
                                 </FieldLabel>
                             </div>
                         </div>
-                    {/if}
+                    </div>
+
+                    <div class="grid gap-6 lg:grid-cols-2" hidden={activeTab !== 'robustness'} aria-hidden={activeTab !== 'robustness'}>
+                        <div class="space-y-6">
+                            <FieldLabel forId="impacts" label={m['proposition-create.fields.impacts.label']()} required info={m['proposition-create.fields.impacts.info']()}>
+                                <Textarea name="impacts" id="impacts" bind:value={impacts} max={1500} rows={8} required />
+                            </FieldLabel>
+
+                            <FieldLabel forId="expertise" label={m['proposition-create.fields.expertise.label']()} info={m['proposition-create.fields.expertise.info']()}>
+                                <Textarea name="expertise" id="expertise" bind:value={expertise} max={150} rows={4} />
+                            </FieldLabel>
+
+                            <FieldLabel
+                                forId="associatedPropositions"
+                                label={m['proposition-create.fields.associated-propositions.label']()}
+                                info={m['proposition-create.fields.associated-propositions.info']()}
+                            >
+                                <MultiSelect
+                                    placeholder={m['proposition-create.fields.associated-propositions.placeholder']()}
+                                    bind:selectedValues={associatedPropositionIds}
+                                    options={propositionOptions}
+                                />
+                            </FieldLabel>
+                        </div>
+
+                        <div class="space-y-6">
+                            <FieldLabel
+                                forId="rescueInitiators"
+                                label={m['proposition-create.fields.rescue-initiators.label']()}
+                                required
+                                info={m['proposition-create.fields.rescue-initiators.info']()}
+                            >
+                                <MultiSelect placeholder={m['proposition-create.fields.rescue-initiators.placeholder']()} bind:selectedValues={rescueInitiatorIds} options={userOptions} />
+                            </FieldLabel>
+                        </div>
+                    </div>
 
                     <div class="flex flex-col gap-4 border-t border-white/40 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800/70">
                         <div class="text-sm text-muted-foreground">
