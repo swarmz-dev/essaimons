@@ -109,6 +109,8 @@
         class="justify-between rounded-2xl border-white/60 bg-white/85 px-4 py-2 text-sm font-medium text-foreground shadow-md backdrop-blur-xl hover:bg-white/90 disabled:opacity-70 dark:border-slate-800/70 dark:bg-slate-900/70"
         {disabled}
         onclick={() => (isOpen = !isOpen)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
     >
         <span class={selectedOptions.length === 0 ? 'text-muted-foreground' : ''}>
             {#if selectedOptions.length === 0}
@@ -135,7 +137,7 @@
                         bind:this={searchInput}
                     />
                 </div>
-                <div class="max-h-56 overflow-y-auto rounded-xl border border-white/40 bg-white/95 shadow-inner dark:border-slate-800/70 dark:bg-slate-900/80">
+                <div class="max-h-56 overflow-y-auto rounded-xl border border-white/40 bg-white/95 shadow-inner dark:border-slate-800/70 dark:bg-slate-900/80" role="listbox">
                     {#if filteredOptions.length === 0}
                         <p class="px-4 py-3 text-sm text-muted-foreground">{noResultsLabel}</p>
                     {:else}
@@ -156,6 +158,8 @@
                                                 }
                                                 toggleOption(option.value);
                                             }}
+                                            role="option"
+                                            aria-selected={selectedValues.includes(option.value)}
                                         >
                                             <div class="flex flex-col">
                                                 <span class="font-medium">{option.label}</span>

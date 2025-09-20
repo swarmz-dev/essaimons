@@ -28,11 +28,7 @@ export const actions: Actions = {
         let isSuccess = true;
 
         try {
-            const response = await locals.client.post('api/propositions', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            const response = await locals.client.post('api/propositions', formData);
             data = response.data;
         } catch (error: any) {
             isSuccess = false;

@@ -7,7 +7,7 @@
     import { Button } from '#lib/components/ui/button';
     import { Input } from '#lib/components/ui/input';
     import { Textarea } from '#lib/components/ui/textarea';
-    import { MarkdownEditor } from '#lib/components/ui/markdown';
+    import { RichTextEditor } from '#lib/components/ui/rich-text';
     import { MultiSelect, type MultiSelectOption } from '#lib/components/ui/multi-select';
     import { FieldLabel } from '#lib/components/forms';
     import { m } from '#lib/paraglide/messages';
@@ -25,8 +25,6 @@
     ] as const;
 
     const { data } = $props<{ data: SerializedPropositionBootstrap }>();
-
-    console.log('bootstrap data', data);
 
     const userOptions: MultiSelectOption[] = $derived(data.users.map((user: SerializedUserSummary) => ({ value: String(user.id), label: user.username })));
     const categoryOptions: MultiSelectOption[] = $derived(data.categories.map((category: SerializedPropositionCategory) => ({ value: category.id, label: category.name })));
@@ -272,7 +270,7 @@
                                     <MultiSelect placeholder={m['proposition-create.fields.categories.placeholder']()} bind:selectedValues={categoryIds} options={categoryOptions} />
                                 </FieldLabel>
 
-                                <MarkdownEditor
+                                <RichTextEditor
                                     name="smartObjectives"
                                     label={m['proposition-create.fields.smart-objectives.label']()}
                                     info={m['proposition-create.fields.smart-objectives.info']()}
@@ -294,7 +292,7 @@
                             </div>
 
                             <div class="space-y-6">
-                                <MarkdownEditor
+                                <RichTextEditor
                                     name="detailedDescription"
                                     label={m['proposition-create.fields.detailed-description.label']()}
                                     info={m['proposition-create.fields.detailed-description.info']()}
@@ -313,7 +311,7 @@
                                     <Textarea name="summary" id="summary" bind:value={summary} max={300} rows={6} required />
                                 </FieldLabel>
 
-                                <MarkdownEditor
+                                <RichTextEditor
                                     name="mandatesDescription"
                                     label={m['proposition-create.fields.mandates-description.label']()}
                                     info={m['proposition-create.fields.mandates-description.info']()}
