@@ -5,14 +5,14 @@
     import { onMount } from 'svelte';
 
     export type MultiSelectOption = {
-        value: string;
+        value: number;
         label: string;
         description?: string;
     };
 
     type Props = {
         options: MultiSelectOption[];
-        selectedValues?: string[];
+        selectedValues?: number[];
         placeholder?: string;
         maxSelections?: number;
         disabled?: boolean;

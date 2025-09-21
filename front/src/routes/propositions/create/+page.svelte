@@ -26,7 +26,7 @@
 
     const { data } = $props<{ data: SerializedPropositionBootstrap }>();
 
-    const userOptions: MultiSelectOption[] = $derived(data.users.map((user: SerializedUserSummary) => ({ value: String(user.id), label: user.username })));
+    const userOptions: MultiSelectOption[] = $derived(data.users.map((user: SerializedUserSummary) => ({ value: user.id, label: user.username })));
     const categoryOptions: MultiSelectOption[] = $derived(data.categories.map((category: SerializedPropositionCategory) => ({ value: category.id, label: category.name })));
     const propositionOptions: MultiSelectOption[] = $derived(data.propositions.map((proposal: SerializedPropositionSummary) => ({ value: proposal.id, label: proposal.title })));
 
@@ -40,9 +40,9 @@
     let mandatesDescription: string = $state('');
     let expertise: string = $state('');
 
-    let categoryIds: string[] = $state([]);
-    let associatedPropositionIds: string[] = $state([]);
-    let rescueInitiatorIds: string[] = $state([]);
+    let categoryIds: number[] = $state([]);
+    let associatedPropositionIds: number[] = $state([]);
+    let rescueInitiatorIds: number[] = $state([]);
 
     let clarificationDeadline: string = $state('');
     let improvementDeadline: string = $state('');
@@ -66,8 +66,6 @@
             evaluationDeadline.trim().length > 0 &&
             mandatesDescription.trim().length > 0
     );
-
-    const robustnessValid: boolean = $derived(impacts.trim().length > 0 && rescueInitiatorIds.length > 0);
 
     const schema = zod.object({
         title: zod.string().min(1).max(150),
@@ -140,6 +138,26 @@
         }
     };
 
+    const toNumberArray = (value: unknown): number[] => {
+        if (!value) return [];
+
+        if (Array.isArray(value)) {
+            return value
+                .flatMap((entry) => (entry ?? '').toString().split(','))
+                .map((entry) => Number(entry.trim()))
+                .filter((entry) => !isNaN(entry));
+        }
+
+        if (typeof value === 'string') {
+            return value
+                .split(',')
+                .map((entry) => Number(entry.trim()))
+                .filter((entry) => !isNaN(entry));
+        }
+
+        return [];
+    };
+
     $effect((): void => {
         const formError: FormError | undefined = page.data.formError;
 
@@ -161,9 +179,9 @@
         mandatesDescription = formData.mandatesDescription ?? mandatesDescription;
         expertise = formData.expertise ?? expertise;
 
-        categoryIds = toArray(formData.categoryIds);
-        associatedPropositionIds = toArray(formData.associatedPropositionIds);
-        rescueInitiatorIds = toArray(formData.rescueInitiatorIds);
+        categoryIds = toNumberArray(formData.categoryIds);
+        associatedPropositionIds = toNumberArray(formData.associatedPropositionIds);
+        rescueInitiatorIds = toNumberArray(formData.rescueInitiatorIds);
 
         clarificationDeadline = formData.clarificationDeadline ?? clarificationDeadline;
         improvementDeadline = formData.improvementDeadline ?? improvementDeadline;
@@ -173,28 +191,6 @@
 
         page.data.formError = undefined;
     });
-
-    const toArray = (value: unknown): string[] => {
-        if (!value) {
-            return [];
-        }
-
-        if (Array.isArray(value)) {
-            return value
-                .flatMap((entry) => (entry ?? '').toString().split(','))
-                .map((entry) => entry.trim())
-                .filter((entry) => entry.length > 0);
-        }
-
-        if (typeof value === 'string') {
-            return value
-                .split(',')
-                .map((entry) => entry.trim())
-                .filter((entry) => entry.length > 0);
-        }
-
-        return [];
-    };
 </script>
 
 <Meta
