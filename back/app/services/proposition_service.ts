@@ -57,14 +57,9 @@ export default class PropositionService {
                 throw new Error('messages.proposition.create.invalid-category');
             }
 
-            const rescueUsers: User[] = await this.userRepository.getRescueUsers(payload.rescueInitiatorIds, trx);
+            const rescueUsers: User[] = await this.userRepository.getRescueUsers(payload.rescueInitiatorIds, creator, trx);
             if (rescueUsers.length !== payload.rescueInitiatorIds.length) {
                 throw new Error('messages.proposition.create.invalid-rescue');
-            }
-
-            const uniqueRescueIds: string[] = rescueUsers.map((user: User): string => user.id);
-            if (uniqueRescueIds.includes(creator.id)) {
-                throw new Error('messages.proposition.create.rescue-cannot-include-creator');
             }
 
             const associatedIds: number[] = payload.associatedPropositionIds ?? [];
@@ -104,8 +99,8 @@ export default class PropositionService {
 
             proposition.useTransaction(trx);
 
-            await proposition.related('categories').attach(payload.categoryIds);
-            await proposition.related('rescueInitiators').attach(uniqueRescueIds);
+            await proposition.related('categories').attach(categories.map((category: PropositionCategory): string => category.id));
+            await proposition.related('rescueInitiators').attach(rescueUsers.map((user: User): string => user.id));
 
             const visualFile: any | undefined | null = files.visual;
             if (visualFile && visualFile.size > 0) {

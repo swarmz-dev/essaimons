@@ -105,7 +105,7 @@ export default class Proposition extends BaseModel {
 
     public summarySerialize(): SerializedPropositionSummary {
         return {
-            id: this.id,
+            id: this.frontId,
             title: this.title,
         };
     }

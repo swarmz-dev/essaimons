@@ -88,7 +88,6 @@
             "success": "Proposal \"{title}\" created successfully",
             "invalid-category": "One or more selected categories could not be found.",
             "invalid-rescue": "Some selected rescue initiators could not be found.",
-            "rescue-cannot-include-creator": "You cannot select yourself as a rescue initiator.",
             "invalid-association": "Some linked proposals could not be found.",
             "invalid-date": "One of the provided dates is not valid.",
             "error": {

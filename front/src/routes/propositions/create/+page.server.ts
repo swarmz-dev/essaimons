@@ -65,6 +65,7 @@ export const actions = {
 
         try {
             const { data: responseData } = await locals.client.post('api/propositions', jsonPayload);
+            console.log(responseData);
             data = responseData;
             isSuccess = true;
         } catch (error: any) {

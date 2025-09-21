@@ -68,7 +68,7 @@ export default class UserRepository extends BaseRepository<typeof User> {
         ]);
     }
 
-    public async getRescueUsers(rescueIds: number[], trx: TransactionClientContract): Promise<User[]> {
-        return this.Model.query({ client: trx }).whereIn('front_id', rescueIds);
+    public async getRescueUsers(rescueIds: number[], currentUser: User, trx: TransactionClientContract): Promise<User[]> {
+        return this.Model.query({ client: trx }).whereIn('front_id', rescueIds).whereNot('id', currentUser.id);
     }
 }

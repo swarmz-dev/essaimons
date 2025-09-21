@@ -75,9 +75,9 @@
         impacts: zod.string().min(1).max(1500),
         mandatesDescription: zod.string().min(1).max(1500),
         expertise: zod.string().max(150).optional(),
-        categoryIds: zod.array(zod.string()).min(1),
-        associatedPropositionIds: zod.array(zod.string()).optional(),
-        rescueInitiatorIds: zod.array(zod.string()).min(1),
+        categoryIds: zod.array(zod.number()).min(1),
+        associatedPropositionIds: zod.array(zod.number()).optional(),
+        rescueInitiatorIds: zod.array(zod.number()).min(1),
         clarificationDeadline: zod.string().min(1),
         improvementDeadline: zod.string().min(1),
         voteDeadline: zod.string().min(1),
@@ -104,6 +104,12 @@
             evaluationDeadline,
         }).success
     );
+
+    $effect(() => {
+        console.log([...categoryIds]);
+        console.log([...associatedPropositionIds]);
+        console.log([...rescueInitiatorIds]);
+    });
 
     const submitHandler: SubmitFunction = async () => {
         isSubmitting = true;
