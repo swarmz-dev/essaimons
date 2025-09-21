@@ -17,6 +17,10 @@ export default class UserRepository extends BaseRepository<typeof User> {
         super(User);
     }
 
+    public async getAllOtherUsers(currentUser: User): Promise<User[]> {
+        return this.Model.query().whereNot('id', currentUser.id);
+    }
+
     public async getAdminUsers(query: string, page: number, limit: number, sortBy: { field: keyof User['$attributes']; order: 'asc' | 'desc' }): Promise<PaginatedUsers> {
         const users: ModelPaginatorContract<User> = await this.Model.query()
             .if(query, (queryBuilder: ModelQueryBuilderContract<typeof User>): void => {

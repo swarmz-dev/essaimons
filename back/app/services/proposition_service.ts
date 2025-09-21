@@ -5,7 +5,6 @@ import Proposition from '#models/proposition';
 import PropositionCategory from '#models/proposition_category';
 import UserRepository from '#repositories/user_repository';
 import PropositionRepository from '#repositories/proposition_repository';
-import type { MultipartFileContract } from '@adonisjs/core/bodyparser';
 import File from '#models/file';
 import SlugifyService from '#services/slugify_service';
 import path from 'node:path';
@@ -31,13 +30,13 @@ interface CreatePropositionPayload {
     mandateDeadline: string;
     evaluationDeadline: string;
     categoryIds: number[];
-    associatedPropositionIds?: string[];
+    associatedPropositionIds?: number[];
     rescueInitiatorIds: number[];
 }
 
 interface CreatePropositionFiles {
-    visual?: MultipartFileContract | null;
-    attachments?: MultipartFileContract[];
+    visual?: any | null;
+    attachments?: any[];
 }
 
 @inject()
@@ -68,15 +67,11 @@ export default class PropositionService {
                 throw new Error('messages.proposition.create.rescue-cannot-include-creator');
             }
 
-            const associatedIds: string[] = payload.associatedPropositionIds?.filter((id: string): boolean => id !== '') ?? [];
-            if (associatedIds.includes('')) {
-                associatedIds.splice(associatedIds.indexOf(''), 1);
-            }
-            const uniqueAssociatedIds: string[] = [...new Set(associatedIds)];
-
-            if (uniqueAssociatedIds.length) {
-                const existingAssociations: Proposition[] = await this.propositionRepository.Model.query({ client: trx }).whereIn('id', uniqueAssociatedIds);
-                if (existingAssociations.length !== uniqueAssociatedIds.length) {
+            const associatedIds: number[] = payload.associatedPropositionIds ?? [];
+            let existingAssociations: Proposition[] = [];
+            if (associatedIds.length) {
+                existingAssociations = await this.propositionRepository.getExistingAssociatedPropositions(associatedIds, trx);
+                if (existingAssociations.length !== associatedIds.length) {
                     throw new Error('messages.proposition.create.invalid-association');
                 }
             }
@@ -112,7 +107,7 @@ export default class PropositionService {
             await proposition.related('categories').attach(payload.categoryIds);
             await proposition.related('rescueInitiators').attach(uniqueRescueIds);
 
-            const visualFile: MultipartFileContract | undefined | null = files.visual;
+            const visualFile: any | undefined | null = files.visual;
             if (visualFile && visualFile.size > 0) {
                 const visualFilePath: string = 'static/propositions/visuals';
                 await fsPromises.mkdir(app.makePath(visualFilePath), { recursive: true });
@@ -135,7 +130,7 @@ export default class PropositionService {
                 await proposition.save();
             }
 
-            const attachmentFiles: MultipartFileContract[] = files.attachments?.filter((attachment) => attachment && attachment.size > 0) ?? [];
+            const attachmentFiles: any[] = files.attachments?.filter((attachment) => attachment && attachment.size > 0) ?? [];
             if (attachmentFiles.length) {
                 const attachmentFolder: string = 'static/propositions/attachments';
                 const storedAttachments: File[] = [];
@@ -146,7 +141,7 @@ export default class PropositionService {
                     attachment.clientName = `${cuid()}-${this.slugifyService.slugify(attachment.clientName)}`;
                     await attachment.move(app.makePath(attachmentFolder), { overwrite: false });
 
-                    const stored = await File.create(
+                    const stored: File = await File.create(
                         {
                             name: attachment.clientName,
                             path: `${attachmentFolder}/${attachment.clientName}`,
@@ -160,30 +155,33 @@ export default class PropositionService {
                     storedAttachments.push(stored);
                 }
 
-                await proposition.related('attachments').attach(storedAttachments.map((file) => file.id));
+                await proposition.related('attachments').attach(storedAttachments.map((file: File): string => file.id));
             }
 
-            if (uniqueAssociatedIds.length) {
-                const associationRows = uniqueAssociatedIds.map((id: string) => ({
+            if (existingAssociations.length) {
+                const associationRows = existingAssociations.map((association: Proposition) => ({
                     proposition_id: proposition.id,
-                    related_proposition_id: id,
+                    related_proposition_id: association.id,
                 }));
-                const reciprocalRows = uniqueAssociatedIds.map((id: string) => ({
-                    proposition_id: id,
+                const reciprocalRows = existingAssociations.map((association: Proposition) => ({
+                    proposition_id: association.id,
                     related_proposition_id: proposition.id,
                 }));
 
-                await trx.from(this.associationsTableName()).insert(associationRows).onConflict(['proposition_id', 'related_proposition_id']).ignore();
-                await trx.from(this.associationsTableName()).insert(reciprocalRows).onConflict(['proposition_id', 'related_proposition_id']).ignore();
+                await trx.insertQuery().table(this.associationsTableName()).insert(associationRows);
+                await trx.insertQuery().table(this.associationsTableName()).insert(reciprocalRows);
             }
 
             await trx.commit();
 
-            await proposition.load('categories');
-            await proposition.load('rescueInitiators');
-            await proposition.load('associatedPropositions');
-            await proposition.load('attachments');
-            await proposition.load('creator');
+            await Promise.all([
+                proposition.load('categories'),
+                proposition.load('rescueInitiators'),
+                proposition.load('associatedPropositions'),
+                proposition.load('attachments'),
+                proposition.load('creator'),
+            ]);
+
             if (proposition.visualFileId) {
                 await proposition.load('visual');
             }

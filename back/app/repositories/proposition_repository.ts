@@ -7,7 +7,7 @@ export default class PropositionRepository extends BaseRepository<typeof Proposi
         super(Proposition);
     }
 
-    public async getAssociatedPropositions(associatedIds: number[], trx: TransactionClientContract): Promise<Proposition[]> {
+    public async getExistingAssociatedPropositions(associatedIds: number[], trx: TransactionClientContract): Promise<Proposition[]> {
         return this.Model.query({ client: trx }).whereIn('front_id', associatedIds);
     }
 }

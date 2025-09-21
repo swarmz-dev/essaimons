@@ -14,16 +14,16 @@ export default class PropositionCategory extends BaseModel {
     @column()
     declare name: string;
 
+    @manyToMany((): typeof Proposition => Proposition, {
+        pivotTable: 'proposition_category_pivot',
+    })
+    declare propositions: ManyToMany<typeof Proposition>;
+
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime;
 
     @column.dateTime({ autoCreate: true, autoUpdate: true })
     declare updatedAt: DateTime;
-
-    @manyToMany(() => Proposition, {
-        pivotTable: 'proposition_category_pivot',
-    })
-    declare propositions: ManyToMany<typeof Proposition>;
 
     public apiSerialize(): SerializedPropositionCategory {
         return {

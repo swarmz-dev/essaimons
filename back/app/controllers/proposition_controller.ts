@@ -9,13 +9,12 @@ import UserRepository from '#repositories/user_repository';
 import { createPropositionValidator } from '#validators/proposition';
 import type Proposition from '#models/proposition';
 import type User from '#models/user';
-import type { MultipartFileContract } from '@adonisjs/core/bodyparser';
 import { errors } from '@vinejs/vine';
-import type { SerializedPropositionBootstrap } from '#types/serialized/serialized_proposition_bootstrap';
 import PropositionCategory from '#models/proposition_category';
 import { SerializedUserSummary } from '#types/serialized/serialized_user_summary';
 import { SerializedPropositionSummary } from '#types/serialized/serialized_proposition_summary';
 import { SerializedPropositionCategory } from '#types/serialized/serialized_proposition_category';
+import type { MultipartFile } from '#types/multipart_file';
 
 @inject()
 export default class PropositionController {
@@ -30,9 +29,7 @@ export default class PropositionController {
         const [categories, propositions, users, rawCategoryCount] = await Promise.all([
             this.propositionCategoryRepository.all(),
             this.propositionRepository.all(),
-            this.userRepository.Model.query().if(user, (builder): void => {
-                builder.whereNot('id', (user as User).id);
-            }),
+            this.userRepository.getAllOtherUsers(user),
             PropositionCategory.query().count('* as total'),
         ]);
 
@@ -52,23 +49,42 @@ export default class PropositionController {
         const associatedPropositionIds: string[] = this.parseCsv(request.input('associatedPropositionIds'));
         const rescueInitiatorIds: number[] = this.parseNumberCsv(request.input('rescueInitiatorIds'));
 
-        const visual: MultipartFileContract | null = request.file('visual', {
+        const visual: MultipartFile | null = request.file('visual', {
             size: '5mb',
             extnames: ['png', 'jpg', 'jpeg', 'webp'],
-        });
+        }) as MultipartFile | null;
 
-        const attachments: MultipartFileContract[] = request.files('attachments', {
+        const rawAttachments = request.files('attachments', {
             size: '15mb',
             extnames: ['png', 'jpg', 'jpeg', 'webp', 'pdf', 'doc', 'docx', 'odt', 'ods'],
         });
+
+        const attachments: MultipartFile[] = (rawAttachments as unknown as any[]).map((file) => ({
+            clientName: file.clientName,
+            tmpPath: file.tmpPath,
+            extname: file.extname,
+            size: file.size,
+            type: file.type,
+            subtype: file.subtype,
+            isValid: file.isValid,
+            hasErrors: file.hasErrors,
+            errors:
+                file.errors?.map((e: any) => ({
+                    field: e.field,
+                    rule: e.rule,
+                    message: e.message,
+                })) ?? [],
+            move: file.move.bind(file),
+            delete: file.delete?.bind(file),
+        }));
 
         if (visual?.hasErrors) {
             return response.badRequest({ errors: visual.errors });
         }
 
-        const attachmentsErrors = attachments.filter((file) => file.hasErrors);
+        const attachmentsErrors: MultipartFile[] = attachments.filter((file: MultipartFile): boolean => file.hasErrors);
         if (attachmentsErrors.length) {
-            return response.badRequest({ errors: attachmentsErrors.flatMap((file) => file.errors ?? []) });
+            return response.badRequest({ errors: attachmentsErrors.flatMap((file: MultipartFile) => file.errors ?? []) });
         }
 
         try {
