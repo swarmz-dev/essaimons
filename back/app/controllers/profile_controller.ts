@@ -14,10 +14,8 @@ import { resetPasswordParamsValidator, resetPasswordValidator, sendResetPassword
 import path from 'node:path';
 import env from '#start/env';
 import { FileTypeEnum } from '#types/enum/file_type_enum';
-import cache from '@adonisjs/cache/services/main';
 import UserToken from '#models/user_token';
 import { UserTokenTypeEnum } from '#types/enum/user_token_type_enum';
-import type { SerializedUser } from '#types/serialized/serialized_user';
 
 @inject()
 export default class ProfileController {
@@ -31,14 +29,7 @@ export default class ProfileController {
 
     public async getProfile({ response, user }: HttpContext) {
         return response.ok({
-            user: await cache.getOrSet({
-                key: `user:${user.id}`,
-                tags: [`user:${user.id}`],
-                ttl: '1h',
-                factory: (): SerializedUser => {
-                    return user.apiSerialize();
-                },
-            }),
+            user: user.apiSerialize(),
         });
     }
 
@@ -128,14 +119,6 @@ export default class ProfileController {
             });
             await newProfilePicture.refresh();
             user.profilePictureId = newProfilePicture.id;
-
-            await cache.deleteByTag({ tags: [`user:${user.id}`, `admin-users`, `admin-user:${user.id}`] });
-            await cache.set({
-                key: `user-profile-picture:${user.id}`,
-                tags: [`user:${user.id}`],
-                ttl: '1h',
-                value: app.makePath(newProfilePicture.path),
-            });
         }
 
         await user.save();

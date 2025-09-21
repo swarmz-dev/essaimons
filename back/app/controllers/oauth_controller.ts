@@ -20,7 +20,6 @@ import UserTokenRepository from '#repositories/user_token_repository';
 import UserToken from '#models/user_token';
 import { DateTime } from 'luxon';
 import { UserTokenTypeEnum } from '#types/enum/user_token_type_enum';
-import cache from '@adonisjs/cache/services/main';
 
 @inject()
 export default class OauthController {
@@ -152,7 +151,6 @@ export default class OauthController {
             role: UserRoleEnum.USER,
         });
         await createdUser.refresh();
-        await cache.deleteByTag({ tags: ['not-friends', `admin-users`] });
 
         await UserToken.create({
             userId: createdUser.id,

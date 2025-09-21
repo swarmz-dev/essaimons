@@ -246,36 +246,6 @@
                     "description": "User profile picture (square image recommended)"
                 }
             }
-        },
-        "language": {
-            "title": "Languages",
-            "fields": {
-                "flag": "Flag",
-                "code": "Code",
-                "name": "Name",
-                "fallback": "Fallback"
-            },
-            "delete": {
-                "title": "Delete {languages}",
-                "text": [
-                    {
-                        "declarations": ["input languages", "input count", "local countPlural = count: plural"],
-                        "selectors": ["countPlural"],
-                        "match": {
-                            "countPlural=zero": "Are you sure you want to delete {languages} ? This action cannot be undone and will permanently remove the languages and all related data.",
-                            "countPlural=one": "Are you sure you want to delete {languages} ? This action cannot be undone and will permanently remove the language and all related data.",
-                            "countPlural=other": "Are you sure you want to delete {languages} ? This action cannot be undone and will permanently remove the languages and all related data."
-                        }
-                    }
-                ]
-            },
-            "new": {
-                "title": "New language",
-                "flag": {
-                    "title": "Flag",
-                    "description": "Language flag (SVG format width=\"24\" height=\"24\" viewBox=\"0 0 36 36\" recommended)"
-                }
-            }
         }
     }
 }
