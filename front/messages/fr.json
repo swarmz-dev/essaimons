@@ -246,36 +246,6 @@
                     "description": "Image de profil de l'utilisateur (format carré recommandé)"
                 }
             }
-        },
-        "language": {
-            "title": "Langues",
-            "fields": {
-                "flag": "Drapeau",
-                "code": "Code",
-                "name": "Nom",
-                "fallback": "Valeur par défaut"
-            },
-            "delete": {
-                "title": "Supprimer {languages}",
-                "text": [
-                    {
-                        "declarations": ["input languages", "input count", "local countPlural = count: plural"],
-                        "selectors": ["countPlural"],
-                        "match": {
-                            "countPlural=zero": "Êtes-vous sûr de vouloir supprimer {languages} ? Cette action est irréversible et supprimera définitivement les langues ainsi que toutes les données associées.",
-                            "countPlural=one": "Êtes-vous sûr de vouloir supprimer {languages} ? Cette action est irréversible et supprimera définitivement la langue ainsi que toutes les données associées.",
-                            "countPlural=other": "Êtes-vous sûr de vouloir supprimer {languages} ? Cette action est irréversible et supprimera définitivement les langues ainsi que toutes les données associées."
-                        }
-                    }
-                ]
-            },
-            "new": {
-                "title": "Nouvelle langue",
-                "flag": {
-                    "title": "Drapeau",
-                    "description": "Drapeau de la langue (format SVG width=\"24\" height=\"24\" viewBox=\"0 0 36 36\" recommandé)"
-                }
-            }
         }
     }
 }

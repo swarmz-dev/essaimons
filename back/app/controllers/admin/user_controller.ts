@@ -1,6 +1,5 @@
 import { inject } from '@adonisjs/core';
 import { HttpContext } from '@adonisjs/core/http';
-import cache from '@adonisjs/cache/services/main';
 import app from '@adonisjs/core/services/app';
 import File from '#models/file';
 import path from 'node:path';
@@ -12,8 +11,6 @@ import { createUserValidator, deleteUsersValidator, getAdminUserValidator, searc
 import User from '#models/user';
 import { cuid } from '@adonisjs/core/helpers';
 import SlugifyService from '#services/slugify_service';
-import type { PaginatedUsers } from '#types/paginated/paginated_users';
-import type { SerializedUser } from '#types/serialized/serialized_user';
 
 @inject()
 export default class AdminUserController {
@@ -26,19 +23,10 @@ export default class AdminUserController {
     public async getAll({ request, response }: HttpContext) {
         const { query, page, limit, sortBy: inputSortBy } = await request.validateUsing(searchAdminUsersValidator);
 
-        return response.ok(
-            await cache.getOrSet({
-                key: `admin-users:query:${query}:page:${page}:limit:${limit}:sortBy:${inputSortBy}`,
-                tags: [`admin-users`],
-                ttl: '1h',
-                factory: async (): Promise<PaginatedUsers> => {
-                    const [field, order] = inputSortBy.split(':');
-                    const sortBy = { field: field as keyof User['$attributes'], order: order as 'asc' | 'desc' };
+        const [field, order] = inputSortBy.split(':');
+        const sortBy = { field: field as keyof User['$attributes'], order: order as 'asc' | 'desc' };
 
-                    return await this.userRepository.getAdminUsers(query, page, limit, sortBy);
-                },
-            })
-        );
+        return response.ok(await this.userRepository.getAdminUsers(query, page, limit, sortBy));
     }
 
     public async delete({ request, response, i18n, user }: HttpContext) {
@@ -51,8 +39,6 @@ export default class AdminUserController {
                 statuses.map(
                     async (status: { isDeleted: boolean; isCurrentUser?: boolean; username?: string; frontId: number; id?: string }): Promise<{ id: number; message: string; isSuccess: boolean }> => {
                         if (status.isDeleted) {
-                            // TODO: Delete related friends, pending friends, blocked users & delete more granularly cache
-                            await cache.deleteByTag({ tags: ['admin-users', `admin-user:${status.id}`, 'not-friends', 'blocked-users', 'friends', 'pending-friends'] });
                             return { id: status.frontId, message: i18n.t(`messages.admin.user.delete.success`, { username: status.username }), isSuccess: true };
                         } else {
                             if (status.isCurrentUser) {
@@ -89,13 +75,9 @@ export default class AdminUserController {
 
         await user.refresh();
 
-        const promises: any[] = [cache.deleteByTag({ tags: ['not-friends', 'admin-users'] })];
-
         if (profilePicture) {
-            promises.push(user.load('profilePicture'));
+            await user.load('profilePicture');
         }
-
-        await Promise.all(promises);
 
         return response.created({ user: user.apiSerialize(), message: i18n.t('messages.admin.user.create.success', { email, username }) });
     }
@@ -113,7 +95,6 @@ export default class AdminUserController {
             }
             const profilePicture: File = await this.processInputProfilePicture(inputProfilePicture);
             user.profilePictureId = profilePicture.id;
-            await cache.delete({ key: `user-profile-picture:${user.id}` });
         }
 
         await user.save();
@@ -122,7 +103,7 @@ export default class AdminUserController {
             await user.profilePicture.delete();
         }
 
-        await Promise.all([user.load('profilePicture'), cache.deleteByTag({ tags: ['not-friends', 'blocked-users', 'friends', 'pending-friends', 'admin-users', `admin-user:${user.id}`] })]);
+        await user.load('profilePicture');
 
         return response.ok({ user: user.apiSerialize(), message: i18n.t('messages.admin.user.update.success', { username }) });
     }
@@ -131,16 +112,7 @@ export default class AdminUserController {
         const { frontId } = await getAdminUserValidator.validate(request.params());
         const user: User = await this.userRepository.firstOrFail({ frontId });
 
-        return response.ok(
-            await cache.getOrSet({
-                key: `admin-user:${user.id}`,
-                tags: [`admin-user:${user.id}`],
-                ttl: '1h',
-                factory: (): SerializedUser => {
-                    return user.apiSerialize();
-                },
-            })
-        );
+        return response.ok(user.apiSerialize());
     }
 
     private async processInputProfilePicture(inputProfilePicture: MultipartFile): Promise<File> {

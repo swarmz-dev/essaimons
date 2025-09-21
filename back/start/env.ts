@@ -49,16 +49,6 @@ export default await Env.create(new URL('../', import.meta.url), {
 
     /*
   |----------------------------------------------------------
-  | Variables for configuring redis package
-  |----------------------------------------------------------
-  */
-    REDIS_HOST: Env.schema.string({ format: 'host' }),
-    REDIS_PORT: Env.schema.number(),
-    REDIS_PASSWORD: Env.schema.string.optional(),
-    REDIS_DB: Env.schema.number(),
-
-    /*
-  |----------------------------------------------------------
   | Variables for configuring ally package
   |----------------------------------------------------------
   */
