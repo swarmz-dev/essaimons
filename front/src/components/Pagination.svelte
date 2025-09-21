@@ -12,11 +12,13 @@
 
     type Props = {
         paginatedObject: PaginatedObject;
-        containerElement?: Window | HTMLElement;
+        containerElement?: Window | HTMLElement | null;
         onChange: (page: number, limit: number) => void;
     };
 
-    let { paginatedObject, containerElement = window, onChange }: Props = $props();
+    const defaultContainer: Window | HTMLElement | null = typeof window !== 'undefined' ? window : null;
+
+    let { paginatedObject, containerElement = defaultContainer, onChange }: Props = $props();
 
     const canGoBack: boolean = $derived(paginatedObject.currentPage > paginatedObject.firstPage);
     const canGoForward: boolean = $derived(paginatedObject.currentPage < paginatedObject.lastPage);

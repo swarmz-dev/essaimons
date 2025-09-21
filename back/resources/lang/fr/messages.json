@@ -50,6 +50,12 @@
     "file": {
         "serve-status-profile-picture-file": {
             "error": "Photo de profil de l'utilisateur introuvable"
+        },
+        "serve-static-proposition-visual": {
+            "error": "Visuel de la proposition introuvable"
+        },
+        "serve-static-proposition-attachment": {
+            "error": "Pièce jointe introuvable"
         }
     },
     "oauth": {
@@ -93,6 +99,10 @@
             "error": {
                 "default": "Impossible de créer la proposition pour le moment. Veuillez réessayer plus tard."
             }
+        },
+        "show": {
+            "not-found": "La proposition demandée est introuvable.",
+            "invalid-id": "L'identifiant de proposition fourni est invalide."
         }
     }
 }

@@ -6,6 +6,7 @@ import File from '#models/file';
 import PropositionCategory from '#models/proposition_category';
 import type { SerializedProposition } from '#types/serialized/serialized_proposition';
 import type { SerializedPropositionSummary } from '#types/serialized/serialized_proposition_summary';
+import type { SerializedPropositionListItem } from '#types/serialized/serialized_proposition_list_item';
 import { SerializedUserSummary } from '#types/serialized/serialized_user_summary';
 import { SerializedPropositionCategory } from '#types/serialized/serialized_proposition_category';
 import { SerializedFile } from '#types/serialized/serialized_file';
@@ -107,6 +108,24 @@ export default class Proposition extends BaseModel {
         return {
             id: this.frontId,
             title: this.title,
+        };
+    }
+
+    public listSerialize(): SerializedPropositionListItem {
+        return {
+            id: this.frontId,
+            title: this.title,
+            summary: this.summary,
+            categories: (this.categories ?? []).map((category: PropositionCategory): SerializedPropositionCategory => category.apiSerialize()),
+            clarificationDeadline: this.clarificationDeadline?.toISODate() ?? '',
+            improvementDeadline: this.improvementDeadline?.toISODate() ?? '',
+            voteDeadline: this.voteDeadline?.toISODate() ?? '',
+            mandateDeadline: this.mandateDeadline?.toISODate() ?? '',
+            evaluationDeadline: this.evaluationDeadline?.toISODate() ?? '',
+            creator: this.creator ? this.creator.summarySerialize() : undefined,
+            visual: this.visual?.apiSerialize(),
+            createdAt: this.createdAt?.toString(),
+            updatedAt: this.updatedAt?.toString(),
         };
     }
 

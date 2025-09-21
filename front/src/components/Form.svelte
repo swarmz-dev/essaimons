@@ -8,7 +8,7 @@
     import { SendHorizontal } from '@lucide/svelte';
     import { Card, CardHeader, CardContent, CardFooter } from '#lib/components/ui/card/index';
     import { page } from '$app/state';
-    import type { PageDataError } from '../app';
+    import type { FormError, PageDataError } from '../app';
     import { showToast } from '#lib/services/toastService';
     import { cn } from '#lib/utils';
     import type { Snippet } from 'svelte';

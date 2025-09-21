@@ -14,6 +14,7 @@ import PropositionCategory from '#models/proposition_category';
 import { SerializedUserSummary } from '#types/serialized/serialized_user_summary';
 import { SerializedPropositionSummary } from '#types/serialized/serialized_proposition_summary';
 import { SerializedPropositionCategory } from '#types/serialized/serialized_proposition_category';
+import type { PaginatedPropositions } from '#types/paginated/paginated_propositions';
 import type { MultipartFile } from '#types/multipart_file';
 
 @inject()
@@ -24,6 +25,34 @@ export default class PropositionController {
         private readonly propositionCategoryRepository: PropositionCategoryRepository,
         private readonly userRepository: UserRepository
     ) {}
+
+    public async index({ request, response }: HttpContext): Promise<void> {
+        const rawSearch = request.input('search');
+        const search = typeof rawSearch === 'string' ? rawSearch.trim() : undefined;
+        const rawPage: number = Number(request.input('page', 1));
+        const rawLimit: number = Number(request.input('limit', 12));
+        const page: number = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+        const limit: number = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.floor(rawLimit) : 12;
+        const categoryIds: number[] = this.parseNumberCsv(request.input('categories'));
+
+        const paginated: PaginatedPropositions = await this.propositionRepository.searchWithFilters(
+            {
+                search: search && search.length ? search : undefined,
+                categoryIds: categoryIds.length ? categoryIds : undefined,
+            },
+            page,
+            limit
+        );
+
+        const categories: PropositionCategory[] = await this.propositionCategoryRepository.all();
+
+        return response.ok({
+            ...paginated,
+            filters: {
+                categories: categories.map((category: PropositionCategory): SerializedPropositionCategory => category.apiSerialize()),
+            },
+        });
+    }
 
     public async bootstrap({ response, user }: HttpContext): Promise<void> {
         const [categories, propositions, users, rawCategoryCount] = await Promise.all([
@@ -143,6 +172,30 @@ export default class PropositionController {
                 ...(app.inProduction || !errorDetails ? {} : { details: errorDetails }),
             });
         }
+    }
+
+    public async show({ request, response, i18n }: HttpContext): Promise<void> {
+        const frontIdParam = request.param('frontId');
+        const frontId: number = Number(frontIdParam);
+
+        if (!Number.isInteger(frontId) || frontId <= 0) {
+            return response.badRequest({ error: i18n.t('messages.proposition.show.invalid-id') });
+        }
+
+        const proposition: Proposition | null = await this.propositionRepository.findByFrontId(frontId, [
+            'categories',
+            'rescueInitiators',
+            'associatedPropositions',
+            'attachments',
+            'creator',
+            'visual',
+        ]);
+
+        if (!proposition) {
+            return response.notFound({ error: i18n.t('messages.proposition.show.not-found') });
+        }
+
+        return response.ok({ proposition: proposition.apiSerialize() });
     }
 
     private parseCsv(value: string | string[] | null | undefined): string[] {

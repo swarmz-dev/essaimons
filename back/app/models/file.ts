@@ -34,6 +34,7 @@ export default class File extends BaseModel {
 
     public apiSerialize(): SerializedFile {
         return {
+            id: this.id,
             name: this.name,
             path: this.path,
             extension: this.extension,

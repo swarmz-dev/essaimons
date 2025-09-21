@@ -20,7 +20,7 @@
         class?: string;
     };
 
-    let { options, selectedValues = $bindable<string[]>([]), placeholder = '', maxSelections, disabled = false, noResultsLabel = 'Aucun résultat', class: className }: Props = $props();
+    let { options, selectedValues = $bindable<number[]>([]), placeholder = '', maxSelections, disabled = false, noResultsLabel = 'Aucun résultat', class: className }: Props = $props();
 
     let query = $state('');
     let isOpen = $state(false);
@@ -32,7 +32,7 @@
     const canAddMore = $derived(!maxSelections || selectedValues.length < maxSelections);
     const filteredOptions = $derived(options.filter((option) => (normalizedQuery ? option.label.toLowerCase().includes(normalizedQuery) : true)));
 
-    const toggleOption = (value: string) => {
+    const toggleOption = (value: number) => {
         if (selectedValues.includes(value)) {
             selectedValues = selectedValues.filter((item) => item !== value);
             return;
@@ -46,7 +46,7 @@
         query = '';
     };
 
-    const removeOption = (value: string) => {
+    const removeOption = (value: number) => {
         selectedValues = selectedValues.filter((item) => item !== value);
     };
 

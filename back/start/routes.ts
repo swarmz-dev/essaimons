@@ -100,7 +100,9 @@ router
 
                 router
                     .group((): void => {
+                        router.get('/', [PropositionController, 'index']);
                         router.get('/bootstrap', [PropositionController, 'bootstrap']);
+                        router.get('/:frontId', [PropositionController, 'show']);
                         router.post('/', [PropositionController, 'create']);
                     })
                     .prefix('propositions');
@@ -108,6 +110,8 @@ router
                 router
                     .group((): void => {
                         router.get('/profile-picture/:userId', [FileController, 'serveStaticProfilePictureFile']);
+                        router.get('/propositions/visual/:propositionId', [FileController, 'serveStaticPropositionVisualFile']);
+                        router.get('/propositions/attachments/:fileId', [FileController, 'serveStaticPropositionAttachmentFile']);
                     })
                     .prefix('static');
             })

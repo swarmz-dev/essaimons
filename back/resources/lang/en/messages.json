@@ -50,6 +50,12 @@
     "file": {
         "serve-status-profile-picture-file": {
             "error": "User's profile picture not found"
+        },
+        "serve-static-proposition-visual": {
+            "error": "The proposal visual could not be found"
+        },
+        "serve-static-proposition-attachment": {
+            "error": "The proposal attachment could not be found"
         }
     },
     "oauth": {
@@ -93,6 +99,10 @@
             "error": {
                 "default": "The proposal could not be created at this time. Please try again later."
             }
+        },
+        "show": {
+            "not-found": "The requested proposal could not be found.",
+            "invalid-id": "The provided proposal identifier is invalid."
         }
     }
 }
