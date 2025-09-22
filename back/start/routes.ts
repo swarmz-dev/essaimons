@@ -102,7 +102,7 @@ router
                     .group((): void => {
                         router.get('/', [PropositionController, 'index']);
                         router.get('/bootstrap', [PropositionController, 'bootstrap']);
-                        router.get('/:frontId', [PropositionController, 'show']);
+                        router.get('/:id', [PropositionController, 'show']);
                         router.post('/', [PropositionController, 'create']);
                     })
                     .prefix('propositions');

@@ -26,8 +26,9 @@ export default class PropositionCategory extends BaseModel {
     declare updatedAt: DateTime;
 
     public apiSerialize(): SerializedPropositionCategory {
+        const publicId = this.frontId !== undefined && this.frontId !== null ? String(this.frontId) : this.id;
         return {
-            id: this.frontId,
+            id: publicId,
             name: this.name,
         };
     }

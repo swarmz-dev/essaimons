@@ -7,7 +7,39 @@ export default class PropositionCategoryRepository extends BaseRepository<typeof
         super(PropositionCategory);
     }
 
-    public async getMultipleCategories(categoryIds: number[], trx: TransactionClientContract): Promise<PropositionCategory[]> {
-        return this.Model.query({ client: trx }).whereIn('front_id', categoryIds);
+    public async getMultipleCategories(categoryIds: string[], trx: TransactionClientContract): Promise<PropositionCategory[]> {
+        const numericIds: number[] = [];
+        const uuidIds: string[] = [];
+
+        for (const rawId of categoryIds) {
+            const trimmed = rawId?.toString().trim();
+            if (!trimmed) continue;
+            const asNumber = Number(trimmed);
+            if (Number.isFinite(asNumber)) {
+                numericIds.push(Math.floor(asNumber));
+            } else {
+                uuidIds.push(trimmed);
+            }
+        }
+
+        if (numericIds.length === 0 && uuidIds.length === 0) {
+            return [];
+        }
+
+        const query = this.Model.query({ client: trx });
+        query.where((builder) => {
+            if (numericIds.length) {
+                builder.whereIn('front_id', numericIds);
+            }
+            if (uuidIds.length) {
+                if (numericIds.length) {
+                    builder.orWhereIn('id', uuidIds);
+                } else {
+                    builder.whereIn('id', uuidIds);
+                }
+            }
+        });
+
+        return query;
     }
 }

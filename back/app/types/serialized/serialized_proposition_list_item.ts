@@ -3,7 +3,7 @@ import type { SerializedUserSummary } from './serialized_user_summary.js';
 import type { SerializedFile } from './serialized_file.js';
 
 export type SerializedPropositionListItem = {
-    id: number;
+    id: string;
     title: string;
     summary: string;
     categories: SerializedPropositionCategory[];

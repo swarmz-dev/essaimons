@@ -35,11 +35,6 @@ export const actions = {
                 .map((item) => item.trim())
                 .filter(Boolean);
         };
-        const toNumericArray = (value: FormDataEntryValue | null): number[] =>
-            toArray(value)
-                .map((entry) => Number(entry))
-                .filter((num) => Number.isFinite(num));
-
         const jsonPayload = {
             title: toString(formData.get('title')),
             summary: toString(formData.get('summary')),
@@ -50,7 +45,7 @@ export const actions = {
             expertise: toString(formData.get('expertise')) || null,
             categoryIds: toArray(formData.get('categoryIds')),
             associatedPropositionIds: toArray(formData.get('associatedPropositionIds')),
-            rescueInitiatorIds: toNumericArray(formData.get('rescueInitiatorIds')),
+            rescueInitiatorIds: toArray(formData.get('rescueInitiatorIds')),
             clarificationDeadline: toString(formData.get('clarificationDeadline')),
             improvementDeadline: toString(formData.get('improvementDeadline')),
             voteDeadline: toString(formData.get('voteDeadline')),

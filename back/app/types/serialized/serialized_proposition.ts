@@ -4,7 +4,7 @@ import type { SerializedPropositionSummary } from './serialized_proposition_summ
 import type { SerializedUserSummary } from './serialized_user_summary.js';
 
 export type SerializedProposition = {
-    id: number;
+    id: string;
     title: string;
     summary: string;
     detailedDescription: string;

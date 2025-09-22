@@ -28,9 +28,33 @@
     const { data } = $props<{ data?: SerializedPropositionBootstrap }>();
     const bootstrap = $derived(data ?? EMPTY_DATA);
 
-    const userOptions: MultiSelectOption[] = $derived(bootstrap.users.map((user: SerializedUserSummary) => ({ value: user.id, label: user.username })));
-    const categoryOptions: MultiSelectOption[] = $derived(bootstrap.categories.map((category: SerializedPropositionCategory) => ({ value: category.id, label: category.name })));
-    const propositionOptions: MultiSelectOption[] = $derived(bootstrap.propositions.map((proposal: SerializedPropositionSummary) => ({ value: proposal.id, label: proposal.title })));
+    const toOptionValue = (value: unknown): string | undefined => {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+
+        const normalized = value.toString().trim();
+        return normalized.length ? normalized : undefined;
+    };
+
+    const userOptions: MultiSelectOption[] = $derived(
+        (bootstrap.users ?? []).flatMap((user: SerializedUserSummary) => {
+            const value = toOptionValue(user.id);
+            return value !== undefined ? [{ value, label: user.username }] : [];
+        })
+    );
+    const categoryOptions: MultiSelectOption[] = $derived(
+        (bootstrap.categories ?? []).flatMap((category: SerializedPropositionCategory) => {
+            const value = toOptionValue(category.id);
+            return value !== undefined ? [{ value, label: category.name }] : [];
+        })
+    );
+    const propositionOptions: MultiSelectOption[] = $derived(
+        (bootstrap.propositions ?? []).flatMap((proposal: SerializedPropositionSummary) => {
+            const value = toOptionValue(proposal.id);
+            return value !== undefined ? [{ value, label: proposal.title }] : [];
+        })
+    );
 
     let activeTab: (typeof tabs)[number]['id'] = $state(tabs[0].id);
 
@@ -42,14 +66,44 @@
     let mandatesDescription: string = $state('');
     let expertise: string = $state('');
 
-    let categoryIds: number[] = $state([]);
-    let associatedPropositionIds: number[] = $state([]);
-    let rescueInitiatorIds: number[] = $state([]);
+    let categoryIds: string[] = $state([]);
+    let associatedPropositionIds: string[] = $state([]);
+    let rescueInitiatorIds: string[] = $state([]);
+
+    let categoryIdsStrings: string[] = $state([]);
+    let associatedPropositionStrings: string[] = $state([]);
+    let rescueInitiatorStrings: string[] = $state([]);
+
+    const toIdentifierArray = (value: unknown): string[] => {
+        if (!value) return [];
+
+        const collect = (input: unknown): string[] => {
+            if (input === undefined || input === null) {
+                return [];
+            }
+            return input
+                .toString()
+                .split(',')
+                .map((entry) => entry.trim())
+                .filter((entry) => entry.length > 0);
+        };
+
+        const entries: string[] = Array.isArray(value) ? value.flatMap(collect) : collect(value);
+        const seen = new Set<string>();
+
+        return entries.filter((entry) => {
+            if (seen.has(entry)) {
+                return false;
+            }
+            seen.add(entry);
+            return true;
+        });
+    };
 
     $effect(() => {
-        if (categoryIds) {
-            console.debug('categoryIds updated', [...categoryIds]);
-        }
+        categoryIds = toIdentifierArray(categoryIdsStrings);
+        associatedPropositionIds = toIdentifierArray(associatedPropositionStrings);
+        rescueInitiatorIds = toIdentifierArray(rescueInitiatorStrings);
     });
 
     let clarificationDeadline: string = $state('');
@@ -83,9 +137,9 @@
         impacts: zod.string().min(1).max(1500),
         mandatesDescription: zod.string().min(1).max(1500),
         expertise: zod.string().max(150).optional(),
-        categoryIds: zod.array(zod.number()).min(1),
-        associatedPropositionIds: zod.array(zod.number()).optional(),
-        rescueInitiatorIds: zod.array(zod.number()).min(1),
+        categoryIds: zod.array(zod.string().trim().min(1)).min(1),
+        associatedPropositionIds: zod.array(zod.string().trim().min(1)).optional(),
+        rescueInitiatorIds: zod.array(zod.string().trim().min(1)).min(1),
         clarificationDeadline: zod.string().min(1),
         improvementDeadline: zod.string().min(1),
         voteDeadline: zod.string().min(1),
@@ -146,26 +200,6 @@
         }
     };
 
-    const toNumberArray = (value: unknown): number[] => {
-        if (!value) return [];
-
-        if (Array.isArray(value)) {
-            return value
-                .flatMap((entry) => (entry ?? '').toString().split(','))
-                .map((entry) => Number(entry.trim()))
-                .filter((entry) => !isNaN(entry));
-        }
-
-        if (typeof value === 'string') {
-            return value
-                .split(',')
-                .map((entry) => Number(entry.trim()))
-                .filter((entry) => !isNaN(entry));
-        }
-
-        return [];
-    };
-
     let hasHydratedFormError = $state(false);
 
     $effect((): void => {
@@ -195,9 +229,14 @@
         mandatesDescription = formData.mandatesDescription ?? mandatesDescription;
         expertise = formData.expertise ?? expertise;
 
-        categoryIds = toNumberArray(formData.categoryIds);
-        associatedPropositionIds = toNumberArray(formData.associatedPropositionIds);
-        rescueInitiatorIds = toNumberArray(formData.rescueInitiatorIds);
+        categoryIdsStrings = Array.isArray(formData.categoryIds) ? formData.categoryIds : (formData.categoryIds ?? '').toString().split(',').filter(Boolean);
+        associatedPropositionStrings = Array.isArray(formData.associatedPropositionIds)
+            ? formData.associatedPropositionIds
+            : (formData.associatedPropositionIds ?? '').toString().split(',').filter(Boolean);
+        rescueInitiatorStrings = Array.isArray(formData.rescueInitiatorIds) ? formData.rescueInitiatorIds : (formData.rescueInitiatorIds ?? '').toString().split(',').filter(Boolean);
+        categoryIds = toIdentifierArray(categoryIdsStrings);
+        associatedPropositionIds = toIdentifierArray(associatedPropositionStrings);
+        rescueInitiatorIds = toIdentifierArray(rescueInitiatorStrings);
 
         clarificationDeadline = formData.clarificationDeadline ?? clarificationDeadline;
         improvementDeadline = formData.improvementDeadline ?? improvementDeadline;
@@ -276,7 +315,7 @@
                             </FieldLabel>
 
                             <FieldLabel forId="categories" label={m['proposition-create.fields.categories.label']()} required info={m['proposition-create.fields.categories.info']()}>
-                                <MultiSelect placeholder={m['proposition-create.fields.categories.placeholder']()} bind:selectedValues={categoryIds} options={categoryOptions} />
+                                <MultiSelect placeholder={m['proposition-create.fields.categories.placeholder']()} bind:selectedValues={categoryIdsStrings} options={categoryOptions} />
                             </FieldLabel>
 
                             <RichTextEditor
@@ -386,7 +425,7 @@
                             >
                                 <MultiSelect
                                     placeholder={m['proposition-create.fields.associated-propositions.placeholder']()}
-                                    bind:selectedValues={associatedPropositionIds}
+                                    bind:selectedValues={associatedPropositionStrings}
                                     options={propositionOptions}
                                 />
                             </FieldLabel>
@@ -399,7 +438,7 @@
                                 required
                                 info={m['proposition-create.fields.rescue-initiators.info']()}
                             >
-                                <MultiSelect placeholder={m['proposition-create.fields.rescue-initiators.placeholder']()} bind:selectedValues={rescueInitiatorIds} options={userOptions} />
+                                <MultiSelect placeholder={m['proposition-create.fields.rescue-initiators.placeholder']()} bind:selectedValues={rescueInitiatorStrings} options={userOptions} />
                             </FieldLabel>
                         </div>
                     </div>
@@ -438,9 +477,9 @@
                         </div>
                     </div>
 
-                    <input type="hidden" name="categoryIds" value={categoryIds} />
-                    <input type="hidden" name="associatedPropositionIds" value={associatedPropositionIds} />
-                    <input type="hidden" name="rescueInitiatorIds" value={rescueInitiatorIds} />
+                    <input type="hidden" name="categoryIds" value={categoryIdsStrings.join(',')} />
+                    <input type="hidden" name="associatedPropositionIds" value={associatedPropositionStrings.join(',')} />
+                    <input type="hidden" name="rescueInitiatorIds" value={rescueInitiatorStrings.join(',')} />
                 </form>
             </div>
         </div>

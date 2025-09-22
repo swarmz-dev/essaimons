@@ -14,7 +14,7 @@ export const serveStaticLanguageFlagFileValidator = vine.compile(
 
 export const serveStaticPropositionVisualFileValidator = vine.compile(
     vine.object({
-        propositionId: vine.number().positive(),
+        propositionId: vine.string().trim().minLength(1),
     })
 );
 

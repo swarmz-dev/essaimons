@@ -1,4 +1,4 @@
 export type SerializedUserSummary = {
-    id: number;
+    id: string;
     username: string;
 };

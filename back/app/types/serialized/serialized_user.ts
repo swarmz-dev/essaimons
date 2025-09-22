@@ -2,7 +2,7 @@ import type { UserRoleEnum } from '../enum/user_role_enum.js';
 import type { SerializedFile } from './serialized_file.js';
 
 export type SerializedUser = {
-    id: number;
+    id: string;
     username: string;
     email: string;
     role: UserRoleEnum;

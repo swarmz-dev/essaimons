@@ -105,15 +105,17 @@ export default class Proposition extends BaseModel {
     declare updatedAt: DateTime;
 
     public summarySerialize(): SerializedPropositionSummary {
+        const publicId = this.frontId !== undefined && this.frontId !== null ? String(this.frontId) : this.id;
         return {
-            id: this.frontId,
+            id: publicId,
             title: this.title,
         };
     }
 
     public listSerialize(): SerializedPropositionListItem {
+        const publicId = this.frontId !== undefined && this.frontId !== null ? String(this.frontId) : this.id;
         return {
-            id: this.frontId,
+            id: publicId,
             title: this.title,
             summary: this.summary,
             categories: (this.categories ?? []).map((category: PropositionCategory): SerializedPropositionCategory => category.apiSerialize()),
@@ -130,8 +132,9 @@ export default class Proposition extends BaseModel {
     }
 
     public apiSerialize(): SerializedProposition {
+        const publicId = this.frontId !== undefined && this.frontId !== null ? String(this.frontId) : this.id;
         return {
-            id: this.frontId,
+            id: publicId,
             title: this.title,
             summary: this.summary,
             detailedDescription: this.detailedDescription,

@@ -1,4 +1,4 @@
 export type SerializedPropositionSummary = {
-    id: number;
+    id: string;
     title: string;
 };

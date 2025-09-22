@@ -59,7 +59,7 @@ export default class FileController {
     public async serveStaticPropositionVisualFile({ request, response, i18n }: HttpContext) {
         const { propositionId } = await serveStaticPropositionVisualFileValidator.validate(request.params());
 
-        const proposition = await this.propositionRepository.findByFrontId(propositionId, ['visual']);
+        const proposition = await this.propositionRepository.findByPublicId(propositionId, ['visual']);
 
         if (!proposition || !proposition.visual) {
             return response.notFound({ error: i18n.t('messages.file.serve-static-proposition-visual.error') });

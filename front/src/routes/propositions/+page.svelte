@@ -15,7 +15,7 @@
 
     type ActiveFilters = {
         search: string;
-        categories: number[];
+        categories: string[];
         view: 'card' | 'table';
         limit: number;
         page: number;
@@ -45,12 +45,12 @@
         return `${PUBLIC_API_BASE_URI}/api/static/propositions/visual/${item.id}`;
     };
 
-    const isSameSelection = (current: number[], source: number[]): boolean => {
+    const isSameSelection = (current: string[], source: string[]): boolean => {
         if (current.length !== source.length) {
             return false;
         }
-        const sortedCurrent = [...current].sort((a, b) => a - b);
-        const sortedSource = [...source].sort((a, b) => a - b);
+        const sortedCurrent = [...current].map((value) => value.toString()).sort();
+        const sortedSource = [...source].map((value) => value.toString()).sort();
         return sortedCurrent.every((value, index) => value === sortedSource[index]);
     };
 
@@ -68,7 +68,7 @@
         return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date);
     };
 
-    const updateQuery = async (updates: { search?: string; categories?: number[]; page?: number; limit?: number; view?: 'card' | 'table' }): Promise<void> => {
+    const updateQuery = async (updates: { search?: string; categories?: string[]; page?: number; limit?: number; view?: 'card' | 'table' }): Promise<void> => {
         const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
         const originalQuery = params.toString();
 
@@ -84,7 +84,10 @@
         if (updates.categories !== undefined) {
             params.delete('categories');
             if (updates.categories.length) {
-                updates.categories.filter((id) => Number.isFinite(id) && id > 0).forEach((id) => params.append('categories', String(id)));
+                updates.categories
+                    .map((id) => id?.toString().trim())
+                    .filter((id): id is string => Boolean(id))
+                    .forEach((id) => params.append('categories', id));
             }
         }
 

@@ -29,9 +29,9 @@ interface CreatePropositionPayload {
     voteDeadline: string;
     mandateDeadline: string;
     evaluationDeadline: string;
-    categoryIds: number[];
-    associatedPropositionIds?: number[];
-    rescueInitiatorIds: number[];
+    categoryIds: string[];
+    associatedPropositionIds?: string[];
+    rescueInitiatorIds: string[];
 }
 
 interface CreatePropositionFiles {
@@ -62,7 +62,7 @@ export default class PropositionService {
                 throw new Error('messages.proposition.create.invalid-rescue');
             }
 
-            const associatedIds: number[] = payload.associatedPropositionIds ?? [];
+            const associatedIds: string[] = payload.associatedPropositionIds ?? [];
             let existingAssociations: Proposition[] = [];
             if (associatedIds.length) {
                 existingAssociations = await this.propositionRepository.getExistingAssociatedPropositions(associatedIds, trx);

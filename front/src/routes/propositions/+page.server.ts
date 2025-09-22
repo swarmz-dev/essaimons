@@ -9,14 +9,26 @@ type PropositionsListResponse = PaginatedPropositions & {
 
 type ActiveFilters = {
     search: string;
-    categories: number[];
+    categories: string[];
     view: 'card' | 'table';
     limit: number;
     page: number;
 };
 
-const parseNumberArray = (values: string[]): number[] => {
-    return values.map((value) => Number(value)).filter((value) => Number.isFinite(value) && value > 0);
+const parseIdentifierArray = (values: string[]): string[] => {
+    const seen = new Set<string>();
+    const result: string[] = [];
+
+    for (const value of values) {
+        const trimmed = value?.toString().trim();
+        if (!trimmed || seen.has(trimmed)) {
+            continue;
+        }
+        seen.add(trimmed);
+        result.push(trimmed);
+    }
+
+    return result;
 };
 
 export const load: PageServerLoad = async ({ url, locals }) => {
@@ -32,7 +44,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
     const view: 'card' | 'table' = viewParam === 'table' ? 'table' : 'card';
 
     const categoryParams: string[] = url.searchParams.getAll('categories');
-    const categoryIds: number[] = parseNumberArray(categoryParams);
+    const categoryIds: string[] = parseIdentifierArray(categoryParams);
 
     const params: Record<string, string | number> = {
         page: sanitizedPage,

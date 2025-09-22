@@ -3,14 +3,14 @@ import type { SerializedProposition } from 'backend/types';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad<{ proposition: SerializedProposition }> = async ({ params, locals }) => {
-    const frontId = Number(params.id);
+    const propositionId = params.id?.toString().trim();
 
-    if (!Number.isFinite(frontId) || frontId <= 0) {
+    if (!propositionId) {
         throw error(404, 'Invalid proposition identifier');
     }
 
     try {
-        const response = await locals.client.get<{ proposition: SerializedProposition }>(`api/propositions/${frontId}`);
+        const response = await locals.client.get<{ proposition: SerializedProposition }>(`api/propositions/${propositionId}`);
         return {
             proposition: response.data.proposition,
         };

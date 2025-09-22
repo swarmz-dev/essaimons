@@ -83,14 +83,14 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
     public summarySerialize(): SerializedUserSummary {
         return {
-            id: this.frontId,
+            id: this.frontId !== undefined && this.frontId !== null ? String(this.frontId) : this.id,
             username: this.username,
         };
     }
 
     public apiSerialize(): SerializedUser {
         return {
-            id: this.frontId,
+            id: this.frontId !== undefined && this.frontId !== null ? String(this.frontId) : this.id,
             username: this.username,
             email: this.email,
             role: this.role,

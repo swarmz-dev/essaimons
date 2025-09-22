@@ -33,7 +33,7 @@ export default class PropositionController {
         const rawLimit: number = Number(request.input('limit', 12));
         const page: number = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
         const limit: number = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.floor(rawLimit) : 12;
-        const categoryIds: number[] = this.parseNumberCsv(request.input('categories'));
+        const categoryIds: string[] = this.parseCsv(request.input('categories'));
 
         const paginated: PaginatedPropositions = await this.propositionRepository.searchWithFilters(
             {
@@ -76,7 +76,7 @@ export default class PropositionController {
 
         const categoryIds: string[] = this.parseCsv(request.input('categoryIds'));
         const associatedPropositionIds: string[] = this.parseCsv(request.input('associatedPropositionIds'));
-        const rescueInitiatorIds: number[] = this.parseNumberCsv(request.input('rescueInitiatorIds'));
+        const rescueInitiatorIds: string[] = this.parseCsv(request.input('rescueInitiatorIds'));
 
         const visual: MultipartFile | null = request.file('visual', {
             size: '5mb',
@@ -175,14 +175,13 @@ export default class PropositionController {
     }
 
     public async show({ request, response, i18n }: HttpContext): Promise<void> {
-        const frontIdParam = request.param('frontId');
-        const frontId: number = Number(frontIdParam);
+        const publicIdParam = request.param('id');
 
-        if (!Number.isInteger(frontId) || frontId <= 0) {
+        if (!publicIdParam || typeof publicIdParam !== 'string' || publicIdParam.trim().length === 0) {
             return response.badRequest({ error: i18n.t('messages.proposition.show.invalid-id') });
         }
 
-        const proposition: Proposition | null = await this.propositionRepository.findByFrontId(frontId, [
+        const proposition: Proposition | null = await this.propositionRepository.findByPublicId(publicIdParam.trim(), [
             'categories',
             'rescueInitiators',
             'associatedPropositions',
@@ -224,11 +223,5 @@ export default class PropositionController {
                 seen.add(item);
                 return item;
             });
-    }
-
-    private parseNumberCsv(value: string | string[] | null | undefined): number[] {
-        return this.parseCsv(value)
-            .map((item) => Number(item))
-            .filter((item) => !Number.isNaN(item));
     }
 }
