@@ -27,14 +27,62 @@
     let searchInput = $state<HTMLInputElement | null>(null);
     let containerRef = $state<HTMLDivElement | null>(null);
 
+    const toNumberList = (value: unknown): number[] => {
+        if (Array.isArray(value)) {
+            return value.map((entry) => Number(entry)).filter((entry) => Number.isFinite(entry));
+        }
+
+        if (typeof value === 'string') {
+            return value
+                .split(',')
+                .map((entry) => Number(entry.trim()))
+                .filter((entry) => Number.isFinite(entry));
+        }
+
+        return [];
+    };
+
+    const arraysEqual = (a: number[], b: number[]): boolean => a.length === b.length && a.every((value, index) => value === b[index]);
+
+    let internalSelected = $state<number[]>(toNumberList(selectedValues));
+
+    $effect(() => {
+        const parsed = toNumberList(selectedValues);
+        if (!arraysEqual(parsed, internalSelected)) {
+            internalSelected = parsed;
+        }
+    });
+
     const normalizedQuery = $derived(query.trim().toLowerCase());
-    const selectedOptions = $derived(options.filter((option) => selectedValues.includes(option.value)));
-    const canAddMore = $derived(!maxSelections || selectedValues.length < maxSelections);
+    const selectedSet = $derived(new Set<number>(internalSelected));
+
+    const toNumeric = (value: number | string | undefined | null): number | undefined => {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+
+        const numeric = Number(value);
+        return Number.isFinite(numeric) ? numeric : undefined;
+    };
+
+    const isSelected = (value: number | string | undefined | null): boolean => {
+        const numeric = toNumeric(value);
+        return numeric !== undefined && selectedSet.has(numeric);
+    };
+
+    const selectedOptions = $derived(internalSelected.map((value) => options.find((option) => toNumeric(option?.value) === value)).filter((option): option is MultiSelectOption => Boolean(option)));
+    const canAddMore = $derived(!maxSelections || selectedSet.size < maxSelections);
     const filteredOptions = $derived(options.filter((option) => (normalizedQuery ? option.label.toLowerCase().includes(normalizedQuery) : true)));
 
-    const toggleOption = (value: number) => {
-        if (selectedValues.includes(value)) {
-            selectedValues = selectedValues.filter((item) => item !== value);
+    const updateSelection = (next: number[]): void => {
+        internalSelected = next;
+        selectedValues = [...next];
+        console.log('updateSelection', next);
+    };
+
+    const toggleOption = (value: number): void => {
+        if (selectedSet.has(value)) {
+            updateSelection(internalSelected.filter((item) => item !== value));
             return;
         }
 
@@ -42,12 +90,12 @@
             return;
         }
 
-        selectedValues = [...selectedValues, value];
+        updateSelection([...internalSelected, value]);
         query = '';
     };
 
-    const removeOption = (value: number) => {
-        selectedValues = selectedValues.filter((item) => item !== value);
+    const removeOption = (value: number): void => {
+        updateSelection(internalSelected.filter((item) => item !== value));
     };
 
     $effect(() => {
@@ -88,11 +136,15 @@
         {#if selectedOptions.length === 0}
             <span class="text-sm text-muted-foreground">{placeholder}</span>
         {:else}
-            {#each selectedOptions as option (option.value)}
+            {#each selectedOptions as option, index (option?.value ?? index)}
                 <button
                     type="button"
                     class="inline-flex items-center gap-2 rounded-xl bg-primary/15 px-3 py-1 text-sm font-medium text-primary transition hover:bg-primary/25"
-                    onclick={() => removeOption(option.value)}
+                    onclick={() => {
+                        const numeric = toNumeric(option?.value);
+                        if (numeric === undefined) return;
+                        removeOption(numeric);
+                    }}
                     {disabled}
                     aria-label={`Retirer ${option.label}`}
                 >
@@ -142,37 +194,41 @@
                         <p class="px-4 py-3 text-sm text-muted-foreground">{noResultsLabel}</p>
                     {:else}
                         <ul class="divide-y divide-white/40 text-sm dark:divide-slate-800/60">
-                            {#each filteredOptions as option (option.value)}
-                                {#key option.value}
-                                    <li>
-                                        <button
-                                            type="button"
-                                            class={cn(
-                                                'flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-foreground transition hover:bg-primary/10 hover:text-primary',
-                                                selectedValues.includes(option.value) ? 'bg-primary/5' : '',
-                                                !selectedValues.includes(option.value) && !canAddMore ? 'opacity-50 cursor-not-allowed' : ''
-                                            )}
-                                            onclick={() => {
-                                                if (!selectedValues.includes(option.value) && !canAddMore) {
-                                                    return;
-                                                }
-                                                toggleOption(option.value);
-                                            }}
-                                            role="option"
-                                            aria-selected={selectedValues.includes(option.value)}
-                                        >
-                                            <div class="flex flex-col">
-                                                <span class="font-medium">{option.label}</span>
-                                                {#if option.description}
-                                                    <span class="text-xs text-muted-foreground">{option.description}</span>
-                                                {/if}
-                                            </div>
-                                            {#if selectedValues.includes(option.value)}
-                                                <Check class="size-4" />
+                            {#each filteredOptions as option, index (option?.value ?? index)}
+                                <li>
+                                    <button
+                                        type="button"
+                                        class={cn(
+                                            'flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-foreground transition hover:bg-primary/10 hover:text-primary',
+                                            isSelected(option?.value) ? 'bg-primary/5' : '',
+                                            !isSelected(option?.value) && !canAddMore ? 'opacity-50 cursor-not-allowed' : ''
+                                        )}
+                                        onclick={() => {
+                                            const numeric = toNumeric(option?.value);
+                                            if (numeric === undefined) {
+                                                return;
+                                            }
+
+                                            if (!isSelected(numeric) && !canAddMore) {
+                                                return;
+                                            }
+
+                                            toggleOption(numeric);
+                                        }}
+                                        role="option"
+                                        aria-selected={isSelected(option?.value)}
+                                    >
+                                        <div class="flex flex-col">
+                                            <span class="font-medium">{option.label}</span>
+                                            {#if option.description}
+                                                <span class="text-xs text-muted-foreground">{option.description}</span>
                                             {/if}
-                                        </button>
-                                    </li>
-                                {/key}
+                                        </div>
+                                        {#if isSelected(option?.value)}
+                                            <Check class="size-4" />
+                                        {/if}
+                                    </button>
+                                </li>
                             {/each}
                         </ul>
                     {/if}

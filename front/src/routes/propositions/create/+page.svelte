@@ -24,11 +24,13 @@
         { id: 'robustness', title: m['proposition-create.tabs.robustness.title'](), description: m['proposition-create.tabs.robustness.description']() },
     ] as const;
 
-    const { data } = $props<{ data: SerializedPropositionBootstrap }>();
+    const EMPTY_DATA: SerializedPropositionBootstrap = { users: [], categories: [], propositions: [] };
+    const { data } = $props<{ data?: SerializedPropositionBootstrap }>();
+    const bootstrap = $derived(data ?? EMPTY_DATA);
 
-    const userOptions: MultiSelectOption[] = $derived(data.users.map((user: SerializedUserSummary) => ({ value: user.id, label: user.username })));
-    const categoryOptions: MultiSelectOption[] = $derived(data.categories.map((category: SerializedPropositionCategory) => ({ value: category.id, label: category.name })));
-    const propositionOptions: MultiSelectOption[] = $derived(data.propositions.map((proposal: SerializedPropositionSummary) => ({ value: proposal.id, label: proposal.title })));
+    const userOptions: MultiSelectOption[] = $derived(bootstrap.users.map((user: SerializedUserSummary) => ({ value: user.id, label: user.username })));
+    const categoryOptions: MultiSelectOption[] = $derived(bootstrap.categories.map((category: SerializedPropositionCategory) => ({ value: category.id, label: category.name })));
+    const propositionOptions: MultiSelectOption[] = $derived(bootstrap.propositions.map((proposal: SerializedPropositionSummary) => ({ value: proposal.id, label: proposal.title })));
 
     let activeTab: (typeof tabs)[number]['id'] = $state(tabs[0].id);
 
@@ -43,6 +45,12 @@
     let categoryIds: number[] = $state([]);
     let associatedPropositionIds: number[] = $state([]);
     let rescueInitiatorIds: number[] = $state([]);
+
+    $effect(() => {
+        if (categoryIds) {
+            console.debug('categoryIds updated', [...categoryIds]);
+        }
+    });
 
     let clarificationDeadline: string = $state('');
     let improvementDeadline: string = $state('');
@@ -105,12 +113,6 @@
         }).success
     );
 
-    $effect(() => {
-        console.log([...categoryIds]);
-        console.log([...associatedPropositionIds]);
-        console.log([...rescueInitiatorIds]);
-    });
-
     const submitHandler: SubmitFunction = async () => {
         isSubmitting = true;
         return async ({ result, update }) => {
@@ -164,12 +166,20 @@
         return [];
     };
 
+    let hasHydratedFormError = $state(false);
+
     $effect((): void => {
+        if (hasHydratedFormError) {
+            return;
+        }
+
         const formError: FormError | undefined = page.data.formError;
 
         if (!formError) {
             return;
         }
+
+        hasHydratedFormError = true;
 
         formError.errors.forEach((error: PageDataError) => {
             showToast(error.message, error.type);
@@ -194,8 +204,6 @@
         voteDeadline = formData.voteDeadline ?? voteDeadline;
         mandateDeadline = formData.mandateDeadline ?? mandateDeadline;
         evaluationDeadline = formData.evaluationDeadline ?? evaluationDeadline;
-
-        page.data.formError = undefined;
     });
 </script>
 
@@ -218,7 +226,7 @@
         <div class="rounded-3xl border border-white/45 bg-white/80 p-4 shadow-2xl backdrop-blur-2xl dark:border-slate-800/80 dark:bg-slate-950/75">
             <div class="flex flex-col gap-6">
                 <nav class="grid gap-3 sm:grid-cols-3">
-                    {#each tabs as tab}
+                    {#each tabs as tab (tab.id)}
                         <button
                             type="button"
                             class={cn(
