@@ -75,7 +75,8 @@
     },
     "menu": {
         "admin": "Admin",
-        "source-code": "Code source"
+        "source-code": "Code source",
+        "open": "Ouvrir la navigation"
     },
     "footer": {
         "navigation": "Navigation",
@@ -353,96 +354,96 @@
             "concretization-hint": "Renseignez le cadre général avant de passer aux aspects collaboratifs.",
             "horizontality-hint": "Documentez le contexte partagé, les délais et les mandatures associées.",
             "robustness-hint": "Analysez les impacts, les expertises nécessaires et les liens avec d’autres propositions."
+        }
+    },
+    "proposition-list": {
+        "title": "Consulter les propositions",
+        "menu": "Propositions",
+        "introduction": "Filtrez, recherchez et explorez les propositions publiées pour préparer vos lectures ou vos temps collectifs.",
+        "meta": {
+            "title": "Consulter les propositions – Essaimons-V1",
+            "description": "Parcourez les propositions disponibles, appliquez des filtres par catégories et ouvrez chaque fiche détaillée pour préparer vos échanges.",
+            "keywords": "propositions, recherche, filtres, Essaimons-V1, consultation"
         },
-        "proposition-list": {
-            "title": "Consulter les propositions",
-            "menu": "Propositions",
-            "introduction": "Filtrez, recherchez et explorez les propositions publiées pour préparer vos lectures ou vos temps collectifs.",
-            "meta": {
-                "title": "Consulter les propositions – Essaimons-V1",
-                "description": "Parcourez les propositions disponibles, appliquez des filtres par catégories et ouvrez chaque fiche détaillée pour préparer vos échanges.",
-                "keywords": "propositions, recherche, filtres, Essaimons-V1, consultation"
+        "search": {
+            "placeholder": "Rechercher une proposition"
+        },
+        "view": {
+            "card": "Vue cartes",
+            "table": "Vue tableau"
+        },
+        "filters": {
+            "categories": {
+                "placeholder": "Filtrer par catégories"
             },
-            "search": {
-                "placeholder": "Rechercher une proposition"
-            },
-            "view": {
-                "card": "Vue cartes",
-                "table": "Vue tableau"
-            },
-            "filters": {
-                "categories": {
-                    "placeholder": "Filtrer par catégories"
-                },
-                "reset": "Réinitialiser les filtres"
-            },
-            "visual": {
-                "alt": "Visuel de la proposition {title}",
-                "placeholder": "Aucun visuel disponible"
-            },
-            "actions": {
-                "view": "Voir la proposition"
-            },
-            "dates": {
-                "empty": "Non renseignée",
+            "reset": "Réinitialiser les filtres"
+        },
+        "visual": {
+            "alt": "Visuel de la proposition {title}",
+            "placeholder": "Aucun visuel disponible"
+        },
+        "actions": {
+            "view": "Voir la proposition"
+        },
+        "dates": {
+            "empty": "Non renseignée",
+            "vote": "Vote",
+            "mandate": "Mandat"
+        },
+        "table": {
+            "columns": {
+                "title": "Titre",
+                "summary": "Résumé",
+                "categories": "Catégories",
                 "vote": "Vote",
-                "mandate": "Mandat"
-            },
-            "table": {
-                "columns": {
-                    "title": "Titre",
-                    "summary": "Résumé",
-                    "categories": "Catégories",
-                    "vote": "Vote",
-                    "updated": "Mise à jour"
-                }
-            },
-            "empty": "Aucune proposition ne correspond à votre recherche."
-        },
-        "proposition-detail": {
-            "meta": {
-                "title": "Proposition {title} – Essaimons-V1",
-                "description": "Découvrez la proposition \"{summary}\" : objectifs, impacts, mandats et documents associés pour faciliter votre lecture hors ligne.",
-                "keywords": "proposition, détail, Essaimons-V1, impacts, mandats"
-            },
-            "actions": {
-                "back": "Retour à la liste",
-                "print": "Imprimer",
-                "download": "Télécharger"
-            },
-            "visual": {
-                "alt": "Visuel de la proposition {title}"
-            },
-            "labels": {
-                "creator": "Créateur·ice",
-                "created": "Créée le",
                 "updated": "Mise à jour"
-            },
-            "sections": {
-                "timeline": "Échéancier",
-                "description": "Description détaillée",
-                "objectives": "Objectifs SMART",
-                "impacts": "Impacts",
-                "mandates": "Mandats",
-                "expertise": "Expertises à mobiliser",
-                "rescue": "Initiateurs de secours",
-                "associated": "Propositions associées",
-                "attachments": "Pièces jointes"
-            },
-            "dates": {
-                "clarification": "Clarification",
-                "improvement": "Amélioration",
-                "vote": "Vote",
-                "mandate": "Mandat",
-                "evaluation": "Évaluation",
-                "empty": "Non renseignée"
-            },
-            "empty": {
-                "expertise": "Aucune expertise complémentaire indiquée.",
-                "rescue": "Aucun initiateur de secours n'a été ajouté.",
-                "associated": "Aucune autre proposition liée.",
-                "attachments": "Aucune pièce jointe disponible."
             }
+        },
+        "empty": "Aucune proposition ne correspond à votre recherche."
+    },
+    "proposition-detail": {
+        "meta": {
+            "title": "Proposition {title} – Essaimons-V1",
+            "description": "Découvrez la proposition \"{summary}\" : objectifs, impacts, mandats et documents associés pour faciliter votre lecture hors ligne.",
+            "keywords": "proposition, détail, Essaimons-V1, impacts, mandats"
+        },
+        "actions": {
+            "back": "Retour à la liste",
+            "print": "Imprimer",
+            "download": "Télécharger"
+        },
+        "visual": {
+            "alt": "Visuel de la proposition {title}"
+        },
+        "labels": {
+            "creator": "Créateur·ice",
+            "created": "Créée le",
+            "updated": "Mise à jour"
+        },
+        "sections": {
+            "timeline": "Échéancier",
+            "description": "Description détaillée",
+            "objectives": "Objectifs SMART",
+            "impacts": "Impacts",
+            "mandates": "Mandats",
+            "expertise": "Expertises à mobiliser",
+            "rescue": "Initiateurs de secours",
+            "associated": "Propositions associées",
+            "attachments": "Pièces jointes"
+        },
+        "dates": {
+            "clarification": "Clarification",
+            "improvement": "Amélioration",
+            "vote": "Vote",
+            "mandate": "Mandat",
+            "evaluation": "Évaluation",
+            "empty": "Non renseignée"
+        },
+        "empty": {
+            "expertise": "Aucune expertise complémentaire indiquée.",
+            "rescue": "Aucun initiateur de secours n'a été ajouté.",
+            "associated": "Aucune autre proposition liée.",
+            "attachments": "Aucune pièce jointe disponible."
         }
     }
 }

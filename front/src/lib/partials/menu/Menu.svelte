@@ -4,6 +4,7 @@
     import { profile } from '#lib/stores/profileStore';
     import Theme from '#components/Theme.svelte';
     import FlagMenu from '#lib/partials/menu/FlagMenu.svelte';
+    import FloatingSidebarToggle from '#lib/partials/menu/FloatingSidebarToggle.svelte';
     import { Link } from '#lib/components/ui/link';
     import { page } from '$app/state';
     import { cn } from '#lib/utils';
@@ -68,7 +69,7 @@
                         </Link>
                         <SidebarTrigger
                             bind:ref={triggerButtonRef}
-                            class="flex size-10 items-center justify-center rounded-full border border-transparent bg-white/90 text-foreground shadow-sm transition hover:border-primary/50 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:hidden dark:bg-slate-900"
+                            class="flex size-10 items-center justify-center rounded-full border border-transparent bg-white/90 text-foreground shadow-sm transition hover:border-primary/50 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40 dark:bg-slate-900"
                         />
                     </div>
 
@@ -109,7 +110,7 @@
                 <div class="flex items-center justify-between gap-4 rounded-full border border-sidebar-border/50 bg-white/85 px-4 py-3 shadow-xl backdrop-blur-2xl dark:bg-slate-950/80">
                     <div class="flex flex-1 items-center gap-3">
                         <SidebarTrigger
-                            class="inline-flex size-11 items-center justify-center rounded-full border border-transparent bg-white/90 text-foreground shadow-md transition hover:border-primary/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:hidden dark:bg-slate-900"
+                            class="inline-flex size-11 items-center justify-center rounded-full border border-transparent bg-white/90 text-foreground shadow-md transition hover:border-primary/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40 dark:bg-slate-900"
                         />
 
                         {#if $profile}
@@ -143,4 +144,6 @@
             {@render children()}
         </div>
     </SidebarInset>
+
+    <FloatingSidebarToggle />
 </SidebarProvider>

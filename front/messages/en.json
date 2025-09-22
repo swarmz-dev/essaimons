@@ -75,7 +75,8 @@
     },
     "menu": {
         "admin": "Admin",
-        "source-code": "Source code"
+        "source-code": "Source code",
+        "open": "Open navigation"
     },
     "footer": {
         "navigation": "Navigation",
