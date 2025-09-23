@@ -2,15 +2,7 @@ import { HttpContext } from '@adonisjs/core/http';
 import app from '@adonisjs/core/services/app';
 import UserRepository from '#repositories/user_repository';
 import User from '#models/user';
-import {
-    serveStaticProfilePictureFileValidator,
-    serveStaticLanguageFlagFileValidator,
-    serveStaticPropositionVisualFileValidator,
-    serveStaticPropositionAttachmentFileValidator,
-} from '#validators/file';
-import cache from '@adonisjs/cache/services/main';
-import LanguageRepository from '#repositories/language_repository';
-import Language from '#models/language';
+import { serveStaticProfilePictureFileValidator, serveStaticPropositionVisualFileValidator, serveStaticPropositionAttachmentFileValidator } from '#validators/file';
 import PropositionRepository from '#repositories/proposition_repository';
 import File from '#models/file';
 import { FileTypeEnum } from '#types/enum/file_type_enum';
@@ -19,7 +11,6 @@ import Proposition from '#models/proposition';
 export default class FileController {
     constructor(
         private readonly userRepository: UserRepository,
-        private readonly languageRepository: LanguageRepository,
         private readonly propositionRepository: PropositionRepository
     ) {}
 
@@ -38,23 +29,6 @@ export default class FileController {
                 return response.notFound({ error: i18n.t('messages.file.serve-status-profile-picture-file.error') });
             }
         }
-    }
-
-    public async serveStaticLanguageFlagFile({ request, response }: HttpContext) {
-        const { languageCode } = await serveStaticLanguageFlagFileValidator.validate(request.params());
-
-        const filePath: string = await cache.getOrSet({
-            key: `language-flag:${languageCode}`,
-            tags: [`language:${languageCode}`],
-            ttl: '1h',
-            factory: async (): Promise<string> => {
-                const language: Language = await this.languageRepository.firstOrFail({ code: languageCode });
-
-                return app.makePath(language.flag.path);
-            },
-        });
-
-        return response.download(filePath);
     }
 
     public async serveStaticPropositionVisualFile({ request, response, i18n }: HttpContext) {

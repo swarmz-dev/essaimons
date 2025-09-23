@@ -6,12 +6,6 @@ export const serveStaticProfilePictureFileValidator = vine.compile(
     })
 );
 
-export const serveStaticLanguageFlagFileValidator = vine.compile(
-    vine.object({
-        languageCode: vine.string().fixedLength(2).toLowerCase(),
-    })
-);
-
 export const serveStaticPropositionVisualFileValidator = vine.compile(
     vine.object({
         propositionId: vine.string().trim().minLength(1),
