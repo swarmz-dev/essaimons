@@ -29,22 +29,10 @@ router
                 // OAuth routes
                 router
                     .group((): void => {
-                        router.get('/', [OauthController, 'github']);
-                        router.get('/callback', [OauthController, 'githubCallback']);
-                    })
-                    .prefix('github');
-                router
-                    .group((): void => {
                         router.get('/', [OauthController, 'discord']);
                         router.get('/callback', [OauthController, 'discordCallback']);
                     })
                     .prefix('discord');
-                router
-                    .group((): void => {
-                        router.get('/', [OauthController, 'google']);
-                        router.get('/callback', [OauthController, 'googleCallback']);
-                    })
-                    .prefix('google');
 
                 router.post('/confirm/:provider/:token', [OauthController, 'confirmOauthConnection']);
             })

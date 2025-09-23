@@ -1,7 +1,5 @@
 import { HttpContext } from '@adonisjs/core/http';
-import { GithubDriver } from '@adonisjs/ally/drivers/github';
 import { DiscordDriver } from '@adonisjs/ally/drivers/discord';
-import { GoogleDriver } from '@adonisjs/ally/drivers/google';
 import FileService from '#services/file_service';
 import { inject } from '@adonisjs/core';
 import app from '@adonisjs/core/services/app';
@@ -30,20 +28,6 @@ export default class OauthController {
         private readonly stringService: StringService
     ) {}
 
-    public async github({ ally }: HttpContext): Promise<void> {
-        return ally.use('github').redirect();
-    }
-
-    public async githubCallback({ ally, response, i18n }: HttpContext) {
-        const client: GithubDriver = ally.use('github');
-        const { error, token } = await this.handleCallback(client, i18n);
-        if (error) {
-            return response.badRequest({ error });
-        }
-
-        return response.redirect(`${env.get('FRONT_URI')}/en/oauth?token=${token}&provider=github`);
-    }
-
     public async discord({ ally }: HttpContext): Promise<void> {
         return ally.use('discord').redirect();
     }
@@ -56,20 +40,6 @@ export default class OauthController {
         }
 
         return response.redirect(`${env.get('FRONT_URI')}/en/oauth?token=${token}&provider=discord`);
-    }
-
-    public async google({ ally }: HttpContext): Promise<void> {
-        return ally.use('google').redirect();
-    }
-
-    public async googleCallback({ ally, response, i18n }: HttpContext) {
-        const client: GoogleDriver = ally.use('google');
-        const { error, token } = await this.handleCallback(client, i18n);
-        if (error) {
-            return response.badRequest({ error });
-        }
-
-        return response.redirect(`${env.get('FRONT_URI')}/en/oauth?token=${token}&provider=google`);
     }
 
     public async confirmOauthConnection({ request, response, i18n }: HttpContext) {
@@ -95,7 +65,7 @@ export default class OauthController {
         });
     }
 
-    private async handleCallback(client: GithubDriver | DiscordDriver | GoogleDriver, i18n: I18n): Promise<{ error?: string; token?: string }> {
+    private async handleCallback(client: DiscordDriver, i18n: I18n): Promise<{ error?: string; token?: string }> {
         // User has denied access by canceling the login flow
         if (client.accessDenied()) {
             return { error: i18n.t('messages.oauth.callback.error.access-denied') };
