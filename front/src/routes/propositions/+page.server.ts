@@ -8,7 +8,7 @@ type PropositionsListResponse = PaginatedPropositions & {
 };
 
 type ActiveFilters = {
-    search: string;
+    query: string;
     categories: string[];
     view: 'card' | 'table';
     limit: number;
@@ -32,15 +32,15 @@ const parseIdentifierArray = (values: string[]): string[] => {
 };
 
 export const load: PageServerLoad = async ({ url, locals }) => {
-    const rawSearch: string = url.searchParams.get('search') ?? '';
-    const search: string = rawSearch.trim();
+    const rawQuery: string = url.searchParams.get('query') ?? '';
+    const query: string = rawQuery.trim();
 
     const rawPage: number = Number(url.searchParams.get('page') ?? '1');
     const rawLimit: number = Number(url.searchParams.get('limit') ?? '12');
     const sanitizedPage: number = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
     const sanitizedLimit: number = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.floor(rawLimit) : 12;
 
-    const viewParam = url.searchParams.get('view');
+    const viewParam: string | null = url.searchParams.get('view');
     const view: 'card' | 'table' = viewParam === 'table' ? 'table' : 'card';
 
     const categoryParams: string[] = url.searchParams.getAll('categories');
@@ -51,8 +51,8 @@ export const load: PageServerLoad = async ({ url, locals }) => {
         limit: sanitizedLimit,
     };
 
-    if (search.length) {
-        params.search = search;
+    if (query.length) {
+        params.search = query;
     }
 
     if (categoryIds.length) {
@@ -60,7 +60,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
     }
 
     const buildActiveFilters = (response?: PropositionsListResponse): ActiveFilters => ({
-        search,
+        query,
         categories: [...categoryIds],
         view,
         limit: response?.limit ?? sanitizedLimit,
@@ -68,8 +68,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
     });
 
     try {
-        const response = await locals.client.get<PropositionsListResponse>('api/propositions', { params });
-        const data = response.data;
+        const { data } = await locals.client.get<PropositionsListResponse>('api/propositions', { params });
 
         return {
             ...data,

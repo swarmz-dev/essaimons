@@ -13,10 +13,10 @@ export const actions: Actions = {
         let data: any;
         let isSuccess: boolean = true;
 
-        const bypassLogin = process.env.TEST_LOGIN_BYPASS === 'true';
+        const bypassLogin: boolean = process.env.TEST_LOGIN_BYPASS === 'true';
 
         if (bypassLogin) {
-            const now = new Date().toISOString();
+            const now: string = new Date().toISOString();
             data = {
                 message: 'Connexion réussie (mode test)',
                 user: {
@@ -68,9 +68,9 @@ export const actions: Actions = {
             cookies.delete('previousPathName', { path: '/' });
 
             const normalizedPath: string = normalizePath(previousPathName);
-            const hasPath = normalizedPath.length > 0;
-            const separator = hasPath && normalizedPath.includes('?') ? '&' : '?';
-            const location = hasPath ? `/${locale}${normalizedPath}${separator}from_login=1` : `/${locale}?from_login=1`;
+            const hasPath: boolean = normalizedPath.length > 0;
+            const separator: '?' | '&' = hasPath && normalizedPath.includes('?') ? '&' : '?';
+            const location: string = hasPath ? `/${locale}${normalizedPath}${separator}from_login=1` : `/${locale}?from_login=1`;
 
             return flashRedirect(
                 303,

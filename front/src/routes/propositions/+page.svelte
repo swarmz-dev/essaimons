@@ -30,13 +30,13 @@
 
     const { data } = $props<{ data: PageData }>();
 
-    let search = $state(data.activeFilters.search ?? '');
+    let query = $state(data.activeFilters.query ?? '');
     let selectedCategories = $state([...data.activeFilters.categories]);
     let view: 'card' | 'table' = $state(data.activeFilters.view ?? 'card');
 
     const categoryOptions: MultiSelectOption[] = $derived(data.filters.categories.map((category: SerializedPropositionCategory) => ({ value: category.id, label: category.name })));
 
-    const hasActiveFilters = $derived(Boolean(search.trim()) || selectedCategories.length > 0);
+    const hasActiveFilters = $derived(Boolean(query.trim()) || selectedCategories.length > 0);
 
     const getVisualUrl = (item: SerializedPropositionListItem): string | undefined => {
         if (!item.visual) {
@@ -75,9 +75,9 @@
         if (updates.search !== undefined) {
             const normalized = updates.search.trim();
             if (normalized.length) {
-                params.set('search', normalized);
+                params.set('query', normalized);
             } else {
-                params.delete('search');
+                params.delete('query');
             }
         }
 
@@ -116,7 +116,7 @@
     };
 
     const handleSearch = async (): Promise<void> => {
-        const normalized = search.trim();
+        const normalized = query.trim();
         if (normalized === data.activeFilters.search) {
             return;
         }
@@ -132,7 +132,7 @@
             return;
         }
 
-        search = '';
+        query = '';
         selectedCategories = [];
 
         await updateQuery({ search: '', categories: [], page: 1 });
@@ -147,7 +147,7 @@
     };
 
     $effect(() => {
-        search = data.activeFilters.search ?? '';
+        query = data.activeFilters.search ?? '';
         selectedCategories = [...data.activeFilters.categories];
         view = data.activeFilters.view ?? 'card';
     });
@@ -171,7 +171,7 @@
 
 <div class="flex flex-col gap-4">
     <div class="flex flex-wrap items-center gap-3 justify-between">
-        <Search bind:search resultsArray={data.propositions} placeholder={m['proposition-list.search.placeholder']()} onSearch={handleSearch} />
+        <Search bind:search={query} resultsArray={data.propositions} placeholder={m['proposition-list.search.placeholder']()} onSearch={handleSearch} />
         <div class="flex gap-2">
             <Button variant={view === 'card' ? 'default' : 'outline'} onclick={() => handleToggleView('card')} aria-pressed={view === 'card'}>
                 <LayoutGrid class="size-4" />

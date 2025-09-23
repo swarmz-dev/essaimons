@@ -6,7 +6,7 @@ import PropositionService from '#services/proposition_service';
 import PropositionRepository from '#repositories/proposition_repository';
 import PropositionCategoryRepository from '#repositories/proposition_category_repository';
 import UserRepository from '#repositories/user_repository';
-import { createPropositionValidator } from '#validators/proposition';
+import { createPropositionValidator, searchPropositionsValidator } from '#validators/proposition';
 import type Proposition from '#models/proposition';
 import type User from '#models/user';
 import { errors } from '@vinejs/vine';
@@ -26,22 +26,23 @@ export default class PropositionController {
         private readonly userRepository: UserRepository
     ) {}
 
-    public async index({ request, response }: HttpContext): Promise<void> {
-        const rawSearch = request.input('search');
-        const search = typeof rawSearch === 'string' ? rawSearch.trim() : undefined;
-        const rawPage: number = Number(request.input('page', 1));
-        const rawLimit: number = Number(request.input('limit', 12));
-        const page: number = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
-        const limit: number = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.floor(rawLimit) : 12;
-        const categoryIds: string[] = this.parseCsv(request.input('categories'));
+    public async search({ request, response }: HttpContext): Promise<void> {
+        const rawCategoryIds: string[] = this.parseCsv(request.input('categories'));
+
+        const { query, page, limit, categoryIds } = await searchPropositionsValidator.validate({
+            query: request.input('query'),
+            page: request.input('page'),
+            limit: request.input('limit'),
+            categoryIds: rawCategoryIds,
+        });
 
         const paginated: PaginatedPropositions = await this.propositionRepository.searchWithFilters(
             {
-                search: search && search.length ? search : undefined,
-                categoryIds: categoryIds.length ? categoryIds : undefined,
+                search: query && query.length ? query : undefined,
+                categoryIds: categoryIds?.length ? categoryIds : undefined,
             },
-            page,
-            limit
+            page || 1,
+            limit || 12
         );
 
         const categories: PropositionCategory[] = await this.propositionCategoryRepository.all();

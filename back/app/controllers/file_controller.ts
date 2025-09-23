@@ -14,6 +14,7 @@ import Language from '#models/language';
 import PropositionRepository from '#repositories/proposition_repository';
 import File from '#models/file';
 import { FileTypeEnum } from '#types/enum/file_type_enum';
+import Proposition from '#models/proposition';
 
 export default class FileController {
     constructor(
@@ -59,13 +60,13 @@ export default class FileController {
     public async serveStaticPropositionVisualFile({ request, response, i18n }: HttpContext) {
         const { propositionId } = await serveStaticPropositionVisualFileValidator.validate(request.params());
 
-        const proposition = await this.propositionRepository.findByPublicId(propositionId, ['visual']);
+        const proposition: Proposition | null = await this.propositionRepository.findByPublicId(propositionId, ['visual']);
 
         if (!proposition || !proposition.visual) {
             return response.notFound({ error: i18n.t('messages.file.serve-static-proposition-visual.error') });
         }
 
-        const filePath = app.makePath(proposition.visual.path);
+        const filePath: string = app.makePath(proposition.visual.path);
 
         try {
             return response.download(filePath);
@@ -75,15 +76,15 @@ export default class FileController {
     }
 
     public async serveStaticPropositionAttachmentFile({ request, response, i18n }: HttpContext) {
-        const { fileId } = await serveStaticPropositionAttachmentFileValidator.validate(request.params());
+        const { attachmentId } = await serveStaticPropositionAttachmentFileValidator.validate(request.params());
 
-        const file = await File.find(fileId);
+        const file: File | null = await File.find(attachmentId);
 
         if (!file || file.type !== FileTypeEnum.PROPOSITION_ATTACHMENT) {
             return response.notFound({ error: i18n.t('messages.file.serve-static-proposition-attachment.error') });
         }
 
-        const filePath = app.makePath(file.path);
+        const filePath: string = app.makePath(file.path);
 
         try {
             return response.download(filePath);

@@ -32,10 +32,11 @@
     let isSendButtonDisabled: boolean = $state(false);
 
     const handleFormError = (formError?: FormError): void => {
-        if (!formError) {
+        if (!formError?.errors?.length) {
             return;
         }
 
+        console.log(formError);
         formError.errors.forEach((error: PageDataError) => {
             showToast(error.message, error.type);
         });

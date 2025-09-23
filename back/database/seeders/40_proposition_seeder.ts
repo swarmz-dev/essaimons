@@ -271,7 +271,7 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
         const pendingAssociations: Array<{ title: string; associates: string[] }> = [];
 
         for (const [index, proposal] of seedData.entries()) {
-            const existing = await Proposition.query().where('title', proposal.title).first();
+            const existing: Proposition | null = await Proposition.query().where('title', proposal.title).first();
             if (existing) {
                 createdPropositions.set(proposal.title, existing);
                 if (proposal.associates?.length) {
@@ -280,22 +280,22 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
                 continue;
             }
 
-            const creator = users[index % users.length];
-            const rescueCandidates = users.filter((user) => user.id !== creator.id);
+            const creator: User = users[index % users.length];
+            const rescueCandidates: User[] = users.filter((user: User): boolean => user.id !== creator.id);
             if (!rescueCandidates.length) {
                 console.warn(`[PropositionSeeder] No rescue initiator available for proposition ${proposal.title}`);
                 continue;
             }
 
-            const clarificationDeadline = DateTime.now()
+            const clarificationDeadline: DateTime<true> = DateTime.now()
                 .plus({ days: 28 + index * 4 })
                 .startOf('day');
-            const improvementDeadline = clarificationDeadline.plus({ days: 14 });
-            const voteDeadline = clarificationDeadline.plus({ days: 35 });
-            const mandateDeadline = clarificationDeadline.plus({ days: 90 });
-            const evaluationDeadline = clarificationDeadline.plus({ days: 200 });
+            const improvementDeadline: DateTime<true> = clarificationDeadline.plus({ days: 14 });
+            const voteDeadline: DateTime<true> = clarificationDeadline.plus({ days: 35 });
+            const mandateDeadline: DateTime<true> = clarificationDeadline.plus({ days: 90 });
+            const evaluationDeadline: DateTime<true> = clarificationDeadline.plus({ days: 200 });
 
-            const proposition = await Proposition.create({
+            const proposition: Proposition = await Proposition.create({
                 title: proposal.title,
                 summary: proposal.summary,
                 detailedDescription: proposal.detailedDescription,
@@ -311,13 +311,13 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
                 creatorId: creator.id,
             });
 
-            const categoryIds = proposal.categories.map((name) => categoryMap.get(name)).filter((value): value is string => Boolean(value));
+            const categoryIds: string[] = proposal.categories.map((name: string): string | undefined => categoryMap.get(name)).filter((value: string | undefined): value is string => Boolean(value));
 
             if (categoryIds.length) {
                 await proposition.related('categories').sync(categoryIds, false);
             }
 
-            const rescueIds = rescueCandidates.slice(index % rescueCandidates.length, (index % rescueCandidates.length) + 2).map((user) => user.id);
+            const rescueIds: string[] = rescueCandidates.slice(index % rescueCandidates.length, (index % rescueCandidates.length) + 2).map((user: User): string => user.id);
 
             if (!rescueIds.length) {
                 rescueIds.push(rescueCandidates[0].id);
@@ -333,18 +333,20 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
         }
 
         for (const association of pendingAssociations) {
-            const source = createdPropositions.get(association.title);
+            const source: Proposition | undefined = createdPropositions.get(association.title);
             if (!source) continue;
 
-            const relatedIds = association.associates.map((title) => createdPropositions.get(title)?.id).filter((id): id is string => Boolean(id));
+            const relatedIds: string[] = association.associates
+                .map((title: string): string | undefined => createdPropositions.get(title)?.id)
+                .filter((id: string | undefined): id is string => Boolean(id));
 
             if (!relatedIds.length) {
                 continue;
             }
 
-            const existingIds = new Set((await source.related('associatedPropositions').query().select('propositions.id')).map((related) => related.id as string));
+            const existingIds = new Set((await source.related('associatedPropositions').query().select('propositions.id')).map((related: Proposition): string => related.id as string));
 
-            const idsToAttach = relatedIds.filter((id) => !existingIds.has(id));
+            const idsToAttach: string[] = relatedIds.filter((id: string): boolean => !existingIds.has(id));
 
             if (idsToAttach.length) {
                 await source.related('associatedPropositions').attach(idsToAttach);
