@@ -84,7 +84,7 @@ build-prod:
 	cp -r back/app/types/. front/back/app/types/
 
 	# Frontend build
-	cd front && npm install && npx paraglide-js compile && npm run build
+	cd front && npm install && npx paraglide-js compile && npm run build && cd build && npm install --omit=dev
 
 migrate-prod:
 	cd back && node ace migration:run && node ace migration:run --connection=logs
