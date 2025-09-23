@@ -8,7 +8,7 @@
     import { SendHorizontal } from '@lucide/svelte';
     import { Card, CardHeader, CardContent, CardFooter } from '#lib/components/ui/card/index';
     import { page } from '$app/state';
-    import type { PageDataError } from '../app';
+    import type { FormError, PageDataError } from '../app';
     import { showToast } from '#lib/services/toastService';
     import { cn } from '#lib/utils';
     import type { Snippet } from 'svelte';
@@ -31,10 +31,30 @@
     let isLoading: boolean = $state(false);
     let isSendButtonDisabled: boolean = $state(false);
 
+    const handleFormError = (formError?: FormError): void => {
+        if (!formError?.errors?.length) {
+            return;
+        }
+
+        console.log(formError);
+        formError.errors.forEach((error: PageDataError) => {
+            showToast(error.message, error.type);
+        });
+
+        if (formError.meta?.details) {
+            console.error('Form submission details:', formError.meta.details);
+        }
+
+        onError?.(formError);
+    };
+
     const submitHandler: SubmitFunction<Record<string, any>, Record<string, any>> = async () => {
+        isLoading = true;
         return async ({ result, update }) => {
+            isLoading = false;
             if (result.type === 'failure') {
                 await update({ reset: false });
+                handleFormError(result.data as FormError | undefined);
             } else {
                 await update();
             }
@@ -49,11 +69,9 @@
         if (!page.data.formError) {
             return;
         }
-        page.data.formError?.errors.forEach((error: PageDataError) => {
-            showToast(error.message, error.type);
-        });
+
+        handleFormError(page.data.formError);
         page.data.formError = undefined;
-        onError?.();
     });
 </script>
 

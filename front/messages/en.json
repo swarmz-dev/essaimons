@@ -75,7 +75,8 @@
     },
     "menu": {
         "admin": "Admin",
-        "source-code": "Source code"
+        "source-code": "Source code",
+        "open": "Open navigation"
     },
     "footer": {
         "navigation": "Navigation",
@@ -246,6 +247,203 @@
                     "description": "User profile picture (square image recommended)"
                 }
             }
+        }
+    },
+    "proposition-create": {
+        "title": "Create a proposal",
+        "menu": "Create a proposal",
+        "introduction": "Work through the three steps to cover concretization, horizontality, and robustness. Fields marked with an asterisk are required.",
+        "meta": {
+            "title": "New proposal - Essaimons-V1",
+            "description": "Capture the core details, deadlines, and impacts needed to formalize a complete proposal on Essaimons-V1.",
+            "keywords": "proposal, create proposal, SMART objectives, impacts, deadlines, Essaimons-V1"
+        },
+        "tabs": {
+            "concretization": {
+                "title": "Concretization details",
+                "description": "Set the tone with the title, categories, detailed description, and SMART objectives."
+            },
+            "horizontality": {
+                "title": "Horizontality details",
+                "description": "Clarify the background summary, key deadlines, and mandate descriptions."
+            },
+            "robustness": {
+                "title": "Robustness details",
+                "description": "Analyse impacts, required expertise, and related proposals."
+            }
+        },
+        "fields": {
+            "title": {
+                "label": "Title",
+                "placeholder": "Example: Reorganise local drop-in sessions",
+                "info": "The title highlights the objective or issue addressed. Mention a target date when helpful and avoid generic openings like “Proposal for…”."
+            },
+            "visual": {
+                "label": "Visual",
+                "info": "Add a representative visual to help people recognise the proposal quickly. Image formats such as PNG, JPG, or WEBP are recommended."
+            },
+            "categories": {
+                "label": "Categories",
+                "placeholder": "Select one or more categories",
+                "info": "Categories make triage and processing easier: level (strategic, tactical), confidentiality (public, restricted), legality, or theme (field, communication, etc.)."
+            },
+            "smart-objectives": {
+                "label": "SMART objectives",
+                "info": "SMART objectives explain how success will be measured (quantitative, qualitative, or time-bound) and confirm the expected outcome."
+            },
+            "attachments": {
+                "label": "Attachments",
+                "info": "Add supporting documents (analysis, templates, spreadsheets, etc.) that provide additional context."
+            },
+            "detailed-description": {
+                "label": "Detailed description",
+                "info": "Describe envisioned scenarios, the actions and their sequence, and reference any supporting documents (links, attachments, data, …)."
+            },
+            "summary": {
+                "label": "Summary (or context)",
+                "info": "Explain where the proposal comes from: idea, identified issue, triggering event, preparatory meetings, or previous proposals."
+            },
+            "mandates-description": {
+                "label": "Mandate description",
+                "info": "Detail the actions per mandate, linked SMART objectives, estimated resources, required skills, and how each mandate will be assigned."
+            },
+            "clarification-deadline": {
+                "label": "Clarification deadline",
+                "info": "Latest date to clarify the initial content with stakeholders."
+            },
+            "improvement-deadline": {
+                "label": "Improvement deadline",
+                "info": "Target date to finalise adjustments based on feedback."
+            },
+            "vote-deadline": {
+                "label": "Vote deadline",
+                "info": "Planned date to submit the proposal for a vote or formal decision."
+            },
+            "mandate-deadline": {
+                "label": "Mandate rollout deadline",
+                "info": "Date by which mandates should be up and running if the proposal is adopted."
+            },
+            "evaluation-deadline": {
+                "label": "Evaluation deadline",
+                "info": "Date when results and impacts will be assessed."
+            },
+            "impacts": {
+                "label": "Impacts (human, financial, geographic, organisational)",
+                "info": "Identify the needed resources, impacted audiences, expected benefits, and potential risks. Consider multiple scenarios and, if useful, conduct a SWOT-style review."
+            },
+            "expertise": {
+                "label": "Expertise to involve",
+                "info": "List the people or groups whose knowledge would help to evaluate or implement the proposal."
+            },
+            "associated-propositions": {
+                "label": "Associated proposals",
+                "placeholder": "Search a proposal",
+                "info": "Reference proposals this one depends on, complements, or conflicts with. This supports coherent planning and impact analysis."
+            },
+            "rescue-initiators": {
+                "label": "Rescue initiators",
+                "placeholder": "Search a co-initiator",
+                "info": "Select at least one co-responsible person who can take over if needed. Their involvement can be detailed in the description or mandates."
+            }
+        },
+        "navigation": {
+            "previous": "Previous",
+            "next": "Next",
+            "submit": "Publish proposal",
+            "submitting": "Submitting…",
+            "concretization-hint": "Complete the general framing before moving to collaborative aspects.",
+            "horizontality-hint": "Document the shared context, deadlines, and mandates.",
+            "robustness-hint": "Assess impacts, required expertise, and connections to other proposals."
+        }
+    },
+    "proposition-list": {
+        "title": "Browse proposals",
+        "menu": "Proposals",
+        "introduction": "Filter, search, and explore published proposals to prepare reviews or collaborative sessions.",
+        "meta": {
+            "title": "Browse proposals – Essaimons-V1",
+            "description": "Navigate through the available proposals, apply category filters, and open detailed views to prepare discussions.",
+            "keywords": "proposals, search, filters, Essaimons-V1, overview"
+        },
+        "search": {
+            "placeholder": "Search for a proposal"
+        },
+        "view": {
+            "card": "Card view",
+            "table": "Table view"
+        },
+        "filters": {
+            "categories": {
+                "placeholder": "Filter by categories"
+            },
+            "reset": "Reset filters"
+        },
+        "visual": {
+            "alt": "Proposal visual for {title}",
+            "placeholder": "No visual available"
+        },
+        "actions": {
+            "view": "Open proposal"
+        },
+        "dates": {
+            "empty": "Not provided",
+            "vote": "Vote",
+            "mandate": "Mandate"
+        },
+        "table": {
+            "columns": {
+                "title": "Title",
+                "summary": "Summary",
+                "categories": "Categories",
+                "vote": "Vote",
+                "updated": "Updated"
+            }
+        },
+        "empty": "No proposal matches your filters."
+    },
+    "proposition-detail": {
+        "meta": {
+            "title": "Proposal {title} – Essaimons-V1",
+            "description": "Review \"{summary}\" in detail: objectives, impacts, mandates, and attachments ready for offline sharing.",
+            "keywords": "proposal, detail, Essaimons-V1, impacts, mandates"
+        },
+        "actions": {
+            "back": "Back to list",
+            "print": "Print",
+            "download": "Download"
+        },
+        "visual": {
+            "alt": "Proposal visual for {title}"
+        },
+        "labels": {
+            "creator": "Creator",
+            "created": "Created",
+            "updated": "Updated"
+        },
+        "sections": {
+            "timeline": "Timeline",
+            "description": "Detailed description",
+            "objectives": "SMART objectives",
+            "impacts": "Impacts",
+            "mandates": "Mandates",
+            "expertise": "Expertise to involve",
+            "rescue": "Rescue initiators",
+            "associated": "Related proposals",
+            "attachments": "Attachments"
+        },
+        "dates": {
+            "clarification": "Clarification",
+            "improvement": "Improvement",
+            "vote": "Vote",
+            "mandate": "Mandate",
+            "evaluation": "Evaluation",
+            "empty": "Not provided"
+        },
+        "empty": {
+            "expertise": "No additional expertise specified.",
+            "rescue": "No rescue initiators were added.",
+            "associated": "No related proposals are linked.",
+            "attachments": "No attachments available."
         }
     }
 }

@@ -1,6 +1,7 @@
 import type { FileTypeEnum } from '../enum/file_type_enum.js';
 
 export type SerializedFile = {
+    id: string;
     name: string;
     path: string;
     extension: string;

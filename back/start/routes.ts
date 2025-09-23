@@ -15,6 +15,7 @@ const AuthController = () => import('#controllers/auth_controller');
 const ProfileController = () => import('#controllers/profile_controller');
 const FileController = () => import('#controllers/file_controller');
 const OauthController = () => import('#controllers/oauth_controller');
+const PropositionController = () => import('#controllers/proposition_controller');
 
 router.get('healthcheck', [HealthCheckController]);
 
@@ -99,7 +100,18 @@ router
 
                 router
                     .group((): void => {
+                        router.get('/', [PropositionController, 'search']);
+                        router.get('/bootstrap', [PropositionController, 'bootstrap']);
+                        router.get('/:id', [PropositionController, 'show']);
+                        router.post('/', [PropositionController, 'create']);
+                    })
+                    .prefix('propositions');
+
+                router
+                    .group((): void => {
                         router.get('/profile-picture/:userId', [FileController, 'serveStaticProfilePictureFile']);
+                        router.get('/propositions/visual/:propositionId', [FileController, 'serveStaticPropositionVisualFile']);
+                        router.get('/propositions/attachments/:attachmentId', [FileController, 'serveStaticPropositionAttachmentFile']);
                     })
                     .prefix('static');
             })

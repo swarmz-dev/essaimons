@@ -6,6 +6,7 @@ import type { SerializedUser } from '#types/serialized/serialized_user';
 import { inject } from '@adonisjs/core';
 import FileService from '#services/file_service';
 import LogUserRepository from '#repositories/log_user_repository';
+import { TransactionClientContract } from '@adonisjs/lucid/types/database';
 
 @inject()
 export default class UserRepository extends BaseRepository<typeof User> {
@@ -16,49 +17,8 @@ export default class UserRepository extends BaseRepository<typeof User> {
         super(User);
     }
 
-    public async searchNotFriends(query: string, page: number, limit: number, user: User): Promise<PaginatedUsers> {
-        const users: ModelPaginatorContract<User> = await this.Model.query()
-            .select('users.*')
-            .select('received_pending_friends.id as receivedPendingFriendId')
-            .select('sent_pending_friends.id as sentPendingFriendId')
-            .leftJoin('blocked_users as blocked', (blockedJoin): void => {
-                blockedJoin
-                    .on((builder): void => {
-                        builder.on('users.id', '=', 'blocked.blocked_id').andOnVal('blocked.blocker_id', '=', user.id);
-                    })
-                    .orOn((builder): void => {
-                        builder.on('users.id', '=', 'blocked.blocker_id').andOnVal('blocked.blocked_id', '=', user.id);
-                    });
-            })
-            .leftJoin('friends', (friendJoin): void => {
-                friendJoin.on('users.id', '=', 'friends.friend_id').andOnVal('friends.user_id', '=', user.id);
-            })
-            .leftJoin('pending_friends as received_pending_friends', (receivedJoin): void => {
-                receivedJoin.on('users.id', '=', 'received_pending_friends.user_id').andOnVal('received_pending_friends.friend_id', '=', user.id);
-            })
-            .leftJoin('pending_friends as sent_pending_friends', (sentJoin): void => {
-                sentJoin.on('users.id', '=', 'sent_pending_friends.friend_id').andOnVal('sent_pending_friends.user_id', '=', user.id);
-            })
-            .if(query, (queryBuilder): void => {
-                queryBuilder.whereILike('users.username', `%${query}%`);
-            })
-            .whereNull('blocked.blocker_id')
-            .whereNull('friends.user_id')
-            .whereNot('users.id', user.id)
-            .paginate(page, limit);
-
-        return {
-            users: await Promise.all(
-                users.all().map((user: User): SerializedUser => {
-                    return { ...user.apiSerialize(), receivedFriendRequest: !!user.$extras.receivedPendingFriendId, sentFriendRequest: !!user.$extras.sentPendingFriendId };
-                })
-            ),
-            firstPage: users.firstPage,
-            lastPage: users.lastPage,
-            limit,
-            total: users.total,
-            currentPage: page,
-        };
+    public async getAllOtherUsers(currentUser: User): Promise<User[]> {
+        return this.Model.query().whereNot('id', currentUser.id);
     }
 
     public async getAdminUsers(query: string, page: number, limit: number, sortBy: { field: keyof User['$attributes']; order: 'asc' | 'desc' }): Promise<PaginatedUsers> {
@@ -106,5 +66,41 @@ export default class UserRepository extends BaseRepository<typeof User> {
                 }
             }),
         ]);
+    }
+
+    public async getRescueUsers(rescueIds: string[], currentUser: User, trx: TransactionClientContract): Promise<User[]> {
+        const numericIds: number[] = [];
+        const uuidIds: string[] = [];
+
+        for (const rawId of rescueIds ?? []) {
+            const trimmed = rawId?.toString().trim();
+            if (!trimmed) continue;
+            const asNumber = Number(trimmed);
+            if (Number.isFinite(asNumber)) {
+                numericIds.push(Math.floor(asNumber));
+            } else {
+                uuidIds.push(trimmed);
+            }
+        }
+
+        if (!numericIds.length && !uuidIds.length) {
+            return [];
+        }
+
+        const query = this.Model.query({ client: trx }).whereNot('id', currentUser.id);
+        query.where((builder) => {
+            if (numericIds.length) {
+                builder.whereIn('front_id', numericIds);
+            }
+            if (uuidIds.length) {
+                if (numericIds.length) {
+                    builder.orWhereIn('id', uuidIds);
+                } else {
+                    builder.whereIn('id', uuidIds);
+                }
+            }
+        });
+
+        return query;
     }
 }
