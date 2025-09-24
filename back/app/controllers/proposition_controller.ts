@@ -6,7 +6,7 @@ import PropositionService from '#services/proposition_service';
 import PropositionRepository from '#repositories/proposition_repository';
 import PropositionCategoryRepository from '#repositories/proposition_category_repository';
 import UserRepository from '#repositories/user_repository';
-import { createPropositionValidator, searchPropositionsValidator } from '#validators/proposition';
+import { createPropositionValidator, searchPropositionsValidator, updatePropositionValidator } from '#validators/proposition';
 import type Proposition from '#models/proposition';
 import type User from '#models/user';
 import { errors } from '@vinejs/vine';
@@ -196,6 +196,96 @@ export default class PropositionController {
         }
 
         return response.ok({ proposition: proposition.apiSerialize() });
+    }
+
+    public async update(ctx: HttpContext): Promise<void> {
+        const { request, response, i18n, user } = ctx;
+
+        const identifierParam = request.param('id');
+
+        if (!identifierParam || typeof identifierParam !== 'string' || identifierParam.trim().length === 0) {
+            return response.badRequest({ error: i18n.t('messages.proposition.show.invalid-id') });
+        }
+
+        const proposition: Proposition | null = await this.propositionRepository.findByPublicId(identifierParam.trim(), [
+            'categories',
+            'rescueInitiators',
+            'associatedPropositions',
+            'attachments',
+            'creator',
+            'visual',
+        ]);
+
+        if (!proposition) {
+            return response.notFound({ error: i18n.t('messages.proposition.show.not-found') });
+        }
+
+        const actor: User = user as User;
+        const isAdmin: boolean = actor?.role === 'admin';
+        const isCreator: boolean = proposition.creatorId === actor?.id;
+        const isRescueInitiator: boolean = (proposition.rescueInitiators ?? []).some((rescueUser: User) => rescueUser.id === actor?.id);
+
+        if (!isAdmin && !isCreator && !isRescueInitiator) {
+            return response.forbidden({ error: i18n.t('messages.proposition.update.forbidden') });
+        }
+
+        const categoryIds: string[] = this.parseCsv(request.input('categoryIds'));
+        const associatedPropositionIds: string[] = this.parseCsv(request.input('associatedPropositionIds'));
+        const rescueInitiatorIds: string[] = this.parseCsv(request.input('rescueInitiatorIds'));
+
+        try {
+            const payload = await updatePropositionValidator.validate({
+                title: request.input('title'),
+                summary: request.input('summary'),
+                detailedDescription: request.input('detailedDescription'),
+                smartObjectives: request.input('smartObjectives'),
+                impacts: request.input('impacts'),
+                mandatesDescription: request.input('mandatesDescription'),
+                expertise: request.input('expertise'),
+                categoryIds,
+                associatedPropositionIds,
+                rescueInitiatorIds,
+                clarificationDeadline: request.input('clarificationDeadline'),
+                improvementDeadline: request.input('improvementDeadline'),
+                voteDeadline: request.input('voteDeadline'),
+                mandateDeadline: request.input('mandateDeadline'),
+                evaluationDeadline: request.input('evaluationDeadline'),
+            });
+
+            const updatedProposition: Proposition = await this.propositionService.update(proposition, payload, actor);
+
+            logger.info('proposition.update.success', {
+                id: updatedProposition.id,
+                title: updatedProposition.title,
+                actorId: actor?.id,
+            });
+
+            return response.ok({
+                message: i18n.t('messages.proposition.update.success', { title: updatedProposition.title }),
+                proposition: updatedProposition.apiSerialize(),
+            });
+        } catch (error: any) {
+            logger.error('proposition.update.error', {
+                message: error?.message,
+                stack: error?.stack,
+            });
+
+            if (error instanceof errors.E_VALIDATION_ERROR) {
+                return response.badRequest({ errors: error.messages });
+            }
+
+            if (typeof error?.message === 'string' && error.message.startsWith('messages.proposition.create.')) {
+                return response.badRequest({ error: i18n.t(error.message) });
+            }
+
+            const fallbackMessage = i18n.t('messages.proposition.update.error.default');
+            const errorDetails: string | undefined = typeof error?.message === 'string' ? error.message : undefined;
+
+            return response.badRequest({
+                error: fallbackMessage,
+                ...(app.inProduction || !errorDetails ? {} : { details: errorDetails }),
+            });
+        }
     }
 
     private parseCsv(value: string | string[] | null | undefined): string[] {

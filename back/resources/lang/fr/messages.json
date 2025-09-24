@@ -101,6 +101,13 @@
                 "default": "Impossible de créer la proposition pour le moment. Veuillez réessayer plus tard."
             }
         },
+        "update": {
+            "success": "Proposition \"{title}\" mise à jour avec succès",
+            "forbidden": "Vous n'êtes pas autorisé à modifier cette proposition.",
+            "error": {
+                "default": "Impossible de mettre à jour la proposition pour le moment. Veuillez réessayer plus tard."
+            }
+        },
         "show": {
             "not-found": "La proposition demandée est introuvable.",
             "invalid-id": "L'identifiant de proposition fourni est invalide."

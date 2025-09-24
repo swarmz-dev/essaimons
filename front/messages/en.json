@@ -356,6 +356,18 @@
             "robustness-hint": "Assess impacts, required expertise, and connections to other proposals."
         }
     },
+    "proposition-edit": {
+        "title": "Edit proposal",
+        "meta": {
+            "title": "Edit {title} - Essaimons-V1",
+            "description": "Update the proposal \"{title}\" to keep its information current.",
+            "keywords": "edit proposal, update proposal, Essaimons-V1"
+        },
+        "navigation": {
+            "submit": "Save changes",
+            "submitting": "Saving..."
+        }
+    },
     "proposition-list": {
         "title": "Browse proposals",
         "menu": "Proposals",

@@ -92,6 +92,7 @@ router
                         router.get('/bootstrap', [PropositionController, 'bootstrap']);
                         router.get('/:id', [PropositionController, 'show']);
                         router.post('/', [PropositionController, 'create']);
+                        router.put('/:id', [PropositionController, 'update']);
                     })
                     .prefix('propositions');
 

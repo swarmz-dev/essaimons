@@ -356,6 +356,18 @@
             "robustness-hint": "Analysez les impacts, les expertises nécessaires et les liens avec d’autres propositions."
         }
     },
+    "proposition-edit": {
+        "title": "Modifier la proposition",
+        "meta": {
+            "title": "Modifier {title} – Essaimons-V1",
+            "description": "Mettez à jour la proposition \"{title}\" pour refléter les informations les plus récentes.",
+            "keywords": "modifier proposition, mise à jour proposition, Essaimons-V1"
+        },
+        "navigation": {
+            "submit": "Enregistrer les modifications",
+            "submitting": "Enregistrement en cours..."
+        }
+    },
     "proposition-list": {
         "title": "Consulter les propositions",
         "menu": "Propositions",

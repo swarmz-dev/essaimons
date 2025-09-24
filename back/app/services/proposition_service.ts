@@ -188,6 +188,94 @@ export default class PropositionService {
         }
     }
 
+    public async update(proposition: Proposition, payload: CreatePropositionPayload, actor: User): Promise<Proposition> {
+        const trx: TransactionClientContract = await db.transaction();
+
+        try {
+            const categories: PropositionCategory[] = await this.propositionCategoryRepository.getMultipleCategories(payload.categoryIds, trx);
+            if (categories.length !== payload.categoryIds.length) {
+                throw new Error('messages.proposition.create.invalid-category');
+            }
+
+            const rescueUsers: User[] = await this.userRepository.getRescueUsers(payload.rescueInitiatorIds, actor, trx, { includeCurrentUser: true });
+            if (rescueUsers.length !== payload.rescueInitiatorIds.length) {
+                throw new Error('messages.proposition.create.invalid-rescue');
+            }
+
+            const associatedIds: string[] = payload.associatedPropositionIds ?? [];
+            let existingAssociations: Proposition[] = [];
+            if (associatedIds.length) {
+                existingAssociations = await this.propositionRepository.getExistingAssociatedPropositions(associatedIds, trx);
+                if (existingAssociations.length !== associatedIds.length) {
+                    throw new Error('messages.proposition.create.invalid-association');
+                }
+            }
+
+            const clarificationDate: DateTime = this.parseIsoDate(payload.clarificationDeadline);
+            const improvementDate: DateTime = this.parseIsoDate(payload.improvementDeadline);
+            const voteDate: DateTime = this.parseIsoDate(payload.voteDeadline);
+            const mandateDate: DateTime = this.parseIsoDate(payload.mandateDeadline);
+            const evaluationDate: DateTime = this.parseIsoDate(payload.evaluationDeadline);
+
+            proposition.useTransaction(trx);
+
+            proposition.merge({
+                title: payload.title,
+                summary: payload.summary,
+                detailedDescription: payload.detailedDescription,
+                smartObjectives: payload.smartObjectives,
+                impacts: payload.impacts,
+                mandatesDescription: payload.mandatesDescription,
+                expertise: payload.expertise ?? null,
+                clarificationDeadline: clarificationDate,
+                improvementDeadline: improvementDate,
+                voteDeadline: voteDate,
+                mandateDeadline: mandateDate,
+                evaluationDeadline: evaluationDate,
+            });
+
+            await proposition.save();
+
+            await proposition.related('categories').sync(categories.map((category: PropositionCategory): string => category.id));
+            await proposition.related('rescueInitiators').sync(rescueUsers.map((user: User): string => user.id));
+
+            await trx.from(this.associationsTableName()).where('proposition_id', proposition.id).orWhere('related_proposition_id', proposition.id).delete();
+
+            if (existingAssociations.length) {
+                const associationRows = existingAssociations.map((association: Proposition) => ({
+                    proposition_id: proposition.id,
+                    related_proposition_id: association.id,
+                }));
+                const reciprocalRows = existingAssociations.map((association: Proposition) => ({
+                    proposition_id: association.id,
+                    related_proposition_id: proposition.id,
+                }));
+
+                await trx.insertQuery().table(this.associationsTableName()).insert(associationRows);
+                await trx.insertQuery().table(this.associationsTableName()).insert(reciprocalRows);
+            }
+
+            await trx.commit();
+
+            await Promise.all([
+                proposition.load('categories'),
+                proposition.load('rescueInitiators'),
+                proposition.load('associatedPropositions'),
+                proposition.load('attachments'),
+                proposition.load('creator'),
+            ]);
+
+            if (proposition.visualFileId) {
+                await proposition.load('visual');
+            }
+
+            return proposition;
+        } catch (error) {
+            await trx.rollback();
+            throw error;
+        }
+    }
+
     private associationsTableName(): string {
         return 'proposition_associations';
     }

@@ -68,7 +68,7 @@ export default class UserRepository extends BaseRepository<typeof User> {
         ]);
     }
 
-    public async getRescueUsers(rescueIds: string[], currentUser: User, trx: TransactionClientContract): Promise<User[]> {
+    public async getRescueUsers(rescueIds: string[], currentUser: User, trx: TransactionClientContract, options: { includeCurrentUser?: boolean } = {}): Promise<User[]> {
         const numericIds: number[] = [];
         const uuidIds: string[] = [];
 
@@ -87,7 +87,11 @@ export default class UserRepository extends BaseRepository<typeof User> {
             return [];
         }
 
-        const query = this.Model.query({ client: trx }).whereNot('id', currentUser.id);
+        const query = this.Model.query({ client: trx });
+
+        if (!options.includeCurrentUser) {
+            query.whereNot('id', currentUser.id);
+        }
         query.where((builder) => {
             if (numericIds.length) {
                 builder.whereIn('front_id', numericIds);

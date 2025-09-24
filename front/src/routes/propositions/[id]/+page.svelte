@@ -4,14 +4,52 @@
     import { cn } from '#lib/utils';
     import { m } from '#lib/paraglide/messages';
     import { PUBLIC_API_BASE_URI } from '$env/static/public';
-    import type { SerializedProposition, SerializedPropositionSummary } from 'backend/types';
+    import type { SerializedProposition, SerializedPropositionSummary, SerializedUserSummary } from 'backend/types';
     import { goto } from '$app/navigation';
-    import { ArrowLeft, Printer, Download, CalendarDays } from '@lucide/svelte';
+    import { page } from '$app/state';
+    import { ArrowLeft, Printer, Download, CalendarDays, Pencil } from '@lucide/svelte';
 
     const { data } = $props<{ data: { proposition: SerializedProposition } }>();
     const proposition = data.proposition;
 
     const visualUrl = proposition.visual ? `${PUBLIC_API_BASE_URI}/api/static/propositions/visual/${proposition.id}` : undefined;
+
+    const normalizeId = (value?: string | number | null): string | undefined => {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        const normalized = value.toString().trim();
+        return normalized.length ? normalized : undefined;
+    };
+
+    let canEditProposition: boolean = $state(false);
+
+    $effect(() => {
+        const currentUser = page.data.user;
+        if (!currentUser) {
+            canEditProposition = false;
+            return;
+        }
+
+        if (currentUser.role === 'admin') {
+            canEditProposition = true;
+            return;
+        }
+
+        const currentUserId = normalizeId((currentUser as any).id ?? (currentUser as any).frontId);
+        if (!currentUserId) {
+            canEditProposition = false;
+            return;
+        }
+
+        const creatorId = normalizeId(proposition.creator?.id);
+        if (creatorId && creatorId === currentUserId) {
+            canEditProposition = true;
+            return;
+        }
+
+        canEditProposition = proposition.rescueInitiators.some((rescue: SerializedUserSummary) => normalizeId(rescue.id) === currentUserId);
+    });
 
     const attachmentUrl = (fileId: string): string => `${PUBLIC_API_BASE_URI}/api/static/propositions/attachments/${fileId}`;
 
@@ -98,10 +136,18 @@
 
 <div class="proposition-detail space-y-6 lg:space-y-8">
     <div class="flex flex-wrap items-center justify-between gap-3 print-hidden">
-        <Button variant="outline" class="gap-2" onclick={goBack}>
-            <ArrowLeft class="size-4" />
-            {m['proposition-detail.actions.back']()}
-        </Button>
+        <div class="flex flex-wrap items-center gap-3">
+            <Button variant="outline" class="gap-2" onclick={goBack}>
+                <ArrowLeft class="size-4" />
+                {m['proposition-detail.actions.back']()}
+            </Button>
+            {#if canEditProposition}
+                <Button variant="outline" class="gap-2" onclick={() => goto(`/propositions/${proposition.id}/edit`)}>
+                    <Pencil class="size-4" />
+                    {m['common.edit']()}
+                </Button>
+            {/if}
+        </div>
         <Button variant="secondary" class="gap-2" onclick={printPage}>
             <Printer class="size-4" />
             {m['proposition-detail.actions.print']()}
