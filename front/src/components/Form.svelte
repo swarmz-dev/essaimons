@@ -1,7 +1,6 @@
 <script lang="ts">
     import { enhance } from '$app/forms';
     import type { SubmitFunction } from '@sveltejs/kit';
-    import Icon from '#components/Icon.svelte';
     import { m } from '#lib/paraglide/messages';
     import FormBackground from '#components/background/FormBackground.svelte';
     import { Button } from '#lib/components/ui/button';
@@ -94,10 +93,8 @@
 
             {#if submittable}
                 <CardFooter class="flex justify-center pt-2">
-                    <Button type="submit" disabled={isSendButtonDisabled} size="lg" class="w-full max-w-xs sm:max-w-sm">
-                        {#if isLoading}
-                            <Icon name="spinner" size={40} />
-                        {:else if submitContent}
+                    <Button type="submit" disabled={isSendButtonDisabled} loading={isLoading} size="lg" class="w-full max-w-xs sm:max-w-sm">
+                        {#if submitContent}
                             {@render submitContent?.()}
                         {:else}
                             <p class="text-lg">{m['common.submit']()}</p>

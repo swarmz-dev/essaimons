@@ -18,6 +18,7 @@
     import { wrappedFetch } from '#lib/services/requestService';
     import { location, navigate } from '#lib/stores/locationStore';
     import type { Snippet } from 'svelte';
+    import type { SubmitFunction } from '@sveltejs/kit';
 
     type Props = {
         children: Snippet;
@@ -31,6 +32,7 @@
     let { children, id, canSubmit, deleteTitle, deleteText, onError }: Props = $props();
 
     let showModal: boolean = $state(false);
+    let isSubmitting: boolean = $state(false);
 
     const handleDelete = async (): Promise<void> => {
         showModal = false;
@@ -46,6 +48,18 @@
         });
     };
 
+    const submitHandler: SubmitFunction<Record<string, any>, Record<string, any>> = async () => {
+        isSubmitting = true;
+        return async ({ result, update }) => {
+            isSubmitting = false;
+            if (result.type === 'failure') {
+                await update({ reset: false });
+            } else {
+                await update();
+            }
+        };
+    };
+
     $effect((): void => {
         if (!page.data.formError) {
             return;
@@ -58,7 +72,7 @@
     });
 </script>
 
-<form use:enhance method="POST" enctype="multipart/form-data" class="pt-8 flex flex-col gap-8 rounded-lg shadow-md mt-5 p-3 bg-gray-300 dark:bg-gray-700">
+<form use:enhance={submitHandler} method="POST" enctype="multipart/form-data" class="pt-8 flex flex-col gap-8 rounded-lg shadow-md mt-5 p-3 bg-gray-300 dark:bg-gray-700">
     {@render children?.()}
     <div class="w-full flex justify-end gap-5 pr-5">
         {#if id}
@@ -66,7 +80,9 @@
                 {m['common.delete']()}
             </Button>
         {/if}
-        <Button type="submit" variant="secondary" disabled={!canSubmit}>{m[`common.${id ? 'update' : 'create'}`]()}</Button>
+        <Button type="submit" variant="secondary" disabled={!canSubmit || isSubmitting} loading={isSubmitting}>
+            {m[`common.${id ? 'update' : 'create'}`]()}
+        </Button>
     </div>
 </form>
 

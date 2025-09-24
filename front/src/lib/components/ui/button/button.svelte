@@ -33,13 +33,78 @@
         WithElementRef<HTMLAnchorAttributes> & {
             variant?: ButtonVariant;
             size?: ButtonSize;
+            loading?: boolean;
+            loadingLabel?: string;
+            autoLoading?: boolean;
         };
 </script>
 
 <script lang="ts">
-    let { class: className, variant = 'default', size = 'default', ref = $bindable(), type = 'button', disabled, children, onclick, target, ...restProps }: ButtonProps = $props();
+    import Icon from '#components/Icon.svelte';
+
+    let {
+        class: className,
+        variant = 'default',
+        size = 'default',
+        ref = $bindable(),
+        type = 'button',
+        disabled,
+        loading = false,
+        loadingLabel,
+        autoLoading = true,
+        children,
+        onclick,
+        target,
+        ...restProps
+    }: ButtonProps = $props();
+
+    let asyncLoading: boolean = $state(false);
+
+    const isLoading: boolean = $derived(Boolean(loading || asyncLoading));
+    const isDisabled: boolean = $derived(Boolean(disabled || isLoading));
+    const spinnerSize: number = $derived(size === 'lg' ? 32 : size === 'sm' ? 18 : size === 'icon' ? 24 : 24);
+
+    const handleClick = async (event: MouseEvent): Promise<void> => {
+        if (isDisabled) {
+            event.preventDefault();
+            return;
+        }
+
+        const handler = onclick as ((event: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }) => any) | undefined;
+        const result = handler?.(event as MouseEvent & { currentTarget: EventTarget & HTMLButtonElement });
+
+        if (!autoLoading || !result || typeof (result as Promise<unknown>).then !== 'function') {
+            return;
+        }
+
+        asyncLoading = true;
+        try {
+            await result;
+        } finally {
+            asyncLoading = false;
+        }
+    };
 </script>
 
-<button bind:this={ref} data-slot="button" class={cn(buttonVariants({ variant, size }), className)} {type} {disabled} {onclick} {...restProps}>
-    {@render children?.()}
+<button
+    bind:this={ref}
+    data-slot="button"
+    class={cn(buttonVariants({ variant, size }), className)}
+    {type}
+    disabled={isDisabled}
+    aria-busy={isLoading}
+    data-loading={isLoading ? 'true' : undefined}
+    onclick={handleClick}
+    {...restProps}
+>
+    {#if isLoading}
+        <span class="flex items-center gap-2">
+            <Icon name="spinner" size={spinnerSize} />
+            {#if loadingLabel}
+                <span class="font-medium">{loadingLabel}</span>
+            {/if}
+        </span>
+    {:else}
+        {@render children?.()}
+    {/if}
 </button>

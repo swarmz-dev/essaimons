@@ -466,12 +466,8 @@
                                     {m['proposition-create.navigation.next']()}
                                 </Button>
                             {:else}
-                                <Button type="submit" disabled={!canSubmit || isSubmitting}>
-                                    {#if isSubmitting}
-                                        {m['proposition-create.navigation.submitting']()}
-                                    {:else}
-                                        {m['proposition-create.navigation.submit']()}
-                                    {/if}
+                                <Button type="submit" disabled={!canSubmit} loading={isSubmitting} loadingLabel={m['proposition-create.navigation.submitting']()}>
+                                    {m['proposition-create.navigation.submit']()}
                                 </Button>
                             {/if}
                         </div>
