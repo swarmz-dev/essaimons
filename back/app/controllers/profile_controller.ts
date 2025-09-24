@@ -36,7 +36,13 @@ export default class ProfileController {
     public async sendResetPasswordEmail({ request, response, i18n }: HttpContext) {
         const { email } = await request.validateUsing(sendResetPasswordEmailValidator);
 
-        const user: User = await this.userRepository.firstOrFail({ email });
+        const user: User | null = await this.userRepository.findOneBy({ email });
+
+        if (!user) {
+            return response.notFound({
+                error: i18n.t('messages.profile.send-reset-password-email.error.unknown-email'),
+            });
+        }
 
         const previousToken: UserToken | null = await this.userTokenRepository.findOneBy({ userId: user.id, type: UserTokenTypeEnum.PASSWORD_RESET });
         if (previousToken) {

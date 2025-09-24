@@ -79,7 +79,8 @@
         "send-reset-password-email": {
             "success": "Vérifiez vos e-mails pour réinitialiser votre mot de passe",
             "error": {
-                "mail-not-sent": "Une erreur s'est produite lors de l'envoi de l'e-mail, veuillez réessayer plus tard"
+                "mail-not-sent": "Une erreur s'est produite lors de l'envoi de l'e-mail, veuillez réessayer plus tard",
+                "unknown-email": "Cet e-mail n'est associé à aucun compte"
             }
         },
         "reset": {

@@ -79,7 +79,8 @@
             "subject": "Reset your password",
             "success": "Check your mails to reset your password",
             "error": {
-                "mail-not-sent": "An error occurred while sending the email, please try again later"
+                "mail-not-sent": "An error occurred while sending the email, please try again later",
+                "unknown-email": "No account is linked to this email address"
             }
         },
         "reset": {
