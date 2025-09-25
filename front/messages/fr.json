@@ -247,11 +247,16 @@
                     "description": "Image de profil de l'utilisateur (format carré recommandé)"
                 }
             }
+        },
+        "categories": {
+            "title": "Catégories",
+            "description": "Consultez et gérez la liste des catégories de propositions disponibles dans l'application.",
+            "count": "Nombre total de catégories : {count}"
         }
     },
     "proposition-create": {
         "title": "Créer une proposition",
-        "menu": "Créer une proposition",
+        "menu": "Créer prop.",
         "introduction": "Complétez les trois étapes pour structurer la concrétisation, l'horizontalité et la robustesse de la proposition. Les champs marqués d'une astérisque sont obligatoires.",
         "meta": {
             "title": "Nouvelle proposition – Essaimons-V1",

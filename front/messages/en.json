@@ -247,11 +247,16 @@
                     "description": "User profile picture (square image recommended)"
                 }
             }
+        },
+        "categories": {
+            "title": "Categories",
+            "description": "Review and maintain the list of proposal categories available in the application.",
+            "count": "Total categories: {count}"
         }
     },
     "proposition-create": {
         "title": "Create a proposal",
-        "menu": "Create a proposal",
+        "menu": "New prop.",
         "introduction": "Work through the three steps to cover concretization, horizontality, and robustness. Fields marked with an asterisk are required.",
         "meta": {
             "title": "New proposal - Essaimons-V1",

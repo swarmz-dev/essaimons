@@ -17,6 +17,31 @@
             "update": {
                 "success": "Successfully updated {username}"
             }
+        },
+        "categories": {
+            "create": {
+                "success": "Successfully created category {name}",
+                "error": {
+                    "exists": "A category named {name} already exists",
+                    "default": "Unable to create the category right now. Please try again later."
+                }
+            },
+            "update": {
+                "success": "Successfully renamed the category to {name}",
+                "error": {
+                    "exists": "A category named {name} already exists",
+                    "not-found": "The requested category could not be found",
+                    "default": "Unable to update the category right now. Please try again later."
+                }
+            },
+            "delete": {
+                "success": "Successfully deleted category {name}",
+                "error": {
+                    "in-use": "Category {name} cannot be deleted because it is linked to {count} proposal(s)",
+                    "not-found": "The requested category could not be found",
+                    "default": "Unable to delete the category right now. Please try again later."
+                }
+            }
         }
     },
     "auth": {

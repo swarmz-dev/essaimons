@@ -17,6 +17,31 @@
             "update": {
                 "success": "Utilisateur {username} mis à jour avec succès"
             }
+        },
+        "categories": {
+            "create": {
+                "success": "Catégorie {name} créée avec succès",
+                "error": {
+                    "exists": "Une catégorie nommée {name} existe déjà",
+                    "default": "Impossible de créer la catégorie pour le moment. Veuillez réessayer plus tard."
+                }
+            },
+            "update": {
+                "success": "Catégorie renommée en {name} avec succès",
+                "error": {
+                    "exists": "Une catégorie nommée {name} existe déjà",
+                    "not-found": "La catégorie demandée est introuvable",
+                    "default": "Impossible de mettre à jour la catégorie pour le moment. Veuillez réessayer plus tard."
+                }
+            },
+            "delete": {
+                "success": "Catégorie {name} supprimée avec succès",
+                "error": {
+                    "in-use": "Impossible de supprimer la catégorie {name} car elle est liée à {count} proposition(s)",
+                    "not-found": "La catégorie demandée est introuvable",
+                    "default": "Impossible de supprimer la catégorie pour le moment. Veuillez réessayer plus tard."
+                }
+            }
         }
     },
     "auth": {
