@@ -93,6 +93,7 @@ router
                     .group((): void => {
                         router.get('/', [ProfileController, 'getProfile']);
                         router.post('/update', [ProfileController, 'updateProfile']);
+                        router.get('/export', [ProfileController, 'exportProfile']);
                     })
                     .prefix('profile');
 

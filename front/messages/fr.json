@@ -94,6 +94,14 @@
         "profile-picture": {
             "title": "Photo de profil",
             "description": "Uploadez ici une photo de profil"
+        },
+        "export-data": {
+            "title": "Télécharger vos données",
+            "description": "Exportez une copie structurée de votre compte et des propositions associées.",
+            "cta": "Télécharger mes données",
+            "loading": "Préparation de l’export…",
+            "success": "Votre export de données est en cours de téléchargement.",
+            "error": "Impossible d’exporter vos données pour le moment. Veuillez réessayer plus tard."
         }
     },
     "reset-password": {

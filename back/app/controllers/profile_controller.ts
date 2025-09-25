@@ -3,6 +3,7 @@ import UserRepository from '#repositories/user_repository';
 import UserTokenRepository from '#repositories/user_token_repository';
 import BrevoMailService from '#services/brevo_mail_service';
 import User from '#models/user';
+import Proposition from '#models/proposition';
 import { DateTime } from 'luxon';
 import { inject } from '@adonisjs/core';
 import File from '#models/file';
@@ -134,5 +135,60 @@ export default class ProfileController {
             message: i18n.t('messages.profile.update-profile.success'),
             user: user.apiSerialize(),
         });
+    }
+
+    public async exportProfile({ response, user, i18n }: HttpContext) {
+        try {
+            await user.load('profilePicture');
+
+            const createdPropositions: Proposition[] = await Proposition.query()
+                .where('creator_id', user.id)
+                .preload('categories')
+                .preload('rescueInitiators')
+                .preload('associatedPropositions')
+                .preload('attachments')
+                .preload('creator')
+                .preload('visual');
+
+            const participatingPropositions: Proposition[] = await Proposition.query()
+                .whereHas('rescueInitiators', (builder) => {
+                    builder.where('users.id', user.id);
+                })
+                .preload('categories')
+                .preload('rescueInitiators')
+                .preload('associatedPropositions')
+                .preload('attachments')
+                .preload('creator')
+                .preload('visual');
+
+            const createdIds = new Set(createdPropositions.map((proposition) => proposition.id));
+            const uniqueParticipations = participatingPropositions.filter((proposition) => !createdIds.has(proposition.id));
+
+            const exportedAt = DateTime.now().toISO();
+            const payload = {
+                metadata: {
+                    version: 1,
+                    exportedAt,
+                },
+                user: user.apiSerialize(),
+                data: {
+                    createdPropositions: createdPropositions.map((proposition) => proposition.apiSerialize()),
+                    rescueInitiatedPropositions: uniqueParticipations.map((proposition) => proposition.apiSerialize()),
+                },
+            };
+
+            const identifier = user.frontId !== undefined && user.frontId !== null ? `user-${user.frontId}` : user.id;
+            const fileName = `user-export-${identifier}-${DateTime.now().toFormat('yyyyLLdd-HHmmss')}.json`;
+
+            response.header('Content-Type', 'application/json');
+            response.header('Content-Disposition', `attachment; filename="${fileName}"`);
+
+            return response.send(payload);
+        } catch (error) {
+            console.error('profile.export.error', error);
+            return response.badRequest({
+                error: i18n.t('messages.profile.export.error.default'),
+            });
+        }
     }
 }

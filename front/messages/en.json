@@ -94,6 +94,14 @@
         "profile-picture": {
             "title": "Profile picture",
             "description": "Upload here a profile picture"
+        },
+        "export-data": {
+            "title": "Download your data",
+            "description": "Export a structured copy of your account details and related proposals.",
+            "cta": "Download my data",
+            "loading": "Preparing export…",
+            "success": "Your data export has started downloading.",
+            "error": "We could not export your data right now. Please try again later."
         }
     },
     "reset-password": {

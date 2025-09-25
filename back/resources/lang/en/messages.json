@@ -113,6 +113,11 @@
         },
         "update-profile": {
             "success": "Profile successfully updated"
+        },
+        "export": {
+            "error": {
+                "default": "We could not generate your data export at this time. Please try again later."
+            }
         }
     },
     "proposition": {
