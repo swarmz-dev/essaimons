@@ -41,14 +41,14 @@ export const actions: Actions = {
                 .filter(Boolean);
         };
 
-        const jsonPayload = {
+        const normalizedPayload = {
             title: toString(formData.get('title')),
             summary: toString(formData.get('summary')),
             detailedDescription: toString(formData.get('detailedDescription')),
             smartObjectives: toString(formData.get('smartObjectives')),
             impacts: toString(formData.get('impacts')),
             mandatesDescription: toString(formData.get('mandatesDescription')),
-            expertise: toString(formData.get('expertise')) || null,
+            expertise: toString(formData.get('expertise')),
             categoryIds: toArray(formData.get('categoryIds')),
             associatedPropositionIds: toArray(formData.get('associatedPropositionIds')),
             rescueInitiatorIds: toArray(formData.get('rescueInitiatorIds')),
@@ -59,11 +59,52 @@ export const actions: Actions = {
             evaluationDeadline: toString(formData.get('evaluationDeadline')),
         };
 
+        const apiFormData = new FormData();
+        const setField = (key: keyof typeof normalizedPayload, value: string | string[]) => {
+            if (Array.isArray(value)) {
+                apiFormData.set(key, value.join(','));
+            } else {
+                apiFormData.set(key, value ?? '');
+            }
+        };
+
+        setField('title', normalizedPayload.title);
+        setField('summary', normalizedPayload.summary);
+        setField('detailedDescription', normalizedPayload.detailedDescription);
+        setField('smartObjectives', normalizedPayload.smartObjectives);
+        setField('impacts', normalizedPayload.impacts);
+        setField('mandatesDescription', normalizedPayload.mandatesDescription);
+        setField('expertise', normalizedPayload.expertise ?? '');
+        setField('categoryIds', normalizedPayload.categoryIds);
+        setField('associatedPropositionIds', normalizedPayload.associatedPropositionIds);
+        setField('rescueInitiatorIds', normalizedPayload.rescueInitiatorIds);
+        setField('clarificationDeadline', normalizedPayload.clarificationDeadline);
+        setField('improvementDeadline', normalizedPayload.improvementDeadline);
+        setField('voteDeadline', normalizedPayload.voteDeadline);
+        setField('mandateDeadline', normalizedPayload.mandateDeadline);
+        setField('evaluationDeadline', normalizedPayload.evaluationDeadline);
+
+        const visual = formData.get('visual');
+        if (visual instanceof File && visual.size > 0) {
+            apiFormData.set('visual', visual, visual.name);
+        }
+
+        const attachments = formData.getAll('attachments');
+        attachments
+            .filter((file): file is File => file instanceof File && file.size > 0)
+            .forEach((file) => {
+                apiFormData.append('attachments', file, file.name);
+            });
+
         let data: any;
         let isSuccess = true;
 
         try {
-            const { data: responseData } = await locals.client.put(`api/propositions/${params.id}`, jsonPayload);
+            const { data: responseData } = await locals.client.put(`api/propositions/${params.id}`, apiFormData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
             data = responseData;
         } catch (error: any) {
             isSuccess = false;

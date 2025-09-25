@@ -55,6 +55,7 @@
         "@adonisjs/lucid": "^21.8.0",
         "@adonisjs/transmit": "^2.0.2",
         "@vinejs/vine": "^3.0.1",
+        "@aws-sdk/client-s3": "^3.637.0",
         "axios": "^1.11.0",
         "chokidar": "^4.0.3",
         "file-type": "^21.0.0",

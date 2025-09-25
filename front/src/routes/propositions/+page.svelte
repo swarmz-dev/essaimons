@@ -9,7 +9,6 @@
     import { Title } from '#lib/components/ui/title';
     import { m } from '#lib/paraglide/messages';
     import { goto } from '$app/navigation';
-    import { PUBLIC_API_BASE_URI } from '$env/static/public';
     import type { PaginatedPropositions, SerializedPropositionCategory, SerializedPropositionListItem } from 'backend/types';
     import { LayoutGrid, TableProperties, RotateCcw, ArrowRight } from '@lucide/svelte';
 
@@ -42,7 +41,7 @@
         if (!item.visual) {
             return undefined;
         }
-        return `${PUBLIC_API_BASE_URI}/api/static/propositions/visual/${item.id}`;
+        return `/assets/propositions/visual/${item.id}`;
     };
 
     const isSameSelection = (current: string[], source: string[]): boolean => {

@@ -65,4 +65,13 @@ export default await Env.create(new URL('../', import.meta.url), {
     FRONT_URI: Env.schema.string(), // injected by Docker
     API_URI: Env.schema.string(), // injected by Docker
     MAIL_MOCK: Env.schema.boolean.optional(),
+
+    STORAGE_DRIVER: Env.schema.enum.optional(['local', 's3'] as const),
+    STORAGE_LOCAL_BASE_PATH: Env.schema.string.optional(),
+    STORAGE_S3_BUCKET: Env.schema.string.optional(),
+    STORAGE_S3_REGION: Env.schema.string.optional(),
+    STORAGE_S3_ACCESS_KEY: Env.schema.string.optional(),
+    STORAGE_S3_SECRET_KEY: Env.schema.string.optional(),
+    STORAGE_S3_ENDPOINT: Env.schema.string.optional(),
+    STORAGE_S3_FORCE_PATH_STYLE: Env.schema.boolean.optional(),
 });

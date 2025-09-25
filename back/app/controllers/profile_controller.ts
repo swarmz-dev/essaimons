@@ -7,7 +7,6 @@ import Proposition from '#models/proposition';
 import { DateTime } from 'luxon';
 import { inject } from '@adonisjs/core';
 import File from '#models/file';
-import app from '@adonisjs/core/services/app';
 import { cuid } from '@adonisjs/core/helpers';
 import FileService from '#services/file_service';
 import SlugifyService from '#services/slugify_service';
@@ -17,6 +16,7 @@ import env from '#start/env';
 import { FileTypeEnum } from '#types/enum/file_type_enum';
 import UserToken from '#models/user_token';
 import { UserTokenTypeEnum } from '#types/enum/user_token_type_enum';
+import mime from 'mime-types';
 
 @inject()
 export default class ProfileController {
@@ -104,24 +104,31 @@ export default class ProfileController {
 
         if (profilePicture) {
             if (user.profilePictureId) {
-                // Physically delete the file
-                this.fileService.delete(user.profilePicture);
+                await this.fileService.delete(user.profilePicture);
 
-                // Database file clear
                 user.profilePictureId = null;
                 await user.save();
                 await user.profilePicture.delete();
             }
 
-            profilePicture.clientName = `${cuid()}-${this.slugifyService.slugify(profilePicture.clientName)}`;
-            const profilePicturePath: string = `static/profile-picture`;
-            await profilePicture.move(app.makePath(profilePicturePath));
+            const originalExtension = path.extname(profilePicture.clientName);
+            const baseName = path.basename(profilePicture.clientName, originalExtension);
+            const sanitizedName = `${cuid()}-${this.slugifyService.slugify(baseName)}${originalExtension}`;
+            const key = `profile-picture/${sanitizedName}`;
+            const uploadMeta = await this.fileService.storeMultipartFile(profilePicture, key);
+
+            const resolvedMime =
+                uploadMeta.mimeType ||
+                (profilePicture.type && profilePicture.subtype ? `${profilePicture.type}/${profilePicture.subtype}` : null) ||
+                mime.lookup(sanitizedName) ||
+                'application/octet-stream';
+
             const newProfilePicture: File = await File.create({
-                name: profilePicture.clientName,
-                path: `${profilePicturePath}/${profilePicture.clientName}`,
-                extension: path.extname(profilePicture.clientName),
-                mimeType: `${profilePicture.type}/${profilePicture.subtype}`,
-                size: profilePicture.size,
+                name: sanitizedName,
+                path: key,
+                extension: originalExtension,
+                mimeType: resolvedMime,
+                size: uploadMeta.size,
                 type: FileTypeEnum.PROFILE_PICTURE,
             });
             await newProfilePicture.refresh();

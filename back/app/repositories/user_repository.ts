@@ -54,7 +54,7 @@ export default class UserRepository extends BaseRepository<typeof User> {
                     await user.delete();
 
                     if (user.profilePicture) {
-                        this.fileService.delete(user.profilePicture);
+                        await this.fileService.delete(user.profilePicture);
                         await user.profilePicture.delete();
                     }
 

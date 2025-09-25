@@ -87,7 +87,7 @@ export default class PropositionController {
 
         const rawAttachments = request.files('attachments', {
             size: '15mb',
-            extnames: ['png', 'jpg', 'jpeg', 'webp', 'pdf', 'doc', 'docx', 'odt', 'ods'],
+            extnames: ['png', 'jpg', 'jpeg', 'webp', 'pdf', 'doc', 'docx', 'odt', 'ods', 'txt'],
         });
 
         const attachments: MultipartFile[] = (rawAttachments as unknown as any[]).map((file) => ({
@@ -234,6 +234,44 @@ export default class PropositionController {
         const associatedPropositionIds: string[] = this.parseCsv(request.input('associatedPropositionIds'));
         const rescueInitiatorIds: string[] = this.parseCsv(request.input('rescueInitiatorIds'));
 
+        const visual: MultipartFile | null = request.file('visual', {
+            size: '5mb',
+            extnames: ['png', 'jpg', 'jpeg', 'webp'],
+        }) as MultipartFile | null;
+
+        const rawAttachments = request.files('attachments', {
+            size: '15mb',
+            extnames: ['png', 'jpg', 'jpeg', 'webp', 'pdf', 'doc', 'docx', 'odt', 'ods', 'txt'],
+        });
+
+        const attachments: MultipartFile[] = (rawAttachments as unknown as any[]).map((file) => ({
+            clientName: file.clientName,
+            tmpPath: file.tmpPath,
+            extname: file.extname,
+            size: file.size,
+            type: file.type,
+            subtype: file.subtype,
+            isValid: file.isValid,
+            hasErrors: file.hasErrors,
+            errors:
+                file.errors?.map((e: any) => ({
+                    field: e.field,
+                    rule: e.rule,
+                    message: e.message,
+                })) ?? [],
+            move: file.move.bind(file),
+            delete: file.delete?.bind(file),
+        }));
+
+        if (visual?.hasErrors) {
+            return response.badRequest({ errors: visual.errors });
+        }
+
+        const attachmentsErrors: MultipartFile[] = attachments.filter((file: MultipartFile): boolean => file.hasErrors);
+        if (attachmentsErrors.length) {
+            return response.badRequest({ errors: attachmentsErrors.flatMap((file: MultipartFile) => file.errors ?? []) });
+        }
+
         try {
             const payload = await updatePropositionValidator.validate({
                 title: request.input('title'),
@@ -253,7 +291,10 @@ export default class PropositionController {
                 evaluationDeadline: request.input('evaluationDeadline'),
             });
 
-            const updatedProposition: Proposition = await this.propositionService.update(proposition, payload, actor);
+            const updatedProposition: Proposition = await this.propositionService.update(proposition, payload, actor, {
+                visual,
+                attachments,
+            });
 
             logger.info('proposition.update.success', {
                 id: updatedProposition.id,

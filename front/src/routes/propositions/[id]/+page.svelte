@@ -15,14 +15,13 @@
     import { Button, buttonVariants } from '#lib/components/ui/button';
     import { m } from '#lib/paraglide/messages';
     import { cn } from '#lib/utils';
-    import { PUBLIC_API_BASE_URI } from '$env/static/public';
     import type { SerializedProposition, SerializedPropositionSummary, SerializedUserSummary } from 'backend/types';
     import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2 } from '@lucide/svelte';
 
     const { data } = $props<{ data: { proposition: SerializedProposition } }>();
     const proposition = data.proposition;
 
-    const visualUrl = proposition.visual ? `${PUBLIC_API_BASE_URI}/api/static/propositions/visual/${proposition.id}` : undefined;
+    const visualUrl = proposition.visual ? `/assets/propositions/visual/${proposition.id}` : undefined;
 
     const normalizeId = (value?: string | number | null): string | undefined => {
         if (value === undefined || value === null) {
@@ -71,7 +70,7 @@
         isDeleteSubmitting = true;
     };
 
-    const attachmentUrl = (fileId: string): string => `${PUBLIC_API_BASE_URI}/api/static/propositions/attachments/${fileId}`;
+    const attachmentUrl = (fileId: string): string => `/assets/propositions/attachments/${fileId}`;
 
     const formatDate = (value?: string): string => {
         if (!value) {

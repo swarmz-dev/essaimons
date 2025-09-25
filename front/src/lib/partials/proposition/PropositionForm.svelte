@@ -24,6 +24,10 @@
         { id: 'robustness', title: m['proposition-create.tabs.robustness.title'](), description: m['proposition-create.tabs.robustness.description']() },
     ] as const;
 
+    const ALLOWED_ATTACHMENT_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'pdf', 'doc', 'docx', 'odt', 'ods', 'txt'] as const;
+    const ATTACHMENT_ACCEPT = ALLOWED_ATTACHMENT_EXTENSIONS.map((extension) => `.${extension}`).join(',');
+    const ATTACHMENT_EXTENSION_LABEL = ALLOWED_ATTACHMENT_EXTENSIONS.map((extension) => extension.toUpperCase()).join(', ');
+
     const EMPTY_DATA: SerializedPropositionBootstrap = { users: [], categories: [], propositions: [] };
     let {
         bootstrap: bootstrapInput = EMPTY_DATA,
@@ -180,6 +184,7 @@
 
     let visualFiles: FileList | undefined = $state();
     let attachmentFiles: FileList | undefined = $state();
+    let attachmentsInputRef: HTMLInputElement | undefined = $state();
 
     let isSubmitting: boolean = $state(false);
     let hasInitializedFromProposition: boolean = $state(false);
@@ -292,6 +297,37 @@
                 await update();
             }
         };
+    };
+
+    const validateAttachmentSelection = (files?: FileList | null): boolean => {
+        if (!files?.length) {
+            return true;
+        }
+
+        for (const file of Array.from(files)) {
+            const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+            if (!ALLOWED_ATTACHMENT_EXTENSIONS.includes(extension as (typeof ALLOWED_ATTACHMENT_EXTENSIONS)[number])) {
+                showToast(m['proposition-create.validation.attachments.invalid-extension']({ extensions: ATTACHMENT_EXTENSION_LABEL }), 'error');
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+    const handleAttachmentsChange = (event: Event): void => {
+        if (validateAttachmentSelection(attachmentFiles)) {
+            return;
+        }
+
+        attachmentFiles = undefined;
+        const target = event.currentTarget as HTMLInputElement | null;
+        if (target) {
+            target.value = '';
+        }
+        if (attachmentsInputRef) {
+            attachmentsInputRef.value = '';
+        }
     };
 
     const goToTab = (tabId: (typeof tabs)[number]['id']): void => {
@@ -438,7 +474,16 @@
                             />
 
                             <FieldLabel forId="attachments" label={m['proposition-create.fields.attachments.label']()} info={m['proposition-create.fields.attachments.info']()}>
-                                <Input type="file" name="attachments" id="attachments" multiple bind:files={attachmentFiles} />
+                                <Input
+                                    type="file"
+                                    name="attachments"
+                                    id="attachments"
+                                    multiple
+                                    bind:files={attachmentFiles}
+                                    bind:ref={attachmentsInputRef}
+                                    accept={ATTACHMENT_ACCEPT}
+                                    onchange={handleAttachmentsChange}
+                                />
                                 {#if attachmentFiles?.length}
                                     <ul class="mt-2 list-disc pl-5 text-sm text-muted-foreground">
                                         {#each Array.from(attachmentFiles) as file (file.name)}

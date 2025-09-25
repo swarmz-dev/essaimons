@@ -359,6 +359,11 @@
                 "info": "Choisissez au moins un co-responsable capable de prendre le relais en cas d’imprévu. Leur rôle peut être détaillé au sein de la description ou des mandats."
             }
         },
+        "validation": {
+            "attachments": {
+                "invalid-extension": "Format de fichier non pris en charge. Formats autorisés : {extensions}."
+            }
+        },
         "navigation": {
             "previous": "Précédent",
             "next": "Suivant",

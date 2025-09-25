@@ -359,6 +359,11 @@
                 "info": "Select at least one co-responsible person who can take over if needed. Their involvement can be detailed in the description or mandates."
             }
         },
+        "validation": {
+            "attachments": {
+                "invalid-extension": "Unsupported file type. Allowed formats: {extensions}."
+            }
+        },
         "navigation": {
             "previous": "Previous",
             "next": "Next",
