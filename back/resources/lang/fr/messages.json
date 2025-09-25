@@ -108,6 +108,12 @@
                 "default": "Impossible de mettre à jour la proposition pour le moment. Veuillez réessayer plus tard."
             }
         },
+        "delete": {
+            "success": "Proposition \"{title}\" supprimée avec succès",
+            "error": {
+                "default": "Impossible de supprimer la proposition pour le moment. Veuillez réessayer plus tard."
+            }
+        },
         "show": {
             "not-found": "La proposition demandée est introuvable.",
             "invalid-id": "L'identifiant de proposition fourni est invalide."

@@ -424,6 +424,11 @@
             "print": "Print",
             "download": "Download"
         },
+        "delete": {
+            "title": "Delete proposal",
+            "description": "This action cannot be undone. The proposal and all related files will be permanently removed.",
+            "confirm": "Yes, delete this proposal"
+        },
         "visual": {
             "alt": "Proposal visual for {title}"
         },

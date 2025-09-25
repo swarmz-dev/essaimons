@@ -15,6 +15,7 @@ import { DateTime } from 'luxon';
 import fsPromises from 'node:fs/promises';
 import { TransactionClientContract } from '@adonisjs/lucid/types/database';
 import PropositionCategoryRepository from '#repositories/proposition_category_repository';
+import FileService from '#services/file_service';
 
 interface CreatePropositionPayload {
     title: string;
@@ -45,7 +46,8 @@ export default class PropositionService {
         private readonly propositionRepository: PropositionRepository,
         private readonly propositionCategoryRepository: PropositionCategoryRepository,
         private readonly userRepository: UserRepository,
-        private readonly slugifyService: SlugifyService
+        private readonly slugifyService: SlugifyService,
+        private readonly fileService: FileService
     ) {}
 
     public async create(payload: CreatePropositionPayload, creator: User, files: CreatePropositionFiles): Promise<Proposition> {
@@ -270,6 +272,46 @@ export default class PropositionService {
             }
 
             return proposition;
+        } catch (error) {
+            await trx.rollback();
+            throw error;
+        }
+    }
+
+    public async delete(proposition: Proposition): Promise<void> {
+        await proposition.load('attachments');
+        if (proposition.visualFileId) {
+            await proposition.load('visual');
+        }
+
+        const attachmentFiles: File[] = [...(proposition.attachments ?? [])];
+        const visualFile: File | undefined = proposition.visualFileId ? (proposition.visual ?? undefined) : undefined;
+
+        const trx: TransactionClientContract = await db.transaction();
+
+        try {
+            proposition.useTransaction(trx);
+            await proposition.delete();
+
+            for (const file of attachmentFiles) {
+                file.useTransaction(trx);
+                await file.delete();
+            }
+
+            if (visualFile) {
+                visualFile.useTransaction(trx);
+                await visualFile.delete();
+            }
+
+            await trx.commit();
+
+            for (const file of attachmentFiles) {
+                this.fileService.delete(file);
+            }
+
+            if (visualFile) {
+                this.fileService.delete(visualFile);
+            }
         } catch (error) {
             await trx.rollback();
             throw error;

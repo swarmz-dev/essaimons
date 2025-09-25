@@ -16,6 +16,7 @@ import { SerializedPropositionSummary } from '#types/serialized/serialized_propo
 import { SerializedPropositionCategory } from '#types/serialized/serialized_proposition_category';
 import type { PaginatedPropositions } from '#types/paginated/paginated_propositions';
 import type { MultipartFile } from '#types/multipart_file';
+import { UserRoleEnum } from '#types/enum/user_role_enum';
 
 @inject()
 export default class PropositionController {
@@ -221,7 +222,7 @@ export default class PropositionController {
         }
 
         const actor: User = user as User;
-        const isAdmin: boolean = actor?.role === 'admin';
+        const isAdmin: boolean = actor?.role === UserRoleEnum.ADMIN;
         const isCreator: boolean = proposition.creatorId === actor?.id;
         const isRescueInitiator: boolean = (proposition.rescueInitiators ?? []).some((rescueUser: User) => rescueUser.id === actor?.id);
 
@@ -279,6 +280,52 @@ export default class PropositionController {
             }
 
             const fallbackMessage = i18n.t('messages.proposition.update.error.default');
+            const errorDetails: string | undefined = typeof error?.message === 'string' ? error.message : undefined;
+
+            return response.badRequest({
+                error: fallbackMessage,
+                ...(app.inProduction || !errorDetails ? {} : { details: errorDetails }),
+            });
+        }
+    }
+
+    public async delete(ctx: HttpContext): Promise<void> {
+        const { request, response, i18n, user } = ctx;
+
+        const identifierParam = request.param('id');
+
+        if (!identifierParam || typeof identifierParam !== 'string' || identifierParam.trim().length === 0) {
+            return response.badRequest({ error: i18n.t('messages.proposition.show.invalid-id') });
+        }
+
+        const proposition: Proposition | null = await this.propositionRepository.findByPublicId(identifierParam.trim(), ['rescueInitiators']);
+
+        if (!proposition) {
+            return response.notFound({ error: i18n.t('messages.proposition.show.not-found') });
+        }
+
+        const actor: User = user as User;
+        const isAdmin: boolean = actor?.role === UserRoleEnum.ADMIN;
+        const isCreator: boolean = proposition.creatorId === actor?.id;
+        const isRescueInitiator: boolean = (proposition.rescueInitiators ?? []).some((rescueUser: User) => rescueUser.id === actor?.id);
+
+        if (!isAdmin && !isCreator && !isRescueInitiator) {
+            return response.forbidden({ error: i18n.t('messages.proposition.update.forbidden') });
+        }
+
+        try {
+            await this.propositionService.delete(proposition);
+
+            return response.ok({
+                message: i18n.t('messages.proposition.delete.success', { title: proposition.title }),
+            });
+        } catch (error: any) {
+            logger.error('proposition.delete.error', {
+                message: error?.message,
+                stack: error?.stack,
+            });
+
+            const fallbackMessage = i18n.t('messages.proposition.delete.error.default');
             const errorDetails: string | undefined = typeof error?.message === 'string' ? error.message : undefined;
 
             return response.badRequest({

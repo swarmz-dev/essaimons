@@ -93,6 +93,7 @@ router
                         router.get('/:id', [PropositionController, 'show']);
                         router.post('/', [PropositionController, 'create']);
                         router.put('/:id', [PropositionController, 'update']);
+                        router.delete('/:id', [PropositionController, 'delete']);
                     })
                     .prefix('propositions');
 

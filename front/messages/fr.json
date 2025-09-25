@@ -424,6 +424,11 @@
             "print": "Imprimer",
             "download": "Télécharger"
         },
+        "delete": {
+            "title": "Supprimer la proposition",
+            "description": "Cette action est irréversible. La proposition et tous les fichiers associés seront définitivement supprimés.",
+            "confirm": "Oui, supprimer cette proposition"
+        },
         "visual": {
             "alt": "Visuel de la proposition {title}"
         },

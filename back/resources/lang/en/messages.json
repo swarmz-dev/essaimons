@@ -108,6 +108,12 @@
                 "default": "The proposal could not be updated at this time. Please try again later."
             }
         },
+        "delete": {
+            "success": "Proposal \"{title}\" deleted successfully",
+            "error": {
+                "default": "The proposal could not be deleted at this time. Please try again later."
+            }
+        },
         "show": {
             "not-found": "The requested proposal could not be found.",
             "invalid-id": "The provided proposal identifier is invalid."

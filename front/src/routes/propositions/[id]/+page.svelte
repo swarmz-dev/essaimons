@@ -1,13 +1,23 @@
 <script lang="ts">
-    import Meta from '#components/Meta.svelte';
-    import { Button, buttonVariants } from '#lib/components/ui/button';
-    import { cn } from '#lib/utils';
-    import { m } from '#lib/paraglide/messages';
-    import { PUBLIC_API_BASE_URI } from '$env/static/public';
-    import type { SerializedProposition, SerializedPropositionSummary, SerializedUserSummary } from 'backend/types';
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
-    import { ArrowLeft, Printer, Download, CalendarDays, Pencil } from '@lucide/svelte';
+    import Meta from '#components/Meta.svelte';
+    import {
+        AlertDialog,
+        AlertDialogAction,
+        AlertDialogCancel,
+        AlertDialogContent,
+        AlertDialogDescription,
+        AlertDialogFooter,
+        AlertDialogHeader,
+        AlertDialogTitle,
+    } from '#lib/components/ui/alert-dialog';
+    import { Button, buttonVariants } from '#lib/components/ui/button';
+    import { m } from '#lib/paraglide/messages';
+    import { cn } from '#lib/utils';
+    import { PUBLIC_API_BASE_URI } from '$env/static/public';
+    import type { SerializedProposition, SerializedPropositionSummary, SerializedUserSummary } from 'backend/types';
+    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2 } from '@lucide/svelte';
 
     const { data } = $props<{ data: { proposition: SerializedProposition } }>();
     const proposition = data.proposition;
@@ -23,15 +33,21 @@
     };
 
     let canEditProposition: boolean = $state(false);
+    let canDeleteProposition: boolean = $state(false);
+    let showDeleteDialog: boolean = $state(false);
+    let isDeleteSubmitting: boolean = $state(false);
 
     $effect(() => {
         const currentUser = page.data.user;
         if (!currentUser) {
             canEditProposition = false;
+            canDeleteProposition = false;
             return;
         }
 
-        if (currentUser.role === 'admin') {
+        canDeleteProposition = currentUser.role === 'admin';
+
+        if (canDeleteProposition) {
             canEditProposition = true;
             return;
         }
@@ -50,6 +66,10 @@
 
         canEditProposition = proposition.rescueInitiators.some((rescue: SerializedUserSummary) => normalizeId(rescue.id) === currentUserId);
     });
+
+    const handleDeleteSubmit = (): void => {
+        isDeleteSubmitting = true;
+    };
 
     const attachmentUrl = (fileId: string): string => `${PUBLIC_API_BASE_URI}/api/static/propositions/attachments/${fileId}`;
 
@@ -147,12 +167,37 @@
                     {m['common.edit']()}
                 </Button>
             {/if}
+            {#if canDeleteProposition}
+                <Button variant="destructive" class="gap-2" onclick={() => (showDeleteDialog = true)}>
+                    <Trash2 class="size-4" />
+                    {m['common.delete']()}
+                </Button>
+            {/if}
         </div>
         <Button variant="secondary" class="gap-2" onclick={printPage}>
             <Printer class="size-4" />
             {m['proposition-detail.actions.print']()}
         </Button>
     </div>
+
+    {#if canDeleteProposition}
+        <AlertDialog open={showDeleteDialog} onOpenChange={(value: boolean) => (showDeleteDialog = value)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{m['proposition-detail.delete.title']()}</AlertDialogTitle>
+                    <AlertDialogDescription>{m['proposition-detail.delete.description']()}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>{m['common.cancel']()}</AlertDialogCancel>
+                    <form method="POST" action="?/delete" class="inline-flex" onsubmit={handleDeleteSubmit}>
+                        <AlertDialogAction type="submit" disabled={isDeleteSubmitting}>
+                            {m['proposition-detail.delete.confirm']()}
+                        </AlertDialogAction>
+                    </form>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    {/if}
 
     <section class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
