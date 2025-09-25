@@ -84,6 +84,37 @@ export const load: LayoutServerLoad = loadFlash(async (event): Promise<{ user?: 
         return redirect(303, `/${language}/login`);
     }
 
+    if (!bypassLogin) {
+        // Revalidate the authenticated session at least once per hour
+        const lastAuthCheckCookie = cookies.get('authValidatedAt');
+        const lastAuthCheckTimestamp: number | undefined = lastAuthCheckCookie ? Number(lastAuthCheckCookie) : undefined;
+        const isAuthCheckExpired = !lastAuthCheckTimestamp || Number.isNaN(lastAuthCheckTimestamp) || Date.now() - lastAuthCheckTimestamp >= 60 * 60 * 1000;
+
+        if (isAuthCheckExpired) {
+            try {
+                await locals.client.get('api');
+                cookies.set('authValidatedAt', Date.now().toString(), {
+                    path: '/',
+                    httpOnly: true,
+                    sameSite: 'lax',
+                    maxAge: 60 * 60 * 24 * 7,
+                });
+            } catch (error) {
+                cookies.delete('user', { path: '/' });
+                cookies.delete('token', { path: '/' });
+                cookies.delete('authValidatedAt', { path: '/' });
+                cookies.set('previousPathName', `${location}${url.search}`, {
+                    path: '/',
+                    httpOnly: false,
+                    sameSite: 'lax',
+                    maxAge: 60 * 60,
+                });
+
+                return redirect(303, `/${language}/login`);
+            }
+        }
+    }
+
     if (!url.searchParams.has('from_login') && openedPathNames.some((openedPathName: OpenedPathName): boolean => location.startsWith(openedPathName.pathname) && !openedPathName.hybrid)) {
         const redirectTo = cookies.get('previousPathName') ?? '/';
         cookies.delete('previousPathName', { path: '/' });
