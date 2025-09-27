@@ -30,7 +30,7 @@ const storageConfig: StorageConfig = {
         region: env.get('STORAGE_S3_REGION', ''),
         accessKeyId: env.get('STORAGE_S3_ACCESS_KEY', ''),
         secretAccessKey: env.get('STORAGE_S3_SECRET_KEY', ''),
-        endpoint: env.get('STORAGE_S3_ENDPOINT', undefined),
+        endpoint: env.get('STORAGE_S3_ENDPOINT'),
         forcePathStyle: env.get('STORAGE_S3_FORCE_PATH_STYLE', false),
     },
 };
