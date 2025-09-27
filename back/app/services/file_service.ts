@@ -5,7 +5,6 @@ import { fileTypeFromBuffer, type FileTypeResult } from 'file-type';
 import axios from 'axios';
 import { cuid } from '@adonisjs/core/helpers';
 import { unlink } from 'node:fs/promises';
-import path from 'node:path';
 import mime from 'mime-types';
 import type { MultipartFile } from '@adonisjs/bodyparser/types';
 
