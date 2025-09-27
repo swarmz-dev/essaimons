@@ -3,4 +3,5 @@ export enum FileTypeEnum {
     PROFILE_PICTURE = 'profile_picture',
     PROPOSITION_VISUAL = 'proposition_visual',
     PROPOSITION_ATTACHMENT = 'proposition_attachment',
+    ORGANIZATION_LOGO = 'organization_logo',
 }

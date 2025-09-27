@@ -6,9 +6,18 @@
     import { mainMenu, type MenuItemsListItem } from '#lib/services/menuService';
     import { FooterGroupItem, FooterGroup } from '#lib/components/ui/footer';
     import { Link } from '#lib/components/ui/link';
+    import { organizationSettings } from '#lib/stores/organizationStore';
 
-    const brandName = 'Essaimons-V1';
+    const DEFAULT_BRAND_NAME = 'Essaimons-V1';
+    const DEFAULT_DESCRIPTION = m['home.meta.description']();
+    const DEFAULT_COPYRIGHT = 'Copyleft 2025 La Ruche, AGPL-3.0';
     let footerNavigation: MenuItemsListItem[] = $state(mainMenu.notConnected);
+    const brandName = $derived($organizationSettings.name ?? DEFAULT_BRAND_NAME);
+    const description = $derived($organizationSettings.description ?? DEFAULT_DESCRIPTION);
+    const sourceCodeUrl = $derived($organizationSettings.sourceCodeUrl ?? PUBLIC_GITHUB_REPOSITORY);
+    const hasSourceLink = $derived(Boolean(sourceCodeUrl));
+    const logoUrl = $derived($organizationSettings.logo ? `/assets/organization/logo/${$organizationSettings.logo.id}?no-cache=true` : null);
+    const copyrightText = $derived($organizationSettings.copyright ?? DEFAULT_COPYRIGHT);
 
     $effect(() => {
         if (!$profile) {
@@ -29,45 +38,35 @@
             <div class="space-y-6">
                 <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                     <div class="flex items-center gap-4">
-                        <span class="grid size-16 place-items-center rounded-3xl bg-primary/15 text-primary shadow-inner">
-                            <img src="/icons/favicon-96x96.png" alt={m['common.logo.alt']()} class="size-12 rounded-2xl" />
+                        <span class="grid size-16 place-items-center rounded-3xl bg-primary/15 text-primary shadow-inner overflow-hidden">
+                            {#if logoUrl}
+                                <img src={logoUrl} alt={brandName} class="size-12 rounded-2xl object-cover" />
+                            {:else}
+                                <img src="/icons/favicon-96x96.png" alt={m['common.logo.alt']()} class="size-12 rounded-2xl" />
+                            {/if}
                         </span>
                         <div class="flex flex-col leading-tight">
-                            <span class="text-xs font-semibold uppercase tracking-[0.32em] text-muted-foreground">{m['common.logo.alt']()}</span>
                             <span class="text-2xl font-semibold text-foreground">{brandName}</span>
                         </div>
                     </div>
-                    <Link
-                        href={PUBLIC_GITHUB_REPOSITORY}
-                        target="_blank"
-                        class="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-2 text-sm font-semibold !text-primary transition hover:bg-primary hover:!text-primary-foreground"
-                    >
-                        <Github class="size-4" />
-                        {m['menu.source-code']()}
-                    </Link>
                 </div>
-                <p class="max-w-2xl text-base text-muted-foreground/90">
-                    {m['home.meta.description']()}
-                </p>
+                <p class="max-w-2xl text-base text-muted-foreground/90">{description}</p>
             </div>
 
-            <div class="grid gap-8 sm:grid-cols-2">
-                <FooterGroup title={m['footer.navigation']()} class="text-left">
-                    {#each footerNavigation as item (item.title)}
-                        <FooterGroupItem name={item.title} href={item.href} icon={item.icon} />
-                    {/each}
-                </FooterGroup>
+            <div class="space-y-3">
                 <FooterGroup title={m['footer.about']()} class="text-left">
-                    <FooterGroupItem name={m['menu.source-code']()} href={PUBLIC_GITHUB_REPOSITORY} icon={Github} target="_blank" />
+                    {#if hasSourceLink}
+                        <FooterGroupItem name={m['menu.source-code']()} href={sourceCodeUrl} icon={Github} target="_blank" rel="noopener" />
+                    {/if}
                     <li class="text-sm leading-6 text-muted-foreground/80">
-                        {m['home.meta.title']()}
+                        {brandName}
                     </li>
                 </FooterGroup>
             </div>
         </div>
 
         <div class="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/25 pt-6 text-xs text-muted-foreground sm:flex-row dark:border-slate-800/60">
-            <p>© 2025 Tassadraft Studio</p>
+            <p>{copyrightText}</p>
             <Link href="/" class="inline-flex items-center gap-2 text-xs font-semibold !text-foreground/70 transition hover:!text-primary">
                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="m15 18-6-6 6-6" />

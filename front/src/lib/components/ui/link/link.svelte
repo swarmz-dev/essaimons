@@ -21,6 +21,7 @@
         href: string;
         class?: string;
         target?: '_blank' | '_self';
+        rel?: string;
         ariaLabel?: string;
         size?: SizeKeys;
         loading?: boolean;
@@ -51,6 +52,7 @@
         loading = false,
         loadingLabel,
         autoLoading = true,
+        rel,
     }: LinkProps = $props();
 
     let isAbsolute: boolean = href.startsWith('http://') || href.startsWith('https://');
@@ -112,6 +114,7 @@
     {onblur}
     {onmouseout}
     onclick={handleClick}
+    {rel}
 >
     {#if isLoading}
         <span class="flex items-center gap-2">

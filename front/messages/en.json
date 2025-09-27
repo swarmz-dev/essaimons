@@ -86,7 +86,7 @@
         "title": "Profile",
         "description": "Update your profile",
         "meta": {
-            "title": "Edit Profile – Essaimons-V1",
+            "title": "Edit Profile - Essaimons-V1",
             "description": "Update your username and profile picture easily on Essaimons-V1. Manage your personal information securely.",
             "keywords": "edit profile, update username, change profile picture, user settings, Essaimons-V1"
         },
@@ -107,14 +107,14 @@
     "reset-password": {
         "title": "Reset password",
         "meta": {
-            "title": "Reset Password – Essaimons-V1",
+            "title": "Reset Password - Essaimons-V1",
             "description": "Enter your email to receive a password reset link. The email field is prefilled if you are logged in.",
             "keywords": "reset password, password recovery, forgot password, password reset email, Essaimons-V1"
         },
         "confirm": {
             "title": "Finish reset password",
             "meta": {
-                "title": "Password Reset Confirmation – Essaimons-V1",
+                "title": "Password Reset Confirmation - Essaimons-V1",
                 "description": "Confirm your password reset by clicking the link sent to your email. Securely update your password and regain access to your account.",
                 "keywords": "password reset confirmation, reset password, email verification, Essaimons-V1"
             }
@@ -123,7 +123,7 @@
     "home": {
         "title": "Home",
         "meta": {
-            "title": "Welcome to Essaimons-V1 – Your Full-Stack Starter Solution",
+            "title": "Welcome to Essaimons-V1 - Your Full-Stack Starter Solution",
             "description": "Get started quickly with Essaimons-V1, a powerful full-stack starter template combining Adonis backend and Svelte frontend. Build your projects faster and smarter.",
             "keywords": "Adonis starter kit, Svelte starter kit, full-stack template, web development, backend, frontend, Essaimons-V1"
         }
@@ -138,7 +138,7 @@
             "cta": "Resend confirmation email"
         },
         "meta": {
-            "title": "Login – Essaimons-V1",
+            "title": "Login - Essaimons-V1",
             "description": "Log in to Essaimons-V1 using your email and password, or quickly via Google, GitHub, or Discord OAuth.",
             "keywords": "login, sign in, email login, password login, OAuth login, Google login, GitHub login, Discord login, Essaimons-V1"
         }
@@ -146,7 +146,7 @@
     "create-account": {
         "title": "Create account",
         "meta": {
-            "title": "Create Your Account – Essaimons-V1",
+            "title": "Create Your Account - Essaimons-V1",
             "description": "Sign up for Essaimons-V1 by creating your account with username, email, and password. Or quickly register using Google, Discord, or GitHub.",
             "keywords": "create account, sign up, register, username, email, password, OAuth, Google login, Discord login, GitHub login, Essaimons-V1"
         }
@@ -154,7 +154,7 @@
     "logout": {
         "title": "Logout",
         "meta": {
-            "title": "Confirm Logout – Essaimons-V1",
+            "title": "Confirm Logout - Essaimons-V1",
             "description": "Are you sure you want to log out? Confirm your logout to end your session safely on Essaimons-V1.",
             "keywords": "confirm logout, logout confirmation, end session, Essaimons-V1"
         },
@@ -167,7 +167,7 @@
         "title": "Unauthorized",
         "subtitle": "You are not authorized to view this page.",
         "meta": {
-            "title": "Unauthorized Access – Essaimons-V1",
+            "title": "Unauthorized Access - Essaimons-V1",
             "description": "Your credentials do not grant access to this page. Please log in or contact support if you think this is a mistake.",
             "keywords": "unauthorized access, 401 error, login required, permission denied, Essaimons-V1"
         }
@@ -176,7 +176,7 @@
         "title": "Forbidden",
         "subtitle": "You have to be logged to access this app's part.",
         "meta": {
-            "title": "Access Forbidden – Essaimons-V1",
+            "title": "Access Forbidden - Essaimons-V1",
             "description": "You do not have permission to access this page. If you believe this is an error, please contact support.",
             "keywords": "access forbidden, 403 error, permission denied, restricted access, Essaimons-V1"
         }
@@ -184,7 +184,7 @@
     "not-found": {
         "title": "Page not found",
         "meta": {
-            "title": "Page Not Found – Essaimons-V1",
+            "title": "Page Not Found - Essaimons-V1",
             "description": "The page you are looking for does not exist. Check the URL or return to the homepage of Essaimons-V1.",
             "keywords": "404 error, page not found, missing page, Essaimons-V1"
         }
@@ -192,7 +192,7 @@
     "already-connected": {
         "title": "Already connected",
         "meta": {
-            "title": "Already Logged In – Return to Your Dashboard | Essaimons-V1",
+            "title": "Already Logged In - Return to Your Dashboard | Essaimons-V1",
             "description": "You're already logged in to Essaimons-V1. Continue to your dashboard or return to the homepage to explore more features.",
             "keywords": "already logged in, user session, dashboard, homepage, Essaimons-V1"
         }
@@ -200,7 +200,7 @@
     "unknown-error": {
         "title": "Unknown error",
         "meta": {
-            "title": "Unknown Error – Something Went Wrong | Essaimons-V1",
+            "title": "Unknown Error - Something Went Wrong | Essaimons-V1",
             "description": "An unexpected error occurred while using the Essaimons-V1. Please try again later or return to the homepage for support.",
             "keywords": "unknown error, unexpected issue, error handling, troubleshooting, Essaimons-V1"
         }
@@ -260,6 +260,34 @@
             "title": "Categories",
             "description": "Review and maintain the list of proposal categories available in the application.",
             "count": "Total categories: {count}"
+        },
+        "organization": {
+            "title": "Settings",
+            "description": "Update the public information displayed in the sidebar and footer.",
+            "fields": {
+                "name": "Organization name",
+                "description": "Description",
+                "source-code": "Source code link",
+                "copyright": "Copyright",
+                "logo": {
+                    "title": "Logo",
+                    "placeholder": "Upload a square logo (PNG, JPG, SVG, WEBP)",
+                    "remove": "Remove current logo"
+                }
+            },
+            "actions": {
+                "save": "Save changes"
+            },
+            "crop": {
+                "title": "Adjust logo",
+                "instructions": "Drag to reposition the logo. Use the slider to zoom in or out so it fills the square.",
+                "zoom": "Zoom",
+                "reset": "Reset",
+                "cancel": "Cancel",
+                "apply": "Apply",
+                "unsupported": "Canvas is not supported in your browser",
+                "background": "Background color"
+            }
         }
     },
     "proposition-create": {
@@ -391,7 +419,7 @@
         "menu": "Proposals",
         "introduction": "Filter, search, and explore published proposals to prepare reviews or collaborative sessions.",
         "meta": {
-            "title": "Browse proposals – Essaimons-V1",
+            "title": "Browse proposals - Essaimons-V1",
             "description": "Navigate through the available proposals, apply category filters, and open detailed views to prepare discussions.",
             "keywords": "proposals, search, filters, Essaimons-V1, overview"
         },
@@ -433,7 +461,7 @@
     },
     "proposition-detail": {
         "meta": {
-            "title": "Proposal {title} – Essaimons-V1",
+            "title": "Proposal {title} - Essaimons-V1",
             "description": "Review \"{summary}\" in detail: objectives, impacts, mandates, and attachments ready for offline sharing.",
             "keywords": "proposal, detail, Essaimons-V1, impacts, mandates"
         },

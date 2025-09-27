@@ -5,13 +5,13 @@
                 "success": "Utilisateur {username} supprimé avec succès",
                 "error": {
                     "current": "Vous ne pouvez pas supprimer votre propre compte depuis le back-office ({username})",
-                    "default": "Erreur lors de la suppression de l’utilisateur avec l’identifiant {frontId}"
+                    "default": "Erreur lors de la suppression de l'utilisateur avec l'identifiant {frontId}"
                 }
             },
             "create": {
                 "success": "Utilisateur {username} ({email}) créé avec succès",
                 "error": {
-                    "already-exists": "Un utilisateur avec l’email {email} existe déjà"
+                    "already-exists": "Un utilisateur avec l'email {email} existe déjà"
                 }
             },
             "update": {
@@ -41,6 +41,11 @@
                     "not-found": "La catégorie demandée est introuvable",
                     "default": "Impossible de supprimer la catégorie pour le moment. Veuillez réessayer plus tard."
                 }
+            }
+        },
+        "organization": {
+            "update": {
+                "success": "Profil de l'organisation mis à jour avec succès"
             }
         }
     },
@@ -81,6 +86,9 @@
         },
         "serve-static-proposition-attachment": {
             "error": "Pièce jointe introuvable"
+        },
+        "serve-static-organization-logo": {
+            "error": "Logo de l'organisation introuvable"
         }
     },
     "oauth": {

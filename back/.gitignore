@@ -13,6 +13,7 @@ tmp
 static/profile-picture
 static/propositions
 static/language-flag
+static/organization
 .persist
 .adonisjs
 
@@ -21,3 +22,4 @@ npm-debug.log
 yarn-error.log
 
 commands/exec_test.ts
+

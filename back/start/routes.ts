@@ -9,6 +9,7 @@ const UnsubscribeController = () => import('@adonisjs/transmit/controllers/unsub
 // Admin controllers
 const AdminUserController = () => import('#controllers/admin/user_controller');
 const AdminPropositionCategoryController = () => import('#controllers/admin/proposition_category_controller');
+const AdminOrganizationSettingsController = () => import('#controllers/admin/organization_settings_controller');
 
 // App controllers
 const HealthCheckController = () => import('#controllers/health_checks_controller');
@@ -17,11 +18,16 @@ const ProfileController = () => import('#controllers/profile_controller');
 const FileController = () => import('#controllers/file_controller');
 const OauthController = () => import('#controllers/oauth_controller');
 const PropositionController = () => import('#controllers/proposition_controller');
+const SettingsController = () => import('#controllers/settings_controller');
 
 router.get('healthcheck', [HealthCheckController]);
 
 router
     .group((): void => {
+        router.get('/settings/organization', [SettingsController, 'organization']);
+
+        router.get('/static/organization/logo/:fileId', [FileController, 'serveOrganizationLogoFile']);
+
         router
             .group((): void => {
                 // Classic authentication routes
@@ -83,6 +89,13 @@ router
                                 router.delete('/:id', [AdminPropositionCategoryController, 'delete']);
                             })
                             .prefix('categories');
+
+                        router
+                            .group((): void => {
+                                router.get('/', [AdminOrganizationSettingsController, 'show']);
+                                router.post('/', [AdminOrganizationSettingsController, 'update']);
+                            })
+                            .prefix('organization');
                     })
                     .prefix('admin')
                     .use([middleware.isAdmin()]);
