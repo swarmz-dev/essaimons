@@ -93,4 +93,30 @@ export default class FileController {
             return response.notFound({ error: i18n.t('messages.file.serve-static-proposition-attachment.error') });
         }
     }
+
+    public async serveOrganizationLogoFile({ request, response, i18n }: HttpContext) {
+        const fileId = request.param('fileId');
+        if (!fileId || typeof fileId !== 'string') {
+            return response.notFound({ error: i18n.t('messages.file.serve-static-organization-logo.error') });
+        }
+
+        const file: File | null = await File.find(fileId);
+        if (!file || file.type !== FileTypeEnum.ORGANIZATION_LOGO) {
+            return response.notFound({ error: i18n.t('messages.file.serve-static-organization-logo.error') });
+        }
+
+        try {
+            const { stream, contentType, contentLength } = await this.fileService.stream(file.path);
+            if (contentType) {
+                response.header('Content-Type', contentType);
+            }
+            if (contentLength) {
+                response.header('Content-Length', contentLength.toString());
+            }
+
+            return response.stream(stream);
+        } catch (error) {
+            return response.notFound({ error: i18n.t('messages.file.serve-static-organization-logo.error') });
+        }
+    }
 }

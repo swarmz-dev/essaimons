@@ -10,6 +10,7 @@
     import { cn } from '#lib/utils';
     import { m } from '#lib/paraglide/messages';
     import type { Snippet } from 'svelte';
+    import { organizationSettings } from '#lib/stores/organizationStore';
 
     type Props = {
         children: Snippet;
@@ -20,8 +21,10 @@
     let triggerButtonRef: HTMLButtonElement | undefined = $state();
     let isOpen: boolean = $state(true);
 
-    const brandName = 'Essaimons-V1';
+    const DEFAULT_BRAND_NAME = 'Essaimons-V1';
     let navItems: MenuItemsListItem[] = $state(mainMenu.notConnected);
+    const brandName = $derived($organizationSettings.name ?? DEFAULT_BRAND_NAME);
+    const logoUrl = $derived($organizationSettings.logo ? `/assets/organization/logo/${$organizationSettings.logo.id}?no-cache=true` : null);
 
     $effect(() => {
         if (!$profile) {
@@ -59,8 +62,12 @@
                         class="flex items-center justify-between gap-3 rounded-3xl border border-sidebar-border/50 bg-white/85 px-3.5 py-2.5 shadow-lg backdrop-blur-xl transition hover:border-primary/60 hover:bg-white/90 dark:bg-slate-950/80"
                     >
                         <Link href="/" class="group flex w-full items-center gap-4 text-left">
-                            <span class="grid size-10 place-items-center rounded-2xl bg-primary/15 text-primary shadow-inner">
-                                <img src="/icons/favicon-96x96.png" alt={m['common.logo.alt']()} class="size-7 rounded-xl" />
+                            <span class="grid size-10 place-items-center rounded-2xl bg-primary/15 text-primary shadow-inner overflow-hidden">
+                                {#if logoUrl}
+                                    <img src={logoUrl} alt={brandName} class="size-7 rounded-xl object-cover" />
+                                {:else}
+                                    <img src="/icons/favicon-96x96.png" alt={m['common.logo.alt']()} class="size-7 rounded-xl" />
+                                {/if}
                             </span>
                             <div class="flex min-w-0 flex-col leading-tight">
                                 <span class="truncate text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-muted-foreground">{m['common.logo.alt']()}</span>

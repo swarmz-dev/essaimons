@@ -16,3 +16,4 @@ export type { SerializedPropositionSummary } from './serialized/serialized_propo
 export type { SerializedProposition } from './serialized/serialized_proposition.js';
 export type { SerializedPropositionBootstrap } from './serialized/serialized_proposition_bootstrap.js';
 export type { SerializedPropositionListItem } from './serialized/serialized_proposition_list_item.js';
+export type { SerializedOrganizationSettings } from './serialized/serialized_organization_settings.js';
