@@ -140,10 +140,24 @@
         await goto(`/propositions/${linked.id}`);
     };
 
+    const HTML_TAG_PATTERN = /<\/?\s*[a-zA-Z][^>]*>/;
+    const containsHtml = (value?: string | null): boolean => {
+        if (!value) {
+            return false;
+        }
+        return HTML_TAG_PATTERN.test(value);
+    };
+
     const hasExpertise = Boolean(proposition.expertise && proposition.expertise.trim().length);
     const hasRescueInitiators = proposition.rescueInitiators.length > 0;
     const hasAssociated = proposition.associatedPropositions.length > 0;
     const hasAttachments = proposition.attachments.length > 0;
+
+    const detailedDescriptionHasHtml = containsHtml(proposition.detailedDescription);
+    const smartObjectivesHasHtml = containsHtml(proposition.smartObjectives);
+    const impactsHasHtml = containsHtml(proposition.impacts);
+    const mandatesHasHtml = containsHtml(proposition.mandatesDescription);
+    const expertiseHasHtml = containsHtml(proposition.expertise);
 </script>
 
 <Meta
@@ -252,24 +266,54 @@
         <div class="space-y-6">
             <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
                 <h2 class="text-lg font-semibold">{m['proposition-detail.sections.description']()}</h2>
-                <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.detailedDescription}</p>
+                {#if detailedDescriptionHasHtml}
+                    <div class="mt-3 text-sm leading-relaxed text-foreground">
+                        {@html proposition.detailedDescription}
+                    </div>
+                {:else}
+                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.detailedDescription}</p>
+                {/if}
             </article>
             <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
                 <h2 class="text-lg font-semibold">{m['proposition-detail.sections.objectives']()}</h2>
-                <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.smartObjectives}</p>
+                {#if smartObjectivesHasHtml}
+                    <div class="mt-3 text-sm leading-relaxed text-foreground">
+                        {@html proposition.smartObjectives}
+                    </div>
+                {:else}
+                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.smartObjectives}</p>
+                {/if}
             </article>
             <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
                 <h2 class="text-lg font-semibold">{m['proposition-detail.sections.impacts']()}</h2>
-                <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.impacts}</p>
+                {#if impactsHasHtml}
+                    <div class="mt-3 text-sm leading-relaxed text-foreground">
+                        {@html proposition.impacts}
+                    </div>
+                {:else}
+                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.impacts}</p>
+                {/if}
             </article>
             <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
                 <h2 class="text-lg font-semibold">{m['proposition-detail.sections.mandates']()}</h2>
-                <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.mandatesDescription}</p>
+                {#if mandatesHasHtml}
+                    <div class="mt-3 text-sm leading-relaxed text-foreground">
+                        {@html proposition.mandatesDescription}
+                    </div>
+                {:else}
+                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.mandatesDescription}</p>
+                {/if}
             </article>
             <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
                 <h2 class="text-lg font-semibold">{m['proposition-detail.sections.expertise']()}</h2>
                 {#if hasExpertise}
-                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.expertise}</p>
+                    {#if expertiseHasHtml}
+                        <div class="mt-3 text-sm leading-relaxed text-foreground">
+                            {@html proposition.expertise}
+                        </div>
+                    {:else}
+                        <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.expertise}</p>
+                    {/if}
                 {:else}
                     <p class="mt-3 text-sm text-muted-foreground">{m['proposition-detail.empty.expertise']()}</p>
                 {/if}
