@@ -4,7 +4,7 @@ import type { FormError } from '../../app';
 import { extractFormData, extractFormErrors } from '#lib/services/requestService';
 
 export const actions: Actions = {
-    default: async (event: RequestEvent): Promise<void> => {
+    default: async (event: RequestEvent) => {
         const { request, cookies, locals } = event;
 
         const formData: FormData = await request.formData();
@@ -45,7 +45,7 @@ export const actions: Actions = {
                 maxAge: 60 * 60 * 24 * 7,
             });
 
-            fail(400);
+            return fail<FormError>(400, form);
         }
     },
 };

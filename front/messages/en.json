@@ -94,6 +94,14 @@
         "profile-picture": {
             "title": "Profile picture",
             "description": "Upload here a profile picture"
+        },
+        "export-data": {
+            "title": "Download your data",
+            "description": "Export a structured copy of your account details and related proposals.",
+            "cta": "Download my data",
+            "loading": "Preparing export…",
+            "success": "Your data export has started downloading.",
+            "error": "We could not export your data right now. Please try again later."
         }
     },
     "reset-password": {
@@ -247,11 +255,16 @@
                     "description": "User profile picture (square image recommended)"
                 }
             }
+        },
+        "categories": {
+            "title": "Categories",
+            "description": "Review and maintain the list of proposal categories available in the application.",
+            "count": "Total categories: {count}"
         }
     },
     "proposition-create": {
         "title": "Create a proposal",
-        "menu": "Create a proposal",
+        "menu": "New prop.",
         "introduction": "Work through the three steps to cover concretization, horizontality, and robustness. Fields marked with an asterisk are required.",
         "meta": {
             "title": "New proposal - Essaimons-V1",
@@ -346,6 +359,11 @@
                 "info": "Select at least one co-responsible person who can take over if needed. Their involvement can be detailed in the description or mandates."
             }
         },
+        "validation": {
+            "attachments": {
+                "invalid-extension": "Unsupported file type. Allowed formats: {extensions}."
+            }
+        },
         "navigation": {
             "previous": "Previous",
             "next": "Next",
@@ -354,6 +372,18 @@
             "concretization-hint": "Complete the general framing before moving to collaborative aspects.",
             "horizontality-hint": "Document the shared context, deadlines, and mandates.",
             "robustness-hint": "Assess impacts, required expertise, and connections to other proposals."
+        }
+    },
+    "proposition-edit": {
+        "title": "Edit proposal",
+        "meta": {
+            "title": "Edit {title} - Essaimons-V1",
+            "description": "Update the proposal \"{title}\" to keep its information current.",
+            "keywords": "edit proposal, update proposal, Essaimons-V1"
+        },
+        "navigation": {
+            "submit": "Save changes",
+            "submitting": "Saving..."
         }
     },
     "proposition-list": {
@@ -411,6 +441,11 @@
             "back": "Back to list",
             "print": "Print",
             "download": "Download"
+        },
+        "delete": {
+            "title": "Delete proposal",
+            "description": "This action cannot be undone. The proposal and all related files will be permanently removed.",
+            "confirm": "Yes, delete this proposal"
         },
         "visual": {
             "alt": "Proposal visual for {title}"

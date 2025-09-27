@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { createServer, type Server } from 'http';
 
 const USE_REAL_BACKEND = process.env.PLAYWRIGHT_USE_REAL_BACKEND === 'true';
@@ -6,7 +6,7 @@ const SEEDED_IDENTITY = process.env.E2E_SEEDED_IDENTITY ?? 'admin';
 const SEEDED_PASSWORD = process.env.E2E_SEEDED_PASSWORD ?? 'xxx';
 const REAL_BACKEND_ORIGIN = process.env.PLAYWRIGHT_REAL_BACKEND_ORIGIN ?? 'http://localhost:3333';
 
-async function login(page, identity: string, password: string) {
+async function login(page: Page, identity: string, password: string) {
     if (USE_REAL_BACKEND) {
         const response = await page.request.post(`${REAL_BACKEND_ORIGIN}/api/auth`, {
             form: {

@@ -94,6 +94,14 @@
         "profile-picture": {
             "title": "Photo de profil",
             "description": "Uploadez ici une photo de profil"
+        },
+        "export-data": {
+            "title": "Télécharger vos données",
+            "description": "Exportez une copie structurée de votre compte et des propositions associées.",
+            "cta": "Télécharger mes données",
+            "loading": "Préparation de l’export…",
+            "success": "Votre export de données est en cours de téléchargement.",
+            "error": "Impossible d’exporter vos données pour le moment. Veuillez réessayer plus tard."
         }
     },
     "reset-password": {
@@ -247,11 +255,16 @@
                     "description": "Image de profil de l'utilisateur (format carré recommandé)"
                 }
             }
+        },
+        "categories": {
+            "title": "Catégories",
+            "description": "Consultez et gérez la liste des catégories de propositions disponibles dans l'application.",
+            "count": "Nombre total de catégories : {count}"
         }
     },
     "proposition-create": {
         "title": "Créer une proposition",
-        "menu": "Créer une proposition",
+        "menu": "Créer prop.",
         "introduction": "Complétez les trois étapes pour structurer la concrétisation, l'horizontalité et la robustesse de la proposition. Les champs marqués d'une astérisque sont obligatoires.",
         "meta": {
             "title": "Nouvelle proposition – Essaimons-V1",
@@ -346,6 +359,11 @@
                 "info": "Choisissez au moins un co-responsable capable de prendre le relais en cas d’imprévu. Leur rôle peut être détaillé au sein de la description ou des mandats."
             }
         },
+        "validation": {
+            "attachments": {
+                "invalid-extension": "Format de fichier non pris en charge. Formats autorisés : {extensions}."
+            }
+        },
         "navigation": {
             "previous": "Précédent",
             "next": "Suivant",
@@ -354,6 +372,18 @@
             "concretization-hint": "Renseignez le cadre général avant de passer aux aspects collaboratifs.",
             "horizontality-hint": "Documentez le contexte partagé, les délais et les mandatures associées.",
             "robustness-hint": "Analysez les impacts, les expertises nécessaires et les liens avec d’autres propositions."
+        }
+    },
+    "proposition-edit": {
+        "title": "Modifier la proposition",
+        "meta": {
+            "title": "Modifier {title} – Essaimons-V1",
+            "description": "Mettez à jour la proposition \"{title}\" pour refléter les informations les plus récentes.",
+            "keywords": "modifier proposition, mise à jour proposition, Essaimons-V1"
+        },
+        "navigation": {
+            "submit": "Enregistrer les modifications",
+            "submitting": "Enregistrement en cours..."
         }
     },
     "proposition-list": {
@@ -411,6 +441,11 @@
             "back": "Retour à la liste",
             "print": "Imprimer",
             "download": "Télécharger"
+        },
+        "delete": {
+            "title": "Supprimer la proposition",
+            "description": "Cette action est irréversible. La proposition et tous les fichiers associés seront définitivement supprimés.",
+            "confirm": "Oui, supprimer cette proposition"
         },
         "visual": {
             "alt": "Visuel de la proposition {title}"

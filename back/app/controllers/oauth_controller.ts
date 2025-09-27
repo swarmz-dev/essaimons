@@ -2,7 +2,6 @@ import { HttpContext } from '@adonisjs/core/http';
 import { DiscordDriver } from '@adonisjs/ally/drivers/discord';
 import FileService from '#services/file_service';
 import { inject } from '@adonisjs/core';
-import app from '@adonisjs/core/services/app';
 import File from '#models/file';
 import User from '#models/user';
 import { UserRoleEnum } from '#types/enum/user_role_enum';
@@ -132,12 +131,11 @@ export default class OauthController {
     }
 
     private async storeAndGetFileFromUrl(url: string): Promise<File> {
-        const profilePicturePath: string = await this.fileService.saveOauthProfilePictureFromUrl(url);
-        const { size, mimeType, extension, name } = await this.fileService.getFileInfo(app.makePath(profilePicturePath));
+        const { key, size, mimeType, extension, name } = await this.fileService.saveOauthProfilePictureFromUrl(url);
 
         const profilePicture: File | null = await File.create({
             name,
-            path: profilePicturePath,
+            path: key,
             extension,
             mimeType,
             size,

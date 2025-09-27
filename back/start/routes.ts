@@ -8,6 +8,7 @@ const UnsubscribeController = () => import('@adonisjs/transmit/controllers/unsub
 
 // Admin controllers
 const AdminUserController = () => import('#controllers/admin/user_controller');
+const AdminPropositionCategoryController = () => import('#controllers/admin/proposition_category_controller');
 
 // App controllers
 const HealthCheckController = () => import('#controllers/health_checks_controller');
@@ -73,6 +74,15 @@ router
                                 router.get('/:frontId', [AdminUserController, 'get']);
                             })
                             .prefix('user');
+
+                        router
+                            .group((): void => {
+                                router.get('/', [AdminPropositionCategoryController, 'index']);
+                                router.post('/', [AdminPropositionCategoryController, 'create']);
+                                router.put('/:id', [AdminPropositionCategoryController, 'update']);
+                                router.delete('/:id', [AdminPropositionCategoryController, 'delete']);
+                            })
+                            .prefix('categories');
                     })
                     .prefix('admin')
                     .use([middleware.isAdmin()]);
@@ -83,6 +93,7 @@ router
                     .group((): void => {
                         router.get('/', [ProfileController, 'getProfile']);
                         router.post('/update', [ProfileController, 'updateProfile']);
+                        router.get('/export', [ProfileController, 'exportProfile']);
                     })
                     .prefix('profile');
 
@@ -92,6 +103,8 @@ router
                         router.get('/bootstrap', [PropositionController, 'bootstrap']);
                         router.get('/:id', [PropositionController, 'show']);
                         router.post('/', [PropositionController, 'create']);
+                        router.put('/:id', [PropositionController, 'update']);
+                        router.delete('/:id', [PropositionController, 'delete']);
                     })
                     .prefix('propositions');
 

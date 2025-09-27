@@ -6,7 +6,7 @@ import PropositionService from '#services/proposition_service';
 import PropositionRepository from '#repositories/proposition_repository';
 import PropositionCategoryRepository from '#repositories/proposition_category_repository';
 import UserRepository from '#repositories/user_repository';
-import { createPropositionValidator, searchPropositionsValidator } from '#validators/proposition';
+import { createPropositionValidator, searchPropositionsValidator, updatePropositionValidator } from '#validators/proposition';
 import type Proposition from '#models/proposition';
 import type User from '#models/user';
 import { errors } from '@vinejs/vine';
@@ -16,6 +16,7 @@ import { SerializedPropositionSummary } from '#types/serialized/serialized_propo
 import { SerializedPropositionCategory } from '#types/serialized/serialized_proposition_category';
 import type { PaginatedPropositions } from '#types/paginated/paginated_propositions';
 import type { MultipartFile } from '#types/multipart_file';
+import { UserRoleEnum } from '#types/enum/user_role_enum';
 
 @inject()
 export default class PropositionController {
@@ -86,7 +87,7 @@ export default class PropositionController {
 
         const rawAttachments = request.files('attachments', {
             size: '15mb',
-            extnames: ['png', 'jpg', 'jpeg', 'webp', 'pdf', 'doc', 'docx', 'odt', 'ods'],
+            extnames: ['png', 'jpg', 'jpeg', 'webp', 'pdf', 'doc', 'docx', 'odt', 'ods', 'txt'],
         });
 
         const attachments: MultipartFile[] = (rawAttachments as unknown as any[]).map((file) => ({
@@ -196,6 +197,183 @@ export default class PropositionController {
         }
 
         return response.ok({ proposition: proposition.apiSerialize() });
+    }
+
+    public async update(ctx: HttpContext): Promise<void> {
+        const { request, response, i18n, user } = ctx;
+
+        const identifierParam = request.param('id');
+
+        if (!identifierParam || typeof identifierParam !== 'string' || identifierParam.trim().length === 0) {
+            return response.badRequest({ error: i18n.t('messages.proposition.show.invalid-id') });
+        }
+
+        const proposition: Proposition | null = await this.propositionRepository.findByPublicId(identifierParam.trim(), [
+            'categories',
+            'rescueInitiators',
+            'associatedPropositions',
+            'attachments',
+            'creator',
+            'visual',
+        ]);
+
+        if (!proposition) {
+            return response.notFound({ error: i18n.t('messages.proposition.show.not-found') });
+        }
+
+        const actor: User = user as User;
+        const isAdmin: boolean = actor?.role === UserRoleEnum.ADMIN;
+        const isCreator: boolean = proposition.creatorId === actor?.id;
+        const isRescueInitiator: boolean = (proposition.rescueInitiators ?? []).some((rescueUser: User) => rescueUser.id === actor?.id);
+
+        if (!isAdmin && !isCreator && !isRescueInitiator) {
+            return response.forbidden({ error: i18n.t('messages.proposition.update.forbidden') });
+        }
+
+        const categoryIds: string[] = this.parseCsv(request.input('categoryIds'));
+        const associatedPropositionIds: string[] = this.parseCsv(request.input('associatedPropositionIds'));
+        const rescueInitiatorIds: string[] = this.parseCsv(request.input('rescueInitiatorIds'));
+
+        const visual: MultipartFile | null = request.file('visual', {
+            size: '5mb',
+            extnames: ['png', 'jpg', 'jpeg', 'webp'],
+        }) as MultipartFile | null;
+
+        const rawAttachments = request.files('attachments', {
+            size: '15mb',
+            extnames: ['png', 'jpg', 'jpeg', 'webp', 'pdf', 'doc', 'docx', 'odt', 'ods', 'txt'],
+        });
+
+        const attachments: MultipartFile[] = (rawAttachments as unknown as any[]).map((file) => ({
+            clientName: file.clientName,
+            tmpPath: file.tmpPath,
+            extname: file.extname,
+            size: file.size,
+            type: file.type,
+            subtype: file.subtype,
+            isValid: file.isValid,
+            hasErrors: file.hasErrors,
+            errors:
+                file.errors?.map((e: any) => ({
+                    field: e.field,
+                    rule: e.rule,
+                    message: e.message,
+                })) ?? [],
+            move: file.move.bind(file),
+            delete: file.delete?.bind(file),
+        }));
+
+        if (visual?.hasErrors) {
+            return response.badRequest({ errors: visual.errors });
+        }
+
+        const attachmentsErrors: MultipartFile[] = attachments.filter((file: MultipartFile): boolean => file.hasErrors);
+        if (attachmentsErrors.length) {
+            return response.badRequest({ errors: attachmentsErrors.flatMap((file: MultipartFile) => file.errors ?? []) });
+        }
+
+        try {
+            const payload = await updatePropositionValidator.validate({
+                title: request.input('title'),
+                summary: request.input('summary'),
+                detailedDescription: request.input('detailedDescription'),
+                smartObjectives: request.input('smartObjectives'),
+                impacts: request.input('impacts'),
+                mandatesDescription: request.input('mandatesDescription'),
+                expertise: request.input('expertise'),
+                categoryIds,
+                associatedPropositionIds,
+                rescueInitiatorIds,
+                clarificationDeadline: request.input('clarificationDeadline'),
+                improvementDeadline: request.input('improvementDeadline'),
+                voteDeadline: request.input('voteDeadline'),
+                mandateDeadline: request.input('mandateDeadline'),
+                evaluationDeadline: request.input('evaluationDeadline'),
+            });
+
+            const updatedProposition: Proposition = await this.propositionService.update(proposition, payload, actor, {
+                visual,
+                attachments,
+            });
+
+            logger.info('proposition.update.success', {
+                id: updatedProposition.id,
+                title: updatedProposition.title,
+                actorId: actor?.id,
+            });
+
+            return response.ok({
+                message: i18n.t('messages.proposition.update.success', { title: updatedProposition.title }),
+                proposition: updatedProposition.apiSerialize(),
+            });
+        } catch (error: any) {
+            logger.error('proposition.update.error', {
+                message: error?.message,
+                stack: error?.stack,
+            });
+
+            if (error instanceof errors.E_VALIDATION_ERROR) {
+                return response.badRequest({ errors: error.messages });
+            }
+
+            if (typeof error?.message === 'string' && error.message.startsWith('messages.proposition.create.')) {
+                return response.badRequest({ error: i18n.t(error.message) });
+            }
+
+            const fallbackMessage = i18n.t('messages.proposition.update.error.default');
+            const errorDetails: string | undefined = typeof error?.message === 'string' ? error.message : undefined;
+
+            return response.badRequest({
+                error: fallbackMessage,
+                ...(app.inProduction || !errorDetails ? {} : { details: errorDetails }),
+            });
+        }
+    }
+
+    public async delete(ctx: HttpContext): Promise<void> {
+        const { request, response, i18n, user } = ctx;
+
+        const identifierParam = request.param('id');
+
+        if (!identifierParam || typeof identifierParam !== 'string' || identifierParam.trim().length === 0) {
+            return response.badRequest({ error: i18n.t('messages.proposition.show.invalid-id') });
+        }
+
+        const proposition: Proposition | null = await this.propositionRepository.findByPublicId(identifierParam.trim(), ['rescueInitiators']);
+
+        if (!proposition) {
+            return response.notFound({ error: i18n.t('messages.proposition.show.not-found') });
+        }
+
+        const actor: User = user as User;
+        const isAdmin: boolean = actor?.role === UserRoleEnum.ADMIN;
+        const isCreator: boolean = proposition.creatorId === actor?.id;
+        const isRescueInitiator: boolean = (proposition.rescueInitiators ?? []).some((rescueUser: User) => rescueUser.id === actor?.id);
+
+        if (!isAdmin && !isCreator && !isRescueInitiator) {
+            return response.forbidden({ error: i18n.t('messages.proposition.update.forbidden') });
+        }
+
+        try {
+            await this.propositionService.delete(proposition);
+
+            return response.ok({
+                message: i18n.t('messages.proposition.delete.success', { title: proposition.title }),
+            });
+        } catch (error: any) {
+            logger.error('proposition.delete.error', {
+                message: error?.message,
+                stack: error?.stack,
+            });
+
+            const fallbackMessage = i18n.t('messages.proposition.delete.error.default');
+            const errorDetails: string | undefined = typeof error?.message === 'string' ? error.message : undefined;
+
+            return response.badRequest({
+                error: fallbackMessage,
+                ...(app.inProduction || !errorDetails ? {} : { details: errorDetails }),
+            });
+        }
     }
 
     private parseCsv(value: string | string[] | null | undefined): string[] {

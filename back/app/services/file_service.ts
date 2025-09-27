@@ -1,78 +1,100 @@
 import File from '#models/file';
-import fs from 'fs';
-import fsPromises from 'fs/promises';
-import path from 'path';
-import mime from 'mime-types';
+import storageManager from '#services/storage/storage_manager';
+import type { StorageDriver } from '#services/storage/storage_driver';
+import { fileTypeFromBuffer, type FileTypeResult } from 'file-type';
 import axios from 'axios';
-import { fileTypeFromBuffer, FileTypeResult } from 'file-type';
 import { cuid } from '@adonisjs/core/helpers';
-import { fileURLToPath } from 'node:url';
+import { unlink } from 'node:fs/promises';
+import path from 'node:path';
+import mime from 'mime-types';
+import type { MultipartFile } from '@adonisjs/bodyparser/types';
+
+interface StoredFileMeta {
+    key: string;
+    size: number;
+    mimeType?: string;
+}
 
 export default class FileService {
-    /**
-     * Deletes a file from the 'public' directory based on the given File object.
-     *
-     * @param {File} file - The File object containing the path to delete.
-     * @returns {void}
-     */
-    public delete(file: File): void {
-        fs.unlink(file.path, (error: any): void => {
-            if (error) {
-                console.error(error.message);
+    private driver: StorageDriver = storageManager.driver;
+
+    public async delete(file: File | null | undefined): Promise<void> {
+        if (!file?.path) {
+            return;
+        }
+
+        try {
+            await this.driver.delete(file.path);
+        } catch (error) {
+            console.error('file.delete.error', error);
+        }
+    }
+
+    public async stream(key: string) {
+        try {
+            return await this.driver.stream(key);
+        } catch (error: any) {
+            if (error?.name === 'FileNotFoundError' || error?.message === 'FILE_NOT_FOUND') {
+                const notFoundError = new Error('FILE_NOT_FOUND');
+                notFoundError.name = 'FileNotFoundError';
+                throw notFoundError;
             }
+
+            throw error;
+        }
+    }
+
+    public async storeMultipartFile(file: MultipartFile, key: string, contentType?: string): Promise<StoredFileMeta> {
+        if (!file.tmpPath) {
+            throw new Error('Uploaded file has no temporary path');
+        }
+
+        const resolvedContentType = contentType || file.headers?.['content-type'] || (file.type && file.subtype ? `${file.type}/${file.subtype}` : undefined) || mime.lookup(key) || undefined;
+
+        await this.driver.saveFromFileSystem(file.tmpPath, {
+            key,
+            contentType: resolvedContentType,
         });
+
+        await unlink(file.tmpPath).catch(() => {});
+
+        return {
+            key,
+            size: file.size ?? 0,
+            mimeType: typeof resolvedContentType === 'string' ? resolvedContentType : undefined,
+        };
     }
 
-    /**
-     * Retrieves information about a file, such as size, MIME type, extension, and name.
-     *
-     * @param {string} filePath - The path to the file.
-     * @returns {Promise<{ size: number; mimeType: string; extension: string; name: string }>}
-     *          An object containing file size, MIME type, extension, and filename.
-     */
-    public async getFileInfo(filePath: string): Promise<{ size: number; mimeType: string; extension: string; name: string }> {
-        const stats = await fsPromises.stat(filePath);
-
-        const size: number = stats.size;
-        const extension: string = path.extname(filePath);
-        const name: string = path.basename(filePath);
-        const mimeType: string = mime.lookup(filePath) || 'unknown';
-
-        return { size, mimeType, extension, name };
+    public async saveBuffer(buffer: Buffer, key: string, contentType?: string): Promise<void> {
+        await this.driver.save(buffer, { key, contentType });
     }
 
-    /**
-     * Downloads an OAuth profile picture from a given URL, detects its file type,
-     * saves it locally with a unique filename, and returns the relative path.
-     *
-     * @param {string} url - The URL of the profile picture to download.
-     * @returns {Promise<string>} The relative path to the saved profile picture.
-     * @throws Will throw an error if the file type cannot be detected or saving fails.
-     */
-    public async saveOauthProfilePictureFromUrl(url: string): Promise<string> {
-        const response = await axios.get(url, { responseType: 'arraybuffer' });
-        const buffer: Buffer = Buffer.from(response.data);
+    public async saveOauthProfilePictureFromUrl(url: string): Promise<{
+        key: string;
+        size: number;
+        mimeType: string;
+        extension: string;
+        name: string;
+    }> {
+        const response = await axios.get<ArrayBuffer>(url, { responseType: 'arraybuffer' });
+        const buffer = Buffer.from(response.data);
 
-        const fileTypeResult: FileTypeResult | undefined = await fileTypeFromBuffer(buffer);
-        if (!fileTypeResult) {
+        const fileType: FileTypeResult | undefined = await fileTypeFromBuffer(buffer);
+        if (!fileType) {
             throw new Error('Unable to detect file type');
         }
 
-        const filename = `${cuid()}-${Date.now()}.${fileTypeResult.ext}`;
-        const __filename: string = fileURLToPath(import.meta.url);
-        const __dirname: string = path.dirname(__filename);
-        const folderPath: string = path.join(__dirname, '../../static/profile-picture');
+        const filename = `${cuid()}-${Date.now()}.${fileType.ext}`;
+        const key = `profile-picture/${filename}`;
 
-        await fsPromises.mkdir(folderPath, { recursive: true });
+        await this.saveBuffer(buffer, key, fileType.mime);
 
-        const filePath: string = path.join(folderPath, filename);
-
-        try {
-            await fsPromises.writeFile(filePath, buffer);
-        } catch {
-            throw new Error('Failed to save the avatar from URL');
-        }
-
-        return `static/profile-picture/${filename}`;
+        return {
+            key,
+            size: buffer.length,
+            mimeType: fileType.mime,
+            extension: `.${fileType.ext}`,
+            name: filename,
+        };
     }
 }

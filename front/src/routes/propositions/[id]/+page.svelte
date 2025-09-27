@@ -1,19 +1,76 @@
 <script lang="ts">
-    import Meta from '#components/Meta.svelte';
-    import { Button, buttonVariants } from '#lib/components/ui/button';
-    import { cn } from '#lib/utils';
-    import { m } from '#lib/paraglide/messages';
-    import { PUBLIC_API_BASE_URI } from '$env/static/public';
-    import type { SerializedProposition, SerializedPropositionSummary } from 'backend/types';
     import { goto } from '$app/navigation';
-    import { ArrowLeft, Printer, Download, CalendarDays } from '@lucide/svelte';
+    import { page } from '$app/state';
+    import Meta from '#components/Meta.svelte';
+    import {
+        AlertDialog,
+        AlertDialogAction,
+        AlertDialogCancel,
+        AlertDialogContent,
+        AlertDialogDescription,
+        AlertDialogFooter,
+        AlertDialogHeader,
+        AlertDialogTitle,
+    } from '#lib/components/ui/alert-dialog';
+    import { Button, buttonVariants } from '#lib/components/ui/button';
+    import { m } from '#lib/paraglide/messages';
+    import { cn } from '#lib/utils';
+    import type { SerializedProposition, SerializedPropositionSummary, SerializedUserSummary } from 'backend/types';
+    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2 } from '@lucide/svelte';
 
     const { data } = $props<{ data: { proposition: SerializedProposition } }>();
     const proposition = data.proposition;
 
-    const visualUrl = proposition.visual ? `${PUBLIC_API_BASE_URI}/api/static/propositions/visual/${proposition.id}` : undefined;
+    const visualUrl = proposition.visual ? `/assets/propositions/visual/${proposition.id}` : undefined;
 
-    const attachmentUrl = (fileId: string): string => `${PUBLIC_API_BASE_URI}/api/static/propositions/attachments/${fileId}`;
+    const normalizeId = (value?: string | number | null): string | undefined => {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+        const normalized = value.toString().trim();
+        return normalized.length ? normalized : undefined;
+    };
+
+    let canEditProposition: boolean = $state(false);
+    let canDeleteProposition: boolean = $state(false);
+    let showDeleteDialog: boolean = $state(false);
+    let isDeleteSubmitting: boolean = $state(false);
+
+    $effect(() => {
+        const currentUser = page.data.user;
+        if (!currentUser) {
+            canEditProposition = false;
+            canDeleteProposition = false;
+            return;
+        }
+
+        canDeleteProposition = currentUser.role === 'admin';
+
+        if (canDeleteProposition) {
+            canEditProposition = true;
+            return;
+        }
+
+        const currentUserId = normalizeId((currentUser as any).id ?? (currentUser as any).frontId);
+        if (!currentUserId) {
+            canEditProposition = false;
+            return;
+        }
+
+        const creatorId = normalizeId(proposition.creator?.id);
+        if (creatorId && creatorId === currentUserId) {
+            canEditProposition = true;
+            return;
+        }
+
+        canEditProposition = proposition.rescueInitiators.some((rescue: SerializedUserSummary) => normalizeId(rescue.id) === currentUserId);
+    });
+
+    const handleDeleteSubmit = (): void => {
+        isDeleteSubmitting = true;
+    };
+
+    const attachmentUrl = (fileId: string): string => `/assets/propositions/attachments/${fileId}`;
 
     const formatDate = (value?: string): string => {
         if (!value) {
@@ -83,10 +140,24 @@
         await goto(`/propositions/${linked.id}`);
     };
 
+    const HTML_TAG_PATTERN = /<\/?\s*[a-zA-Z][^>]*>/;
+    const containsHtml = (value?: string | null): boolean => {
+        if (!value) {
+            return false;
+        }
+        return HTML_TAG_PATTERN.test(value);
+    };
+
     const hasExpertise = Boolean(proposition.expertise && proposition.expertise.trim().length);
     const hasRescueInitiators = proposition.rescueInitiators.length > 0;
     const hasAssociated = proposition.associatedPropositions.length > 0;
     const hasAttachments = proposition.attachments.length > 0;
+
+    const detailedDescriptionHasHtml = containsHtml(proposition.detailedDescription);
+    const smartObjectivesHasHtml = containsHtml(proposition.smartObjectives);
+    const impactsHasHtml = containsHtml(proposition.impacts);
+    const mandatesHasHtml = containsHtml(proposition.mandatesDescription);
+    const expertiseHasHtml = containsHtml(proposition.expertise);
 </script>
 
 <Meta
@@ -98,15 +169,48 @@
 
 <div class="proposition-detail space-y-6 lg:space-y-8">
     <div class="flex flex-wrap items-center justify-between gap-3 print-hidden">
-        <Button variant="outline" class="gap-2" onclick={goBack}>
-            <ArrowLeft class="size-4" />
-            {m['proposition-detail.actions.back']()}
-        </Button>
+        <div class="flex flex-wrap items-center gap-3">
+            <Button variant="outline" class="gap-2" onclick={goBack}>
+                <ArrowLeft class="size-4" />
+                {m['proposition-detail.actions.back']()}
+            </Button>
+            {#if canEditProposition}
+                <Button variant="outline" class="gap-2" onclick={() => goto(`/propositions/${proposition.id}/edit`)}>
+                    <Pencil class="size-4" />
+                    {m['common.edit']()}
+                </Button>
+            {/if}
+            {#if canDeleteProposition}
+                <Button variant="destructive" class="gap-2" onclick={() => (showDeleteDialog = true)}>
+                    <Trash2 class="size-4" />
+                    {m['common.delete']()}
+                </Button>
+            {/if}
+        </div>
         <Button variant="secondary" class="gap-2" onclick={printPage}>
             <Printer class="size-4" />
             {m['proposition-detail.actions.print']()}
         </Button>
     </div>
+
+    {#if canDeleteProposition}
+        <AlertDialog open={showDeleteDialog} onOpenChange={(value: boolean) => (showDeleteDialog = value)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{m['proposition-detail.delete.title']()}</AlertDialogTitle>
+                    <AlertDialogDescription>{m['proposition-detail.delete.description']()}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>{m['common.cancel']()}</AlertDialogCancel>
+                    <form method="POST" action="?/delete" class="inline-flex" onsubmit={handleDeleteSubmit}>
+                        <AlertDialogAction type="submit" disabled={isDeleteSubmitting}>
+                            {m['proposition-detail.delete.confirm']()}
+                        </AlertDialogAction>
+                    </form>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    {/if}
 
     <section class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -162,24 +266,54 @@
         <div class="space-y-6">
             <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
                 <h2 class="text-lg font-semibold">{m['proposition-detail.sections.description']()}</h2>
-                <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.detailedDescription}</p>
+                {#if detailedDescriptionHasHtml}
+                    <div class="mt-3 text-sm leading-relaxed text-foreground">
+                        {@html proposition.detailedDescription}
+                    </div>
+                {:else}
+                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.detailedDescription}</p>
+                {/if}
             </article>
             <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
                 <h2 class="text-lg font-semibold">{m['proposition-detail.sections.objectives']()}</h2>
-                <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.smartObjectives}</p>
+                {#if smartObjectivesHasHtml}
+                    <div class="mt-3 text-sm leading-relaxed text-foreground">
+                        {@html proposition.smartObjectives}
+                    </div>
+                {:else}
+                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.smartObjectives}</p>
+                {/if}
             </article>
             <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
                 <h2 class="text-lg font-semibold">{m['proposition-detail.sections.impacts']()}</h2>
-                <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.impacts}</p>
+                {#if impactsHasHtml}
+                    <div class="mt-3 text-sm leading-relaxed text-foreground">
+                        {@html proposition.impacts}
+                    </div>
+                {:else}
+                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.impacts}</p>
+                {/if}
             </article>
             <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
                 <h2 class="text-lg font-semibold">{m['proposition-detail.sections.mandates']()}</h2>
-                <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.mandatesDescription}</p>
+                {#if mandatesHasHtml}
+                    <div class="mt-3 text-sm leading-relaxed text-foreground">
+                        {@html proposition.mandatesDescription}
+                    </div>
+                {:else}
+                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.mandatesDescription}</p>
+                {/if}
             </article>
             <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
                 <h2 class="text-lg font-semibold">{m['proposition-detail.sections.expertise']()}</h2>
                 {#if hasExpertise}
-                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.expertise}</p>
+                    {#if expertiseHasHtml}
+                        <div class="mt-3 text-sm leading-relaxed text-foreground">
+                            {@html proposition.expertise}
+                        </div>
+                    {:else}
+                        <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.expertise}</p>
+                    {/if}
                 {:else}
                     <p class="mt-3 text-sm text-muted-foreground">{m['proposition-detail.empty.expertise']()}</p>
                 {/if}

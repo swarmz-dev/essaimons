@@ -1,3 +1,6 @@
+process.env.STORAGE_DRIVER = process.env.STORAGE_DRIVER ?? 'local';
+process.env.STORAGE_LOCAL_BASE_PATH = process.env.STORAGE_LOCAL_BASE_PATH ?? 'tmp/test-storage';
+
 import { assert } from '@japa/assert';
 import { apiClient } from '@japa/api-client';
 import app from '@adonisjs/core/services/app';

@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { m } from '#lib/paraglide/messages';
-import type { SerializedLanguage } from 'backend/types';
 
 export const GET: RequestHandler = async ({ url, locals }): Promise<Response> => {
     try {
