@@ -21,3 +21,5 @@ npm-debug.log
 yarn-error.log
 
 commands/exec_test.ts
+
+static/organization
