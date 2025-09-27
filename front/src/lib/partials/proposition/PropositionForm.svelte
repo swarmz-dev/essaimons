@@ -1,28 +1,29 @@
 <script lang="ts">
     import { enhance } from '$app/forms';
     import { page } from '$app/state';
-    import { Title } from '#lib/components/ui/title';
     import Meta from '#components/Meta.svelte';
     import FormBackground from '#components/background/FormBackground.svelte';
+    import { Title } from '#lib/components/ui/title';
     import { Button } from '#lib/components/ui/button';
-    import { Input } from '#lib/components/ui/input';
-    import { Textarea } from '#lib/components/ui/textarea';
-    import { RichTextEditor } from '#lib/components/ui/rich-text';
-    import { MultiSelect, type MultiSelectOption } from '#lib/components/ui/multi-select';
-    import { FieldLabel } from '#lib/components/forms';
     import { m } from '#lib/paraglide/messages';
+    import { showToast } from '#lib/services/toastService';
+    import PropositionFormConcretization from './components/PropositionFormConcretization.svelte';
+    import PropositionFormHorizontality from './components/PropositionFormHorizontality.svelte';
+    import PropositionFormRobustness from './components/PropositionFormRobustness.svelte';
+    import PropositionFormTabs from './components/PropositionFormTabs.svelte';
+    import type { MultiSelectOption } from '#lib/components/ui/multi-select';
     import type { SubmitFunction } from '@sveltejs/kit';
     import type { FormError, PageDataError } from '../../../app';
-    import { showToast } from '#lib/services/toastService';
     import * as zod from 'zod';
     import type { SerializedProposition, SerializedPropositionBootstrap, SerializedPropositionCategory, SerializedPropositionSummary, SerializedUserSummary } from 'backend/types';
-    import { cn } from '#lib/utils';
 
     const tabs = [
         { id: 'concretization', title: m['proposition-create.tabs.concretization.title'](), description: m['proposition-create.tabs.concretization.description']() },
         { id: 'horizontality', title: m['proposition-create.tabs.horizontality.title'](), description: m['proposition-create.tabs.horizontality.description']() },
         { id: 'robustness', title: m['proposition-create.tabs.robustness.title'](), description: m['proposition-create.tabs.robustness.description']() },
     ] as const;
+
+    type TabId = (typeof tabs)[number]['id'];
 
     const ALLOWED_ATTACHMENT_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'pdf', 'doc', 'docx', 'odt', 'ods', 'txt'] as const;
     const ATTACHMENT_ACCEPT = ALLOWED_ATTACHMENT_EXTENSIONS.map((extension) => `.${extension}`).join(',');
@@ -126,7 +127,7 @@
         });
     });
 
-    let activeTab: (typeof tabs)[number]['id'] = $state(tabs[0].id);
+    let activeTab: TabId = $state(tabs[0].id);
 
     let title: string = $state('');
     let summary: string = $state('');
@@ -330,8 +331,10 @@
         }
     };
 
-    const goToTab = (tabId: (typeof tabs)[number]['id']): void => {
-        activeTab = tabId;
+    const goToTab = (tabId: string): void => {
+        if (tabs.some((tab) => tab.id === tabId)) {
+            activeTab = tabId as TabId;
+        }
     };
 
     const handlePrevious = (): void => {
@@ -410,192 +413,40 @@
 
         <div class="rounded-3xl border border-white/45 bg-white/80 p-4 shadow-2xl backdrop-blur-2xl dark:border-slate-800/80 dark:bg-slate-950/75">
             <div class="flex flex-col gap-6">
-                <nav class="grid gap-3 sm:grid-cols-3">
-                    {#each tabs as tab (tab.id)}
-                        <button
-                            type="button"
-                            class={cn(
-                                'group flex flex-col gap-2 rounded-2xl border border-white/45 bg-white/75 px-4 py-4 text-left shadow-md transition hover:border-primary/50 hover:bg-white/90 dark:border-slate-800/70 dark:bg-slate-900/70',
-                                activeTab === tab.id ? 'border-primary/70 bg-primary/90 text-primary-foreground' : ''
-                            )}
-                            onclick={() => goToTab(tab.id)}
-                        >
-                            <span
-                                class={cn(
-                                    'text-sm font-semibold uppercase tracking-wide text-muted-foreground group-hover:text-primary dark:group-hover:text-primary',
-                                    activeTab === tab.id ? 'text-primary-foreground' : ''
-                                )}
-                            >
-                                {tab.title}
-                            </span>
-                            <p class={cn('text-sm text-muted-foreground group-hover:text-foreground/90 dark:group-hover:text-foreground/90', activeTab === tab.id ? 'text-primary-foreground/90' : '')}>
-                                {tab.description}
-                            </p>
-                        </button>
-                    {/each}
-                </nav>
+                <PropositionFormTabs {tabs} {activeTab} selectTab={goToTab} />
 
                 <form method="POST" enctype="multipart/form-data" use:enhance={submitHandler} class="flex flex-col gap-10">
                     <input type="hidden" name="activeTab" value={activeTab} />
 
                     <div class="grid gap-6 lg:grid-cols-2" hidden={activeTab !== 'concretization'} aria-hidden={activeTab !== 'concretization'}>
-                        <div class="space-y-6">
-                            <div class="space-y-2">
-                                <Input
-                                    name="title"
-                                    id="title"
-                                    label={m['proposition-create.fields.title.label']()}
-                                    bind:value={title}
-                                    placeholder={m['proposition-create.fields.title.placeholder']()}
-                                    required
-                                    max={150}
-                                />
-                                <p class="text-xs leading-snug text-muted-foreground">{m['proposition-create.fields.title.info']()}</p>
-                            </div>
-
-                            <FieldLabel forId="visual" label={m['proposition-create.fields.visual.label']()} info={m['proposition-create.fields.visual.info']()}>
-                                <Input type="file" name="visual" id="visual" accept="image/*" bind:files={visualFiles} />
-                                {#if visualFiles?.length}
-                                    <p class="mt-2 text-sm text-muted-foreground">{visualFiles[0].name}</p>
-                                {/if}
-                            </FieldLabel>
-
-                            <FieldLabel forId="categories" label={m['proposition-create.fields.categories.label']()} required info={m['proposition-create.fields.categories.info']()}>
-                                <MultiSelect placeholder={m['proposition-create.fields.categories.placeholder']()} bind:selectedValues={categoryIdsStrings} options={categoryOptions} />
-                            </FieldLabel>
-
-                            <RichTextEditor
-                                name="smartObjectives"
-                                label={m['proposition-create.fields.smart-objectives.label']()}
-                                info={m['proposition-create.fields.smart-objectives.info']()}
-                                bind:value={smartObjectives}
-                                required
-                                max={1500}
-                            />
-
-                            <FieldLabel forId="attachments" label={m['proposition-create.fields.attachments.label']()} info={m['proposition-create.fields.attachments.info']()}>
-                                <Input
-                                    type="file"
-                                    name="attachments"
-                                    id="attachments"
-                                    multiple
-                                    bind:files={attachmentFiles}
-                                    bind:ref={attachmentsInputRef}
-                                    accept={ATTACHMENT_ACCEPT}
-                                    onchange={handleAttachmentsChange}
-                                />
-                                {#if attachmentFiles?.length}
-                                    <ul class="mt-2 list-disc pl-5 text-sm text-muted-foreground">
-                                        {#each Array.from(attachmentFiles) as file (file.name)}
-                                            <li>{file.name}</li>
-                                        {/each}
-                                    </ul>
-                                {/if}
-                            </FieldLabel>
-                        </div>
-
-                        <div class="space-y-6">
-                            <RichTextEditor
-                                name="detailedDescription"
-                                label={m['proposition-create.fields.detailed-description.label']()}
-                                info={m['proposition-create.fields.detailed-description.info']()}
-                                bind:value={detailedDescription}
-                                required
-                                max={1500}
-                            />
-                        </div>
+                        <PropositionFormConcretization
+                            bind:title
+                            bind:smartObjectives
+                            bind:detailedDescription
+                            bind:categoryIdsStrings
+                            {categoryOptions}
+                            bind:visualFiles
+                            bind:attachmentFiles
+                            bind:attachmentsInputRef
+                            attachmentAccept={ATTACHMENT_ACCEPT}
+                            onAttachmentsChange={handleAttachmentsChange}
+                        />
                     </div>
 
                     <div class="grid gap-6 lg:grid-cols-2" hidden={activeTab !== 'horizontality'} aria-hidden={activeTab !== 'horizontality'}>
-                        <div class="space-y-6">
-                            <FieldLabel forId="summary" label={m['proposition-create.fields.summary.label']()} required info={m['proposition-create.fields.summary.info']()}>
-                                <Textarea name="summary" id="summary" bind:value={summary} max={300} rows={6} required />
-                            </FieldLabel>
-
-                            <RichTextEditor
-                                name="mandatesDescription"
-                                label={m['proposition-create.fields.mandates-description.label']()}
-                                info={m['proposition-create.fields.mandates-description.info']()}
-                                bind:value={mandatesDescription}
-                                required
-                                max={1500}
-                            />
-                        </div>
-
-                        <div class="space-y-6">
-                            <div class="grid gap-4">
-                                <FieldLabel
-                                    forId="clarificationDeadline"
-                                    label={m['proposition-create.fields.clarification-deadline.label']()}
-                                    required
-                                    info={m['proposition-create.fields.clarification-deadline.info']()}
-                                >
-                                    <Input type="date" name="clarificationDeadline" id="clarificationDeadline" bind:value={clarificationDeadline} required />
-                                </FieldLabel>
-                                <FieldLabel
-                                    forId="improvementDeadline"
-                                    label={m['proposition-create.fields.improvement-deadline.label']()}
-                                    required
-                                    info={m['proposition-create.fields.improvement-deadline.info']()}
-                                >
-                                    <Input type="date" name="improvementDeadline" id="improvementDeadline" bind:value={improvementDeadline} required />
-                                </FieldLabel>
-                                <FieldLabel forId="voteDeadline" label={m['proposition-create.fields.vote-deadline.label']()} required info={m['proposition-create.fields.vote-deadline.info']()}>
-                                    <Input type="date" name="voteDeadline" id="voteDeadline" bind:value={voteDeadline} required />
-                                </FieldLabel>
-                                <FieldLabel
-                                    forId="mandateDeadline"
-                                    label={m['proposition-create.fields.mandate-deadline.label']()}
-                                    required
-                                    info={m['proposition-create.fields.mandate-deadline.info']()}
-                                >
-                                    <Input type="date" name="mandateDeadline" id="mandateDeadline" bind:value={mandateDeadline} required />
-                                </FieldLabel>
-                                <FieldLabel
-                                    forId="evaluationDeadline"
-                                    label={m['proposition-create.fields.evaluation-deadline.label']()}
-                                    required
-                                    info={m['proposition-create.fields.evaluation-deadline.info']()}
-                                >
-                                    <Input type="date" name="evaluationDeadline" id="evaluationDeadline" bind:value={evaluationDeadline} required />
-                                </FieldLabel>
-                            </div>
-                        </div>
+                        <PropositionFormHorizontality
+                            bind:summary
+                            bind:mandatesDescription
+                            bind:clarificationDeadline
+                            bind:improvementDeadline
+                            bind:voteDeadline
+                            bind:mandateDeadline
+                            bind:evaluationDeadline
+                        />
                     </div>
 
                     <div class="grid gap-6 lg:grid-cols-2" hidden={activeTab !== 'robustness'} aria-hidden={activeTab !== 'robustness'}>
-                        <div class="space-y-6">
-                            <FieldLabel forId="impacts" label={m['proposition-create.fields.impacts.label']()} required info={m['proposition-create.fields.impacts.info']()}>
-                                <Textarea name="impacts" id="impacts" bind:value={impacts} max={1500} rows={8} required />
-                            </FieldLabel>
-
-                            <FieldLabel forId="expertise" label={m['proposition-create.fields.expertise.label']()} info={m['proposition-create.fields.expertise.info']()}>
-                                <Textarea name="expertise" id="expertise" bind:value={expertise} max={150} rows={4} />
-                            </FieldLabel>
-
-                            <FieldLabel
-                                forId="associatedPropositions"
-                                label={m['proposition-create.fields.associated-propositions.label']()}
-                                info={m['proposition-create.fields.associated-propositions.info']()}
-                            >
-                                <MultiSelect
-                                    placeholder={m['proposition-create.fields.associated-propositions.placeholder']()}
-                                    bind:selectedValues={associatedPropositionStrings}
-                                    options={propositionOptions}
-                                />
-                            </FieldLabel>
-                        </div>
-
-                        <div class="space-y-6">
-                            <FieldLabel
-                                forId="rescueInitiators"
-                                label={m['proposition-create.fields.rescue-initiators.label']()}
-                                required
-                                info={m['proposition-create.fields.rescue-initiators.info']()}
-                            >
-                                <MultiSelect placeholder={m['proposition-create.fields.rescue-initiators.placeholder']()} bind:selectedValues={rescueInitiatorStrings} options={userOptions} />
-                            </FieldLabel>
-                        </div>
+                        <PropositionFormRobustness bind:impacts bind:expertise bind:associatedPropositionStrings {propositionOptions} bind:rescueInitiatorStrings {userOptions} />
                     </div>
 
                     <div class="flex flex-col gap-4 border-t border-white/40 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800/70">
