@@ -10,7 +10,8 @@
     import { cn } from '#lib/utils';
     import { m } from '#lib/paraglide/messages';
     import type { Snippet } from 'svelte';
-    import { organizationSettings } from '#lib/stores/organizationStore';
+    import { organizationSettings, translateField } from '#lib/stores/organizationStore';
+    import { language } from '#lib/stores/languageStore';
 
     type Props = {
         children: Snippet;
@@ -23,7 +24,9 @@
 
     const DEFAULT_BRAND_NAME = 'Essaimons-V1';
     let navItems: MenuItemsListItem[] = $state(mainMenu.notConnected);
-    const brandName = $derived($organizationSettings.name ?? DEFAULT_BRAND_NAME);
+    const resolvedLocale = $derived($language);
+    const fallbackLocale = $derived($organizationSettings.fallbackLocale);
+    const brandName = $derived(translateField($organizationSettings.name, resolvedLocale, fallbackLocale) ?? DEFAULT_BRAND_NAME);
     const logoUrl = $derived($organizationSettings.logo ? `/assets/organization/logo/${$organizationSettings.logo.id}?no-cache=true` : null);
 
     $effect(() => {

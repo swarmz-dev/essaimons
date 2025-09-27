@@ -42,10 +42,12 @@ export const load: LayoutServerLoad = loadFlash(
         const user: SerializedUser | undefined = userCookie ? <SerializedUser>JSON.parse(userCookie) : undefined;
 
         let organization: SerializedOrganizationSettings = {
-            name: null,
-            description: null,
-            sourceCodeUrl: null,
-            copyright: null,
+            fallbackLocale: 'en',
+            locales: [],
+            name: {},
+            description: {},
+            sourceCodeUrl: {},
+            copyright: {},
             logo: null,
         };
 

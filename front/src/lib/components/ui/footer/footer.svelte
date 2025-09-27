@@ -1,32 +1,23 @@
 <script lang="ts">
-    import { profile } from '#lib/stores/profileStore';
     import { m } from '#lib/paraglide/messages';
     import { PUBLIC_GITHUB_REPOSITORY } from '$env/static/public';
     import { Github } from '@lucide/svelte';
-    import { mainMenu, type MenuItemsListItem } from '#lib/services/menuService';
     import { FooterGroupItem, FooterGroup } from '#lib/components/ui/footer';
     import { Link } from '#lib/components/ui/link';
-    import { organizationSettings } from '#lib/stores/organizationStore';
+    import { organizationSettings, translateField } from '#lib/stores/organizationStore';
+    import { language } from '#lib/stores/languageStore';
 
     const DEFAULT_BRAND_NAME = 'Essaimons-V1';
     const DEFAULT_DESCRIPTION = m['home.meta.description']();
     const DEFAULT_COPYRIGHT = 'Copyleft 2025 La Ruche, AGPL-3.0';
-    let footerNavigation: MenuItemsListItem[] = $state(mainMenu.notConnected);
-    const brandName = $derived($organizationSettings.name ?? DEFAULT_BRAND_NAME);
-    const description = $derived($organizationSettings.description ?? DEFAULT_DESCRIPTION);
-    const sourceCodeUrl = $derived($organizationSettings.sourceCodeUrl ?? PUBLIC_GITHUB_REPOSITORY);
+    const resolvedLocale = $derived($language);
+    const fallbackLocale = $derived($organizationSettings.fallbackLocale);
+    const brandName = $derived(translateField($organizationSettings.name, resolvedLocale, fallbackLocale) ?? DEFAULT_BRAND_NAME);
+    const description = $derived(translateField($organizationSettings.description, resolvedLocale, fallbackLocale) ?? DEFAULT_DESCRIPTION);
+    const sourceCodeUrl = $derived(translateField($organizationSettings.sourceCodeUrl, resolvedLocale, fallbackLocale) ?? PUBLIC_GITHUB_REPOSITORY);
     const hasSourceLink = $derived(Boolean(sourceCodeUrl));
     const logoUrl = $derived($organizationSettings.logo ? `/assets/organization/logo/${$organizationSettings.logo.id}?no-cache=true` : null);
-    const copyrightText = $derived($organizationSettings.copyright ?? DEFAULT_COPYRIGHT);
-
-    $effect(() => {
-        if (!$profile) {
-            footerNavigation = mainMenu.notConnected;
-            return;
-        }
-
-        footerNavigation = mainMenu.connected.filter((item) => $profile.role === 'admin' || !item.href.startsWith('/admin'));
-    });
+    const copyrightText = $derived(translateField($organizationSettings.copyright, resolvedLocale, fallbackLocale) ?? DEFAULT_COPYRIGHT);
 </script>
 
 <footer class="relative mt-16 w-full">

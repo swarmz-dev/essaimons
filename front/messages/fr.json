@@ -273,7 +273,9 @@
                     "title": "Logo",
                     "placeholder": "Téléversez un logo carré (PNG, JPG, SVG, WEBP)",
                     "remove": "Supprimer le logo"
-                }
+                },
+                "fallback-locale": "Langue de repli",
+                "fallback-badge": "Référence"
             },
             "actions": {
                 "save": "Enregistrer les modifications"

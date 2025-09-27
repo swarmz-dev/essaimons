@@ -3,6 +3,7 @@ import db from '@adonisjs/lucid/services/db';
 import path from 'node:path';
 import { cuid } from '@adonisjs/core/helpers';
 import mime from 'mime-types';
+import Language from '#models/language';
 import SettingRepository from '#repositories/setting_repository';
 import FileService from '#services/file_service';
 import SlugifyService from '#services/slugify_service';
@@ -15,18 +16,22 @@ import type { MultipartFile } from '@adonisjs/bodyparser/types';
 const ORGANIZATION_SETTINGS_KEY = 'organization';
 
 interface OrganizationSettingsValue {
-    name: string | null;
-    description: string | null;
-    sourceCodeUrl: string | null;
-    copyright: string | null;
+    fallbackLocale: string;
+    name: Record<string, string>;
+    description: Record<string, string>;
+    sourceCodeUrl: Record<string, string>;
+    copyright: Record<string, string>;
     logoFileId: string | null;
 }
 
 interface UpdateOrganizationSettingsPayload {
-    name?: string | null;
-    description?: string | null;
-    sourceCodeUrl?: string | null;
-    copyright?: string | null;
+    fallbackLocale: string;
+    translations: {
+        name: Record<string, string>;
+        description: Record<string, string>;
+        sourceCodeUrl: Record<string, string>;
+        copyright: Record<string, string>;
+    };
     removeLogo?: boolean;
 }
 
@@ -38,29 +43,36 @@ export default class SettingsService {
         private readonly slugifyService: SlugifyService
     ) {}
 
-    private normalizeString(value?: string | null): string | null {
-        if (value === undefined || value === null) {
-            return null;
+    private normalizeTranslationMap(input: Record<string, unknown> | undefined | null): Record<string, string> {
+        const result: Record<string, string> = {};
+        if (!input) {
+            return result;
         }
-
-        const trimmed = value.trim();
-        return trimmed.length ? trimmed : null;
+        for (const [locale, raw] of Object.entries(input)) {
+            if (typeof raw !== 'string') continue;
+            const trimmed = raw.trim();
+            if (!trimmed.length) continue;
+            const lower = locale.toLowerCase();
+            result[lower] = trimmed;
+        }
+        return result;
     }
 
     private async serializeOrganizationSettings(value: OrganizationSettingsValue | null): Promise<SerializedOrganizationSettings> {
-        if (!value) {
-            return {
-                name: null,
-                description: null,
-                sourceCodeUrl: null,
-                copyright: null,
-                logo: null,
-            };
-        }
+        const languages = await Language.query().orderBy('name', 'asc');
+        const locales = languages.map((language) => ({
+            code: language.code,
+            label: language.name ?? language.code,
+            isDefault: Boolean(language.isFallback),
+        }));
+
+        const storedFallback = value?.fallbackLocale?.toLowerCase();
+        const fallbackLocale =
+            storedFallback && locales.some((locale) => locale.code === storedFallback) ? storedFallback : (locales.find((locale) => locale.isDefault)?.code ?? locales[0]?.code ?? 'en');
 
         let logo: SerializedOrganizationSettings['logo'] = null;
 
-        if (value.logoFileId) {
+        if (value?.logoFileId) {
             const file = await File.find(value.logoFileId);
             if (file) {
                 logo = file.apiSerialize();
@@ -68,10 +80,12 @@ export default class SettingsService {
         }
 
         return {
-            name: value.name,
-            description: value.description,
-            sourceCodeUrl: value.sourceCodeUrl,
-            copyright: value.copyright,
+            fallbackLocale,
+            locales,
+            name: value?.name ?? {},
+            description: value?.description ?? {},
+            sourceCodeUrl: value?.sourceCodeUrl ?? {},
+            copyright: value?.copyright ?? {},
             logo,
         };
     }
@@ -86,20 +100,36 @@ export default class SettingsService {
         const trx = await db.transaction();
 
         try {
+            const languages = await Language.query({ client: trx }).orderBy('name', 'asc');
+            const localeCodes = languages.map((language) => language.code.toLowerCase());
+
+            let fallbackLocale = payload.fallbackLocale.toLowerCase();
+            if (!localeCodes.includes(fallbackLocale)) {
+                fallbackLocale = languages.find((language) => language.isFallback)?.code.toLowerCase() ?? localeCodes[0] ?? fallbackLocale;
+            }
+
             let record = await this.settingRepository.findByKey(ORGANIZATION_SETTINGS_KEY, trx);
             let value: OrganizationSettingsValue = {
-                name: null,
-                description: null,
-                sourceCodeUrl: null,
-                copyright: null,
+                fallbackLocale,
+                name: {},
+                description: {},
+                sourceCodeUrl: {},
+                copyright: {},
                 logoFileId: null,
             };
 
             if (record) {
-                value = {
-                    ...value,
-                    ...((record.value as unknown as OrganizationSettingsValue) ?? {}),
-                };
+                const currentValue = (record.value as unknown as OrganizationSettingsValue) ?? null;
+                if (currentValue) {
+                    value = {
+                        fallbackLocale: (currentValue.fallbackLocale ?? fallbackLocale).toLowerCase(),
+                        name: currentValue.name ?? {},
+                        description: currentValue.description ?? {},
+                        sourceCodeUrl: currentValue.sourceCodeUrl ?? {},
+                        copyright: currentValue.copyright ?? {},
+                        logoFileId: currentValue.logoFileId ?? null,
+                    };
+                }
             } else {
                 record = await Setting.create(
                     {
@@ -110,56 +140,59 @@ export default class SettingsService {
                 );
             }
 
-            const normalized: OrganizationSettingsValue = {
-                name: value.name,
-                description: value.description,
-                sourceCodeUrl: value.sourceCodeUrl,
-                copyright: value.copyright,
-                logoFileId: value.logoFileId,
-            };
+            const allowedLocales = new Set(localeCodes.length ? localeCodes : Object.keys(payload.translations.name ?? {}).map((code) => code.toLowerCase()));
 
-            if (payload.name !== undefined) {
-                normalized.name = this.normalizeString(payload.name);
-            }
-
-            if (payload.description !== undefined) {
-                normalized.description = this.normalizeString(payload.description);
-            }
-
-            if (payload.sourceCodeUrl !== undefined) {
-                normalized.sourceCodeUrl = this.normalizeString(payload.sourceCodeUrl);
-                if (normalized.sourceCodeUrl) {
-                    try {
-                        // Validate that the URL is well formed
-                        new URL(normalized.sourceCodeUrl);
-                    } catch {
-                        normalized.sourceCodeUrl = null;
+            const filterMap = (input: Record<string, string>): Record<string, string> => {
+                const normalized = this.normalizeTranslationMap(input);
+                const filtered: Record<string, string> = {};
+                for (const [locale, value] of Object.entries(normalized)) {
+                    const lower = locale.toLowerCase();
+                    if (allowedLocales.has(lower)) {
+                        filtered[lower] = value;
                     }
                 }
-            }
+                return filtered;
+            };
 
-            if (payload.copyright !== undefined) {
-                normalized.copyright = this.normalizeString(payload.copyright);
-            }
+            const filterUrlMap = (input: Record<string, string>): Record<string, string> => {
+                const normalized = filterMap(input);
+                const filtered: Record<string, string> = {};
+                for (const [locale, url] of Object.entries(normalized)) {
+                    try {
+                        // eslint-disable-next-line no-new
+                        new URL(url);
+                        filtered[locale] = url;
+                    } catch (error) {
+                        // ignore invalid URLs
+                    }
+                }
+                return filtered;
+            };
+
+            value.fallbackLocale = fallbackLocale;
+            value.name = filterMap(payload.translations.name);
+            value.description = filterMap(payload.translations.description);
+            value.sourceCodeUrl = filterUrlMap(payload.translations.sourceCodeUrl);
+            value.copyright = filterMap(payload.translations.copyright);
 
             const shouldRemoveLogo = Boolean(payload.removeLogo) && !logoFile;
-            if (shouldRemoveLogo && normalized.logoFileId) {
-                const existing = await File.find(normalized.logoFileId, { client: trx });
+            if (shouldRemoveLogo && value.logoFileId) {
+                const existing = await File.find(value.logoFileId, { client: trx });
                 if (existing) {
                     await this.fileService.delete(existing);
                     await existing.delete();
                 }
-                normalized.logoFileId = null;
+                value.logoFileId = null;
             }
 
             if (logoFile && logoFile.tmpPath) {
-                if (normalized.logoFileId) {
-                    const existing = await File.find(normalized.logoFileId, { client: trx });
+                if (value.logoFileId) {
+                    const existing = await File.find(value.logoFileId, { client: trx });
                     if (existing) {
                         await this.fileService.delete(existing);
                         await existing.delete();
                     }
-                    normalized.logoFileId = null;
+                    value.logoFileId = null;
                 }
 
                 const originalExtension = path.extname(logoFile.clientName);
@@ -186,15 +219,15 @@ export default class SettingsService {
                     { client: trx }
                 );
 
-                normalized.logoFileId = storedLogo.id;
+                value.logoFileId = storedLogo.id;
             }
 
-            record.merge({ value: normalized as unknown as Record<string, unknown> });
+            record.merge({ value: value as unknown as Record<string, unknown> });
             await record.save();
 
             await trx.commit();
 
-            return this.serializeOrganizationSettings(normalized);
+            return this.serializeOrganizationSettings(value);
         } catch (error) {
             await trx.rollback();
             throw error;

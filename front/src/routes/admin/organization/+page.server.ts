@@ -2,12 +2,6 @@ import type { Actions, PageServerLoad } from './$types';
 import type { SerializedOrganizationSettings } from 'backend/types';
 import { redirect as flashRedirect } from 'sveltekit-flash-message/server';
 
-const toBoolean = (value: FormDataEntryValue | null): boolean => {
-    if (!value) return false;
-    const normalized = value.toString().toLowerCase();
-    return normalized === 'true' || normalized === 'on' || normalized === '1';
-};
-
 export const load: PageServerLoad<{ settings: SerializedOrganizationSettings }> = async ({ locals }) => {
     try {
         const { data } = await locals.client.get<{ settings: SerializedOrganizationSettings }>('api/admin/organization');
@@ -19,10 +13,12 @@ export const load: PageServerLoad<{ settings: SerializedOrganizationSettings }> 
         console.error('admin.organization.load.error', error?.response?.data ?? error);
         return {
             settings: {
-                name: null,
-                description: null,
-                sourceCodeUrl: null,
-                copyright: null,
+                fallbackLocale: 'en',
+                locales: [],
+                name: {},
+                description: {},
+                sourceCodeUrl: {},
+                copyright: {},
                 logo: null,
             },
         };
@@ -38,20 +34,12 @@ export const actions: Actions = {
 
         const multipart = new FormData();
 
-        const name = formData.get('name');
-        const description = formData.get('description');
-        const sourceCodeUrl = formData.get('sourceCodeUrl');
-        const copyright = formData.get('copyright');
-        const removeLogo = toBoolean(formData.get('removeLogo'));
-        const logo = formData.get('logo');
-
-        if (name !== null) multipart.append('name', name.toString());
-        if (description !== null) multipart.append('description', description.toString());
-        if (sourceCodeUrl !== null) multipart.append('sourceCodeUrl', sourceCodeUrl.toString());
-        if (copyright !== null) multipart.append('copyright', copyright.toString());
-        if (removeLogo) multipart.append('removeLogo', 'true');
-        if (!removeLogo && logo instanceof File && logo.size > 0) {
-            multipart.append('logo', logo, logo.name);
+        for (const [key, value] of formData.entries()) {
+            if (value instanceof File) {
+                multipart.append(key, value, value.name);
+            } else {
+                multipart.append(key, value as string);
+            }
         }
 
         try {
@@ -72,7 +60,16 @@ export const actions: Actions = {
             }
 
             const apiError = error?.response?.data;
-            const message = typeof apiError?.error === 'string' ? apiError.error : 'Unable to update organization profile';
+            let message = 'Unable to update organization profile';
+
+            if (typeof apiError?.error === 'string' && apiError.error.trim().length > 0) {
+                message = apiError.error;
+            } else if (Array.isArray(apiError?.errors) && apiError.errors.length > 0) {
+                const firstMessage = apiError.errors.find((item: any) => typeof item?.message === 'string')?.message;
+                if (firstMessage) {
+                    message = firstMessage;
+                }
+            }
 
             throw flashRedirect(
                 303,

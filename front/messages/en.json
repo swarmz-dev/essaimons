@@ -273,7 +273,9 @@
                     "title": "Logo",
                     "placeholder": "Upload a square logo (PNG, JPG, SVG, WEBP)",
                     "remove": "Remove current logo"
-                }
+                },
+                "fallback-locale": "Fallback language",
+                "fallback-badge": "Fallback"
             },
             "actions": {
                 "save": "Save changes"

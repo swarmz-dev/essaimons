@@ -45,7 +45,11 @@
         },
         "organization": {
             "update": {
-                "success": "Profil de l'organisation mis à jour avec succès"
+                "success": "Profil de l'organisation mis à jour avec succès",
+                "error": {
+                    "missing": "Traduction manquante pour {field} en langue {locale}",
+                    "invalid-url": "Le lien du code source doit être une URL valide pour la langue {locale}"
+                }
             }
         }
     },

@@ -1,19 +1,29 @@
 import { writable, type Writable } from 'svelte/store';
 import type { SerializedFile } from 'backend/types';
 
+export type OrganizationLocale = {
+    code: string;
+    label: string;
+    isDefault: boolean;
+};
+
 export type OrganizationSettings = {
-    name: string | null;
-    description: string | null;
-    sourceCodeUrl: string | null;
-    copyright: string | null;
+    fallbackLocale: string;
+    locales: OrganizationLocale[];
+    name: Record<string, string>;
+    description: Record<string, string>;
+    sourceCodeUrl: Record<string, string>;
+    copyright: Record<string, string>;
     logo: SerializedFile | null;
 };
 
 const defaultSettings: OrganizationSettings = {
-    name: null,
-    description: null,
-    sourceCodeUrl: null,
-    copyright: null,
+    fallbackLocale: 'en',
+    locales: [],
+    name: {},
+    description: {},
+    sourceCodeUrl: {},
+    copyright: {},
     logo: null,
 };
 
@@ -21,10 +31,25 @@ export const organizationSettings: Writable<OrganizationSettings> = writable(def
 
 export function setOrganizationSettings(settings: OrganizationSettings): void {
     organizationSettings.set({
-        name: settings.name ?? null,
-        description: settings.description ?? null,
-        sourceCodeUrl: settings.sourceCodeUrl ?? null,
-        copyright: settings.copyright ?? null,
+        fallbackLocale: settings.fallbackLocale,
+        locales: settings.locales ?? [],
+        name: settings.name ?? {},
+        description: settings.description ?? {},
+        sourceCodeUrl: settings.sourceCodeUrl ?? {},
+        copyright: settings.copyright ?? {},
         logo: settings.logo ?? null,
     });
+}
+
+export function translateField(translations: Record<string, string>, locale: string, fallback: string): string | null {
+    const direct = translations[locale]?.trim();
+    if (direct) {
+        return direct;
+    }
+    const fallbackValue = translations[fallback]?.trim();
+    if (fallbackValue) {
+        return fallbackValue;
+    }
+    const first = Object.values(translations).find((value) => value?.trim().length);
+    return first ? first.trim() : null;
 }

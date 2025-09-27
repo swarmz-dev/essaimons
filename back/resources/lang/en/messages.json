@@ -45,7 +45,11 @@
         },
         "organization": {
             "update": {
-                "success": "Organization profile updated successfully"
+                "success": "Organization profile updated successfully",
+                "error": {
+                    "missing": "Missing translation for {field} in locale {locale}",
+                    "invalid-url": "Fallback source code link must be a valid URL for locale {locale}"
+                }
             }
         }
     },
