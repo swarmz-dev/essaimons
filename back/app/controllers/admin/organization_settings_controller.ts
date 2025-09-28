@@ -48,7 +48,7 @@ export default class OrganizationSettingsController {
                     sourceCodeUrl: payload.sourceCodeUrl ?? {},
                     copyright: payload.copyright ?? {},
                 },
-                removeLogo: payload.removeLogo,
+                propositionDefaults: payload.propositionDefaults ?? {},
             },
             payload.logo
         );

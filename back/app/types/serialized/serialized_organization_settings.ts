@@ -8,4 +8,11 @@ export type SerializedOrganizationSettings = {
     sourceCodeUrl: Record<string, string>;
     copyright: Record<string, string>;
     logo: SerializedFile | null;
+    propositionDefaults: {
+        clarificationOffsetDays: number;
+        improvementOffsetDays: number;
+        voteOffsetDays: number;
+        mandateOffsetDays: number;
+        evaluationOffsetDays: number;
+    };
 };

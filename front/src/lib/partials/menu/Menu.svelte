@@ -42,17 +42,18 @@
     });
 
     const currentPath = $derived(page.url.pathname);
+    const currentLocation = $derived<string>(page.data.location ?? currentPath);
 
     const isNavItemActive = (href: string): boolean => {
-        if (!currentPath) {
+        if (!currentLocation) {
             return false;
         }
 
         if (href === '/') {
-            return currentPath === href;
+            return currentLocation === href;
         }
 
-        return currentPath.startsWith(href);
+        return currentLocation.startsWith(href);
     };
 </script>
 
@@ -119,9 +120,11 @@
             <div class="sticky top-6 z-20 mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between gap-4 rounded-full border border-sidebar-border/50 bg-white/85 px-4 py-3 shadow-xl backdrop-blur-2xl dark:bg-slate-950/80">
                     <div class="flex flex-1 items-center gap-3">
-                        <SidebarTrigger
-                            class="inline-flex size-11 items-center justify-center rounded-full border border-transparent bg-white/90 text-foreground shadow-md transition hover:border-primary/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40 dark:bg-slate-900"
-                        />
+                        {#if !isOpen}
+                            <SidebarTrigger
+                                class="inline-flex size-11 items-center justify-center rounded-full border border-transparent bg-white/90 text-foreground shadow-md transition hover:border-primary/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40 dark:bg-slate-900"
+                            />
+                        {/if}
 
                         {#if $profile}
                             <div class="hidden items-center gap-3 rounded-full border border-transparent bg-white/80 px-3 py-2 shadow-sm backdrop-blur-md md:flex dark:bg-slate-900/70">
@@ -130,12 +133,9 @@
                                 </span>
                                 <div class="flex flex-col leading-tight">
                                     <span class="text-sm font-semibold text-foreground/85">{$profile.username}</span>
-                                    <Link href="/profile" class="text-xs font-medium !text-muted-foreground hover:!text-primary">
-                                        {m['profile.title']()}
-                                    </Link>
                                 </div>
                             </div>
-                        {:else}
+                        {:else if !currentLocation.startsWith('/login')}
                             <Link
                                 href="/login"
                                 class="hidden items-center gap-2 rounded-full border border-sidebar-border/60 bg-white/80 px-4 py-2 text-sm font-semibold !text-foreground/80 shadow-sm transition hover:border-primary/60 hover:!text-primary md:inline-flex dark:bg-slate-900/70"

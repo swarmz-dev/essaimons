@@ -15,6 +15,13 @@ export type OrganizationSettings = {
     sourceCodeUrl: Record<string, string>;
     copyright: Record<string, string>;
     logo: SerializedFile | null;
+    propositionDefaults: {
+        clarificationOffsetDays: number;
+        improvementOffsetDays: number;
+        voteOffsetDays: number;
+        mandateOffsetDays: number;
+        evaluationOffsetDays: number;
+    };
 };
 
 const defaultSettings: OrganizationSettings = {
@@ -25,6 +32,13 @@ const defaultSettings: OrganizationSettings = {
     sourceCodeUrl: {},
     copyright: {},
     logo: null,
+    propositionDefaults: {
+        clarificationOffsetDays: 7,
+        improvementOffsetDays: 15,
+        voteOffsetDays: 7,
+        mandateOffsetDays: 15,
+        evaluationOffsetDays: 30,
+    },
 };
 
 export const organizationSettings: Writable<OrganizationSettings> = writable(defaultSettings);
@@ -38,6 +52,7 @@ export function setOrganizationSettings(settings: OrganizationSettings): void {
         sourceCodeUrl: settings.sourceCodeUrl ?? {},
         copyright: settings.copyright ?? {},
         logo: settings.logo ?? null,
+        propositionDefaults: settings.propositionDefaults ?? defaultSettings.propositionDefaults,
     });
 }
 

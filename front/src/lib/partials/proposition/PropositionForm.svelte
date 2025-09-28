@@ -12,6 +12,7 @@
     import PropositionFormRobustness from './components/PropositionFormRobustness.svelte';
     import PropositionFormTabs from './components/PropositionFormTabs.svelte';
     import type { MultiSelectOption } from '#lib/components/ui/multi-select';
+    import { organizationSettings } from '#lib/stores/organizationStore';
     import type { SubmitFunction } from '@sveltejs/kit';
     import type { FormError, PageDataError } from '../../../app';
     import * as zod from 'zod';
@@ -188,6 +189,7 @@
     let attachmentsInputRef: HTMLInputElement | undefined = $state();
 
     let isSubmitting: boolean = $state(false);
+    let hasAppliedPropositionDefaults: boolean = $state(false);
     let hasInitializedFromProposition: boolean = $state(false);
 
     const concretizationValid: boolean = $derived(title.trim().length > 0 && detailedDescription.trim().length > 0 && smartObjectives.trim().length > 0 && categoryIds.length > 0);

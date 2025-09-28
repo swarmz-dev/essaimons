@@ -280,6 +280,13 @@
             "actions": {
                 "save": "Enregistrer les modifications"
             },
+            "validation": {
+                "source-code-url": {
+                    "invalid": "Veuillez saisir une URL valide pour {locale}.",
+                    "required": "Le lien vers le code source est requis pour la langue de repli {locale}.",
+                    "max": "Le lien vers le code source doit contenir au maximum 2000 caractères pour {locale}."
+                }
+            },
             "crop": {
                 "title": "Ajuster le logo",
                 "instructions": "Faites glisser l'image pour la centrer. Utilisez le curseur pour zoomer afin qu'elle remplisse le carré.",
@@ -289,6 +296,18 @@
                 "apply": "Appliquer",
                 "unsupported": "Le canvas n'est pas pris en charge par votre navigateur",
                 "background": "Couleur de fond"
+            },
+            "tabs": {
+                "general": "Général",
+                "propositions": "Propositions"
+            },
+            "propositions": {
+                "description": "Définissez les décalages par défaut appliqués lors de la création d’une proposition. Chaque valeur représente un nombre de jours après l’échéance précédente.",
+                "clarification": "Décalage clarification (jours)",
+                "improvement": "Décalage amendement (jours)",
+                "vote": "Décalage vote (jours)",
+                "mandate": "Décalage mandature (jours)",
+                "evaluation": "Décalage évaluation (jours)"
             }
         }
     },

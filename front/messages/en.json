@@ -280,6 +280,13 @@
             "actions": {
                 "save": "Save changes"
             },
+            "validation": {
+                "source-code-url": {
+                    "invalid": "Please enter a valid URL for {locale}.",
+                    "required": "Source code link is required for fallback locale {locale}.",
+                    "max": "Source code link must be 2000 characters or fewer for {locale}."
+                }
+            },
             "crop": {
                 "title": "Adjust logo",
                 "instructions": "Drag to reposition the logo. Use the slider to zoom in or out so it fills the square.",
@@ -289,6 +296,18 @@
                 "apply": "Apply",
                 "unsupported": "Canvas is not supported in your browser",
                 "background": "Background color"
+            },
+            "tabs": {
+                "general": "General",
+                "propositions": "Proposals"
+            },
+            "propositions": {
+                "description": "Configure default offsets applied when creating a proposal. Each value represents days after the previous milestone.",
+                "clarification": "Clarification offset (days)",
+                "improvement": "Improvement offset (days)",
+                "vote": "Vote offset (days)",
+                "mandate": "Mandate offset (days)",
+                "evaluation": "Evaluation offset (days)"
             }
         }
     },

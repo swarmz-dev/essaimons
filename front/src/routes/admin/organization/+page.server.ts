@@ -20,6 +20,13 @@ export const load: PageServerLoad<{ settings: SerializedOrganizationSettings }> 
                 sourceCodeUrl: {},
                 copyright: {},
                 logo: null,
+                propositionDefaults: {
+                    clarificationOffsetDays: 7,
+                    improvementOffsetDays: 15,
+                    voteOffsetDays: 7,
+                    mandateOffsetDays: 15,
+                    evaluationOffsetDays: 30,
+                },
             },
         };
     }

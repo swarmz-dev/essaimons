@@ -22,6 +22,13 @@ interface OrganizationSettingsValue {
     sourceCodeUrl: Record<string, string>;
     copyright: Record<string, string>;
     logoFileId: string | null;
+    propositionDefaults?: {
+        clarificationOffsetDays: number;
+        improvementOffsetDays: number;
+        voteOffsetDays: number;
+        mandateOffsetDays: number;
+        evaluationOffsetDays: number;
+    };
 }
 
 interface UpdateOrganizationSettingsPayload {
@@ -32,8 +39,22 @@ interface UpdateOrganizationSettingsPayload {
         sourceCodeUrl: Record<string, string>;
         copyright: Record<string, string>;
     };
-    removeLogo?: boolean;
+    propositionDefaults?: {
+        clarificationOffsetDays: number;
+        improvementOffsetDays: number;
+        voteOffsetDays: number;
+        mandateOffsetDays: number;
+        evaluationOffsetDays: number;
+    };
 }
+
+const DEFAULT_PROPOSITION_DEFAULTS = {
+    clarificationOffsetDays: 7,
+    improvementOffsetDays: 15,
+    voteOffsetDays: 7,
+    mandateOffsetDays: 15,
+    evaluationOffsetDays: 30,
+};
 
 @inject()
 export default class SettingsService {
@@ -72,6 +93,29 @@ export default class SettingsService {
 
         let logo: SerializedOrganizationSettings['logo'] = null;
 
+        const normalizeOffsets = (input?: Partial<OrganizationSettingsValue['propositionDefaults']>): SerializedOrganizationSettings['propositionDefaults'] => {
+            const fallback = { ...DEFAULT_PROPOSITION_DEFAULTS };
+            if (!input) {
+                return fallback;
+            }
+
+            const normalize = (value: unknown, defaultValue: number): number => {
+                const parsed = Number(value);
+                if (Number.isFinite(parsed) && parsed >= 0) {
+                    return Math.floor(parsed);
+                }
+                return defaultValue;
+            };
+
+            return {
+                clarificationOffsetDays: normalize(input.clarificationOffsetDays, fallback.clarificationOffsetDays),
+                improvementOffsetDays: normalize(input.improvementOffsetDays, fallback.improvementOffsetDays),
+                voteOffsetDays: normalize(input.voteOffsetDays, fallback.voteOffsetDays),
+                mandateOffsetDays: normalize(input.mandateOffsetDays, fallback.mandateOffsetDays),
+                evaluationOffsetDays: normalize(input.evaluationOffsetDays, fallback.evaluationOffsetDays),
+            };
+        };
+
         if (value?.logoFileId) {
             const file = await File.find(value.logoFileId);
             if (file) {
@@ -87,6 +131,7 @@ export default class SettingsService {
             sourceCodeUrl: value?.sourceCodeUrl ?? {},
             copyright: value?.copyright ?? {},
             logo,
+            propositionDefaults: normalizeOffsets(value?.propositionDefaults),
         };
     }
 
@@ -116,6 +161,7 @@ export default class SettingsService {
                 sourceCodeUrl: {},
                 copyright: {},
                 logoFileId: null,
+                propositionDefaults: { ...DEFAULT_PROPOSITION_DEFAULTS },
             };
 
             if (record) {
@@ -128,6 +174,7 @@ export default class SettingsService {
                         sourceCodeUrl: currentValue.sourceCodeUrl ?? {},
                         copyright: currentValue.copyright ?? {},
                         logoFileId: currentValue.logoFileId ?? null,
+                        propositionDefaults: currentValue.propositionDefaults ?? { ...DEFAULT_PROPOSITION_DEFAULTS },
                     };
                 }
             } else {
@@ -175,15 +222,22 @@ export default class SettingsService {
             value.sourceCodeUrl = filterUrlMap(payload.translations.sourceCodeUrl);
             value.copyright = filterMap(payload.translations.copyright);
 
-            const shouldRemoveLogo = Boolean(payload.removeLogo) && !logoFile;
-            if (shouldRemoveLogo && value.logoFileId) {
-                const existing = await File.find(value.logoFileId, { client: trx });
-                if (existing) {
-                    await this.fileService.delete(existing);
-                    await existing.delete();
+            const normalizeOffset = (value: unknown, fallback: number): number => {
+                const parsed = Number(value);
+                if (Number.isFinite(parsed) && parsed >= 0) {
+                    return Math.floor(parsed);
                 }
-                value.logoFileId = null;
-            }
+                return fallback;
+            };
+
+            const defaults = payload.propositionDefaults;
+            value.propositionDefaults = {
+                clarificationOffsetDays: normalizeOffset(defaults?.clarificationOffsetDays, value.propositionDefaults?.clarificationOffsetDays ?? DEFAULT_PROPOSITION_DEFAULTS.clarificationOffsetDays),
+                improvementOffsetDays: normalizeOffset(defaults?.improvementOffsetDays, value.propositionDefaults?.improvementOffsetDays ?? DEFAULT_PROPOSITION_DEFAULTS.improvementOffsetDays),
+                voteOffsetDays: normalizeOffset(defaults?.voteOffsetDays, value.propositionDefaults?.voteOffsetDays ?? DEFAULT_PROPOSITION_DEFAULTS.voteOffsetDays),
+                mandateOffsetDays: normalizeOffset(defaults?.mandateOffsetDays, value.propositionDefaults?.mandateOffsetDays ?? DEFAULT_PROPOSITION_DEFAULTS.mandateOffsetDays),
+                evaluationOffsetDays: normalizeOffset(defaults?.evaluationOffsetDays, value.propositionDefaults?.evaluationOffsetDays ?? DEFAULT_PROPOSITION_DEFAULTS.evaluationOffsetDays),
+            };
 
             if (logoFile && logoFile.tmpPath) {
                 if (value.logoFileId) {
