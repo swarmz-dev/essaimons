@@ -92,6 +92,7 @@ const DEFAULT_PERMISSIONS: Record<string, Record<string, boolean>> = {
         'initiator.manage_deliverables': true,
         'initiator.manage_comments': true,
         'mandated.upload_deliverable': true,
+        'mandated.comment_evaluation': true,
         'contributor.evaluate_deliverable': true,
         'contributor.comment_evaluation': true,
         'contributor.request_revocation': true,

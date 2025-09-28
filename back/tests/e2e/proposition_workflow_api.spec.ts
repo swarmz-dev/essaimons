@@ -1,5 +1,6 @@
 import { test } from '@japa/runner';
 import testUtils from '@adonisjs/core/services/test_utils';
+import app from '@adonisjs/core/services/app';
 import { DateTime } from 'luxon';
 import { cuid } from '@adonisjs/core/helpers';
 import User from '#models/user';
@@ -12,7 +13,12 @@ import { PropositionEventTypeEnum } from '#types/enum/proposition_event_type_enu
 import { PropositionVotePhaseEnum } from '#types/enum/proposition_vote_phase_enum';
 import { PropositionVoteMethodEnum } from '#types/enum/proposition_vote_method_enum';
 import { PropositionCommentScopeEnum } from '#types/enum/proposition_comment_scope_enum';
+import { MandateStatusEnum } from '#types/enum/mandate_status_enum';
+import SettingsService from '#services/settings_service';
 import Language from '#models/language';
+import PropositionWorkflowService from '#services/proposition_workflow_service';
+import PropositionMandate from '#models/proposition_mandate';
+import PropositionRepository from '#repositories/proposition_repository';
 
 const seedLanguages = async () => {
     await Language.updateOrCreate(
@@ -85,7 +91,32 @@ const createPropositionFixture = async (client: any) => {
     return {
         propositionId: createResponse.body().proposition.id as string,
         creatorBearer,
+        creator,
     };
+};
+
+const updatePermissions = async (overrides: Record<string, Record<string, boolean>>) => {
+    const settingsService = await app.container.make(SettingsService);
+    const current = await settingsService.getOrganizationSettings();
+    const fallback = current.fallbackLocale ?? 'en';
+    const ensureTranslation = (map: Record<string, string>, defaultValue: string) => ({
+        ...map,
+        [fallback]: map[fallback] ?? defaultValue,
+    });
+
+    await settingsService.updateOrganizationSettings(
+        {
+            fallbackLocale: fallback,
+            translations: {
+                name: ensureTranslation(current.name, 'Organization'),
+                description: ensureTranslation(current.description, 'Description'),
+                sourceCodeUrl: ensureTranslation(current.sourceCodeUrl, 'https://example.org'),
+                copyright: ensureTranslation(current.copyright, 'Copyright'),
+            },
+            permissions: overrides,
+        },
+        null
+    );
 };
 
 test.group('Proposition workflow API', (group) => {
@@ -268,8 +299,12 @@ test.group('Proposition workflow API', (group) => {
         voteResponse.assertStatus(201);
         const voteId = voteResponse.body().vote.id;
 
-        const statusResponse = await client.post(`/api/propositions/${propositionId}/votes/${voteId}/status`).header('accept-language', 'en').bearerToken(creatorBearer).json({ status: 'open' });
-        statusResponse.assertStatus(200);
+        await client
+            .post(`/api/propositions/${propositionId}/votes/${voteId}/status`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({ status: 'open' })
+            .then((res) => res.assertStatus(200));
 
         await client
             .post(`/api/propositions/${propositionId}/status`)
@@ -303,9 +338,9 @@ test.group('Proposition workflow API', (group) => {
         });
         commentResponse.assertStatus(201);
 
-        const listResponse = await client.get(`/api/propositions/${propositionId}/events`).bearerToken(creatorBearer).header('accept-language', 'en');
-        listResponse.assertStatus(200);
-        assert.lengthOf(listResponse.body().events, 1);
+        const eventsList = await client.get(`/api/propositions/${propositionId}/events`).bearerToken(creatorBearer).header('accept-language', 'en');
+        eventsList.assertStatus(200);
+        assert.lengthOf(eventsList.body().events, 1);
 
         const votesList = await client.get(`/api/propositions/${propositionId}/votes`).bearerToken(creatorBearer).header('accept-language', 'en');
         votesList.assertStatus(200);
@@ -322,5 +357,176 @@ test.group('Proposition workflow API', (group) => {
         const commentId = commentsList.body().comments[0].id;
         const deleteResponse = await client.delete(`/api/propositions/${propositionId}/comments/${commentId}`).bearerToken(creatorBearer).header('accept-language', 'en');
         deleteResponse.assertStatus(204);
-    });
+    }).timeout(120000);
+
+    test('contributor cannot manage events by default', async ({ client }) => {
+        const { propositionId, creatorBearer } = await createPropositionFixture(client);
+
+        await client
+            .post(`/api/propositions/${propositionId}/status`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({ status: PropositionStatusEnum.CLARIFY })
+            .then((res) => res.assertStatus(200));
+        await client
+            .post(`/api/propositions/${propositionId}/status`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({ status: PropositionStatusEnum.AMEND })
+            .then((res) => res.assertStatus(200));
+
+        const contributor = await makeUser('contrib-default');
+        const token = await User.accessTokens.create(contributor);
+        const bearer = token.toJSON().token;
+        if (!bearer) throw new Error('missing token');
+
+        const response = await client
+            .post(`/api/propositions/${propositionId}/events`)
+            .header('accept-language', 'en')
+            .bearerToken(bearer)
+            .json({ type: PropositionEventTypeEnum.MILESTONE, title: 'Community meetup' });
+        response.assertStatus(403);
+    }).timeout(60000);
+
+    test('permissions override allows contributor to manage events', async ({ client }) => {
+        await updatePermissions({ amend: { 'contributor.manage_events': true } });
+
+        const { propositionId, creatorBearer } = await createPropositionFixture(client);
+
+        await client
+            .post(`/api/propositions/${propositionId}/status`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({ status: PropositionStatusEnum.CLARIFY })
+            .then((res) => res.assertStatus(200));
+        await client
+            .post(`/api/propositions/${propositionId}/status`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({ status: PropositionStatusEnum.AMEND })
+            .then((res) => res.assertStatus(200));
+
+        const contributor = await makeUser('contrib-override');
+        const token = await User.accessTokens.create(contributor);
+        const bearer = token.toJSON().token;
+        if (!bearer) throw new Error('missing token');
+
+        const response = await client
+            .post(`/api/propositions/${propositionId}/events`)
+            .header('accept-language', 'en')
+            .bearerToken(bearer)
+            .json({ type: PropositionEventTypeEnum.MILESTONE, title: 'Community meetup' });
+        response.assertStatus(201);
+
+        await updatePermissions({ amend: { 'contributor.manage_events': false } });
+    }).timeout(60000);
+
+    test('cannot update vote once opened', async ({ client }) => {
+        const { propositionId, creatorBearer } = await createPropositionFixture(client);
+
+        await client
+            .post(`/api/propositions/${propositionId}/status`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({ status: PropositionStatusEnum.CLARIFY })
+            .then((res) => res.assertStatus(200));
+        await client
+            .post(`/api/propositions/${propositionId}/status`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({ status: PropositionStatusEnum.AMEND })
+            .then((res) => res.assertStatus(200));
+        await client
+            .post(`/api/propositions/${propositionId}/status`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({ status: PropositionStatusEnum.VOTE })
+            .then((res) => res.assertStatus(200));
+
+        const voteResponse = await client
+            .post(`/api/propositions/${propositionId}/votes`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({
+                phase: PropositionVotePhaseEnum.VOTE,
+                method: PropositionVoteMethodEnum.BINARY,
+                title: 'Adopt proposal',
+                options: [{ label: 'Yes' }, { label: 'No' }],
+            });
+        voteResponse.assertStatus(201);
+        const voteId = voteResponse.body().vote.id;
+
+        await client
+            .post(`/api/propositions/${propositionId}/votes/${voteId}/status`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({ status: 'open' })
+            .then((res) => res.assertStatus(200));
+
+        const updateResponse = await client.put(`/api/propositions/${propositionId}/votes/${voteId}`).header('accept-language', 'en').bearerToken(creatorBearer).json({ title: 'Updated title' });
+        updateResponse.assertStatus(400);
+    }).timeout(60000);
+
+    test('workflow permissions toggle evaluation comments for mandated vs contributor', async ({ client, assert }) => {
+        const { propositionId, creatorBearer } = await createPropositionFixture(client);
+
+        let workflowService = await app.container.make(PropositionWorkflowService);
+        const propositionRepository = await app.container.make(PropositionRepository);
+
+        let proposition = await propositionRepository.findByPublicId(propositionId, ['rescueInitiators', 'mandates']);
+        if (!proposition) {
+            throw new Error('proposition not found');
+        }
+
+        const transitionTo = async (status: PropositionStatusEnum) => {
+            const transitionResponse = await client.post(`/api/propositions/${propositionId}/status`).header('accept-language', 'en').bearerToken(creatorBearer).json({ status });
+
+            transitionResponse.assertStatus(200);
+
+            const refreshed = await propositionRepository.findByPublicId(propositionId, ['rescueInitiators', 'mandates']);
+            if (!refreshed) {
+                throw new Error(`proposition not found after transitioning to ${status}`);
+            }
+            proposition = refreshed;
+        };
+
+        const transitionOrder = [PropositionStatusEnum.CLARIFY, PropositionStatusEnum.AMEND, PropositionStatusEnum.VOTE, PropositionStatusEnum.MANDATE];
+
+        for (const status of transitionOrder) {
+            await transitionTo(status);
+        }
+
+        const mandatedUser = await makeUser('mandated-user');
+        await PropositionMandate.create({
+            propositionId: proposition.id,
+            title: 'Mandate 1',
+            description: 'Lead delivery',
+            holderUserId: mandatedUser.id,
+            status: MandateStatusEnum.ACTIVE,
+        });
+
+        proposition = await propositionRepository.findByPublicId(propositionId, ['rescueInitiators', 'mandates']);
+        if (!proposition) {
+            throw new Error('proposition not found after mandate');
+        }
+
+        await transitionTo(PropositionStatusEnum.EVALUATE);
+
+        await updatePermissions({ evaluate: { 'mandated.comment_evaluation': true, 'contributor.comment_evaluation': true } });
+        workflowService = await app.container.make(PropositionWorkflowService);
+
+        const mandatedAllowed = await workflowService.canPerform(proposition, mandatedUser, 'comment_evaluation');
+        assert.isTrue(mandatedAllowed);
+
+        const contributor = await makeUser('evaluation-contributor');
+        const contributorAllowed = await workflowService.canPerform(proposition, contributor, 'comment_evaluation');
+        assert.isTrue(contributorAllowed);
+
+        await updatePermissions({ evaluate: { 'contributor.comment_evaluation': false } });
+        workflowService = await app.container.make(PropositionWorkflowService);
+        const contributorDenied = await workflowService.canPerform(proposition, contributor, 'comment_evaluation');
+        assert.isFalse(contributorDenied);
+
+        await updatePermissions({ evaluate: { 'contributor.comment_evaluation': true } });
+    }).timeout(60000);
 });
