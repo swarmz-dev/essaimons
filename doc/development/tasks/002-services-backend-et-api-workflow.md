@@ -1,8 +1,6 @@
 # Tâche 002 · Services backend & API workflow
 
-# Tâche 002 · Services backend & API workflow
-
-**Statut actuel : en cours – workflow complet (transitions + événements/votes/mandats/commentaires) avec permissions dynamiques.**
+**Statut actuel : livrée – workflow complet (transitions + événements/votes/mandats/commentaires) avec permissions dynamiques.**
 
 ## Prérequis
 - ✅ Tâche 001 livrée (structures de données et relations disponibles).
@@ -22,7 +20,7 @@
 - ✅ Permissions dynamiques :
   - Stockage dans `SettingsService` (`permissions.per_status` + valeurs par défaut).
   - `PropositionWorkflowService.canPerform` + intégration dans services/controllers (events/votes/mandates/comments, update proposition).
-- 🔄 À venir : recalcul des échéances automatiques (tâche 005) et exposition enrichie côté serialization/UI (timeline, liste d’actions autorisées).
+- 🔄 Suivi : recalcul des échéances automatiques (tâche 005) et exposition enrichie côté serialization/UI (timeline, liste d’actions autorisées).
 
 ### Matrice de permissions par défaut (à implémenter côté settings + policies)
 | Statut → / Action ↓ | Admin | Initiator | Mandated | Contributor |
@@ -43,16 +41,13 @@ Notes :
 - Actions clés à contrôler : `edit_proposition`, `manage_events`, `configure_vote` (bloqué dès qu’un bulletin existe), `participate_vote`, `upload_deliverable`, `evaluate_deliverable`, `comment_scope.*`, `trigger_revocation`, `manage_permissions`.
 
 ## Tests
-- ✅ Nouveau scénario E2E `proposition_workflow_api.spec.ts` :
+- ✅ Nouveau scénario E2E `proposition_workflow_api.spec.ts` (exécuté via `node ace test --files tests/e2e/proposition_workflow_api.spec.ts`) :
   - Transition initiateur `draft → clarify` (historique vérifié).
   - Blocage d’un contributeur non autorisé (403).
-  - Flux complet évènements/votes/mandats/commentaires (création + lecture + droits, transitions de statut).
+  - Flux complet événements/votes/mandats/commentaires (création + lecture + droits, transitions de statut).
+  - Vérification des permissions dynamiques `comment_evaluation` pour mandatés vs contributeurs après override settings.
 - ✅ Harmonisation des migrations tests (connexion `logs`).
 - 🔄 Tests complémentaires à prévoir :
-  - Couvrir les refus d’actions par rôle/statut (initiator vs contributor/mandated) sur chaque endpoint (`/events`, `/votes`, `/mandates`, `/comments`, transition `/status`).
-  - Vérifier la prise en compte des overrides `permissions.per_status` (charger des settings custom puis assurer que `canPerform` reflète les changements).
-  - Ajouter un test de vote verrouillé après ouverture (impossibilité de modifier/supprimer une fois status `open`).
-  - Ajouter un test commentaire mandaté en phase `evaluate` (autorisé) vs contributeur (refus).
-  - Sérialisation : s’assurer que la payload `settings` renvoie bien les permissions et que le détail proposition expose les actions autorisées (à réaliser après enrichissement serializer côté Tâche 002/004).
-- ✅ Harmonisation des migrations tests (connexion `logs`).
-- 🔄 Tests complémentaires à prévoir : granularité permissions (matrix configurable), votes ouverts avec bulletins, modération avancée.
+  - Couvrir les refus d’actions par rôle/statut sur chaque endpoint (`/events`, `/votes`, `/mandates`, `/comments`, transition `/status`).
+  - Enrichir la sérialisation (exposition des actions autorisées) lorsque la tâche 004 ajoutera l’UI correspondante.
+  - Tester granularité permissions supplémentaires (matrix configurable), votes ouverts avec bulletins, modération avancée.
