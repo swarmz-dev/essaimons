@@ -10,13 +10,13 @@
   - Introduire la navigation par onglets conditionnée au statut et aux permissions.
   - Afficher la timeline enrichie (échéances + statut + livrables associés).
   - Ajouter composants pour événements, votes, mandats, livrables.
-- Consommer `permissions.perStatus` et les données d’automatisation exposées par la Tâche 002/003 pour piloter l’affichage des actions.
+- Consommer `permissions.perStatus` et les données d’automatisation exposées par les Tâches 002/003 pour piloter l’affichage des actions. La structure attendue devient `{ [status]: { [role]: { [action]: boolean } } }`; prévoir les composants/stores pour itérer par rôle puis action.
 - Mettre à jour la liste `/propositions` pour intégrer filtres/statuts, badges retards et indicateurs procédures.
 - Créer/mettre à jour les formulaires :
   - Publication (choix privé/public), transitions, gestion des événements, votes, mandats, livrables.
   - Formulaires de commentaires (clarification, amendement) et réactions.
 - Mettre en place les stores/front services pour consommer les nouveaux endpoints et gérer état optimiste.
-- Ajouter validations Zod miroir des Vine pour chaque formulaire.
+- Ajouter validations Zod miroir des Vine pour chaque formulaire et refléter la nouvelle matrice à trois dimensions lors de l’envoi.
 - Garantir l’accessibilité (navigation clavier, ARIA) des onglets et listes.
 
 ## Tests
