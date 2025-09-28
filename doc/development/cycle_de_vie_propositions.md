@@ -28,7 +28,7 @@
 7. **Archivé / Clos**
    - Statut final après cycle complet ou décision explicite, consultation en lecture seule.
 
-Transition : chaque changement de statut trace un historique (`proposition_status_history`) et déclenche les automatisations (notifications, recalculs d'échéance, ajustement permissions).
+Transition : chaque changement de statut trace un historique (`proposition_status_histories`) et déclenche les automatisations (notifications, recalculs d'échéance, ajustement permissions).
 
 ## Modèle de données cible
 ### Proposition (`propositions`)
@@ -36,7 +36,7 @@ Transition : chaque changement de statut trace un historique (`proposition_statu
   `clarification_deadline`, `improvement_deadline`, `vote_deadline`, `mandate_deadline`, `evaluation_deadline`.
 - `creator_id`, `visual_file_id`, `settings_snapshot` (options prises au moment de la publication), `visibility` (privé/public en phase A formaliser), timestamps.
 
-### Historique des statuts (`proposition_status_history`)
+### Historique des statuts (`proposition_status_histories`)
 - `id`, `proposition_id`, `from_status`, `to_status`, `triggered_by_user_id`, `reason`, `metadata`, `created_at`.
 
 ### Evénements & planning (`proposition_events`)

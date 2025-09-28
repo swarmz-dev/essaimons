@@ -2,6 +2,8 @@ import { BaseSeeder } from '@adonisjs/lucid/seeders';
 import Proposition from '#models/proposition';
 import PropositionCategory from '#models/proposition_category';
 import User from '#models/user';
+import PropositionStatusHistory from '#models/proposition_status_history';
+import { PropositionStatusEnum, PropositionVisibilityEnum } from '#types';
 import { DateTime } from 'luxon';
 
 interface SeedProposition {
@@ -303,12 +305,26 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
                 impacts: proposal.impacts,
                 mandatesDescription: proposal.mandatesDescription,
                 expertise: proposal.expertise ?? null,
+                status: PropositionStatusEnum.DRAFT,
+                statusStartedAt: DateTime.now(),
+                visibility: PropositionVisibilityEnum.PUBLIC,
+                archivedAt: null,
+                settingsSnapshot: {},
                 clarificationDeadline,
                 improvementDeadline,
                 voteDeadline,
                 mandateDeadline,
                 evaluationDeadline,
                 creatorId: creator.id,
+            });
+
+            await PropositionStatusHistory.create({
+                propositionId: proposition.id,
+                fromStatus: PropositionStatusEnum.DRAFT,
+                toStatus: PropositionStatusEnum.DRAFT,
+                triggeredByUserId: creator.id,
+                reason: 'seed initial status',
+                metadata: {},
             });
 
             const categoryIds: string[] = proposal.categories.map((name: string): string | undefined => categoryMap.get(name)).filter((value: string | undefined): value is string => Boolean(value));

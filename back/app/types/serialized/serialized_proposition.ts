@@ -2,6 +2,8 @@ import type { SerializedFile } from './serialized_file.js';
 import type { SerializedPropositionCategory } from './serialized_proposition_category.js';
 import type { SerializedPropositionSummary } from './serialized_proposition_summary.js';
 import type { SerializedUserSummary } from './serialized_user_summary.js';
+import { PropositionStatusEnum } from '../enum/proposition_status_enum.js';
+import { PropositionVisibilityEnum } from '../enum/proposition_visibility_enum.js';
 
 export type SerializedProposition = {
     id: string;
@@ -12,11 +14,16 @@ export type SerializedProposition = {
     impacts: string;
     mandatesDescription: string;
     expertise?: string | null;
+    status: PropositionStatusEnum;
+    statusStartedAt: string;
+    visibility: PropositionVisibilityEnum;
     clarificationDeadline: string;
     improvementDeadline: string;
     voteDeadline: string;
     mandateDeadline: string;
     evaluationDeadline: string;
+    archivedAt?: string;
+    settingsSnapshot: Record<string, unknown>;
     creator: SerializedUserSummary;
     categories: SerializedPropositionCategory[];
     rescueInitiators: SerializedUserSummary[];

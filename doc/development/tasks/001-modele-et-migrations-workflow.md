@@ -1,5 +1,7 @@
 # Tâche 001 · Modèle & migrations du workflow
 
+**Statut actuel : ✅ terminé (migrations, modèles et tests validés).**
+
 ## Prérequis
 - Validation du périmètre fonctionnel décrit dans `doc/development/cycle_de_vie_propositions.md` (statuts, règles par phase).
 - Inventaire des tables existantes pour éviter collisions — réalisé (voir inventaire ci-dessous).
@@ -31,23 +33,17 @@
 - Ajouter un champ `archived_at` sur `propositions` pour tracer la date de bascule en archive; aucun déplacement physique n’est prévu.
 
 ## Implémentation
-- Étendre `propositions` pour ajouter `status`, `status_started_at`, `visibility`, `archived_at`, `settings_snapshot` et les timestamps nécessaires.
-- Créer les tables suivantes avec contraintes FK et index :
-  - `proposition_status_history` (traçabilité des transitions).
-  - `proposition_events` pour milestones/temps d’échange/évaluation.
-  - `proposition_votes`, `vote_options`, `vote_ballots` pour gérer votes (phases vote, mandature, révocation).
-  - `proposition_mandates`, `mandate_applications` pour gérer mandatés et candidatures.
-  - `mandate_deliverables`, `deliverable_evaluations` pour suivi livrables & évaluations.
-  - `mandate_revocation_requests` pour procédures de révocation.
-  - `proposition_comments`, `proposition_reactions` pour clarifications/amendements/suivi.
-- Définir les relations dans les modèles Adonis (`app/models/*`) en respectant les alias (#models).
-- Initialiser enums/constantes nécessaires (ex. types d’événements, méthodes de vote) dans `back/app/types`.
-- Mettre à jour les seeders si besoin pour refléter les nouveaux champs (statut par défaut `A formaliser`).
-- Générer les migrations down correspondantes.
+- ✅ `propositions` étendue (`status`, `status_started_at`, `visibility`, `archived_at`, `settings_snapshot`).
+- ✅ Nouvelle migration `1760000000000_update_propositions_workflow.ts` créant :
+  - `proposition_status_histories`, `proposition_events`, `proposition_votes`, `vote_options`, `vote_ballots`,
+    `proposition_mandates`, `mandate_applications`, `mandate_deliverables`, `deliverable_evaluations`,
+    `mandate_revocation_requests`, `proposition_comments`, `proposition_reactions` (+ index & FK).
+- ✅ Modèles Adonis ajoutés pour chaque table et relations exposées dans `Proposition`.
+- ✅ Enums/export `#types` complétés pour statuts, visibilités, votes, mandats, réactions…
+- ✅ Seeder `40_proposition_seeder` mis à jour (statut par défaut `draft`, historique initial).
+- ⚠️ Prévoir alignement des services/validators front/back (tâches 002+).
 
 ## Tests
-- Tests Japa pour vérifier :
-  - Création d’une proposition initialise `status`, `visibility` et enregistre un historique.
-  - Relations principales (hasMany/belongsTo) fonctionnent (chargement events, votes, mandats, commentaires).
-- Tests d’intégration migration : exécuter `node ace migration:run` sur base de test et vérifier la présence des tables/colonnes (via queries SQL ou inspect schema helper).
-- Optionnel : test de seed pour s'assurer que les seeds existants fonctionnent avec le nouveau schéma.
+- ✅ Nouveau test E2E `proposition_workflow_schema.spec.ts` couvrant l’initialisation du workflow.
+- ✅ Suite backend repassée (`npm test --workspace back`), seules les specs S3 sont ignorées faute de configuration.
+- À garder en tête lors des prochains travaux : relancer `node ace migration:fresh --seed && node ace migration:run --connection=logs` avant les tests quand le schéma évolue.

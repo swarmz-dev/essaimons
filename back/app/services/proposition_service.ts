@@ -9,12 +9,13 @@ import File from '#models/file';
 import SlugifyService from '#services/slugify_service';
 import path from 'node:path';
 import { cuid } from '@adonisjs/core/helpers';
-import { FileTypeEnum } from '#types/enum/file_type_enum';
+import { FileTypeEnum, PropositionStatusEnum, PropositionVisibilityEnum } from '#types';
 import { DateTime } from 'luxon';
 import { TransactionClientContract } from '@adonisjs/lucid/types/database';
 import PropositionCategoryRepository from '#repositories/proposition_category_repository';
 import FileService from '#services/file_service';
 import mime from 'mime-types';
+import PropositionStatusHistory from '#models/proposition_status_history';
 
 interface CreatePropositionPayload {
     title: string;
@@ -87,6 +88,11 @@ export default class PropositionService {
                     impacts: payload.impacts,
                     mandatesDescription: payload.mandatesDescription,
                     expertise: payload.expertise ?? null,
+                    status: PropositionStatusEnum.DRAFT,
+                    statusStartedAt: DateTime.now(),
+                    visibility: PropositionVisibilityEnum.PRIVATE,
+                    archivedAt: null,
+                    settingsSnapshot: {},
                     clarificationDeadline: clarificationDate,
                     improvementDeadline: improvementDate,
                     voteDeadline: voteDate,
@@ -102,6 +108,18 @@ export default class PropositionService {
 
             await proposition.related('categories').attach(categories.map((category: PropositionCategory): string => category.id));
             await proposition.related('rescueInitiators').attach(rescueUsers.map((user: User): string => user.id));
+
+            await PropositionStatusHistory.create(
+                {
+                    propositionId: proposition.id,
+                    fromStatus: PropositionStatusEnum.DRAFT,
+                    toStatus: PropositionStatusEnum.DRAFT,
+                    triggeredByUserId: creator.id,
+                    reason: 'initial creation',
+                    metadata: {},
+                },
+                { client: trx }
+            );
 
             const visualFile: any | undefined | null = files.visual;
             if (visualFile && visualFile.size > 0) {
