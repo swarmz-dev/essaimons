@@ -18,6 +18,10 @@ const ProfileController = () => import('#controllers/profile_controller');
 const FileController = () => import('#controllers/file_controller');
 const OauthController = () => import('#controllers/oauth_controller');
 const PropositionController = () => import('#controllers/proposition_controller');
+const PropositionEventController = () => import('#controllers/proposition_event_controller');
+const PropositionVoteController = () => import('#controllers/proposition_vote_controller');
+const PropositionMandateController = () => import('#controllers/proposition_mandate_controller');
+const PropositionCommentController = () => import('#controllers/proposition_comment_controller');
 const SettingsController = () => import('#controllers/settings_controller');
 
 router.get('healthcheck', [HealthCheckController]);
@@ -117,7 +121,29 @@ router
                         router.get('/:id', [PropositionController, 'show']);
                         router.post('/', [PropositionController, 'create']);
                         router.put('/:id', [PropositionController, 'update']);
+                        router.post('/:id/status', [PropositionController, 'updateStatus']);
                         router.delete('/:id', [PropositionController, 'delete']);
+
+                        router.get('/:id/events', [PropositionEventController, 'index']);
+                        router.post('/:id/events', [PropositionEventController, 'store']);
+                        router.put('/:id/events/:eventId', [PropositionEventController, 'update']);
+                        router.delete('/:id/events/:eventId', [PropositionEventController, 'destroy']);
+
+                        router.get('/:id/votes', [PropositionVoteController, 'index']);
+                        router.post('/:id/votes', [PropositionVoteController, 'store']);
+                        router.put('/:id/votes/:voteId', [PropositionVoteController, 'update']);
+                        router.post('/:id/votes/:voteId/status', [PropositionVoteController, 'changeStatus']);
+                        router.delete('/:id/votes/:voteId', [PropositionVoteController, 'destroy']);
+
+                        router.get('/:id/mandates', [PropositionMandateController, 'index']);
+                        router.post('/:id/mandates', [PropositionMandateController, 'store']);
+                        router.put('/:id/mandates/:mandateId', [PropositionMandateController, 'update']);
+                        router.delete('/:id/mandates/:mandateId', [PropositionMandateController, 'destroy']);
+
+                        router.get('/:id/comments', [PropositionCommentController, 'index']);
+                        router.post('/:id/comments', [PropositionCommentController, 'store']);
+                        router.put('/:id/comments/:commentId', [PropositionCommentController, 'update']);
+                        router.delete('/:id/comments/:commentId', [PropositionCommentController, 'destroy']);
                     })
                     .prefix('propositions');
 

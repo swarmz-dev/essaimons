@@ -45,6 +45,7 @@ test.group('Proposition uploads', (group) => {
         process.env.STORAGE_DRIVER = 'local';
         process.env.STORAGE_LOCAL_BASE_PATH = storageBasePath;
         await testUtils.db().migrate();
+        await testUtils.db('logs').migrate();
         await cleanupStorage();
         await seedLanguages();
     });

@@ -29,6 +29,7 @@ const makeUser = async (prefix: string): Promise<User> => {
 test.group('Proposition workflow schema', (group) => {
     group.setup(async () => {
         await testUtils.db().migrate();
+        await testUtils.db('logs').migrate();
     });
 
     group.each.teardown(async () => {
