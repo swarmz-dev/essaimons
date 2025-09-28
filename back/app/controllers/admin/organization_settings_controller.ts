@@ -39,19 +39,18 @@ export default class OrganizationSettingsController {
             }
         }
 
-        const settings = await this.settingsService.updateOrganizationSettings(
-            {
-                fallbackLocale,
-                translations: {
-                    name: payload.name ?? {},
-                    description: payload.description ?? {},
-                    sourceCodeUrl: payload.sourceCodeUrl ?? {},
-                    copyright: payload.copyright ?? {},
-                },
-                propositionDefaults: payload.propositionDefaults ?? {},
+        const settingsPayload = {
+            fallbackLocale,
+            translations: {
+                name: payload.name ?? {},
+                description: payload.description ?? {},
+                sourceCodeUrl: payload.sourceCodeUrl ?? {},
+                copyright: payload.copyright ?? {},
             },
-            payload.logo
-        );
+            ...(payload.propositionDefaults ? { propositionDefaults: payload.propositionDefaults } : {}),
+        };
+
+        const settings = await this.settingsService.updateOrganizationSettings(settingsPayload, payload.logo);
 
         return response.ok({
             settings,
