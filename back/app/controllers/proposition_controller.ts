@@ -17,9 +17,8 @@ import { SerializedPropositionSummary } from '#types/serialized/serialized_propo
 import { SerializedPropositionCategory } from '#types/serialized/serialized_proposition_category';
 import type { PaginatedPropositions } from '#types/paginated/paginated_propositions';
 import type { MultipartFile } from '#types/multipart_file';
-import { UserRoleEnum } from '#types/enum/user_role_enum';
 import { PropositionStatusEnum } from '#types/enum/proposition_status_enum';
-import { PropositionWorkflowException } from '#services/proposition_workflow_service';
+import PropositionWorkflowService, { PropositionWorkflowException } from '#services/proposition_workflow_service';
 
 @inject()
 export default class PropositionController {
@@ -27,7 +26,8 @@ export default class PropositionController {
         private readonly propositionService: PropositionService,
         private readonly propositionRepository: PropositionRepository,
         private readonly propositionCategoryRepository: PropositionCategoryRepository,
-        private readonly userRepository: UserRepository
+        private readonly userRepository: UserRepository,
+        private readonly propositionWorkflowService: PropositionWorkflowService
     ) {}
 
     public async search({ request, response }: HttpContext): Promise<void> {
@@ -225,11 +225,8 @@ export default class PropositionController {
         }
 
         const actor: User = user as User;
-        const isAdmin: boolean = actor?.role === UserRoleEnum.ADMIN;
-        const isCreator: boolean = proposition.creatorId === actor?.id;
-        const isRescueInitiator: boolean = (proposition.rescueInitiators ?? []).some((rescueUser: User) => rescueUser.id === actor?.id);
-
-        if (!isAdmin && !isCreator && !isRescueInitiator) {
+        const canEdit = await this.propositionWorkflowService.canPerform(proposition, actor, 'edit_proposition');
+        if (!canEdit) {
             return response.forbidden({ error: i18n.t('messages.proposition.update.forbidden') });
         }
 

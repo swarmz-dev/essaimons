@@ -29,6 +29,7 @@ interface OrganizationSettingsValue {
         mandateOffsetDays: number;
         evaluationOffsetDays: number;
     };
+    permissions?: Record<string, Record<string, boolean>>;
 }
 
 interface UpdateOrganizationSettingsPayload {
@@ -46,6 +47,7 @@ interface UpdateOrganizationSettingsPayload {
         mandateOffsetDays: number;
         evaluationOffsetDays: number;
     };
+    permissions?: Record<string, Record<string, boolean>>;
 }
 
 const DEFAULT_PROPOSITION_DEFAULTS = {
@@ -56,8 +58,53 @@ const DEFAULT_PROPOSITION_DEFAULTS = {
     evaluationOffsetDays: 30,
 };
 
+const DEFAULT_PERMISSIONS: Record<string, Record<string, boolean>> = {
+    draft: {
+        'initiator.edit_proposition': true,
+        'initiator.publish': true,
+        'initiator.manage_files': true,
+        'initiator.manage_comments': true,
+    },
+    clarify: {
+        'initiator.edit_proposition': true,
+        'initiator.manage_comments': true,
+        'contributor.comment_clarification': true,
+    },
+    amend: {
+        'initiator.edit_proposition': true,
+        'initiator.manage_events': true,
+        'initiator.manage_comments': true,
+        'contributor.comment_amendment': true,
+    },
+    vote: {
+        'initiator.configure_vote': true,
+        'initiator.manage_comments': true,
+        'contributor.participate_vote': true,
+    },
+    mandate: {
+        'initiator.manage_mandates': true,
+        'initiator.manage_comments': true,
+        'contributor.participate_vote': true,
+        'mandated.candidate': true,
+        'contributor.comment_mandate': true,
+    },
+    evaluate: {
+        'initiator.manage_deliverables': true,
+        'initiator.manage_comments': true,
+        'mandated.upload_deliverable': true,
+        'contributor.evaluate_deliverable': true,
+        'contributor.comment_evaluation': true,
+        'contributor.request_revocation': true,
+    },
+    archived: {
+        'admin.purge': true,
+    },
+};
+
 @inject()
 export default class SettingsService {
+    private cachedPermissions: Record<string, Record<string, boolean>> | null = null;
+
     constructor(
         private readonly settingRepository: SettingRepository,
         private readonly fileService: FileService,
@@ -123,6 +170,8 @@ export default class SettingsService {
             }
         }
 
+        const permissions = this.mergePermissions(DEFAULT_PERMISSIONS, value?.permissions);
+
         return {
             fallbackLocale,
             locales,
@@ -132,6 +181,7 @@ export default class SettingsService {
             copyright: value?.copyright ?? {},
             logo,
             propositionDefaults: normalizeOffsets(value?.propositionDefaults),
+            permissions,
         };
     }
 
@@ -139,6 +189,17 @@ export default class SettingsService {
         const record = await this.settingRepository.findByKey(ORGANIZATION_SETTINGS_KEY);
         const value = (record?.value as unknown as OrganizationSettingsValue | null | undefined) ?? null;
         return this.serializeOrganizationSettings(value);
+    }
+
+    public async getWorkflowPermissions(): Promise<Record<string, Record<string, boolean>>> {
+        if (this.cachedPermissions) {
+            return this.cachedPermissions;
+        }
+
+        const record = await this.settingRepository.findByKey(ORGANIZATION_SETTINGS_KEY);
+        const value = (record?.value as unknown as OrganizationSettingsValue | null | undefined) ?? null;
+        this.cachedPermissions = this.mergePermissions(DEFAULT_PERMISSIONS, value?.permissions);
+        return this.cachedPermissions;
     }
 
     public async updateOrganizationSettings(payload: UpdateOrganizationSettingsPayload, logoFile?: MultipartFile | null): Promise<SerializedOrganizationSettings> {
@@ -162,6 +223,7 @@ export default class SettingsService {
                 copyright: {},
                 logoFileId: null,
                 propositionDefaults: { ...DEFAULT_PROPOSITION_DEFAULTS },
+                permissions: this.mergePermissions(DEFAULT_PERMISSIONS),
             };
 
             if (record) {
@@ -175,6 +237,7 @@ export default class SettingsService {
                         copyright: currentValue.copyright ?? {},
                         logoFileId: currentValue.logoFileId ?? null,
                         propositionDefaults: currentValue.propositionDefaults ?? { ...DEFAULT_PROPOSITION_DEFAULTS },
+                        permissions: this.mergePermissions(DEFAULT_PERMISSIONS, currentValue.permissions),
                     };
                 }
             } else {
@@ -221,6 +284,10 @@ export default class SettingsService {
             value.description = filterMap(payload.translations.description);
             value.sourceCodeUrl = filterUrlMap(payload.translations.sourceCodeUrl);
             value.copyright = filterMap(payload.translations.copyright);
+
+            if (payload.permissions) {
+                value.permissions = this.mergePermissions(value.permissions ?? DEFAULT_PERMISSIONS, payload.permissions);
+            }
 
             const normalizeOffset = (value: unknown, fallback: number): number => {
                 const parsed = Number(value);
@@ -281,10 +348,38 @@ export default class SettingsService {
 
             await trx.commit();
 
+            this.cachedPermissions = this.mergePermissions(DEFAULT_PERMISSIONS, value.permissions);
+
             return this.serializeOrganizationSettings(value);
         } catch (error) {
             await trx.rollback();
             throw error;
         }
+    }
+
+    private mergePermissions(base: Record<string, Record<string, boolean>>, overrides?: Record<string, Record<string, boolean>>): Record<string, Record<string, boolean>> {
+        const result: Record<string, Record<string, boolean>> = {};
+
+        for (const [status, actions] of Object.entries(base ?? {})) {
+            result[status] = { ...actions };
+        }
+
+        for (const [status, actions] of Object.entries(overrides ?? {})) {
+            if (!actions || typeof actions !== 'object') {
+                continue;
+            }
+
+            if (!result[status]) {
+                result[status] = {};
+            }
+
+            for (const [action, allowed] of Object.entries(actions)) {
+                if (typeof allowed === 'boolean') {
+                    result[status][action] = allowed;
+                }
+            }
+        }
+
+        return result;
     }
 }

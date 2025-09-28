@@ -51,9 +51,11 @@ export default class PropositionCommentService {
             throw new Error('comments.content.empty');
         }
 
-        const role = await this.workflowService.resolveActorRole(proposition, actor);
-        if (comment.authorId !== actor.id && role !== 'admin' && role !== 'initiator') {
-            throw new Error('forbidden:comments');
+        if (comment.authorId !== actor.id) {
+            const allowed = await this.workflowService.canPerform(proposition, actor, 'manage_comments');
+            if (!allowed) {
+                throw new Error('forbidden:comments');
+            }
         }
 
         comment.content = trimmed;
@@ -62,28 +64,35 @@ export default class PropositionCommentService {
     }
 
     public async delete(proposition: Proposition, comment: PropositionComment, actor: User): Promise<void> {
-        const role = await this.workflowService.resolveActorRole(proposition, actor);
-        if (comment.authorId !== actor.id && role !== 'admin' && role !== 'initiator') {
-            throw new Error('forbidden:comments');
+        if (comment.authorId !== actor.id) {
+            const allowed = await this.workflowService.canPerform(proposition, actor, 'manage_comments');
+            if (!allowed) {
+                throw new Error('forbidden:comments');
+            }
         }
         await comment.related('replies').query().delete();
         await comment.delete();
     }
 
     private async ensureCanComment(proposition: Proposition, actor: User, scope: PropositionCommentScopeEnum): Promise<void> {
-        const role = await this.workflowService.resolveActorRole(proposition, actor);
-        if (role === 'admin' || role === 'initiator') {
-            return;
+        const actionKey = this.actionForScope(scope);
+        const allowed = await this.workflowService.canPerform(proposition, actor, actionKey);
+        if (!allowed) {
+            throw new Error('forbidden:comments');
         }
+    }
 
-        if (role === 'mandated' && scope === PropositionCommentScopeEnum.EVALUATION) {
-            return;
+    private actionForScope(scope: PropositionCommentScopeEnum): string {
+        switch (scope) {
+            case PropositionCommentScopeEnum.AMENDMENT:
+                return 'comment_amendment';
+            case PropositionCommentScopeEnum.EVALUATION:
+                return 'comment_evaluation';
+            case PropositionCommentScopeEnum.MANDATE:
+                return 'comment_mandate';
+            case PropositionCommentScopeEnum.CLARIFICATION:
+            default:
+                return 'comment_clarification';
         }
-
-        if (scope === PropositionCommentScopeEnum.CLARIFICATION || scope === PropositionCommentScopeEnum.AMENDMENT) {
-            return;
-        }
-
-        throw new Error('forbidden:comments');
     }
 }

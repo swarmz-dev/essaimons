@@ -33,6 +33,9 @@ export default class PropositionMandateController {
             const created = await this.mandateService.create(proposition, user as User, payload);
             return response.created({ mandate: created.toJSON() });
         } catch (error) {
+            if (error instanceof Error && error.message.startsWith('forbidden:')) {
+                return response.forbidden({ error: 'You are not allowed to manage mandates for this proposition' });
+            }
             logger.error('proposition.mandates.create.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: error?.message ?? 'Unable to create mandate' });
         }
@@ -51,6 +54,9 @@ export default class PropositionMandateController {
             const updated = await this.mandateService.update(proposition, mandate, user as User, payload);
             return response.ok({ mandate: updated.toJSON() });
         } catch (error) {
+            if (error instanceof Error && error.message.startsWith('forbidden:')) {
+                return response.forbidden({ error: 'You are not allowed to manage mandates for this proposition' });
+            }
             logger.error('proposition.mandates.update.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: error?.message ?? 'Unable to update mandate' });
         }
@@ -68,6 +74,9 @@ export default class PropositionMandateController {
             await this.mandateService.delete(proposition, mandate, user as User);
             return response.noContent();
         } catch (error) {
+            if (error instanceof Error && error.message.startsWith('forbidden:')) {
+                return response.forbidden({ error: 'You are not allowed to manage mandates for this proposition' });
+            }
             logger.error('proposition.mandates.delete.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: error?.message ?? 'Unable to delete mandate' });
         }

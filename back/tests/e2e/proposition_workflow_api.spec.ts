@@ -222,6 +222,20 @@ test.group('Proposition workflow API', (group) => {
     test('initiator can manage events, votes, mandates and contributor can comment', async ({ client, assert }) => {
         const { propositionId, creatorBearer } = await createPropositionFixture(client);
 
+        await client
+            .post(`/api/propositions/${propositionId}/status`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({ status: PropositionStatusEnum.CLARIFY, reason: 'Move to clarify' })
+            .then((res) => res.assertStatus(200));
+
+        await client
+            .post(`/api/propositions/${propositionId}/status`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({ status: PropositionStatusEnum.AMEND, reason: 'Start amendments' })
+            .then((res) => res.assertStatus(200));
+
         const eventResponse = await client
             .post(`/api/propositions/${propositionId}/events`)
             .header('accept-language', 'en')
@@ -233,6 +247,13 @@ test.group('Proposition workflow API', (group) => {
                 startAt: DateTime.now().plus({ days: 1 }).toISO(),
             });
         eventResponse.assertStatus(201);
+
+        await client
+            .post(`/api/propositions/${propositionId}/status`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({ status: PropositionStatusEnum.VOTE, reason: 'Ready to configure vote' })
+            .then((res) => res.assertStatus(200));
 
         const voteResponse = await client
             .post(`/api/propositions/${propositionId}/votes`)
@@ -250,6 +271,13 @@ test.group('Proposition workflow API', (group) => {
         const statusResponse = await client.post(`/api/propositions/${propositionId}/votes/${voteId}/status`).header('accept-language', 'en').bearerToken(creatorBearer).json({ status: 'open' });
         statusResponse.assertStatus(200);
 
+        await client
+            .post(`/api/propositions/${propositionId}/status`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({ status: PropositionStatusEnum.MANDATE, reason: 'Select mandates' })
+            .then((res) => res.assertStatus(200));
+
         const mandateResponse = await client
             .post(`/api/propositions/${propositionId}/mandates`)
             .header('accept-language', 'en')
@@ -257,14 +285,21 @@ test.group('Proposition workflow API', (group) => {
             .json({ title: 'Mandate 1', description: 'Lead implementation' });
         mandateResponse.assertStatus(201);
 
+        await client
+            .post(`/api/propositions/${propositionId}/status`)
+            .header('accept-language', 'en')
+            .bearerToken(creatorBearer)
+            .json({ status: PropositionStatusEnum.EVALUATE, reason: 'Start evaluation phase' })
+            .then((res) => res.assertStatus(200));
+
         const commenter = await makeUser('commenter-workflow');
         const commenterToken = await User.accessTokens.create(commenter);
         const commenterBearer = commenterToken.toJSON().token;
         if (!commenterBearer) throw new Error('missing token');
 
         const commentResponse = await client.post(`/api/propositions/${propositionId}/comments`).header('accept-language', 'en').bearerToken(commenterBearer).json({
-            scope: PropositionCommentScopeEnum.CLARIFICATION,
-            content: 'Need more details on timeline.',
+            scope: PropositionCommentScopeEnum.EVALUATION,
+            content: 'Deliverable needs clarification.',
         });
         commentResponse.assertStatus(201);
 

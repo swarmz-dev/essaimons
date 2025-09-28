@@ -80,8 +80,8 @@ export default class PropositionMandateService {
     }
 
     private async ensureCanManageMandates(proposition: Proposition, actor: User): Promise<void> {
-        const role = await this.workflowService.resolveActorRole(proposition, actor);
-        if (role !== 'admin' && role !== 'initiator') {
+        const allowed = await this.workflowService.canPerform(proposition, actor, 'manage_mandates');
+        if (!allowed) {
             throw new Error('forbidden:mandates');
         }
     }

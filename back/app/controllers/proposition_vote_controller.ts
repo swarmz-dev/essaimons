@@ -36,6 +36,9 @@ export default class PropositionVoteController {
             await created.load('options');
             return response.created({ vote: created.toJSON() });
         } catch (error) {
+            if (error instanceof Error && error.message.startsWith('forbidden:')) {
+                return response.forbidden({ error: 'You are not allowed to manage votes for this proposition' });
+            }
             logger.error('proposition.votes.create.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: error?.message ?? 'Unable to create vote' });
         }
@@ -55,6 +58,9 @@ export default class PropositionVoteController {
             await updated.load('options');
             return response.ok({ vote: updated.toJSON() });
         } catch (error) {
+            if (error instanceof Error && error.message.startsWith('forbidden:')) {
+                return response.forbidden({ error: 'You are not allowed to manage votes for this proposition' });
+            }
             logger.error('proposition.votes.update.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: error?.message ?? 'Unable to update vote' });
         }
@@ -74,6 +80,9 @@ export default class PropositionVoteController {
             await updated.load('options');
             return response.ok({ vote: updated.toJSON() });
         } catch (error) {
+            if (error instanceof Error && error.message.startsWith('forbidden:')) {
+                return response.forbidden({ error: 'You are not allowed to manage votes for this proposition' });
+            }
             logger.error('proposition.votes.status.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: error?.message ?? 'Unable to change vote status' });
         }
@@ -91,6 +100,9 @@ export default class PropositionVoteController {
             await this.voteService.delete(proposition, vote, user as User);
             return response.noContent();
         } catch (error) {
+            if (error instanceof Error && error.message.startsWith('forbidden:')) {
+                return response.forbidden({ error: 'You are not allowed to manage votes for this proposition' });
+            }
             logger.error('proposition.votes.delete.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: error?.message ?? 'Unable to delete vote' });
         }

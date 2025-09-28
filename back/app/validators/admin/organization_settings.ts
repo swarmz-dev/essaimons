@@ -25,5 +25,6 @@ export const updateOrganizationSettingsValidator = vine.compile(
                 evaluationOffsetDays: vine.number().min(0).max(365).optional(),
             })
             .optional(),
+        permissions: vine.record(vine.record(vine.boolean())).optional(),
     })
 );

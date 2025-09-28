@@ -15,4 +15,5 @@ export type SerializedOrganizationSettings = {
         mandateOffsetDays: number;
         evaluationOffsetDays: number;
     };
+    permissions: Record<string, Record<string, boolean>>;
 };

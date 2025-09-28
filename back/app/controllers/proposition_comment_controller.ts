@@ -33,6 +33,9 @@ export default class PropositionCommentController {
             const created = await this.commentService.create(proposition, user as User, payload);
             return response.created({ comment: created.toJSON() });
         } catch (error) {
+            if (error instanceof Error && error.message.startsWith('forbidden:')) {
+                return response.forbidden({ error: 'You are not allowed to comment on this proposition' });
+            }
             logger.error('proposition.comments.create.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: error?.message ?? 'Unable to create comment' });
         }
@@ -51,6 +54,9 @@ export default class PropositionCommentController {
             const updated = await this.commentService.update(proposition, comment, user as User, payload);
             return response.ok({ comment: updated.toJSON() });
         } catch (error) {
+            if (error instanceof Error && error.message.startsWith('forbidden:')) {
+                return response.forbidden({ error: 'You are not allowed to edit this comment' });
+            }
             logger.error('proposition.comments.update.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: error?.message ?? 'Unable to update comment' });
         }
@@ -68,6 +74,9 @@ export default class PropositionCommentController {
             await this.commentService.delete(proposition, comment, user as User);
             return response.noContent();
         } catch (error) {
+            if (error instanceof Error && error.message.startsWith('forbidden:')) {
+                return response.forbidden({ error: 'You are not allowed to delete this comment' });
+            }
             logger.error('proposition.comments.delete.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: error?.message ?? 'Unable to delete comment' });
         }

@@ -1,9 +1,11 @@
+import { inject } from '@adonisjs/core';
 import { DateTime } from 'luxon';
 import { TransactionClientContract } from '@adonisjs/lucid/types/database';
 import Proposition from '#models/proposition';
 import PropositionStatusHistory from '#models/proposition_status_history';
 import type User from '#models/user';
 import { MandateStatusEnum, PropositionStatusEnum, PropositionVisibilityEnum, UserRoleEnum } from '#types';
+import SettingsService from '#services/settings_service';
 
 export class PropositionWorkflowException extends Error {
     constructor(public readonly code: 'invalid_transition' | 'forbidden') {
@@ -51,7 +53,9 @@ const ROLE_TRANSITIONS: Partial<Record<PropositionStatusEnum, Partial<Record<Wor
     },
 };
 
+@inject()
 export default class PropositionWorkflowService {
+    constructor(private readonly settingsService: SettingsService) {}
     public getAllowedTransitions(currentStatus: PropositionStatusEnum): PropositionStatusEnum[] {
         return ALLOWED_TRANSITIONS[currentStatus] ?? [];
     }
@@ -144,6 +148,28 @@ export default class PropositionWorkflowService {
         }
 
         return 'contributor';
+    }
+
+    public async canPerform(proposition: Proposition, actor: User, action: string): Promise<boolean> {
+        const role = await this.resolveActorRole(proposition, actor);
+        if (role === 'admin') {
+            return true;
+        }
+
+        const permissions = await this.settingsService.getWorkflowPermissions();
+        const statusKey = (proposition.status ?? PropositionStatusEnum.DRAFT) as string;
+        const statusPermissions = permissions[statusKey] ?? {};
+
+        const roleKey = `${role}.${action}`;
+        if (roleKey in statusPermissions) {
+            return statusPermissions[roleKey];
+        }
+
+        if (action in statusPermissions) {
+            return statusPermissions[action];
+        }
+
+        return false;
     }
 
     private async isRoleAllowedToTransition(currentStatus: PropositionStatusEnum, role: WorkflowRole, targetStatus: PropositionStatusEnum): Promise<boolean> {

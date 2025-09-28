@@ -140,8 +140,8 @@ export default class PropositionVoteService {
     }
 
     private async ensureCanManageVotes(proposition: Proposition, actor: User): Promise<void> {
-        const role = await this.workflowService.resolveActorRole(proposition, actor);
-        if (role !== 'admin' && role !== 'initiator') {
+        const allowed = await this.workflowService.canPerform(proposition, actor, 'configure_vote');
+        if (!allowed) {
             throw new Error('forbidden:votes');
         }
     }

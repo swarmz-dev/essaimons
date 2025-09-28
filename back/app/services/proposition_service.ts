@@ -217,6 +217,11 @@ export default class PropositionService {
         const trx: TransactionClientContract = await db.transaction();
 
         try {
+            const canEdit = await this.propositionWorkflowService.canPerform(proposition, actor, 'edit_proposition');
+            if (!canEdit) {
+                throw new Error('messages.proposition.update.forbidden');
+            }
+
             const categories: PropositionCategory[] = await this.propositionCategoryRepository.getMultipleCategories(payload.categoryIds, trx);
             if (categories.length !== payload.categoryIds.length) {
                 throw new Error('messages.proposition.create.invalid-category');

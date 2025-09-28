@@ -34,6 +34,9 @@ export default class PropositionEventController {
             const created = await this.eventService.create(proposition, actor, payload);
             return response.created({ event: created.toJSON() });
         } catch (error) {
+            if (error instanceof Error && error.message.startsWith('forbidden:')) {
+                return response.forbidden({ error: 'You are not allowed to manage events for this proposition' });
+            }
             logger.error('proposition.events.create.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: 'Unable to create event' });
         }
@@ -56,6 +59,9 @@ export default class PropositionEventController {
             const updated = await this.eventService.update(proposition, event, actor, payload);
             return response.ok({ event: updated.toJSON() });
         } catch (error) {
+            if (error instanceof Error && error.message.startsWith('forbidden:')) {
+                return response.forbidden({ error: 'You are not allowed to manage events for this proposition' });
+            }
             logger.error('proposition.events.update.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: 'Unable to update event' });
         }
@@ -76,6 +82,9 @@ export default class PropositionEventController {
             await this.eventService.delete(proposition, event, user as User);
             return response.noContent();
         } catch (error) {
+            if (error instanceof Error && error.message.startsWith('forbidden:')) {
+                return response.forbidden({ error: 'You are not allowed to manage events for this proposition' });
+            }
             logger.error('proposition.events.delete.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: 'Unable to delete event' });
         }

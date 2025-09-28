@@ -2,7 +2,7 @@
 
 # Tâche 002 · Services backend & API workflow
 
-**Statut actuel : en cours – transitions + gestion événements/votes/mandats/commentaires exposées via l’API.**
+**Statut actuel : en cours – workflow complet (transitions + événements/votes/mandats/commentaires) avec permissions dynamiques.**
 
 ## Prérequis
 - ✅ Tâche 001 livrée (structures de données et relations disponibles).
@@ -19,9 +19,10 @@
   - `PropositionMandateController`/`Service` (`/mandates`: création/mise à jour/suppression avec cascade deliverables/applications/revocations).
   - `PropositionCommentController`/`Service` (`/comments`: création, édition, suppression, contrôles rôles/scope).
 - ✅ Validators dédiés (événements, votes, mandats, commentaires, status) + routes enregistrées.
-- 🔄 À venir : recalcul des échéances automatiques (tâche 005) et exposition des permissions détaillées côté serialization/UI.
-- 🔄 À venir : matrix permissions appliquée finement via policies/middlewares et exposition front complète.
-- 🔄 À venir : sérialisation étendue (timeline, permissions détaillées).
+- ✅ Permissions dynamiques :
+  - Stockage dans `SettingsService` (`permissions.per_status` + valeurs par défaut).
+  - `PropositionWorkflowService.canPerform` + intégration dans services/controllers (events/votes/mandates/comments, update proposition).
+- 🔄 À venir : recalcul des échéances automatiques (tâche 005) et exposition enrichie côté serialization/UI (timeline, liste d’actions autorisées).
 
 ### Matrice de permissions par défaut (à implémenter côté settings + policies)
 | Statut → / Action ↓ | Admin | Initiator | Mandated | Contributor |
@@ -45,6 +46,13 @@ Notes :
 - ✅ Nouveau scénario E2E `proposition_workflow_api.spec.ts` :
   - Transition initiateur `draft → clarify` (historique vérifié).
   - Blocage d’un contributeur non autorisé (403).
-  - Flux complet évènements/votes/mandats/commentaires (création + lecture + droits).
+  - Flux complet évènements/votes/mandats/commentaires (création + lecture + droits, transitions de statut).
+- ✅ Harmonisation des migrations tests (connexion `logs`).
+- 🔄 Tests complémentaires à prévoir :
+  - Couvrir les refus d’actions par rôle/statut (initiator vs contributor/mandated) sur chaque endpoint (`/events`, `/votes`, `/mandates`, `/comments`, transition `/status`).
+  - Vérifier la prise en compte des overrides `permissions.per_status` (charger des settings custom puis assurer que `canPerform` reflète les changements).
+  - Ajouter un test de vote verrouillé après ouverture (impossibilité de modifier/supprimer une fois status `open`).
+  - Ajouter un test commentaire mandaté en phase `evaluate` (autorisé) vs contributeur (refus).
+  - Sérialisation : s’assurer que la payload `settings` renvoie bien les permissions et que le détail proposition expose les actions autorisées (à réaliser après enrichissement serializer côté Tâche 002/004).
 - ✅ Harmonisation des migrations tests (connexion `logs`).
 - 🔄 Tests complémentaires à prévoir : granularité permissions (matrix configurable), votes ouverts avec bulletins, modération avancée.
