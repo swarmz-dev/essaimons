@@ -113,7 +113,7 @@ const updatePermissions = async (overrides: Record<string, Record<string, boolea
                 sourceCodeUrl: ensureTranslation(current.sourceCodeUrl, 'https://example.org'),
                 copyright: ensureTranslation(current.copyright, 'Copyright'),
             },
-            permissions: overrides,
+            permissions: { perStatus: overrides },
         },
         null
     );

@@ -15,5 +15,13 @@ export type SerializedOrganizationSettings = {
         mandateOffsetDays: number;
         evaluationOffsetDays: number;
     };
-    permissions: Record<string, Record<string, boolean>>;
+    permissions: {
+        perStatus: Record<string, Record<string, boolean>>;
+    };
+    workflowAutomation: {
+        nonConformityThreshold: number;
+        evaluationAutoShiftDays: number;
+        revocationAutoTriggerDelayDays: number;
+        deliverableNamingPattern: string;
+    };
 };

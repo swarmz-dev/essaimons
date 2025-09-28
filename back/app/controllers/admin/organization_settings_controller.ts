@@ -49,6 +49,7 @@ export default class OrganizationSettingsController {
             },
             ...(payload.propositionDefaults ? { propositionDefaults: payload.propositionDefaults } : {}),
             ...(payload.permissions ? { permissions: payload.permissions } : {}),
+            ...(payload.workflowAutomation ? { workflowAutomation: payload.workflowAutomation } : {}),
         };
 
         const settings = await this.settingsService.updateOrganizationSettings(settingsPayload, payload.logo);

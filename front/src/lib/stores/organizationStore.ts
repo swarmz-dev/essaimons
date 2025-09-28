@@ -22,6 +22,15 @@ export type OrganizationSettings = {
         mandateOffsetDays: number;
         evaluationOffsetDays: number;
     };
+    permissions: {
+        perStatus: Record<string, Record<string, boolean>>;
+    };
+    workflowAutomation: {
+        nonConformityThreshold: number;
+        evaluationAutoShiftDays: number;
+        revocationAutoTriggerDelayDays: number;
+        deliverableNamingPattern: string;
+    };
 };
 
 const defaultSettings: OrganizationSettings = {
@@ -39,6 +48,13 @@ const defaultSettings: OrganizationSettings = {
         mandateOffsetDays: 15,
         evaluationOffsetDays: 30,
     },
+    permissions: { perStatus: {} },
+    workflowAutomation: {
+        nonConformityThreshold: 60,
+        evaluationAutoShiftDays: 14,
+        revocationAutoTriggerDelayDays: 30,
+        deliverableNamingPattern: 'DELIV-{proposition}-{date}',
+    },
 };
 
 export const organizationSettings: Writable<OrganizationSettings> = writable(defaultSettings);
@@ -53,6 +69,8 @@ export function setOrganizationSettings(settings: OrganizationSettings): void {
         copyright: settings.copyright ?? {},
         logo: settings.logo ?? null,
         propositionDefaults: settings.propositionDefaults ?? defaultSettings.propositionDefaults,
+        permissions: settings.permissions ?? defaultSettings.permissions,
+        workflowAutomation: settings.workflowAutomation ?? defaultSettings.workflowAutomation,
     });
 }
 

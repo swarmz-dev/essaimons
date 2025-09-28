@@ -56,11 +56,25 @@ export const load: LayoutServerLoad = loadFlash(
                 mandateOffsetDays: 15,
                 evaluationOffsetDays: 30,
             },
+            permissions: { perStatus: {} },
+            workflowAutomation: {
+                nonConformityThreshold: 60,
+                evaluationAutoShiftDays: 14,
+                revocationAutoTriggerDelayDays: 30,
+                deliverableNamingPattern: 'DELIV-{proposition}-{date}',
+            },
         };
 
         try {
             const { data } = await locals.client.get<{ settings: SerializedOrganizationSettings }>('api/settings/organization');
-            organization = data.settings ?? organization;
+            if (data?.settings) {
+                organization = {
+                    ...organization,
+                    ...data.settings,
+                    permissions: data.settings.permissions ?? organization.permissions,
+                    workflowAutomation: data.settings.workflowAutomation ?? organization.workflowAutomation,
+                };
+            }
         } catch (error: any) {
             console.error('load.organization.fetch.error', error?.response?.data ?? error);
         }

@@ -9,7 +9,6 @@
     import type { SubmitFunction } from '@sveltejs/kit';
     import { m } from '#lib/paraglide/messages';
     import LogoCropper from '#lib/components/ui/image/LogoCropper.svelte';
-    import { translateField } from '#lib/stores/organizationStore';
     import EnglishFlag from '#icons/EnglishFlag.svelte';
     import FrenchFlag from '#icons/FrenchFlag.svelte';
     import type { SerializedOrganizationSettings } from 'backend/types';
@@ -127,6 +126,57 @@
     let voteOffsetDays: string = $state(String(settings.propositionDefaults?.voteOffsetDays ?? 7));
     let mandateOffsetDays: string = $state(String(settings.propositionDefaults?.mandateOffsetDays ?? 15));
     let evaluationOffsetDays: string = $state(String(settings.propositionDefaults?.evaluationOffsetDays ?? 30));
+    const defaultPermissionMatrix: Record<string, Record<string, boolean>> = {
+        draft: {
+            'initiator.edit_proposition': true,
+            'initiator.publish': true,
+            'initiator.manage_files': true,
+            'initiator.manage_comments': true,
+        },
+        clarify: {
+            'initiator.edit_proposition': true,
+            'initiator.manage_comments': true,
+            'contributor.comment_clarification': true,
+        },
+        amend: {
+            'initiator.edit_proposition': true,
+            'initiator.manage_events': true,
+            'initiator.manage_comments': true,
+            'contributor.comment_amendment': true,
+        },
+        vote: {
+            'initiator.configure_vote': true,
+            'initiator.manage_comments': true,
+            'contributor.participate_vote': true,
+        },
+        mandate: {
+            'initiator.manage_mandates': true,
+            'initiator.manage_comments': true,
+            'contributor.participate_vote': true,
+            'mandated.candidate': true,
+            'contributor.comment_mandate': true,
+        },
+        evaluate: {
+            'initiator.manage_deliverables': true,
+            'initiator.manage_comments': true,
+            'mandated.upload_deliverable': true,
+            'mandated.comment_evaluation': true,
+            'contributor.evaluate_deliverable': true,
+            'contributor.comment_evaluation': true,
+            'contributor.request_revocation': true,
+        },
+        archived: {
+            'admin.purge': true,
+        },
+    };
+
+    const initialPermissionsMatrix = Object.keys(settings.permissions?.perStatus ?? {}).length ? (settings.permissions?.perStatus ?? {}) : defaultPermissionMatrix;
+
+    let permissionsPerStatus: Record<string, Record<string, boolean>> = $state(JSON.parse(JSON.stringify(initialPermissionsMatrix)));
+    let nonConformityThreshold: string = $state(String(settings.workflowAutomation?.nonConformityThreshold ?? 60));
+    let evaluationAutoShiftDays: string = $state(String(settings.workflowAutomation?.evaluationAutoShiftDays ?? 14));
+    let revocationAutoTriggerDelayDays: string = $state(String(settings.workflowAutomation?.revocationAutoTriggerDelayDays ?? 30));
+    let deliverableNamingPattern: string = $state(settings.workflowAutomation?.deliverableNamingPattern ?? 'DELIV-{proposition}-{date}');
 
     let sourceCodeUrlErrors: Record<string, string | null> = $state({});
     let hasSourceCodeUrlErrors: boolean = $state(false);
@@ -143,6 +193,43 @@
 
     const updateMapValue = (map: Record<string, string>, localeCode: string, value: string, setter: (next: Record<string, string>) => void): void => {
         setter({ ...map, [localeCode]: value });
+    };
+
+    const statusOrder = ['draft', 'clarify', 'amend', 'vote', 'mandate', 'evaluate', 'archived'];
+
+    const getStatuses = (): string[] => {
+        const merged = new Set<string>([...statusOrder, ...Object.keys(permissionsPerStatus ?? {})]);
+        return Array.from(merged);
+    };
+
+    const getActionsForStatus = (status: string): string[] => {
+        return Object.keys(permissionsPerStatus?.[status] ?? {}).sort();
+    };
+
+    const formatStatusLabel = (status: string): string => {
+        return status
+            .split('_')
+            .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+            .join(' ');
+    };
+
+    const formatActionLabel = (action: string): string => {
+        return action
+            .replace(/\./g, ' · ')
+            .split('_')
+            .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+            .join(' ');
+    };
+
+    const handlePermissionToggle = (status: string, action: string, allowed: boolean): void => {
+        const current = permissionsPerStatus[status] ?? {};
+        permissionsPerStatus = {
+            ...permissionsPerStatus,
+            [status]: {
+                ...current,
+                [action]: allowed,
+            },
+        };
     };
 
     const handleLogoChange = (event: Event): void => {
@@ -217,6 +304,19 @@
         formData.set('propositionDefaults[voteOffsetDays]', voteOffsetDays.trim() || '0');
         formData.set('propositionDefaults[mandateOffsetDays]', mandateOffsetDays.trim() || '0');
         formData.set('propositionDefaults[evaluationOffsetDays]', evaluationOffsetDays.trim() || '0');
+
+        for (const status of getStatuses()) {
+            const actions = getActionsForStatus(status);
+            for (const action of actions) {
+                const allowed = Boolean(permissionsPerStatus?.[status]?.[action]);
+                formData.set(`permissions[perStatus][${status}][${action}]`, allowed ? '1' : '0');
+            }
+        }
+
+        formData.set('workflowAutomation[nonConformityThreshold]', nonConformityThreshold.trim() || '0');
+        formData.set('workflowAutomation[evaluationAutoShiftDays]', evaluationAutoShiftDays.trim() || '0');
+        formData.set('workflowAutomation[revocationAutoTriggerDelayDays]', revocationAutoTriggerDelayDays.trim() || '0');
+        formData.set('workflowAutomation[deliverableNamingPattern]', deliverableNamingPattern.trim());
 
         if (croppedFile) {
             formData.delete('logo');
@@ -440,6 +540,71 @@
                     <FieldLabel forId="evaluationOffsetDays" label={m['admin.organization.propositions.evaluation']()}>
                         <Input id="evaluationOffsetDays" type="number" name="propositionDefaults[evaluationOffsetDays]" min={0} bind:value={evaluationOffsetDays} required />
                     </FieldLabel>
+
+                    <section class="space-y-4">
+                        <h3 class="text-sm font-semibold text-muted-foreground">Automatisations</h3>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <FieldLabel forId="nonConformityThreshold" label="Seuil non conforme (%)">
+                                <Input id="nonConformityThreshold" type="number" name="workflowAutomation[nonConformityThreshold]" min={0} max={100} bind:value={nonConformityThreshold} required />
+                            </FieldLabel>
+
+                            <FieldLabel forId="evaluationAutoShiftDays" label="Décalage auto évaluation (jours)">
+                                <Input id="evaluationAutoShiftDays" type="number" name="workflowAutomation[evaluationAutoShiftDays]" min={0} max={365} bind:value={evaluationAutoShiftDays} required />
+                            </FieldLabel>
+
+                            <FieldLabel forId="revocationAutoTriggerDelayDays" label="Délai auto révocation (jours)">
+                                <Input
+                                    id="revocationAutoTriggerDelayDays"
+                                    type="number"
+                                    name="workflowAutomation[revocationAutoTriggerDelayDays]"
+                                    min={0}
+                                    max={365}
+                                    bind:value={revocationAutoTriggerDelayDays}
+                                    required
+                                />
+                            </FieldLabel>
+
+                            <FieldLabel forId="deliverableNamingPattern" label="Patron nommage livrables">
+                                <Input id="deliverableNamingPattern" type="text" name="workflowAutomation[deliverableNamingPattern]" maxlength={255} bind:value={deliverableNamingPattern} />
+                            </FieldLabel>
+                        </div>
+                    </section>
+
+                    <section class="space-y-4">
+                        <div>
+                            <h3 class="text-sm font-semibold text-muted-foreground">Permissions par statut</h3>
+                            <p class="text-xs text-muted-foreground">Activez les actions autorisées pour chaque rôle et statut.</p>
+                        </div>
+                        <div class="overflow-x-auto rounded-2xl border border-border/60 bg-white/70 shadow-sm dark:bg-slate-950/70">
+                            <table class="w-full min-w-[560px] divide-y divide-border/60 text-sm">
+                                <thead class="bg-muted/40">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left font-semibold uppercase tracking-wide text-muted-foreground">Statut</th>
+                                        <th class="px-4 py-3 text-left font-semibold uppercase tracking-wide text-muted-foreground">Action</th>
+                                        <th class="px-4 py-3 text-center font-semibold uppercase tracking-wide text-muted-foreground">Autorisé</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-border/60">
+                                    {#each getStatuses() as status}
+                                        {#each getActionsForStatus(status) as action}
+                                            <tr class="hover:bg-muted/30">
+                                                <td class="px-4 py-3 align-middle font-medium text-foreground/85">{formatStatusLabel(status)}</td>
+                                                <td class="px-4 py-3 align-middle text-foreground/80">{formatActionLabel(action)}</td>
+                                                <td class="px-4 py-3 text-center align-middle">
+                                                    <input
+                                                        class="size-4 rounded border-border/60 accent-primary"
+                                                        type="checkbox"
+                                                        checked={Boolean(permissionsPerStatus?.[status]?.[action])}
+                                                        onchange={(event) => handlePermissionToggle(status, action, (event.currentTarget as HTMLInputElement).checked)}
+                                                    />
+                                                </td>
+                                            </tr>
+                                        {/each}
+                                    {/each}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
                 </div>
             </div>
 

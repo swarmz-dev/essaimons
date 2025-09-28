@@ -6,8 +6,37 @@ export const load: PageServerLoad<{ settings: SerializedOrganizationSettings }> 
     try {
         const { data } = await locals.client.get<{ settings: SerializedOrganizationSettings }>('api/admin/organization');
 
+        const fallbackSettings: SerializedOrganizationSettings = {
+            fallbackLocale: 'en',
+            locales: [],
+            name: {},
+            description: {},
+            sourceCodeUrl: {},
+            copyright: {},
+            logo: null,
+            propositionDefaults: {
+                clarificationOffsetDays: 7,
+                improvementOffsetDays: 15,
+                voteOffsetDays: 7,
+                mandateOffsetDays: 15,
+                evaluationOffsetDays: 30,
+            },
+            permissions: { perStatus: {} },
+            workflowAutomation: {
+                nonConformityThreshold: 60,
+                evaluationAutoShiftDays: 14,
+                revocationAutoTriggerDelayDays: 30,
+                deliverableNamingPattern: 'DELIV-{proposition}-{date}',
+            },
+        };
+
         return {
-            settings: data.settings,
+            settings: {
+                ...fallbackSettings,
+                ...data.settings,
+                permissions: data.settings.permissions ?? fallbackSettings.permissions,
+                workflowAutomation: data.settings.workflowAutomation ?? fallbackSettings.workflowAutomation,
+            },
         };
     } catch (error: any) {
         console.error('admin.organization.load.error', error?.response?.data ?? error);
@@ -26,6 +55,13 @@ export const load: PageServerLoad<{ settings: SerializedOrganizationSettings }> 
                     voteOffsetDays: 7,
                     mandateOffsetDays: 15,
                     evaluationOffsetDays: 30,
+                },
+                permissions: { perStatus: {} },
+                workflowAutomation: {
+                    nonConformityThreshold: 60,
+                    evaluationAutoShiftDays: 14,
+                    revocationAutoTriggerDelayDays: 30,
+                    deliverableNamingPattern: 'DELIV-{proposition}-{date}',
                 },
             },
         };

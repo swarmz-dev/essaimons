@@ -2,6 +2,7 @@ import vine from '@vinejs/vine';
 
 const translationSchema = vine.record(vine.string().trim().maxLength(2000));
 const sourceCodeUrlSchema = vine.record(vine.string().trim().maxLength(2000).url());
+const permissionMatrixSchema = vine.record(vine.record(vine.boolean()));
 
 export const updateOrganizationSettingsValidator = vine.compile(
     vine.object({
@@ -25,6 +26,18 @@ export const updateOrganizationSettingsValidator = vine.compile(
                 evaluationOffsetDays: vine.number().min(0).max(365).optional(),
             })
             .optional(),
-        permissions: vine.record(vine.record(vine.boolean())).optional(),
+        permissions: vine
+            .object({
+                perStatus: permissionMatrixSchema.optional(),
+            })
+            .optional(),
+        workflowAutomation: vine
+            .object({
+                nonConformityThreshold: vine.number().min(0).max(100).optional(),
+                evaluationAutoShiftDays: vine.number().min(0).max(365).optional(),
+                revocationAutoTriggerDelayDays: vine.number().min(0).max(365).optional(),
+                deliverableNamingPattern: vine.string().trim().maxLength(255).optional(),
+            })
+            .optional(),
     })
 );

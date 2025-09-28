@@ -15,6 +15,19 @@ import type { MultipartFile } from '@adonisjs/bodyparser/types';
 
 const ORGANIZATION_SETTINGS_KEY = 'organization';
 
+type PermissionMatrix = Record<string, Record<string, boolean>>;
+
+interface PermissionsWrapper {
+    perStatus: PermissionMatrix;
+}
+
+interface WorkflowAutomationSettingsValue {
+    nonConformityThreshold: number;
+    evaluationAutoShiftDays: number;
+    revocationAutoTriggerDelayDays: number;
+    deliverableNamingPattern: string;
+}
+
 interface OrganizationSettingsValue {
     fallbackLocale: string;
     name: Record<string, string>;
@@ -29,7 +42,8 @@ interface OrganizationSettingsValue {
         mandateOffsetDays: number;
         evaluationOffsetDays: number;
     };
-    permissions?: Record<string, Record<string, boolean>>;
+    permissions?: PermissionsWrapper;
+    workflowAutomation?: WorkflowAutomationSettingsValue;
 }
 
 interface UpdateOrganizationSettingsPayload {
@@ -47,7 +61,8 @@ interface UpdateOrganizationSettingsPayload {
         mandateOffsetDays: number;
         evaluationOffsetDays: number;
     };
-    permissions?: Record<string, Record<string, boolean>>;
+    permissions?: PermissionsWrapper | PermissionMatrix;
+    workflowAutomation?: Partial<WorkflowAutomationSettingsValue>;
 }
 
 const DEFAULT_PROPOSITION_DEFAULTS = {
@@ -102,6 +117,13 @@ const DEFAULT_PERMISSIONS: Record<string, Record<string, boolean>> = {
     },
 };
 
+const DEFAULT_WORKFLOW_AUTOMATION: WorkflowAutomationSettingsValue = {
+    nonConformityThreshold: 60,
+    evaluationAutoShiftDays: 14,
+    revocationAutoTriggerDelayDays: 30,
+    deliverableNamingPattern: 'DELIV-{proposition}-{date}',
+};
+
 @inject()
 export default class SettingsService {
     private cachedPermissions: Record<string, Record<string, boolean>> | null = null;
@@ -125,6 +147,48 @@ export default class SettingsService {
             result[lower] = trimmed;
         }
         return result;
+    }
+
+    private extractPermissionMatrix(input: PermissionsWrapper | PermissionMatrix | null | undefined): PermissionMatrix | null {
+        if (!input || typeof input !== 'object') {
+            return null;
+        }
+
+        if ('perStatus' in input) {
+            const perStatus = (input as PermissionsWrapper).perStatus;
+            if (!perStatus || typeof perStatus !== 'object') {
+                return null;
+            }
+            return perStatus;
+        }
+
+        return input as PermissionMatrix;
+    }
+
+    private normalizeWorkflowAutomationValue(input?: Partial<WorkflowAutomationSettingsValue> | null): WorkflowAutomationSettingsValue {
+        const normalizeNumber = (value: unknown, fallback: number, min: number, max: number): number => {
+            const parsed = Number(value);
+            if (Number.isFinite(parsed)) {
+                const floored = Math.floor(parsed);
+                if (floored < min) {
+                    return min;
+                }
+                if (floored > max) {
+                    return max;
+                }
+                return floored;
+            }
+            return fallback;
+        };
+
+        const pattern = typeof input?.deliverableNamingPattern === 'string' ? input.deliverableNamingPattern.trim() : '';
+
+        return {
+            nonConformityThreshold: normalizeNumber(input?.nonConformityThreshold, DEFAULT_WORKFLOW_AUTOMATION.nonConformityThreshold, 0, 100),
+            evaluationAutoShiftDays: normalizeNumber(input?.evaluationAutoShiftDays, DEFAULT_WORKFLOW_AUTOMATION.evaluationAutoShiftDays, 0, 365),
+            revocationAutoTriggerDelayDays: normalizeNumber(input?.revocationAutoTriggerDelayDays, DEFAULT_WORKFLOW_AUTOMATION.revocationAutoTriggerDelayDays, 0, 365),
+            deliverableNamingPattern: pattern.length ? pattern.slice(0, 255) : DEFAULT_WORKFLOW_AUTOMATION.deliverableNamingPattern,
+        };
     }
 
     private async serializeOrganizationSettings(value: OrganizationSettingsValue | null): Promise<SerializedOrganizationSettings> {
@@ -171,7 +235,8 @@ export default class SettingsService {
             }
         }
 
-        const permissions = this.mergePermissions(DEFAULT_PERMISSIONS, value?.permissions);
+        const permissions = this.mergePermissions(DEFAULT_PERMISSIONS, this.extractPermissionMatrix(value?.permissions));
+        const workflowAutomation = this.normalizeWorkflowAutomationValue(value?.workflowAutomation);
 
         return {
             fallbackLocale,
@@ -182,7 +247,8 @@ export default class SettingsService {
             copyright: value?.copyright ?? {},
             logo,
             propositionDefaults: normalizeOffsets(value?.propositionDefaults),
-            permissions,
+            permissions: { perStatus: permissions },
+            workflowAutomation,
         };
     }
 
@@ -199,7 +265,7 @@ export default class SettingsService {
 
         const record = await this.settingRepository.findByKey(ORGANIZATION_SETTINGS_KEY);
         const value = (record?.value as unknown as OrganizationSettingsValue | null | undefined) ?? null;
-        this.cachedPermissions = this.mergePermissions(DEFAULT_PERMISSIONS, value?.permissions);
+        this.cachedPermissions = this.mergePermissions(DEFAULT_PERMISSIONS, this.extractPermissionMatrix(value?.permissions));
         return this.cachedPermissions;
     }
 
@@ -224,12 +290,14 @@ export default class SettingsService {
                 copyright: {},
                 logoFileId: null,
                 propositionDefaults: { ...DEFAULT_PROPOSITION_DEFAULTS },
-                permissions: this.mergePermissions(DEFAULT_PERMISSIONS),
+                permissions: { perStatus: this.mergePermissions(DEFAULT_PERMISSIONS) },
+                workflowAutomation: { ...DEFAULT_WORKFLOW_AUTOMATION },
             };
 
             if (record) {
                 const currentValue = (record.value as unknown as OrganizationSettingsValue) ?? null;
                 if (currentValue) {
+                    const existingPermissions = this.mergePermissions(DEFAULT_PERMISSIONS, this.extractPermissionMatrix(currentValue.permissions));
                     value = {
                         fallbackLocale: (currentValue.fallbackLocale ?? fallbackLocale).toLowerCase(),
                         name: currentValue.name ?? {},
@@ -238,7 +306,8 @@ export default class SettingsService {
                         copyright: currentValue.copyright ?? {},
                         logoFileId: currentValue.logoFileId ?? null,
                         propositionDefaults: currentValue.propositionDefaults ?? { ...DEFAULT_PROPOSITION_DEFAULTS },
-                        permissions: this.mergePermissions(DEFAULT_PERMISSIONS, currentValue.permissions),
+                        permissions: { perStatus: existingPermissions },
+                        workflowAutomation: this.normalizeWorkflowAutomationValue(currentValue.workflowAutomation),
                     };
                 }
             } else {
@@ -287,7 +356,19 @@ export default class SettingsService {
             value.copyright = filterMap(payload.translations.copyright);
 
             if (payload.permissions) {
-                value.permissions = this.mergePermissions(value.permissions ?? DEFAULT_PERMISSIONS, payload.permissions);
+                const overrides = this.extractPermissionMatrix(payload.permissions);
+                if (overrides) {
+                    const baseMatrix = value.permissions?.perStatus ?? this.mergePermissions(DEFAULT_PERMISSIONS);
+                    value.permissions = { perStatus: this.mergePermissions(baseMatrix, overrides) };
+                }
+            }
+
+            if (payload.workflowAutomation) {
+                const nextAutomation = this.normalizeWorkflowAutomationValue({
+                    ...value.workflowAutomation,
+                    ...payload.workflowAutomation,
+                });
+                value.workflowAutomation = nextAutomation;
             }
 
             const normalizeOffset = (value: unknown, fallback: number): number => {
@@ -349,7 +430,7 @@ export default class SettingsService {
 
             await trx.commit();
 
-            this.cachedPermissions = this.mergePermissions(DEFAULT_PERMISSIONS, value.permissions);
+            this.cachedPermissions = value.permissions?.perStatus ?? this.mergePermissions(DEFAULT_PERMISSIONS);
 
             return this.serializeOrganizationSettings(value);
         } catch (error) {
@@ -358,23 +439,19 @@ export default class SettingsService {
         }
     }
 
-    private mergePermissions(base: Record<string, Record<string, boolean>>, overrides?: Record<string, Record<string, boolean>>): Record<string, Record<string, boolean>> {
-        const result: Record<string, Record<string, boolean>> = {};
+    private mergePermissions(base: PermissionMatrix, overrides?: PermissionMatrix | null): PermissionMatrix {
+        const result: PermissionMatrix = {};
 
         for (const [status, actions] of Object.entries(base ?? {})) {
             result[status] = { ...actions };
         }
 
         for (const [status, actions] of Object.entries(overrides ?? {})) {
-            if (!actions || typeof actions !== 'object') {
-                continue;
-            }
-
             if (!result[status]) {
                 result[status] = {};
             }
 
-            for (const [action, allowed] of Object.entries(actions)) {
+            for (const [action, allowed] of Object.entries(actions ?? {})) {
                 if (typeof allowed === 'boolean') {
                     result[status][action] = allowed;
                 }
