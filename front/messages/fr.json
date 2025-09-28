@@ -342,7 +342,9 @@
             },
             "visual": {
                 "label": "Visuel",
-                "info": "Ajoutez un visuel représentatif pour faciliter l'identification de la proposition dans les espaces de partage. Formats images recommandés (PNG, JPG, WEBP)."
+                "info": "Ajoutez un visuel représentatif pour faciliter l'identification de la proposition dans les espaces de partage. Formats images recommandés (PNG, JPG, WEBP).",
+                "remove": "Supprimer l’image",
+                "preview-alt": "Aperçu du visuel de la proposition"
             },
             "categories": {
                 "label": "Catégories",
@@ -421,6 +423,13 @@
             "concretization-hint": "Renseignez le cadre général avant de passer aux aspects collaboratifs.",
             "horizontality-hint": "Documentez le contexte partagé, les délais et les mandatures associées.",
             "robustness-hint": "Analysez les impacts, les expertises nécessaires et les liens avec d'autres propositions."
+        },
+        "crop": {
+            "title": "Ajuster le visuel",
+            "instructions": "Redimensionnez et recadrez l’image afin qu’elle s’adapte à la mise en page de la proposition.",
+            "zoom": "Zoom",
+            "reset": "Réinitialiser",
+            "apply": "Enregistrer l’image"
         }
     },
     "proposition-edit": {

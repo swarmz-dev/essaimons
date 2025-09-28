@@ -46,16 +46,32 @@
     const currentPath = $derived(page.url.pathname);
     const currentLocation = $derived<string>(page.data.location ?? currentPath);
 
+    const matchesLocation = (href: string, location: string): boolean => {
+        if (href === '/') {
+            return location === '/';
+        }
+
+        return location === href || location.startsWith(`${href}/`);
+    };
+
     const isNavItemActive = (href: string): boolean => {
         if (!currentLocation) {
             return false;
         }
 
-        if (href === '/') {
-            return currentLocation === href;
+        let bestMatch: string | null = null;
+
+        for (const item of navItems) {
+            if (!matchesLocation(item.href, currentLocation)) {
+                continue;
+            }
+
+            if (!bestMatch || item.href.length > bestMatch.length) {
+                bestMatch = item.href;
+            }
         }
 
-        return currentLocation.startsWith(href);
+        return bestMatch === href;
     };
 </script>
 

@@ -342,7 +342,9 @@
             },
             "visual": {
                 "label": "Visual",
-                "info": "Add a representative visual to help people recognise the proposal quickly. Image formats such as PNG, JPG, or WEBP are recommended."
+                "info": "Add a representative visual to help people recognise the proposal quickly. Image formats such as PNG, JPG, or WEBP are recommended.",
+                "remove": "Remove image",
+                "preview-alt": "Preview of the proposal visual"
             },
             "categories": {
                 "label": "Categories",
@@ -421,6 +423,13 @@
             "concretization-hint": "Complete the general framing before moving to collaborative aspects.",
             "horizontality-hint": "Document the shared context, deadlines, and mandates.",
             "robustness-hint": "Assess impacts, required expertise, and connections to other proposals."
+        },
+        "crop": {
+            "title": "Adjust visual",
+            "instructions": "Resize and crop the image so it fits the proposal layout.",
+            "zoom": "Zoom",
+            "reset": "Reset",
+            "apply": "Save image"
         }
     },
     "proposition-edit": {

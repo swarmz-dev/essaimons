@@ -3,10 +3,41 @@
     import { m } from '#lib/paraglide/messages';
     import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 
-    const PREVIEW_SIZE = 320;
-    const OUTPUT_SIZE = 512;
-
-    const { file } = $props<{ file: File }>();
+    const {
+        file,
+        previewWidth = 320,
+        previewHeight = 320,
+        outputWidth = 512,
+        outputHeight = 512,
+        showBackgroundPicker = true,
+        background = '#ffffff',
+        title = m['admin.organization.crop.title'](),
+        instructions = m['admin.organization.crop.instructions'](),
+        zoomLabel = m['admin.organization.crop.zoom'](),
+        backgroundLabel = m['admin.organization.crop.background'](),
+        resetLabel = m['admin.organization.crop.reset'](),
+        cancelLabel = m['admin.organization.crop.cancel'](),
+        applyLabel = m['admin.organization.crop.apply'](),
+        outputMimeType = 'image/png',
+        outputQuality = 0.92,
+    } = $props<{
+        file: File;
+        previewWidth?: number;
+        previewHeight?: number;
+        outputWidth?: number;
+        outputHeight?: number;
+        showBackgroundPicker?: boolean;
+        background?: string;
+        title?: string;
+        instructions?: string;
+        zoomLabel?: string;
+        backgroundLabel?: string;
+        resetLabel?: string;
+        cancelLabel?: string;
+        applyLabel?: string;
+        outputMimeType?: 'image/png' | 'image/jpeg' | 'image/webp';
+        outputQuality?: number;
+    }>();
 
     const dispatch = createEventDispatcher<{ confirm: { file: File; previewUrl: string }; cancel: void }>();
 
@@ -20,7 +51,7 @@
     let maxScale: number = $state(4);
     let offsetX: number = $state(0);
     let offsetY: number = $state(0);
-    let backgroundColor = $state('#ffffff');
+    let backgroundColor = $state(background ?? '#ffffff');
 
     let dragging: boolean = $state(false);
     let startPointerX = 0;
@@ -29,7 +60,7 @@
     let startOffsetY = 0;
 
     const sanitizeName = (value: string): string => {
-        const base = value.replace(/\.[^/.]+$/, '') || 'logo';
+        const base = value.replace(/\.[^/.]+$/, '') || 'image';
         return base.replace(/[^a-z0-9-_]+/gi, '-').toLowerCase();
     };
 
@@ -37,22 +68,22 @@
         if (!image) return;
         const scaledWidth = image.width * scale;
         const scaledHeight = image.height * scale;
-        const maxOffsetX = Math.max((scaledWidth - PREVIEW_SIZE) / 2, 0);
-        const maxOffsetY = Math.max((scaledHeight - PREVIEW_SIZE) / 2, 0);
+        const maxOffsetX = Math.max((scaledWidth - previewWidth) / 2, 0);
+        const maxOffsetY = Math.max((scaledHeight - previewHeight) / 2, 0);
         offsetX = Math.min(Math.max(offsetX, -maxOffsetX), maxOffsetX);
         offsetY = Math.min(Math.max(offsetY, -maxOffsetY), maxOffsetY);
     };
 
     const draw = (): void => {
         if (!ctx || !image) return;
-        ctx.clearRect(0, 0, PREVIEW_SIZE, PREVIEW_SIZE);
+        ctx.clearRect(0, 0, previewWidth, previewHeight);
         ctx.fillStyle = backgroundColor || '#ffffff';
-        ctx.fillRect(0, 0, PREVIEW_SIZE, PREVIEW_SIZE);
+        ctx.fillRect(0, 0, previewWidth, previewHeight);
 
         const scaledWidth = image.width * scale;
         const scaledHeight = image.height * scale;
-        const drawX = (PREVIEW_SIZE - scaledWidth) / 2 + offsetX;
-        const drawY = (PREVIEW_SIZE - scaledHeight) / 2 + offsetY;
+        const drawX = (previewWidth - scaledWidth) / 2 + offsetX;
+        const drawY = (previewHeight - scaledHeight) / 2 + offsetY;
 
         ctx.imageSmoothingEnabled = true;
         ctx.drawImage(image, drawX, drawY, scaledWidth, scaledHeight);
@@ -66,8 +97,8 @@
         image = new Image();
         image.onload = () => {
             if (!image) return;
-            const coverScale = Math.max(PREVIEW_SIZE / image.width, PREVIEW_SIZE / image.height);
-            const containScale = Math.min(PREVIEW_SIZE / image.width, PREVIEW_SIZE / image.height);
+            const coverScale = Math.max(previewWidth / image.width, previewHeight / image.height);
+            const containScale = Math.min(previewWidth / image.width, previewHeight / image.height);
             minScale = containScale;
             scale = coverScale;
             maxScale = Math.max(coverScale, containScale) * 4;
@@ -138,8 +169,8 @@
 
     const reset = (): void => {
         if (!image) return;
-        const coverScale = Math.max(PREVIEW_SIZE / image.width, PREVIEW_SIZE / image.height);
-        const containScale = Math.min(PREVIEW_SIZE / image.width, PREVIEW_SIZE / image.height);
+        const coverScale = Math.max(previewWidth / image.width, previewHeight / image.height);
+        const containScale = Math.min(previewWidth / image.width, previewHeight / image.height);
         scale = coverScale;
         minScale = containScale;
         maxScale = Math.max(coverScale, containScale) * 4;
@@ -152,32 +183,34 @@
     const confirm = (): void => {
         if (!image) return;
         const outputCanvas = document.createElement('canvas');
-        outputCanvas.width = OUTPUT_SIZE;
-        outputCanvas.height = OUTPUT_SIZE;
+        outputCanvas.width = outputWidth;
+        outputCanvas.height = outputHeight;
         const outputCtx = outputCanvas.getContext('2d');
         if (!outputCtx) return;
 
         outputCtx.fillStyle = backgroundColor || '#ffffff';
-        outputCtx.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+        outputCtx.fillRect(0, 0, outputWidth, outputHeight);
 
         const scaledWidth = image.width * scale;
         const scaledHeight = image.height * scale;
-        const drawX = (PREVIEW_SIZE - scaledWidth) / 2 + offsetX;
-        const drawY = (PREVIEW_SIZE - scaledHeight) / 2 + offsetY;
-        const ratio = OUTPUT_SIZE / PREVIEW_SIZE;
+        const drawX = (previewWidth - scaledWidth) / 2 + offsetX;
+        const drawY = (previewHeight - scaledHeight) / 2 + offsetY;
+        const ratioX = outputWidth / previewWidth;
+        const ratioY = outputHeight / previewHeight;
 
-        outputCtx.drawImage(image, drawX * ratio, drawY * ratio, scaledWidth * ratio, scaledHeight * ratio);
+        outputCtx.drawImage(image, drawX * ratioX, drawY * ratioY, scaledWidth * ratioX, scaledHeight * ratioY);
 
         outputCanvas.toBlob(
             (blob) => {
                 if (!blob) return;
-                const safeName = `${sanitizeName(file.name)}-cropped.png`;
-                const croppedFile = new File([blob], safeName, { type: 'image/png' });
+                const extension = outputMimeType === 'image/png' ? 'png' : outputMimeType === 'image/jpeg' ? 'jpg' : 'webp';
+                const safeName = `${sanitizeName(file.name)}-cropped.${extension}`;
+                const croppedFile = new File([blob], safeName, { type: outputMimeType });
                 const previewUrl = URL.createObjectURL(blob);
                 dispatch('confirm', { file: croppedFile, previewUrl });
             },
-            'image/png',
-            0.92
+            outputMimeType,
+            outputQuality
         );
     };
 
@@ -187,12 +220,12 @@
 </script>
 
 <div class="w-full max-w-xl space-y-5 rounded-3xl border border-white/60 bg-white/95 p-6 shadow-2xl backdrop-blur-2xl dark:border-slate-800/80 dark:bg-slate-950">
-    <h2 class="text-lg font-semibold text-foreground">{m['admin.organization.crop.title']()}</h2>
-    <p class="text-sm text-muted-foreground">{m['admin.organization.crop.instructions']()}</p>
+    <h2 class="text-lg font-semibold text-foreground">{title}</h2>
+    <p class="text-sm text-muted-foreground">{instructions}</p>
 
     <div
-        class="relative mx-auto grid h-[320px] w-[320px] place-items-center overflow-hidden rounded-3xl border border-border/70 shadow-inner cursor-grab"
-        style={`background-color: ${backgroundColor || '#ffffff'};`}
+        class="relative mx-auto grid place-items-center overflow-hidden rounded-3xl border border-border/70 shadow-inner cursor-grab"
+        style={`width: ${previewWidth}px; height: ${previewHeight}px; background-color: ${backgroundColor || '#ffffff'};`}
         class:cursor-grabbing={dragging}
         onpointerdown={handlePointerDown}
         onpointermove={handlePointerMove}
@@ -200,13 +233,13 @@
         onpointerleave={handlePointerUp}
         onpointercancel={handlePointerUp}
     >
-        <canvas bind:this={canvasRef} width={PREVIEW_SIZE} height={PREVIEW_SIZE} class="h-full w-full">
+        <canvas bind:this={canvasRef} width={previewWidth} height={previewHeight} class="h-full w-full">
             {m['admin.organization.crop.unsupported']()}
         </canvas>
     </div>
 
     <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium text-muted-foreground" for="crop-scale">{m['admin.organization.crop.zoom']()}</label>
+        <label class="text-sm font-medium text-muted-foreground" for="crop-scale">{zoomLabel}</label>
         <input
             id="crop-scale"
             type="range"
@@ -220,18 +253,20 @@
         <div class="text-xs font-medium text-muted-foreground">{scale.toFixed(2)}×</div>
     </div>
 
-    <div class="flex flex-col gap-2">
-        <label class="text-sm font-medium text-muted-foreground" for="crop-background">{m['admin.organization.crop.background']()}</label>
-        <div class="flex items-center gap-3">
-            <input id="crop-background" type="color" bind:value={backgroundColor} class="h-10 w-16 cursor-pointer appearance-none rounded-xl border border-border/70 bg-transparent p-0" />
-            <span class="text-xs text-muted-foreground">{backgroundColor.toUpperCase()}</span>
+    {#if showBackgroundPicker}
+        <div class="flex flex-col gap-2">
+            <label class="text-sm font-medium text-muted-foreground" for="crop-background">{backgroundLabel}</label>
+            <div class="flex items-center gap-3">
+                <input id="crop-background" type="color" bind:value={backgroundColor} class="h-10 w-16 cursor-pointer appearance-none rounded-xl border border-border/70 bg-transparent p-0" />
+                <span class="text-xs text-muted-foreground">{backgroundColor.toUpperCase()}</span>
+            </div>
         </div>
-    </div>
+    {/if}
 
     <div class="flex items-center gap-3">
-        <Button type="button" variant="outline" onclick={reset}>{m['admin.organization.crop.reset']()}</Button>
+        <Button type="button" variant="outline" onclick={reset}>{resetLabel}</Button>
         <div class="flex-1"></div>
-        <Button type="button" variant="ghost" onclick={cancel}>{m['admin.organization.crop.cancel']()}</Button>
-        <Button type="button" onclick={confirm}>{m['admin.organization.crop.apply']()}</Button>
+        <Button type="button" variant="ghost" onclick={cancel}>{cancelLabel}</Button>
+        <Button type="button" onclick={confirm}>{applyLabel}</Button>
     </div>
 </div>
