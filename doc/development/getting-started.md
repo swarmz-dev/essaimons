@@ -14,6 +14,10 @@
 
 For this part, refer to the [environment variables](environment.md) documentation.
 
+> ℹ️ **Tests must target a dedicated database.**
+>
+> When you provision your backend environment variables, define `DB_DATABASE_TEST` and `LOGS_DB_DATABASE_TEST` with databases that can be truncated safely (for example `essaimons_db_test` and `essaimons_db_logs_test`). The test runner refuses to execute if those names do not look like test databases, preventing accidental wipes of production data.
+
 ---
 
 ### 3) Make sure you have the right NodeJs version

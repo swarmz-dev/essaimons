@@ -25,7 +25,7 @@ export type { SerializedLogUser } from './serialized/serialized_log_user.js';
 export type { SerializedUser } from './serialized/serialized_user.js';
 export type { SerializedUserSummary } from './serialized/serialized_user_summary.js';
 export type { SerializedPropositionCategory } from './serialized/serialized_proposition_category.js';
-export type { SerializedPropositionSummary } from './serialized_proposition_summary.js';
+export type { SerializedPropositionSummary } from './serialized/serialized_proposition_summary.js';
 export type { SerializedProposition } from './serialized/serialized_proposition.js';
 export type { SerializedPropositionBootstrap } from './serialized/serialized_proposition_bootstrap.js';
 export type { SerializedPropositionListItem } from './serialized/serialized_proposition_list_item.js';

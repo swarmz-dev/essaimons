@@ -20,7 +20,8 @@
 - ✅ Permissions dynamiques :
   - Stockage dans `SettingsService` (`permissions.per_status` + valeurs par défaut).
   - `PropositionWorkflowService.canPerform` + intégration dans services/controllers (events/votes/mandates/comments, update proposition).
-- 🔄 Suivi : recalcul des échéances automatiques (tâche 005) et exposition enrichie côté serialization/UI (timeline, liste d’actions autorisées).
+- ✅ Les aspects automatisations (recalcul des échéances, procédures) sont désormais pris en charge dans la fiche Tâche 005.
+- ✅ L’exposition enrichie pour la timeline et les actions autorisées côté UI est planifiée dans la fiche Tâche 004.
 
 ### Matrice de permissions par défaut (à implémenter côté settings + policies)
 | Statut → / Action ↓ | Admin | Initiator | Mandated | Contributor |
@@ -47,7 +48,4 @@ Notes :
   - Flux complet événements/votes/mandats/commentaires (création + lecture + droits, transitions de statut).
   - Vérification des permissions dynamiques `comment_evaluation` pour mandatés vs contributeurs après override settings.
 - ✅ Harmonisation des migrations tests (connexion `logs`).
-- 🔄 Tests complémentaires à prévoir :
-  - Couvrir les refus d’actions par rôle/statut sur chaque endpoint (`/events`, `/votes`, `/mandates`, `/comments`, transition `/status`).
-  - Enrichir la sérialisation (exposition des actions autorisées) lorsque la tâche 004 ajoutera l’UI correspondante.
-  - Tester granularité permissions supplémentaires (matrix configurable), votes ouverts avec bulletins, modération avancée.
+- ✅ Les compléments de tests (refus par rôle, granularité fine des permissions, scénarios UI) seront implémentés au fil des tâches 004 et 005, en cohérence avec les écrans et automatisations livrés.
