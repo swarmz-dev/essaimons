@@ -1,5 +1,5 @@
 import { type Writable, writable } from 'svelte/store';
-import { Transmit } from '@adonisjs/transmit-client';
+import type { Transmit } from '@adonisjs/transmit-client';
 
 export const transmit: Writable<Transmit | null> = writable(null);
 

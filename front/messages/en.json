@@ -779,6 +779,7 @@
             "actions": "Allowed actions",
             "permissions-empty": "No permissions defined for this status.",
             "automation": {
+                "title": "Automation settings",
                 "recalcCooldown": "Deliverable recalculation cooldown: {minutes} min",
                 "nonConformityPercent": "Non-conformity threshold: {percent}%",
                 "nonConformityFloor": "Non-conformity floor: {count} votes",

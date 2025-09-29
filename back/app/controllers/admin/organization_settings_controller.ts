@@ -39,7 +39,7 @@ export default class OrganizationSettingsController {
             }
         }
 
-        const settingsPayload = {
+        const settingsPayload: any = {
             fallbackLocale,
             translations: {
                 name: payload.name ?? {},
@@ -47,10 +47,20 @@ export default class OrganizationSettingsController {
                 sourceCodeUrl: payload.sourceCodeUrl ?? {},
                 copyright: payload.copyright ?? {},
             },
-            ...(payload.propositionDefaults ? { propositionDefaults: payload.propositionDefaults } : {}),
-            ...(payload.permissions ? { permissions: payload.permissions } : {}),
-            ...(payload.workflowAutomation ? { workflowAutomation: payload.workflowAutomation } : {}),
         };
+
+        if (payload.propositionDefaults) {
+            settingsPayload.propositionDefaults = payload.propositionDefaults;
+        }
+        if (payload.permissions?.perStatus) {
+            settingsPayload.permissions = payload.permissions.perStatus;
+        }
+        if (payload.permissionCatalog?.perStatus) {
+            settingsPayload.permissionCatalog = payload.permissionCatalog.perStatus;
+        }
+        if (payload.workflowAutomation) {
+            settingsPayload.workflowAutomation = payload.workflowAutomation;
+        }
 
         const settings = await this.settingsService.updateOrganizationSettings(settingsPayload, payload.logo);
 

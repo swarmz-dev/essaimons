@@ -1,6 +1,5 @@
 import { inject } from '@adonisjs/core';
 import db from '@adonisjs/lucid/services/db';
-import { TransactionClientContract } from '@adonisjs/lucid/types/database';
 import Proposition from '#models/proposition';
 import PropositionMandate from '#models/proposition_mandate';
 import type User from '#models/user';
@@ -8,6 +7,8 @@ import { MandateStatusEnum } from '#types/enum/mandate_status_enum';
 import PropositionWorkflowService from '#services/proposition_workflow_service';
 import type { SerializedMandate } from '#types';
 import { serializeMandate } from '#serializers/mandate_serializer';
+import { TransactionClientContract } from '@adonisjs/lucid/types/database';
+import type { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model';
 
 interface MandatePayload {
     title: string;
@@ -29,30 +30,30 @@ export default class PropositionMandateService {
         const mandates = await proposition
             .related('mandates')
             .query()
-            .preload('holder', (query) => {
+            .preload('holder', (query: ModelQueryBuilderContract<typeof User>) => {
                 query.select(['id', 'front_id', 'username', 'profile_picture_id']);
             })
             .preload('deliverables', (query) => {
                 query
                     .orderBy('uploaded_at', 'asc')
                     .preload('file')
-                    .preload('uploadedBy', (userQuery) => {
+                    .preload('uploadedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
                         userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
                     })
                     .preload('evaluations', (evaluationQuery) => {
-                        evaluationQuery.preload('evaluator', (userQuery) => {
+                        evaluationQuery.preload('evaluator', (userQuery: ModelQueryBuilderContract<typeof User>) => {
                             userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
                         });
                     });
             })
             .preload('applications', (query) => {
-                query.preload('applicant', (userQuery) => {
+                query.preload('applicant', (userQuery: ModelQueryBuilderContract<typeof User>) => {
                     userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
                 });
             })
             .preload('revocationRequests', (query) => {
                 query
-                    .preload('initiatedBy', (userQuery) => {
+                    .preload('initiatedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
                         userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
                     })
                     .preload('vote');

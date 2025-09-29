@@ -220,7 +220,7 @@ test.group('Deliverable automation service', (group) => {
     test('runRevocationSweep escalates pending procedure to revocation vote', async ({ assert }) => {
         const service = await app.container.make(DeliverableAutomationService);
         const creator = await createUser('automation-revoke');
-        const { proposition, mandate } = await createPropositionWithMandate(creator);
+        const { mandate } = await createPropositionWithMandate(creator);
         const deliverable = await createDeliverable(mandate, creator);
 
         const request = await MandateRevocationRequest.create({

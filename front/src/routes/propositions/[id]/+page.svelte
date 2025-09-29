@@ -1296,7 +1296,7 @@
                 },
                 async ({ mandate }) => {
                     propositionDetailStore.upsertMandate(mandate);
-                    showToast(m['proposition-detail.mandates.deliverables.evaluation-success'](), 'success');
+                    showToast(m['proposition-detail.mandates.deliverables.evaluate-success'](), 'success');
                     evaluationComment = '';
                     isEvaluationDialogOpen = false;
                 },

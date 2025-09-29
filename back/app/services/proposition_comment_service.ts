@@ -81,8 +81,8 @@ export default class PropositionCommentService {
                 throw new Error('forbidden:comments');
             }
         }
-        const repliesCount = await comment.related('replies').query().count('* as total');
-        const total = Number(repliesCount[0]?.total ?? 0);
+        const repliesCount = (await comment.related('replies').query().count('* as total')) as unknown as { total?: string | number }[];
+        const total = Number(repliesCount?.[0]?.total ?? 0);
         if (total > 0) {
             throw new Error('comments.delete.has-children');
         }

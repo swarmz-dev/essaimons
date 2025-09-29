@@ -779,6 +779,7 @@
             "actions": "Actions autorisées",
             "permissions-empty": "Aucune permission spécifique définie pour ce statut.",
             "automation": {
+                "title": "Paramètres d'automatisation",
                 "recalcCooldown": "Cooldown recalcul livrables : {minutes} min",
                 "nonConformityPercent": "Seuil non conforme : {percent} %",
                 "nonConformityFloor": "Plancher non conforme : {count} votes",

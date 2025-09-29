@@ -13,6 +13,7 @@ import type User from '#models/user';
 import { errors } from '@vinejs/vine';
 import PropositionCategory from '#models/proposition_category';
 import { SerializedUserSummary } from '#types/serialized/serialized_user_summary';
+import { UserRoleEnum } from '#types/enum/user_role_enum';
 import { SerializedPropositionSummary } from '#types/serialized/serialized_proposition_summary';
 import { SerializedPropositionCategory } from '#types/serialized/serialized_proposition_category';
 import type { PaginatedPropositions } from '#types/paginated/paginated_propositions';

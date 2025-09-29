@@ -60,13 +60,7 @@ interface UpdateOrganizationSettingsPayload {
         sourceCodeUrl: Record<string, string>;
         copyright: Record<string, string>;
     };
-    propositionDefaults?: {
-        clarificationOffsetDays: number;
-        improvementOffsetDays: number;
-        voteOffsetDays: number;
-        mandateOffsetDays: number;
-        evaluationOffsetDays: number;
-    };
+    propositionDefaults?: Partial<OrganizationSettingsValue['propositionDefaults']>;
     permissions?: PermissionsWrapper | PermissionMatrix;
     permissionCatalog?: PermissionsWrapper | PermissionMatrix;
     workflowAutomation?: Partial<WorkflowAutomationSettingsValue>;

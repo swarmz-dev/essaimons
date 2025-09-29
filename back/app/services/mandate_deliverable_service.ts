@@ -1,6 +1,5 @@
 import { inject } from '@adonisjs/core';
 import db from '@adonisjs/lucid/services/db';
-import { TransactionClientContract } from '@adonisjs/lucid/types/database';
 import path from 'node:path';
 import { cuid } from '@adonisjs/core/helpers';
 import { DateTime } from 'luxon';
@@ -20,6 +19,7 @@ import type { SerializedMandate, SerializedMandateDeliverable, SerializedProposi
 import { serializeMandate, serializeMandateDeliverable } from '#serializers/mandate_serializer';
 import type { MultipartFile } from '@adonisjs/bodyparser/types';
 import logger from '@adonisjs/core/services/logger';
+import type { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model';
 
 interface UploadDeliverablePayload {
     label?: string | null;
@@ -73,21 +73,24 @@ export default class MandateDeliverableService {
                 {
                     name: sanitizedFilename,
                     path: key,
-                    extension: extension || null,
-                    mimeType: stored.mimeType ?? file.type ?? null,
+                    extension: extension || '',
+                    mimeType: stored.mimeType ?? file.type ?? 'application/octet-stream',
                     size: stored.size,
                     type: FileTypeEnum.MANDATE_DELIVERABLE,
                 },
                 { client: trx }
             );
 
+            const label = typeof payload.label === 'string' && payload.label.length ? payload.label : undefined;
+            const objectiveRef = typeof payload.objectiveRef === 'string' && payload.objectiveRef.length ? payload.objectiveRef : undefined;
+
             const deliverable = await MandateDeliverable.create(
                 {
                     mandateId: mandate.id,
                     fileId: storedFile.id,
                     uploadedByUserId: actor.id,
-                    label: payload.label ?? null,
-                    objectiveRef: payload.objectiveRef ?? null,
+                    label,
+                    objectiveRef,
                     autoFilename,
                     status: 'pending',
                     uploadedAt: DateTime.now(),
@@ -105,29 +108,43 @@ export default class MandateDeliverableService {
 
             await deliverable.load((loader) => {
                 loader.preload('file');
-                loader.preload('uploadedBy', (userQuery) => userQuery.select(['id', 'front_id', 'username']));
+                loader.preload('uploadedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                    userQuery.select(['id', 'front_id', 'username']);
+                });
                 loader.preload('evaluations', (evaluationQuery) => {
-                    evaluationQuery.preload('evaluator', (userQuery) => userQuery.select(['id', 'front_id', 'username']));
+                    evaluationQuery.preload('evaluator', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                        userQuery.select(['id', 'front_id', 'username']);
+                    });
                 });
             });
 
             await mandate.load((loader) => {
                 loader
-                    .preload('holder', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']))
+                    .preload('holder', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                        userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                    })
                     .preload('deliverables', (deliverableQuery) => {
                         deliverableQuery
                             .orderBy('uploaded_at', 'asc')
                             .preload('file')
-                            .preload('uploadedBy', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']))
+                            .preload('uploadedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                                userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                            })
                             .preload('evaluations', (evaluationQuery) => {
-                                evaluationQuery.preload('evaluator', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']));
+                                evaluationQuery.preload('evaluator', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                                    userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                                });
                             });
                     })
                     .preload('applications', (applicationQuery) => {
-                        applicationQuery.preload('applicant', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']));
+                        applicationQuery.preload('applicant', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                            userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                        });
                     })
                     .preload('revocationRequests', (requestQuery) => {
-                        requestQuery.preload('initiatedBy', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']));
+                        requestQuery.preload('initiatedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                            userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                        });
                     });
             });
 
@@ -203,29 +220,43 @@ export default class MandateDeliverableService {
 
             await deliverable.load((loader) => {
                 loader.preload('file');
-                loader.preload('uploadedBy', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']));
+                loader.preload('uploadedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                    userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                });
                 loader.preload('evaluations', (evaluationQuery) => {
-                    evaluationQuery.preload('evaluator', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']));
+                    evaluationQuery.preload('evaluator', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                        userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                    });
                 });
             });
 
             await mandate.load((loader) => {
                 loader
-                    .preload('holder', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']))
+                    .preload('holder', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                        userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                    })
                     .preload('deliverables', (deliverableQuery) => {
                         deliverableQuery
                             .orderBy('uploaded_at', 'asc')
                             .preload('file')
-                            .preload('uploadedBy', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']))
+                            .preload('uploadedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                                userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                            })
                             .preload('evaluations', (evaluationQuery) => {
-                                evaluationQuery.preload('evaluator', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']));
+                                evaluationQuery.preload('evaluator', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                                    userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                                });
                             });
                     })
                     .preload('applications', (applicationQuery) => {
-                        applicationQuery.preload('applicant', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']));
+                        applicationQuery.preload('applicant', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                            userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                        });
                     })
                     .preload('revocationRequests', (requestQuery) => {
-                        requestQuery.preload('initiatedBy', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']));
+                        requestQuery.preload('initiatedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                            userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                        });
                     });
             });
 

@@ -87,10 +87,10 @@ export default class DeliverableAutomationService {
 
         if (isLate) {
             mandateMetadata.deadlineHistory.push({
-                mandateDeadline: previousMandateDeadline.toISO(),
-                evaluationDeadline: previousEvaluationDeadline.toISO(),
+                mandateDeadline: this.ensureIsoString(previousMandateDeadline),
+                evaluationDeadline: this.ensureIsoString(previousEvaluationDeadline),
                 status: 'missed',
-                recalculatedAt: now.toISO(),
+                recalculatedAt: this.ensureIsoString(now),
             });
         }
 
@@ -99,10 +99,10 @@ export default class DeliverableAutomationService {
         const nextEvaluationDeadline = nextMandateDeadline.plus({ days: evaluationShift });
 
         mandateMetadata.deadlineHistory.push({
-            mandateDeadline: nextMandateDeadline.toISO(),
-            evaluationDeadline: nextEvaluationDeadline.toISO(),
+            mandateDeadline: this.ensureIsoString(nextMandateDeadline),
+            evaluationDeadline: this.ensureIsoString(nextEvaluationDeadline),
             status: 'scheduled',
-            recalculatedAt: now.toISO(),
+            recalculatedAt: this.ensureIsoString(now),
         });
 
         proposition.mandateDeadline = nextMandateDeadline;
@@ -116,7 +116,7 @@ export default class DeliverableAutomationService {
 
         const deliverableMetadata = this.getDeliverableMetadata(deliverable);
         deliverableMetadata.status = deliverableMetadata.status ?? 'pending';
-        deliverableMetadata.lastRecalculatedAt = now.toISO();
+        deliverableMetadata.lastRecalculatedAt = this.ensureIsoString(now);
         deliverable.metadata = deliverableMetadata;
         deliverable.evaluationDeadlineSnapshot = nextEvaluationDeadline;
         await deliverable.save();
@@ -125,8 +125,8 @@ export default class DeliverableAutomationService {
             propositionId: proposition.id,
             mandateId: mandate.id,
             deliverableId: deliverable.id,
-            nextMandateDeadline: nextMandateDeadline.toISO(),
-            nextEvaluationDeadline: nextEvaluationDeadline.toISO(),
+            nextMandateDeadline: this.ensureIsoString(nextMandateDeadline),
+            nextEvaluationDeadline: this.ensureIsoString(nextEvaluationDeadline),
             actorId: actor.id,
         });
     }
@@ -165,7 +165,7 @@ export default class DeliverableAutomationService {
         if (!deliverableMetadata.procedure) {
             deliverableMetadata.procedure = {
                 status: 'pending',
-                openedAt: now.toISO(),
+                openedAt: this.ensureIsoString(now),
             };
         }
 
@@ -183,7 +183,7 @@ export default class DeliverableAutomationService {
         const mandateMetadata = this.getMandateMetadata(mandate);
         mandateMetadata.procedures[deliverable.id] = {
             status: deliverableMetadata.procedure.status,
-            openedAt: deliverableMetadata.procedure.openedAt,
+            openedAt: this.ensureIsoString(deliverableMetadata.procedure.openedAt),
             revocationRequestId: deliverableMetadata.procedure.revocationRequestId,
             revocationVoteId: deliverableMetadata.procedure.revocationVoteId,
         };
@@ -243,6 +243,20 @@ export default class DeliverableAutomationService {
         }
     }
 
+    private toIsoString(date: DateTime): string {
+        return date.toISO() ?? date.toUTC().toISO() ?? date.toFormat("yyyy-MM-dd'T'HH:mm:ss");
+    }
+
+    private ensureIsoString(value: string | DateTime | null | undefined): string {
+        if (typeof value === 'string' && value.trim().length > 0) {
+            return value;
+        }
+        if (value instanceof DateTime) {
+            return this.toIsoString(value);
+        }
+        return this.toIsoString(DateTime.now());
+    }
+
     private getMandateMetadata(mandate: PropositionMandate): MandateAutomationMetadata {
         const raw = (mandate.metadata ?? {}) as MandateAutomationMetadata;
         const history = Array.isArray(raw.deadlineHistory) ? raw.deadlineHistory : [];
@@ -293,7 +307,7 @@ export default class DeliverableAutomationService {
 
         deliverableMetadata.procedure = {
             status: 'pending',
-            openedAt: deliverableMetadata.procedure?.openedAt ?? now.toISO(),
+            openedAt: this.ensureIsoString(deliverableMetadata.procedure?.openedAt ?? now),
             revocationRequestId: request.id,
         };
         deliverable.metadata = deliverableMetadata;
@@ -314,9 +328,9 @@ export default class DeliverableAutomationService {
             mandate.useTransaction(trx);
             deliverable.useTransaction(trx);
 
-            const procedure = deliverableMetadata.procedure ?? {
+            const procedure: DeliverableProcedureMetadata = deliverableMetadata.procedure ?? {
                 status: 'pending',
-                openedAt: deliverable.nonConformityFlaggedAt?.toISO() ?? now.toISO(),
+                openedAt: this.ensureIsoString(deliverable.nonConformityFlaggedAt ?? now),
             };
 
             let request: MandateRevocationRequest | null = null;
@@ -388,7 +402,7 @@ export default class DeliverableAutomationService {
             await request.save();
 
             procedure.status = 'escalated';
-            procedure.escalatedAt = now.toISO();
+            procedure.escalatedAt = this.ensureIsoString(now);
             procedure.revocationVoteId = vote.id;
             deliverableMetadata.procedure = procedure;
             deliverable.metadata = deliverableMetadata;

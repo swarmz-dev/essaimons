@@ -3,7 +3,6 @@ import { inject } from '@adonisjs/core';
 import logger from '@adonisjs/core/services/logger';
 import PropositionRepository from '#repositories/proposition_repository';
 import PropositionVoteService from '#services/proposition_vote_service';
-import PropositionWorkflowService from '#services/proposition_workflow_service';
 import PropositionVote from '#models/proposition_vote';
 import type Proposition from '#models/proposition';
 import type User from '#models/user';
@@ -13,8 +12,7 @@ import { createVoteValidator, updateVoteValidator, changeVoteStatusValidator } f
 export default class PropositionVoteController {
     constructor(
         private readonly propositionRepository: PropositionRepository,
-        private readonly voteService: PropositionVoteService,
-        private readonly workflowService: PropositionWorkflowService
+        private readonly voteService: PropositionVoteService
     ) {}
 
     public async index({ request, response }: HttpContext): Promise<void> {

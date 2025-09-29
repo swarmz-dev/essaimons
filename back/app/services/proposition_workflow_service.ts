@@ -2,6 +2,7 @@ import { inject } from '@adonisjs/core';
 import { DateTime } from 'luxon';
 import { TransactionClientContract } from '@adonisjs/lucid/types/database';
 import Proposition from '#models/proposition';
+import PropositionMandate from '#models/proposition_mandate';
 import PropositionStatusHistory from '#models/proposition_status_history';
 import type User from '#models/user';
 import { MandateStatusEnum, PropositionStatusEnum, PropositionVisibilityEnum, UserRoleEnum } from '#types';
@@ -203,9 +204,10 @@ export default class PropositionWorkflowService {
         return related;
     }
 
-    private async ensureMandates(proposition: Proposition) {
-        if (Array.isArray((proposition as any).mandates)) {
-            return (proposition as any).mandates;
+    private async ensureMandates(proposition: Proposition): Promise<PropositionMandate[]> {
+        const cached = (proposition as any).mandates;
+        if (Array.isArray(cached)) {
+            return cached as PropositionMandate[];
         }
         const related = await proposition.related('mandates').query();
         (proposition as any).mandates = related;

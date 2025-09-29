@@ -21,6 +21,16 @@ interface CreateEventPayload extends BaseEventPayload {}
 
 interface UpdateEventPayload extends Partial<BaseEventPayload> {}
 
+type NormalizedEventPayload = {
+    type?: PropositionEventTypeEnum;
+    title?: string;
+    description?: string | null;
+    startAt?: DateTime | null;
+    endAt?: DateTime | null;
+    location?: string | null;
+    videoLink?: string | null;
+};
+
 @inject()
 export default class PropositionEventService {
     constructor(private readonly workflowService: PropositionWorkflowService) {}
@@ -37,7 +47,13 @@ export default class PropositionEventService {
         const event = await PropositionEvent.create(
             {
                 propositionId: proposition.id,
-                ...normalized,
+                type: normalized.type ?? payload.type,
+                title: normalized.title ?? payload.title,
+                description: normalized.description ?? payload.description ?? null,
+                startAt: normalized.startAt ?? null,
+                endAt: normalized.endAt ?? null,
+                location: normalized.location ?? payload.location ?? null,
+                videoLink: normalized.videoLink ?? payload.videoLink ?? null,
                 createdByUserId: actor.id,
             },
             trx ? { client: trx } : undefined
@@ -67,7 +83,7 @@ export default class PropositionEventService {
         }
     }
 
-    private normalizePayload<T extends UpdateEventPayload | CreateEventPayload>(payload: T): T {
+    private normalizePayload(payload: UpdateEventPayload | CreateEventPayload): NormalizedEventPayload {
         const toDate = (value?: string | null): DateTime | null => {
             if (!value) return null;
             const parsed = DateTime.fromISO(value);
@@ -77,13 +93,30 @@ export default class PropositionEventService {
             return parsed;
         };
 
-        const result: any = { ...payload };
-        if (payload.startAt !== undefined) {
-            result.startAt = toDate(payload.startAt);
+        const result: NormalizedEventPayload = {};
+
+        if ('type' in payload && payload.type !== undefined) {
+            result.type = payload.type;
         }
-        if (payload.endAt !== undefined) {
-            result.endAt = toDate(payload.endAt);
+        if ('title' in payload && payload.title !== undefined) {
+            result.title = payload.title;
         }
+        if ('description' in payload) {
+            result.description = payload.description ?? null;
+        }
+        if ('startAt' in payload) {
+            result.startAt = payload.startAt !== undefined ? toDate(payload.startAt) : undefined;
+        }
+        if ('endAt' in payload) {
+            result.endAt = payload.endAt !== undefined ? toDate(payload.endAt) : undefined;
+        }
+        if ('location' in payload) {
+            result.location = payload.location ?? null;
+        }
+        if ('videoLink' in payload) {
+            result.videoLink = payload.videoLink ?? null;
+        }
+
         return result;
     }
 }

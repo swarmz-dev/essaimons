@@ -5,6 +5,7 @@ import Proposition from '#models/proposition';
 import PropositionMandate from '#models/proposition_mandate';
 import MandateDeliverable from '#models/mandate_deliverable';
 import type User from '#models/user';
+import type { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model';
 import MandateDeliverableService from '#services/mandate_deliverable_service';
 import { createMandateDeliverableValidator, evaluateMandateDeliverableValidator } from '#validators/mandate_deliverable';
 import { serializeMandateDeliverable } from '#serializers/mandate_serializer';
@@ -31,17 +32,27 @@ export default class PropositionMandateDeliverableController {
                     deliverableQuery
                         .orderBy('uploaded_at', 'asc')
                         .preload('file')
-                        .preload('uploadedBy', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']))
+                        .preload('uploadedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                            userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                        })
                         .preload('evaluations', (evaluationQuery) => {
-                            evaluationQuery.preload('evaluator', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']));
+                            evaluationQuery.preload('evaluator', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                                userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                            });
                         });
                 })
-                .preload('holder', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']))
+                .preload('holder', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                    userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                })
                 .preload('applications', (applicationQuery) => {
-                    applicationQuery.preload('applicant', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']));
+                    applicationQuery.preload('applicant', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                        userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                    });
                 })
                 .preload('revocationRequests', (requestQuery) => {
-                    requestQuery.preload('initiatedBy', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']));
+                    requestQuery.preload('initiatedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
+                        userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                    });
                 });
         });
 
