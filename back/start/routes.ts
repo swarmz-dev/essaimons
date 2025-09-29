@@ -21,6 +21,7 @@ const PropositionController = () => import('#controllers/proposition_controller'
 const PropositionEventController = () => import('#controllers/proposition_event_controller');
 const PropositionVoteController = () => import('#controllers/proposition_vote_controller');
 const PropositionMandateController = () => import('#controllers/proposition_mandate_controller');
+const PropositionMandateDeliverableController = () => import('#controllers/proposition_mandate_deliverable_controller');
 const PropositionCommentController = () => import('#controllers/proposition_comment_controller');
 const SettingsController = () => import('#controllers/settings_controller');
 
@@ -140,6 +141,10 @@ router
                         router.put('/:id/mandates/:mandateId', [PropositionMandateController, 'update']);
                         router.delete('/:id/mandates/:mandateId', [PropositionMandateController, 'destroy']);
 
+                        router.get('/:id/mandates/:mandateId/deliverables', [PropositionMandateDeliverableController, 'index']);
+                        router.post('/:id/mandates/:mandateId/deliverables', [PropositionMandateDeliverableController, 'store']);
+                        router.post('/:id/mandates/:mandateId/deliverables/:deliverableId/evaluations', [PropositionMandateDeliverableController, 'evaluate']);
+
                         router.get('/:id/comments', [PropositionCommentController, 'index']);
                         router.post('/:id/comments', [PropositionCommentController, 'store']);
                         router.put('/:id/comments/:commentId', [PropositionCommentController, 'update']);
@@ -152,6 +157,7 @@ router
                         router.get('/profile-picture/:userId', [FileController, 'serveStaticProfilePictureFile']);
                         router.get('/propositions/visual/:propositionId', [FileController, 'serveStaticPropositionVisualFile']);
                         router.get('/propositions/attachments/:attachmentId', [FileController, 'serveStaticPropositionAttachmentFile']);
+                        router.get('/propositions/deliverables/:deliverableId', [FileController, 'serveMandateDeliverableFile']);
                     })
                     .prefix('static');
             })

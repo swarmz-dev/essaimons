@@ -28,11 +28,17 @@ export default class MandateDeliverable extends BaseModel {
     @column()
     declare autoFilename?: string | null;
 
+    @column()
+    declare status: string;
+
     @column.dateTime({ autoCreate: true })
     declare uploadedAt: DateTime;
 
     @column.dateTime()
     declare evaluationDeadlineSnapshot?: DateTime | null;
+
+    @column.dateTime()
+    declare nonConformityFlaggedAt?: DateTime | null;
 
     @column()
     declare metadata: Record<string, unknown>;

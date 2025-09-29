@@ -1,6 +1,7 @@
 import type {
     MandateApplicationStatusEnum,
     MandateStatusEnum,
+    DeliverableVerdictEnum,
     PropositionCommentScopeEnum,
     PropositionCommentVisibilityEnum,
     PropositionEventTypeEnum,
@@ -59,6 +60,18 @@ export type PropositionVote = {
     updatedAt?: string;
 };
 
+export type DeliverableEvaluation = {
+    id: string;
+    deliverableId: string;
+    evaluatorUserId: string;
+    verdict: DeliverableVerdictEnum;
+    comment?: string | null;
+    recordedAt: string;
+    createdAt?: string;
+    updatedAt?: string;
+    evaluator?: SerializedUserSummary;
+};
+
 export type MandateDeliverable = {
     id: string;
     mandateId: string;
@@ -67,11 +80,14 @@ export type MandateDeliverable = {
     label?: string | null;
     objectiveRef?: string | null;
     autoFilename?: string | null;
+    status: string;
     uploadedAt: string;
     evaluationDeadlineSnapshot?: string | null;
+    nonConformityFlaggedAt?: string | null;
     metadata: Record<string, unknown>;
     file?: SerializedFile;
     uploadedBy?: SerializedUserSummary;
+    evaluations?: DeliverableEvaluation[];
     createdAt?: string;
     updatedAt?: string;
 };
@@ -109,6 +125,8 @@ export type PropositionMandate = {
     initialDeadline?: string | null;
     currentDeadline?: string | null;
     lastStatusUpdateAt?: string | null;
+    lastAutomationRunAt?: string | null;
+    metadata: Record<string, unknown>;
     createdAt?: string;
     updatedAt?: string;
     holder?: SerializedUserSummary;

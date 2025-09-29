@@ -6,6 +6,8 @@ import PropositionMandate from '#models/proposition_mandate';
 import type User from '#models/user';
 import { MandateStatusEnum } from '#types/enum/mandate_status_enum';
 import PropositionWorkflowService from '#services/proposition_workflow_service';
+import type { SerializedMandate } from '#types';
+import { serializeMandate } from '#serializers/mandate_serializer';
 
 interface MandatePayload {
     title: string;
@@ -23,8 +25,41 @@ interface UpdateMandatePayload extends Partial<MandatePayload> {}
 export default class PropositionMandateService {
     constructor(private readonly workflowService: PropositionWorkflowService) {}
 
-    public async list(proposition: Proposition): Promise<PropositionMandate[]> {
-        return proposition.related('mandates').query().orderBy('created_at', 'asc');
+    public async list(proposition: Proposition): Promise<SerializedMandate[]> {
+        const mandates = await proposition
+            .related('mandates')
+            .query()
+            .preload('holder', (query) => {
+                query.select(['id', 'front_id', 'username', 'profile_picture_id']);
+            })
+            .preload('deliverables', (query) => {
+                query
+                    .orderBy('uploaded_at', 'asc')
+                    .preload('file')
+                    .preload('uploadedBy', (userQuery) => {
+                        userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                    })
+                    .preload('evaluations', (evaluationQuery) => {
+                        evaluationQuery.preload('evaluator', (userQuery) => {
+                            userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                        });
+                    });
+            })
+            .preload('applications', (query) => {
+                query.preload('applicant', (userQuery) => {
+                    userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                });
+            })
+            .preload('revocationRequests', (query) => {
+                query
+                    .preload('initiatedBy', (userQuery) => {
+                        userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                    })
+                    .preload('vote');
+            })
+            .orderBy('created_at', 'asc');
+
+        return mandates.map((mandate: PropositionMandate): SerializedMandate => serializeMandate(mandate));
     }
 
     public async create(proposition: Proposition, actor: User, payload: MandatePayload): Promise<PropositionMandate> {

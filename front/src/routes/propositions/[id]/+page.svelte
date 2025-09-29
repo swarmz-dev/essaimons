@@ -19,7 +19,8 @@
     import { Textarea } from '#lib/components/ui/textarea';
     import { m } from '#lib/paraglide/messages';
     import { cn } from '#lib/utils';
-    import { wrappedFetch } from '#lib/services/requestService';
+    import { wrappedFetch, extractFormErrors } from '#lib/services/requestService';
+    import { showToast } from '#lib/services/toastService';
     import { propositionDetailStore } from '#lib/stores/propositionDetailStore';
     import { organizationSettings } from '#lib/stores/organizationStore';
     import { resolveWorkflowRole, isActionAllowed, buildRolePermissionMap } from '#lib/services/workflowPermissionService';
@@ -33,9 +34,10 @@
         PropositionVisibilityEnum,
         PropositionVoteMethodEnum,
         PropositionVotePhaseEnum,
+        DeliverableVerdictEnum,
     } from 'backend/types';
     import type { PropositionComment, PropositionEvent, PropositionMandate, PropositionTimelinePhase, PropositionVote, WorkflowRole } from '#lib/types/proposition';
-    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw } from '@lucide/svelte';
+    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload } from '@lucide/svelte';
     import { z } from 'zod';
 
     const { data } = $props<{
@@ -92,6 +94,8 @@
     const canManageEvents = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'manage_events') || workflowRole === 'admin');
     const canConfigureVote = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'configure_vote') || workflowRole === 'admin');
     const canManageMandates = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'manage_mandates') || workflowRole === 'admin');
+    const canUploadDeliverable = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'upload_deliverable') || workflowRole === 'admin');
+    const canEvaluateDeliverable = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'evaluate_deliverable') || workflowRole === 'admin');
 
     const canManageStatus = $derived(workflowRole === 'admin' || workflowRole === 'initiator');
 
@@ -106,6 +110,7 @@
     };
 
     const attachmentUrl = (fileId: string): string => `/assets/propositions/attachments/${fileId}`;
+    const deliverableUrl = (deliverableId: string): string => `/assets/propositions/deliverables/${deliverableId}`;
 
     const formatDate = (value?: string): string => {
         if (!value) {
@@ -151,6 +156,27 @@
 
         const formatted = index === 0 ? Math.round(value).toString() : value.toFixed(1);
         return `${formatted} ${units[index]}`;
+    };
+
+    type DeliverableProcedureMeta = {
+        status?: string;
+        openedAt?: string;
+        escalatedAt?: string;
+        revocationRequestId?: string;
+        revocationVoteId?: string;
+    };
+
+    const getDeliverableProcedure = (deliverable: PropositionMandate['deliverables'][number]): DeliverableProcedureMeta | null => {
+        const metadata = deliverable.metadata as Record<string, unknown> | undefined;
+        const raw = metadata && typeof metadata === 'object' ? (metadata as any).procedure : null;
+        if (!raw || typeof raw !== 'object') {
+            return null;
+        }
+        return raw as DeliverableProcedureMeta;
+    };
+
+    const countNonConformEvaluations = (deliverable: PropositionMandate['deliverables'][number]): number => {
+        return (deliverable.evaluations ?? []).filter((evaluation) => evaluation.verdict === DeliverableVerdictEnum.NON_COMPLIANT).length;
     };
 
     const HTML_TAG_PATTERN = /<\s*\/?\s*[a-zA-Z][^>]*>/;
@@ -381,6 +407,20 @@
     let mandateForm = $state({ ...defaultMandateForm });
     let mandateErrors: string[] = $state([]);
     let isMandateSubmitting: boolean = $state(false);
+
+    let isDeliverableDialogOpen: boolean = $state(false);
+    let deliverableMandateId: string | null = $state(null);
+    let deliverableForm = $state<{ label: string; objectiveRef: string; file: File | null }>({ label: '', objectiveRef: '', file: null });
+    let deliverableErrors: string[] = $state([]);
+    let isDeliverableSubmitting: boolean = $state(false);
+
+    let isEvaluationDialogOpen: boolean = $state(false);
+    let evaluationMandateId: string | null = $state(null);
+    let evaluationDeliverableId: string | null = $state(null);
+    let evaluationVerdict: DeliverableVerdictEnum = $state(DeliverableVerdictEnum.COMPLIANT);
+    let evaluationComment: string = $state('');
+    let evaluationErrors: string[] = $state([]);
+    let isEvaluationSubmitting: boolean = $state(false);
 
     const transitionMap: Record<PropositionStatusEnum, PropositionStatusEnum[]> = {
         [PropositionStatusEnum.DRAFT]: [PropositionStatusEnum.CLARIFY, PropositionStatusEnum.ARCHIVED],
@@ -709,6 +749,111 @@
             }
         } finally {
             isMandateSubmitting = false;
+        }
+    };
+
+    const openDeliverableDialog = (mandateId: string): void => {
+        deliverableMandateId = mandateId;
+        deliverableForm = { label: '', objectiveRef: '', file: null };
+        deliverableErrors = [];
+        isDeliverableSubmitting = false;
+        isDeliverableDialogOpen = true;
+    };
+
+    const submitDeliverable = async (): Promise<void> => {
+        if (!deliverableMandateId) {
+            return;
+        }
+
+        deliverableErrors = [];
+
+        if (!deliverableForm.file) {
+            deliverableErrors = [m['proposition-detail.mandates.deliverables.file-required']()];
+            return;
+        }
+
+        isDeliverableSubmitting = true;
+
+        try {
+            const formData = new FormData();
+            if (deliverableForm.label.trim()) {
+                formData.set('label', deliverableForm.label.trim());
+            }
+            if (deliverableForm.objectiveRef.trim()) {
+                formData.set('objectiveRef', deliverableForm.objectiveRef.trim());
+            }
+            formData.set('file', deliverableForm.file);
+
+            const response = await wrappedFetch(
+                `/propositions/${proposition.id}/mandates/${deliverableMandateId}/deliverables`,
+                {
+                    method: 'POST',
+                    body: formData,
+                },
+                async ({ deliverable, mandate, proposition: updatedProposition }) => {
+                    propositionDetailStore.upsertMandate(mandate);
+                    propositionDetailStore.updateProposition(updatedProposition);
+                    showToast(m['proposition-detail.mandates.deliverables.upload-success'](), 'success');
+                    deliverableForm = { label: '', objectiveRef: '', file: null };
+                    isDeliverableDialogOpen = false;
+                },
+                async (data) => {
+                    deliverableErrors = extractFormErrors(data).map((entry) => entry.message);
+                }
+            );
+
+            if (!response?.isSuccess && deliverableErrors.length === 0) {
+                deliverableErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isDeliverableSubmitting = false;
+        }
+    };
+
+    const openEvaluationDialog = (mandateId: string, deliverableId: string): void => {
+        evaluationMandateId = mandateId;
+        evaluationDeliverableId = deliverableId;
+        evaluationVerdict = DeliverableVerdictEnum.COMPLIANT;
+        evaluationComment = '';
+        evaluationErrors = [];
+        isEvaluationSubmitting = false;
+        isEvaluationDialogOpen = true;
+    };
+
+    const submitEvaluation = async (): Promise<void> => {
+        if (!evaluationMandateId || !evaluationDeliverableId) {
+            return;
+        }
+
+        evaluationErrors = [];
+        isEvaluationSubmitting = true;
+
+        try {
+            const response = await wrappedFetch(
+                `/propositions/${proposition.id}/mandates/${evaluationMandateId}/deliverables/${evaluationDeliverableId}/evaluations`,
+                {
+                    method: 'POST',
+                    body: {
+                        verdict: evaluationVerdict,
+                        comment: evaluationComment.trim() || undefined,
+                    },
+                },
+                async ({ mandate }) => {
+                    propositionDetailStore.upsertMandate(mandate);
+                    showToast(m['proposition-detail.mandates.deliverables.evaluation-success'](), 'success');
+                    evaluationComment = '';
+                    isEvaluationDialogOpen = false;
+                },
+                async (data) => {
+                    evaluationErrors = extractFormErrors(data).map((entry) => entry.message);
+                }
+            );
+
+            if (!response?.isSuccess && evaluationErrors.length === 0) {
+                evaluationErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isEvaluationSubmitting = false;
         }
     };
 
@@ -1199,7 +1344,7 @@
             {#if mandates.length}
                 <ul class="mt-4 space-y-4">
                     {#each mandates as mandate (mandate.id)}
-                        <li class="rounded-xl border border-border/40 bg-card/60 p-4 space-y-2">
+                        <li class="rounded-xl border border-border/40 bg-card/60 p-4 space-y-3">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <div>
                                     <p class="text-base font-semibold text-foreground">{mandate.title}</p>
@@ -1212,6 +1357,107 @@
                             {#if mandate.holderUserId}
                                 <p class="text-xs text-muted-foreground">{m['proposition-detail.mandate.holder']({ holder: mandate.holder?.username ?? mandate.holderUserId })}</p>
                             {/if}
+                            {#if canUploadDeliverable}
+                                <div class="flex justify-end">
+                                    <Button size="sm" variant="outline" class="gap-2" onclick={() => openDeliverableDialog(mandate.id)}>
+                                        <Upload class="size-4" />
+                                        {m['proposition-detail.mandates.deliverables.upload']()}
+                                    </Button>
+                                </div>
+                            {/if}
+                            <div class="space-y-2">
+                                {#if mandate.deliverables?.length}
+                                    <ul class="space-y-3">
+                                        {#each mandate.deliverables as deliverable (deliverable.id)}
+                                            {#key deliverable.id}
+                                                <li class="rounded-lg border border-border/30 bg-background/80 p-3">
+                                                    <div class="flex flex-wrap items-start justify-between gap-2">
+                                                        <div class="space-y-1">
+                                                            <p class="text-sm font-medium text-foreground">
+                                                                {deliverable.label ?? deliverable.file?.name ?? deliverable.autoFilename ?? m['proposition-detail.mandates.deliverables.unnamed']()}
+                                                            </p>
+                                                            <p class="text-xs text-muted-foreground">
+                                                                {formatDateTime(deliverable.uploadedAt)}
+                                                                {#if deliverable.file?.mimeType}
+                                                                    • {deliverable.file.mimeType}
+                                                                {/if}
+                                                                {#if typeof deliverable.file?.size === 'number'}
+                                                                    • {formatFileSize(deliverable.file.size)}
+                                                                {/if}
+                                                            </p>
+                                                        </div>
+                                                        <div class="flex items-center gap-2">
+                                                            <span
+                                                                class={cn(
+                                                                    'rounded-full px-2 py-1 text-xs font-medium capitalize',
+                                                                    deliverable.status === 'non_conform'
+                                                                        ? 'bg-destructive/10 text-destructive'
+                                                                        : deliverable.status === 'escalated'
+                                                                          ? 'bg-warning/10 text-warning-foreground'
+                                                                          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200'
+                                                                )}
+                                                            >
+                                                                {m[`proposition-detail.mandates.deliverables.status.${deliverable.status}` as keyof typeof m]()}
+                                                            </span>
+                                                            <a
+                                                                class={cn(buttonVariants({ variant: 'outline', size: 'icon' }), 'size-8')}
+                                                                href={deliverableUrl(deliverable.id)}
+                                                                download
+                                                                aria-label={m['proposition-detail.mandates.deliverables.download']()}
+                                                            >
+                                                                <Download class="size-4" />
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    {#if deliverable.nonConformityFlaggedAt}
+                                                        <p class="mt-2 text-xs text-red-500 dark:text-red-300">
+                                                            {m['proposition-detail.mandates.deliverables.flagged']({ date: formatDateTime(deliverable.nonConformityFlaggedAt) })}
+                                                        </p>
+                                                    {/if}
+                                                    {#if getDeliverableProcedure(deliverable)}
+                                                        {@const procedure = getDeliverableProcedure(deliverable)}
+                                                        <p class="mt-2 text-xs text-muted-foreground">
+                                                            {m[`proposition-detail.mandates.deliverables.procedure.${procedure?.status ?? 'pending'}` as keyof typeof m]()}
+                                                        </p>
+                                                    {/if}
+                                                    <p class="mt-2 text-xs text-muted-foreground">
+                                                        {m['proposition-detail.mandates.deliverables.evaluations']({
+                                                            total: deliverable.evaluations?.length ?? 0,
+                                                            nonConform: countNonConformEvaluations(deliverable),
+                                                        })}
+                                                    </p>
+                                                    {#if canEvaluateDeliverable}
+                                                        <div class="mt-3 flex flex-wrap gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="secondary"
+                                                                onclick={() => {
+                                                                    evaluationVerdict = DeliverableVerdictEnum.COMPLIANT;
+                                                                    openEvaluationDialog(mandate.id, deliverable.id);
+                                                                }}
+                                                            >
+                                                                {m['proposition-detail.mandates.deliverables.evaluate-compliant']()}
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onclick={() => {
+                                                                    evaluationVerdict = DeliverableVerdictEnum.NON_COMPLIANT;
+                                                                    openEvaluationDialog(mandate.id, deliverable.id);
+                                                                }}
+                                                            >
+                                                                {m['proposition-detail.mandates.deliverables.evaluate-non-conform']()}
+                                                            </Button>
+                                                        </div>
+                                                    {/if}
+                                                </li>
+                                            {/key}
+                                        {/each}
+                                    </ul>
+                                {:else}
+                                    <p class="text-xs text-muted-foreground">{m['proposition-detail.mandates.deliverables.empty']()}</p>
+                                {/if}
+                            </div>
                         </li>
                     {/each}
                 </ul>
@@ -1258,9 +1504,34 @@
             <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40">
                 <h2 class="text-lg font-semibold text-foreground">{m['proposition-detail.followup.automation.title']()}</h2>
                 <ul class="mt-3 space-y-2 text-sm text-muted-foreground">
-                    <li>{m['proposition-detail.followup.automation.nonConformity']({ threshold: workflowAutomation.nonConformityThreshold })}</li>
-                    <li>{m['proposition-detail.followup.automation.evaluationShift']({ days: workflowAutomation.evaluationAutoShiftDays })}</li>
-                    <li>{m['proposition-detail.followup.automation.revocationDelay']({ days: workflowAutomation.revocationAutoTriggerDelayDays })}</li>
+                    <li>
+                        {m['proposition-detail.followup.automation.recalcCooldown']({ minutes: workflowAutomation.deliverableRecalcCooldownMinutes })}
+                    </li>
+                    <li>
+                        {m['proposition-detail.followup.automation.nonConformityPercent']({
+                            percent: workflowAutomation.nonConformityPercentThreshold,
+                        })}
+                    </li>
+                    <li>
+                        {m['proposition-detail.followup.automation.nonConformityFloor']({
+                            count: workflowAutomation.nonConformityAbsoluteFloor,
+                        })}
+                    </li>
+                    <li>
+                        {m['proposition-detail.followup.automation.evaluationShift']({
+                            days: workflowAutomation.evaluationAutoShiftDays,
+                        })}
+                    </li>
+                    <li>
+                        {m['proposition-detail.followup.automation.revocationDelay']({
+                            days: workflowAutomation.revocationAutoTriggerDelayDays,
+                        })}
+                    </li>
+                    <li>
+                        {m['proposition-detail.followup.automation.revocationFrequency']({
+                            hours: workflowAutomation.revocationCheckFrequencyHours,
+                        })}
+                    </li>
                     <li>{m['proposition-detail.followup.automation.pattern']({ pattern: workflowAutomation.deliverableNamingPattern })}</li>
                 </ul>
             </article>
@@ -1311,6 +1582,83 @@
                 </Button>
             </DialogFooter>
         </form>
+    </DialogContent>
+</Dialog>
+
+<Dialog open={isDeliverableDialogOpen} onOpenChange={(value: boolean) => (isDeliverableDialogOpen = value)}>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.mandates.deliverables.dialog.title']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.mandates.deliverables.dialog.description']()}</DialogDescription>
+        </DialogHeader>
+        <div class="grid gap-4">
+            <Input id="deliverable-label" name="deliverable-label" label={m['proposition-detail.mandates.deliverables.label']()} bind:value={deliverableForm.label} />
+            <Input id="deliverable-objective" name="deliverable-objective" label={m['proposition-detail.mandates.deliverables.objective']()} bind:value={deliverableForm.objectiveRef} />
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-foreground" for="deliverable-file">{m['proposition-detail.mandates.deliverables.file']()}</label>
+                <input
+                    id="deliverable-file"
+                    name="deliverable-file"
+                    type="file"
+                    class="block w-full rounded-md border border-border/40 bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    on:change={(event) => (deliverableForm.file = event.currentTarget.files?.[0] ?? null)}
+                />
+            </div>
+            {#if deliverableErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each deliverableErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+        </div>
+        <DialogFooter>
+            <DialogClose asChild>
+                <Button type="button" variant="outline">{m['common.actions.cancel']()}</Button>
+            </DialogClose>
+            <Button type="button" onclick={submitDeliverable} disabled={isDeliverableSubmitting}>
+                {isDeliverableSubmitting ? m['common.actions.loading']() : m['proposition-detail.mandates.deliverables.submit']()}
+            </Button>
+        </DialogFooter>
+    </DialogContent>
+</Dialog>
+
+<Dialog open={isEvaluationDialogOpen} onOpenChange={(value: boolean) => (isEvaluationDialogOpen = value)}>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.mandates.deliverables.evaluate.title']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.mandates.deliverables.evaluate.description']()}</DialogDescription>
+        </DialogHeader>
+        <div class="grid gap-4">
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-foreground" for="deliverable-verdict">{m['proposition-detail.mandates.deliverables.evaluate.verdict']()}</label>
+                <select
+                    id="deliverable-verdict"
+                    name="deliverable-verdict"
+                    class="rounded-md border border-border/40 bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    bind:value={evaluationVerdict}
+                >
+                    <option value={DeliverableVerdictEnum.COMPLIANT}>{m['proposition-detail.mandates.deliverables.evaluate.compliant']()}</option>
+                    <option value={DeliverableVerdictEnum.NON_COMPLIANT}>{m['proposition-detail.mandates.deliverables.evaluate.non-conform']()}</option>
+                </select>
+            </div>
+            <Textarea id="deliverable-comment" name="deliverable-comment" label={m['proposition-detail.mandates.deliverables.evaluate.comment']()} rows={4} bind:value={evaluationComment} />
+            {#if evaluationErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each evaluationErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+        </div>
+        <DialogFooter>
+            <DialogClose asChild>
+                <Button type="button" variant="outline">{m['common.actions.cancel']()}</Button>
+            </DialogClose>
+            <Button type="button" onclick={submitEvaluation} disabled={isEvaluationSubmitting}>
+                {isEvaluationSubmitting ? m['common.actions.loading']() : m['proposition-detail.mandates.deliverables.evaluate.submit']()}
+            </Button>
+        </DialogFooter>
     </DialogContent>
 </Dialog>
 

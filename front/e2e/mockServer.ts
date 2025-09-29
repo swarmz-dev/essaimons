@@ -98,9 +98,12 @@ const MOCK_ORGANIZATION = {
         perStatus: {},
     },
     workflowAutomation: {
-        nonConformityThreshold: 60,
+        deliverableRecalcCooldownMinutes: 10,
         evaluationAutoShiftDays: 14,
-        revocationAutoTriggerDelayDays: 30,
+        nonConformityPercentThreshold: 10,
+        nonConformityAbsoluteFloor: 5,
+        revocationAutoTriggerDelayDays: 7,
+        revocationCheckFrequencyHours: 24,
         deliverableNamingPattern: 'DELIV-{proposition}-{date}',
     },
 };

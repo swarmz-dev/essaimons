@@ -24,9 +24,12 @@ export type SerializedOrganizationSettings = {
         perStatus: SerializedStatusPermissions;
     };
     workflowAutomation: {
-        nonConformityThreshold: number;
+        deliverableRecalcCooldownMinutes: number;
         evaluationAutoShiftDays: number;
+        nonConformityPercentThreshold: number;
+        nonConformityAbsoluteFloor: number;
         revocationAutoTriggerDelayDays: number;
+        revocationCheckFrequencyHours: number;
         deliverableNamingPattern: string;
     };
 };

@@ -311,10 +311,13 @@
                 "evaluation": "Evaluation offset (days)",
                 "automations": {
                     "title": "Automations",
-                    "non-conformity": "Non-conformity threshold (%)",
                     "evaluation-shift": "Evaluation auto-shift (days)",
                     "revocation-delay": "Revocation auto-trigger delay (days)",
-                    "naming-pattern": "Deliverable naming pattern"
+                    "naming-pattern": "Deliverable naming pattern",
+                    "recalc-cooldown": "Minimum cooldown between recalculations (minutes)",
+                    "non-conformity-percent": "Non-conformity threshold (%)",
+                    "non-conformity-floor": "Non-conformity floor (votes)",
+                    "revocation-frequency": "Revocation check frequency (hours)"
                 },
                 "permissions": {
                     "title": "Permissions by status",
@@ -696,6 +699,47 @@
                 "active": "Active",
                 "completed": "Completed",
                 "revoked": "Revoked"
+            },
+            "deliverables": {
+                "upload": "Upload deliverable",
+                "upload-success": "Deliverable uploaded.",
+                "file-required": "Please select a file to upload.",
+                "dialog": {
+                    "title": "Upload a deliverable",
+                    "description": "Attach the latest version of the deliverable. Deadlines will be recalculated automatically."
+                },
+                "label": "Label (optional)",
+                "objective": "Linked objective (optional)",
+                "file": "Deliverable file",
+                "submit": "Upload",
+                "empty": "No deliverables uploaded yet.",
+                "unnamed": "Unnamed deliverable",
+                "status": {
+                    "pending": "Pending review",
+                    "non_conform": "Non-conform",
+                    "escalated": "Revocation in progress",
+                    "resolved": "Resolved"
+                },
+                "download": "Download deliverable",
+                "flagged": "Flagged on {date}",
+                "procedure": {
+                    "pending": "Procedure pending",
+                    "escalated": "Revocation vote scheduled",
+                    "resolved": "Procedure closed"
+                },
+                "evaluations": "{total} evaluation(s) • {nonConform} marked non-conform",
+                "evaluate": {
+                    "title": "Evaluate deliverable",
+                    "description": "Record your assessment and optionally add a comment.",
+                    "verdict": "Verdict",
+                    "compliant": "Compliant",
+                    "non-conform": "Non-conform",
+                    "comment": "Comment (optional)",
+                    "submit": "Record evaluation"
+                },
+                "evaluate-success": "Evaluation saved.",
+                "evaluate-compliant": "Mark as compliant",
+                "evaluate-non-conform": "Mark as non-conform"
             }
         },
         "followup": {
@@ -704,10 +748,12 @@
             "actions": "Allowed actions",
             "permissions-empty": "No permissions defined for this status.",
             "automation": {
-                "title": "Automation settings",
-                "nonConformity": "Non-conformity threshold: {threshold}%",
+                "recalcCooldown": "Deliverable recalculation cooldown: {minutes} min",
+                "nonConformityPercent": "Non-conformity threshold: {percent}%",
+                "nonConformityFloor": "Non-conformity floor: {count} votes",
                 "evaluationShift": "Automatic evaluation shift: {days} days",
-                "revocationDelay": "Revocation trigger delay: {days} days",
+                "revocationDelay": "Inaction delay before revocation: {days} days",
+                "revocationFrequency": "Revocation check frequency: {hours} h",
                 "pattern": "Deliverable naming pattern: {pattern}"
             }
         },

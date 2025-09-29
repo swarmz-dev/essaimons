@@ -237,9 +237,12 @@
     const initialPermissionsMatrix = mergePermissionMatrix(initialCatalogMatrix, settings.permissions?.perStatus ?? {});
 
     let permissionsPerStatus: Record<string, Record<string, Record<string, boolean>>> = $state(initialPermissionsMatrix);
-    let nonConformityThreshold: string = $state(String(settings.workflowAutomation?.nonConformityThreshold ?? 60));
+    let deliverableRecalcCooldownMinutes: string = $state(String(settings.workflowAutomation?.deliverableRecalcCooldownMinutes ?? 10));
     let evaluationAutoShiftDays: string = $state(String(settings.workflowAutomation?.evaluationAutoShiftDays ?? 14));
-    let revocationAutoTriggerDelayDays: string = $state(String(settings.workflowAutomation?.revocationAutoTriggerDelayDays ?? 30));
+    let nonConformityPercentThreshold: string = $state(String(settings.workflowAutomation?.nonConformityPercentThreshold ?? 10));
+    let nonConformityAbsoluteFloor: string = $state(String(settings.workflowAutomation?.nonConformityAbsoluteFloor ?? 5));
+    let revocationAutoTriggerDelayDays: string = $state(String(settings.workflowAutomation?.revocationAutoTriggerDelayDays ?? 7));
+    let revocationCheckFrequencyHours: string = $state(String(settings.workflowAutomation?.revocationCheckFrequencyHours ?? 24));
     let deliverableNamingPattern: string = $state(settings.workflowAutomation?.deliverableNamingPattern ?? 'DELIV-{proposition}-{date}');
 
     let sourceCodeUrlErrors: Record<string, string | null> = $state({});
@@ -613,9 +616,12 @@
             }
         }
 
-        formData.set('workflowAutomation[nonConformityThreshold]', nonConformityThreshold.trim() || '0');
+        formData.set('workflowAutomation[deliverableRecalcCooldownMinutes]', deliverableRecalcCooldownMinutes.trim() || '0');
         formData.set('workflowAutomation[evaluationAutoShiftDays]', evaluationAutoShiftDays.trim() || '0');
+        formData.set('workflowAutomation[nonConformityPercentThreshold]', nonConformityPercentThreshold.trim() || '0');
+        formData.set('workflowAutomation[nonConformityAbsoluteFloor]', nonConformityAbsoluteFloor.trim() || '0');
         formData.set('workflowAutomation[revocationAutoTriggerDelayDays]', revocationAutoTriggerDelayDays.trim() || '0');
+        formData.set('workflowAutomation[revocationCheckFrequencyHours]', revocationCheckFrequencyHours.trim() || '0');
         formData.set('workflowAutomation[deliverableNamingPattern]', deliverableNamingPattern.trim());
 
         if (croppedFile) {
@@ -844,12 +850,44 @@
                     <section class="space-y-4">
                         <h3 class="text-sm font-semibold text-muted-foreground">{m['admin.organization.propositions.automations.title']()}</h3>
                         <div class="grid gap-4 md:grid-cols-2">
-                            <FieldLabel forId="nonConformityThreshold" label={m['admin.organization.propositions.automations.non-conformity']()}>
-                                <Input id="nonConformityThreshold" type="number" name="workflowAutomation[nonConformityThreshold]" min={0} max={100} bind:value={nonConformityThreshold} required />
+                            <FieldLabel forId="deliverableRecalcCooldownMinutes" label={m['admin.organization.propositions.automations.recalc-cooldown']()}>
+                                <Input
+                                    id="deliverableRecalcCooldownMinutes"
+                                    type="number"
+                                    name="workflowAutomation[deliverableRecalcCooldownMinutes]"
+                                    min={1}
+                                    max={1440}
+                                    bind:value={deliverableRecalcCooldownMinutes}
+                                    required
+                                />
                             </FieldLabel>
 
                             <FieldLabel forId="evaluationAutoShiftDays" label={m['admin.organization.propositions.automations.evaluation-shift']()}>
                                 <Input id="evaluationAutoShiftDays" type="number" name="workflowAutomation[evaluationAutoShiftDays]" min={0} max={365} bind:value={evaluationAutoShiftDays} required />
+                            </FieldLabel>
+
+                            <FieldLabel forId="nonConformityPercentThreshold" label={m['admin.organization.propositions.automations.non-conformity-percent']()}>
+                                <Input
+                                    id="nonConformityPercentThreshold"
+                                    type="number"
+                                    name="workflowAutomation[nonConformityPercentThreshold]"
+                                    min={0}
+                                    max={100}
+                                    bind:value={nonConformityPercentThreshold}
+                                    required
+                                />
+                            </FieldLabel>
+
+                            <FieldLabel forId="nonConformityAbsoluteFloor" label={m['admin.organization.propositions.automations.non-conformity-floor']()}>
+                                <Input
+                                    id="nonConformityAbsoluteFloor"
+                                    type="number"
+                                    name="workflowAutomation[nonConformityAbsoluteFloor]"
+                                    min={0}
+                                    max={1000}
+                                    bind:value={nonConformityAbsoluteFloor}
+                                    required
+                                />
                             </FieldLabel>
 
                             <FieldLabel forId="revocationAutoTriggerDelayDays" label={m['admin.organization.propositions.automations.revocation-delay']()}>
@@ -860,6 +898,18 @@
                                     min={0}
                                     max={365}
                                     bind:value={revocationAutoTriggerDelayDays}
+                                    required
+                                />
+                            </FieldLabel>
+
+                            <FieldLabel forId="revocationCheckFrequencyHours" label={m['admin.organization.propositions.automations.revocation-frequency']()}>
+                                <Input
+                                    id="revocationCheckFrequencyHours"
+                                    type="number"
+                                    name="workflowAutomation[revocationCheckFrequencyHours]"
+                                    min={1}
+                                    max={168}
+                                    bind:value={revocationCheckFrequencyHours}
                                     required
                                 />
                             </FieldLabel>

@@ -20,7 +20,7 @@ export default class PropositionMandateController {
         if (!proposition) return;
 
         const mandates = await this.mandateService.list(proposition);
-        return response.ok({ mandates: mandates.map((mandate) => mandate.toJSON()) });
+        return response.ok({ mandates });
     }
 
     public async store(ctx: HttpContext): Promise<void> {

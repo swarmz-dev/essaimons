@@ -311,10 +311,13 @@
                 "evaluation": "Décalage évaluation (jours)",
                 "automations": {
                     "title": "Automatisations",
-                    "non-conformity": "Seuil non conforme (%)",
                     "evaluation-shift": "Décalage auto évaluation (jours)",
                     "revocation-delay": "Délai auto révocation (jours)",
-                    "naming-pattern": "Patron de nommage des livrables"
+                    "naming-pattern": "Patron de nommage des livrables",
+                    "recalc-cooldown": "Temps minimal entre deux recalculs (minutes)",
+                    "non-conformity-percent": "Seuil non conforme (%)",
+                    "non-conformity-floor": "Plancher non conforme (votes)",
+                    "revocation-frequency": "Fréquence vérification révocation (heures)"
                 },
                 "permissions": {
                     "title": "Permissions par statut",
@@ -696,6 +699,47 @@
                 "active": "Actif",
                 "completed": "Terminé",
                 "revoked": "Révoqué"
+            },
+            "deliverables": {
+                "upload": "Téléverser un livrable",
+                "upload-success": "Livrable téléversé.",
+                "file-required": "Sélectionnez un fichier à téléverser.",
+                "dialog": {
+                    "title": "Téléverser un livrable",
+                    "description": "Ajoutez la dernière version du livrable. Les échéances seront recalculées automatiquement."
+                },
+                "label": "Libellé (optionnel)",
+                "objective": "Objectif lié (optionnel)",
+                "file": "Fichier du livrable",
+                "submit": "Téléverser",
+                "empty": "Aucun livrable téléversé pour le moment.",
+                "unnamed": "Livrable sans nom",
+                "status": {
+                    "pending": "En attente",
+                    "non_conform": "Non conforme",
+                    "escalated": "Révocation en cours",
+                    "resolved": "Résolu"
+                },
+                "download": "Télécharger le livrable",
+                "flagged": "Signalé le {date}",
+                "procedure": {
+                    "pending": "Procédure en attente",
+                    "escalated": "Vote de révocation programmé",
+                    "resolved": "Procédure terminée"
+                },
+                "evaluations": "{total} évaluation(s) • {nonConform} marquée(s) non conforme",
+                "evaluate": {
+                    "title": "Évaluer le livrable",
+                    "description": "Indiquez votre verdict et ajoutez un commentaire si nécessaire.",
+                    "verdict": "Verdict",
+                    "compliant": "Conforme",
+                    "non-conform": "Non conforme",
+                    "comment": "Commentaire (optionnel)",
+                    "submit": "Enregistrer l’évaluation"
+                },
+                "evaluate-success": "Évaluation enregistrée.",
+                "evaluate-compliant": "Marquer conforme",
+                "evaluate-non-conform": "Marquer non conforme"
             }
         },
         "followup": {
@@ -704,10 +748,12 @@
             "actions": "Actions autorisées",
             "permissions-empty": "Aucune permission spécifique définie pour ce statut.",
             "automation": {
-                "title": "Paramètres d'automatisation",
-                "nonConformity": "Seuil de non-conformité : {threshold} %",
+                "recalcCooldown": "Cooldown recalcul livrables : {minutes} min",
+                "nonConformityPercent": "Seuil non conforme : {percent} %",
+                "nonConformityFloor": "Plancher non conforme : {count} votes",
                 "evaluationShift": "Report automatique de l'évaluation : {days} jours",
-                "revocationDelay": "Délai de déclenchement de révocation : {days} jours",
+                "revocationDelay": "Délai avant révocation automatique : {days} jours",
+                "revocationFrequency": "Fréquence de vérification révocation : {hours} h",
                 "pattern": "Patron de nommage des livrables : {pattern}"
             }
         },

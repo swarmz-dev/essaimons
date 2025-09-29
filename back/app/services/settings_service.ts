@@ -24,9 +24,12 @@ interface PermissionsWrapper {
 }
 
 interface WorkflowAutomationSettingsValue {
-    nonConformityThreshold: number;
+    deliverableRecalcCooldownMinutes: number;
     evaluationAutoShiftDays: number;
+    nonConformityPercentThreshold: number;
+    nonConformityAbsoluteFloor: number;
     revocationAutoTriggerDelayDays: number;
+    revocationCheckFrequencyHours: number;
     deliverableNamingPattern: string;
 }
 
@@ -150,9 +153,12 @@ const DEFAULT_PERMISSIONS: PermissionMatrix = {
 };
 
 const DEFAULT_WORKFLOW_AUTOMATION: WorkflowAutomationSettingsValue = {
-    nonConformityThreshold: 60,
+    deliverableRecalcCooldownMinutes: 10,
     evaluationAutoShiftDays: 14,
-    revocationAutoTriggerDelayDays: 30,
+    nonConformityPercentThreshold: 10,
+    nonConformityAbsoluteFloor: 5,
+    revocationAutoTriggerDelayDays: 7,
+    revocationCheckFrequencyHours: 24,
     deliverableNamingPattern: 'DELIV-{proposition}-{date}',
 };
 
@@ -270,9 +276,12 @@ export default class SettingsService {
         const pattern = typeof input?.deliverableNamingPattern === 'string' ? input.deliverableNamingPattern.trim() : '';
 
         return {
-            nonConformityThreshold: normalizeNumber(input?.nonConformityThreshold, DEFAULT_WORKFLOW_AUTOMATION.nonConformityThreshold, 0, 100),
+            deliverableRecalcCooldownMinutes: normalizeNumber(input?.deliverableRecalcCooldownMinutes, DEFAULT_WORKFLOW_AUTOMATION.deliverableRecalcCooldownMinutes, 1, 1440),
             evaluationAutoShiftDays: normalizeNumber(input?.evaluationAutoShiftDays, DEFAULT_WORKFLOW_AUTOMATION.evaluationAutoShiftDays, 0, 365),
+            nonConformityPercentThreshold: normalizeNumber(input?.nonConformityPercentThreshold, DEFAULT_WORKFLOW_AUTOMATION.nonConformityPercentThreshold, 0, 100),
+            nonConformityAbsoluteFloor: normalizeNumber(input?.nonConformityAbsoluteFloor, DEFAULT_WORKFLOW_AUTOMATION.nonConformityAbsoluteFloor, 0, 1000),
             revocationAutoTriggerDelayDays: normalizeNumber(input?.revocationAutoTriggerDelayDays, DEFAULT_WORKFLOW_AUTOMATION.revocationAutoTriggerDelayDays, 0, 365),
+            revocationCheckFrequencyHours: normalizeNumber(input?.revocationCheckFrequencyHours, DEFAULT_WORKFLOW_AUTOMATION.revocationCheckFrequencyHours, 1, 168),
             deliverableNamingPattern: pattern.length ? pattern.slice(0, 255) : DEFAULT_WORKFLOW_AUTOMATION.deliverableNamingPattern,
         };
     }

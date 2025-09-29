@@ -30,3 +30,8 @@ export type { SerializedProposition } from './serialized/serialized_proposition.
 export type { SerializedPropositionBootstrap } from './serialized/serialized_proposition_bootstrap.js';
 export type { SerializedPropositionListItem } from './serialized/serialized_proposition_list_item.js';
 export type { SerializedOrganizationSettings, SerializedStatusPermissions } from './serialized/serialized_organization_settings.js';
+export type { SerializedDeliverableEvaluation } from './serialized/serialized_deliverable_evaluation.js';
+export type { SerializedMandateDeliverable } from './serialized/serialized_mandate_deliverable.js';
+export type { SerializedMandateApplication } from './serialized/serialized_mandate_application.js';
+export type { SerializedMandateRevocationRequest } from './serialized/serialized_mandate_revocation_request.js';
+export type { SerializedMandate } from './serialized/serialized_mandate.js';

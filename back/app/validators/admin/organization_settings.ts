@@ -38,9 +38,12 @@ export const updateOrganizationSettingsValidator = vine.compile(
             .optional(),
         workflowAutomation: vine
             .object({
-                nonConformityThreshold: vine.number().min(0).max(100).optional(),
+                deliverableRecalcCooldownMinutes: vine.number().min(1).max(1440).optional(),
                 evaluationAutoShiftDays: vine.number().min(0).max(365).optional(),
+                nonConformityPercentThreshold: vine.number().min(0).max(100).optional(),
+                nonConformityAbsoluteFloor: vine.number().min(0).max(1000).optional(),
                 revocationAutoTriggerDelayDays: vine.number().min(0).max(365).optional(),
+                revocationCheckFrequencyHours: vine.number().min(1).max(168).optional(),
                 deliverableNamingPattern: vine.string().trim().maxLength(255).optional(),
             })
             .optional(),

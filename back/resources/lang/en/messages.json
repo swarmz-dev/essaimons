@@ -93,6 +93,9 @@
         },
         "serve-static-organization-logo": {
             "error": "The organization logo could not be found"
+        },
+        "serve-deliverable": {
+            "error": "Unable to serve the deliverable file."
         }
     },
     "oauth": {
@@ -159,6 +162,17 @@
         "show": {
             "not-found": "The requested proposal could not be found.",
             "invalid-id": "The provided proposal identifier is invalid."
+        }
+    },
+    "deliverable": {
+        "upload": {
+            "file-required": "A deliverable file is required.",
+            "forbidden": "You are not allowed to upload deliverables for this mandate.",
+            "failed": "Unable to upload the deliverable."
+        },
+        "evaluate": {
+            "forbidden": "You are not allowed to evaluate this deliverable.",
+            "failed": "Unable to record the evaluation."
         }
     }
 }

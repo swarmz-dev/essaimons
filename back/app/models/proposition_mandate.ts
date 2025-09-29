@@ -39,6 +39,12 @@ export default class PropositionMandate extends BaseModel {
     @column.dateTime()
     declare lastStatusUpdateAt?: DateTime | null;
 
+    @column()
+    declare metadata: Record<string, unknown>;
+
+    @column.dateTime()
+    declare lastAutomationRunAt?: DateTime | null;
+
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime;
 
