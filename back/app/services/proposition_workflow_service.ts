@@ -160,13 +160,26 @@ export default class PropositionWorkflowService {
         const statusKey = (proposition.status ?? PropositionStatusEnum.DRAFT) as string;
         const statusPermissions = permissions[statusKey] ?? {};
 
-        const roleKey = `${role}.${action}`;
-        if (roleKey in statusPermissions) {
-            return statusPermissions[roleKey];
+        const rolePermissions = statusPermissions[role] ?? {};
+        if (Object.prototype.hasOwnProperty.call(rolePermissions, action)) {
+            return rolePermissions[action];
         }
 
-        if (action in statusPermissions) {
-            return statusPermissions[action];
+        const fallbackRoles = ['global', '*', 'any'];
+        for (const fallbackRole of fallbackRoles) {
+            const fallbackPermissions = statusPermissions[fallbackRole];
+            if (fallbackPermissions && Object.prototype.hasOwnProperty.call(fallbackPermissions, action)) {
+                return fallbackPermissions[action];
+            }
+        }
+
+        const rawStatusPermissions = statusPermissions as unknown as Record<string, unknown>;
+        for (const [key, value] of Object.entries(rawStatusPermissions)) {
+            if (typeof value === 'boolean') {
+                if (key === `${role}.${action}` || key === action) {
+                    return value;
+                }
+            }
         }
 
         return false;

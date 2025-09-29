@@ -285,7 +285,8 @@
                     "invalid": "Please enter a valid URL for {locale}.",
                     "required": "Source code link is required for fallback locale {locale}.",
                     "max": "Source code link must be 2000 characters or fewer for {locale}."
-                }
+                },
+                "fallback-required": "{field} ({locale}) must be provided."
             },
             "crop": {
                 "title": "Adjust logo",
@@ -307,7 +308,42 @@
                 "improvement": "Improvement offset (days)",
                 "vote": "Vote offset (days)",
                 "mandate": "Mandate offset (days)",
-                "evaluation": "Evaluation offset (days)"
+                "evaluation": "Evaluation offset (days)",
+                "automations": {
+                    "title": "Automations",
+                    "non-conformity": "Non-conformity threshold (%)",
+                    "evaluation-shift": "Evaluation auto-shift (days)",
+                    "revocation-delay": "Revocation auto-trigger delay (days)",
+                    "naming-pattern": "Deliverable naming pattern"
+                },
+                "permissions": {
+                    "title": "Permissions by status",
+                    "hint": "Enable the actions allowed for each role and status.",
+                    "no-role": "No role configured for this status.",
+                    "no-action": "No action defined for this role.",
+                    "select-action": "Select an action",
+                    "add-action": "Add action",
+                    "create-action": "Create custom action",
+                    "no-action-preset": "No predefined action",
+                    "select-role": "Select a role",
+                    "add-role": "Add role",
+                    "no-role-preset": "No predefined role",
+                    "create-role": "Create custom role",
+                    "prompts": {
+                        "role-name": "Name of the new role for {status}",
+                        "role-first-action": "Add an initial action for {role} ({status})",
+                        "action-name": "Name of the new action for {role} ({status})"
+                    },
+                    "errors": {
+                        "role-unavailable": "This role is not available for this status.",
+                        "role-exists": "This role already exists for this status.",
+                        "role-invalid": "The role name must contain alphanumeric characters.",
+                        "action-unavailable": "This action is not available for this role.",
+                        "action-exists": "This action already exists for this role.",
+                        "action-invalid": "The action name must contain alphanumeric characters.",
+                        "role-needs-action": "A custom role must include at least one action."
+                    }
+                }
             }
         }
     },

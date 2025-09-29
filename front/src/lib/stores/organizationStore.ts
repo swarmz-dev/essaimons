@@ -1,5 +1,5 @@
 import { writable, type Writable } from 'svelte/store';
-import type { SerializedFile } from 'backend/types';
+import type { SerializedFile, SerializedStatusPermissions } from 'backend/types';
 
 export type OrganizationLocale = {
     code: string;
@@ -23,7 +23,10 @@ export type OrganizationSettings = {
         evaluationOffsetDays: number;
     };
     permissions: {
-        perStatus: Record<string, Record<string, boolean>>;
+        perStatus: SerializedStatusPermissions;
+    };
+    permissionCatalog: {
+        perStatus: SerializedStatusPermissions;
     };
     workflowAutomation: {
         nonConformityThreshold: number;
@@ -49,6 +52,7 @@ const defaultSettings: OrganizationSettings = {
         evaluationOffsetDays: 30,
     },
     permissions: { perStatus: {} },
+    permissionCatalog: { perStatus: {} },
     workflowAutomation: {
         nonConformityThreshold: 60,
         evaluationAutoShiftDays: 14,
@@ -70,6 +74,7 @@ export function setOrganizationSettings(settings: OrganizationSettings): void {
         logo: settings.logo ?? null,
         propositionDefaults: settings.propositionDefaults ?? defaultSettings.propositionDefaults,
         permissions: settings.permissions ?? defaultSettings.permissions,
+        permissionCatalog: settings.permissionCatalog ?? defaultSettings.permissionCatalog,
         workflowAutomation: settings.workflowAutomation ?? defaultSettings.workflowAutomation,
     });
 }

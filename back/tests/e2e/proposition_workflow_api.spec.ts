@@ -95,7 +95,7 @@ const createPropositionFixture = async (client: any) => {
     };
 };
 
-const updatePermissions = async (overrides: Record<string, Record<string, boolean>>) => {
+const updatePermissions = async (overrides: Record<string, Record<string, Record<string, boolean>>>) => {
     const settingsService = await app.container.make(SettingsService);
     const current = await settingsService.getOrganizationSettings();
     const fallback = current.fallbackLocale ?? 'en';
@@ -389,7 +389,7 @@ test.group('Proposition workflow API', (group) => {
     }).timeout(60000);
 
     test('permissions override allows contributor to manage events', async ({ client }) => {
-        await updatePermissions({ amend: { 'contributor.manage_events': true } });
+        await updatePermissions({ amend: { contributor: { manage_events: true } } });
 
         const { propositionId, creatorBearer } = await createPropositionFixture(client);
 
@@ -418,7 +418,7 @@ test.group('Proposition workflow API', (group) => {
             .json({ type: PropositionEventTypeEnum.MILESTONE, title: 'Community meetup' });
         response.assertStatus(201);
 
-        await updatePermissions({ amend: { 'contributor.manage_events': false } });
+        await updatePermissions({ amend: { contributor: { manage_events: false } } });
     }).timeout(60000);
 
     test('cannot update vote once opened', async ({ client }) => {
@@ -512,7 +512,12 @@ test.group('Proposition workflow API', (group) => {
 
         await transitionTo(PropositionStatusEnum.EVALUATE);
 
-        await updatePermissions({ evaluate: { 'mandated.comment_evaluation': true, 'contributor.comment_evaluation': true } });
+        await updatePermissions({
+            evaluate: {
+                mandated: { comment_evaluation: true },
+                contributor: { comment_evaluation: true },
+            },
+        });
         workflowService = await app.container.make(PropositionWorkflowService);
 
         const mandatedAllowed = await workflowService.canPerform(proposition, mandatedUser, 'comment_evaluation');
@@ -522,11 +527,11 @@ test.group('Proposition workflow API', (group) => {
         const contributorAllowed = await workflowService.canPerform(proposition, contributor, 'comment_evaluation');
         assert.isTrue(contributorAllowed);
 
-        await updatePermissions({ evaluate: { 'contributor.comment_evaluation': false } });
+        await updatePermissions({ evaluate: { contributor: { comment_evaluation: false } } });
         workflowService = await app.container.make(PropositionWorkflowService);
         const contributorDenied = await workflowService.canPerform(proposition, contributor, 'comment_evaluation');
         assert.isFalse(contributorDenied);
 
-        await updatePermissions({ evaluate: { 'contributor.comment_evaluation': true } });
+        await updatePermissions({ evaluate: { contributor: { comment_evaluation: true } } });
     }).timeout(60000);
 });

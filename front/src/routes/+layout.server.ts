@@ -57,6 +57,7 @@ export const load: LayoutServerLoad = loadFlash(
                 evaluationOffsetDays: 30,
             },
             permissions: { perStatus: {} },
+            permissionCatalog: { perStatus: {} },
             workflowAutomation: {
                 nonConformityThreshold: 60,
                 evaluationAutoShiftDays: 14,
@@ -72,6 +73,7 @@ export const load: LayoutServerLoad = loadFlash(
                     ...organization,
                     ...data.settings,
                     permissions: data.settings.permissions ?? organization.permissions,
+                    permissionCatalog: data.settings.permissionCatalog ?? organization.permissionCatalog,
                     workflowAutomation: data.settings.workflowAutomation ?? organization.workflowAutomation,
                 };
             }

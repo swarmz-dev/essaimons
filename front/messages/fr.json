@@ -285,7 +285,8 @@
                     "invalid": "Veuillez saisir une URL valide pour {locale}.",
                     "required": "Le lien vers le code source est requis pour la langue de repli {locale}.",
                     "max": "Le lien vers le code source doit contenir au maximum 2000 caractères pour {locale}."
-                }
+                },
+                "fallback-required": "{field} ({locale}) doit être renseigné."
             },
             "crop": {
                 "title": "Ajuster le logo",
@@ -307,7 +308,42 @@
                 "improvement": "Décalage amendement (jours)",
                 "vote": "Décalage vote (jours)",
                 "mandate": "Décalage mandature (jours)",
-                "evaluation": "Décalage évaluation (jours)"
+                "evaluation": "Décalage évaluation (jours)",
+                "automations": {
+                    "title": "Automatisations",
+                    "non-conformity": "Seuil non conforme (%)",
+                    "evaluation-shift": "Décalage auto évaluation (jours)",
+                    "revocation-delay": "Délai auto révocation (jours)",
+                    "naming-pattern": "Patron de nommage des livrables"
+                },
+                "permissions": {
+                    "title": "Permissions par statut",
+                    "hint": "Activez les actions autorisées pour chaque rôle et statut.",
+                    "no-role": "Aucun rôle configuré pour ce statut.",
+                    "no-action": "Aucune action définie pour ce rôle.",
+                    "select-action": "Sélectionner une action",
+                    "add-action": "Ajouter l’action",
+                    "create-action": "Créer une action personnalisée",
+                    "no-action-preset": "Aucune action prédéfinie",
+                    "select-role": "Sélectionner un rôle",
+                    "add-role": "Ajouter le rôle",
+                    "no-role-preset": "Aucun rôle prédéfini",
+                    "create-role": "Créer un rôle personnalisé",
+                    "prompts": {
+                        "role-name": "Nom du nouveau rôle pour {status}",
+                        "role-first-action": "Ajouter une première action pour {role} ({status})",
+                        "action-name": "Nom de la nouvelle action pour {role} ({status})"
+                    },
+                    "errors": {
+                        "role-unavailable": "Ce rôle n’est pas disponible pour ce statut.",
+                        "role-exists": "Ce rôle existe déjà pour ce statut.",
+                        "role-invalid": "Le nom du rôle doit contenir des caractères alphanumériques.",
+                        "action-unavailable": "Cette action n’est pas disponible pour ce rôle.",
+                        "action-exists": "Cette action existe déjà pour ce rôle.",
+                        "action-invalid": "Le nom de l’action doit contenir des caractères alphanumériques.",
+                        "role-needs-action": "Un rôle personnalisé doit comporter au moins une action."
+                    }
+                }
             }
         }
     },

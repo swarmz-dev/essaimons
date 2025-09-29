@@ -2,7 +2,7 @@ import vine from '@vinejs/vine';
 
 const translationSchema = vine.record(vine.string().trim().maxLength(2000));
 const sourceCodeUrlSchema = vine.record(vine.string().trim().maxLength(2000).url());
-const permissionMatrixSchema = vine.record(vine.record(vine.boolean()));
+const permissionMatrixSchema = vine.record(vine.record(vine.record(vine.boolean())));
 
 export const updateOrganizationSettingsValidator = vine.compile(
     vine.object({
@@ -27,6 +27,11 @@ export const updateOrganizationSettingsValidator = vine.compile(
             })
             .optional(),
         permissions: vine
+            .object({
+                perStatus: permissionMatrixSchema.optional(),
+            })
+            .optional(),
+        permissionCatalog: vine
             .object({
                 perStatus: permissionMatrixSchema.optional(),
             })

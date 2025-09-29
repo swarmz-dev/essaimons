@@ -126,53 +126,117 @@
     let voteOffsetDays: string = $state(String(settings.propositionDefaults?.voteOffsetDays ?? 7));
     let mandateOffsetDays: string = $state(String(settings.propositionDefaults?.mandateOffsetDays ?? 15));
     let evaluationOffsetDays: string = $state(String(settings.propositionDefaults?.evaluationOffsetDays ?? 30));
-    const defaultPermissionMatrix: Record<string, Record<string, boolean>> = {
+    const defaultPermissionMatrix: Record<string, Record<string, Record<string, boolean>>> = {
         draft: {
-            'initiator.edit_proposition': true,
-            'initiator.publish': true,
-            'initiator.manage_files': true,
-            'initiator.manage_comments': true,
+            initiator: {
+                edit_proposition: true,
+                publish: true,
+                manage_files: true,
+                manage_comments: true,
+            },
         },
         clarify: {
-            'initiator.edit_proposition': true,
-            'initiator.manage_comments': true,
-            'contributor.comment_clarification': true,
+            initiator: {
+                edit_proposition: true,
+                manage_comments: true,
+            },
+            contributor: {
+                comment_clarification: true,
+            },
         },
         amend: {
-            'initiator.edit_proposition': true,
-            'initiator.manage_events': true,
-            'initiator.manage_comments': true,
-            'contributor.comment_amendment': true,
+            initiator: {
+                edit_proposition: true,
+                manage_events: true,
+                manage_comments: true,
+            },
+            contributor: {
+                comment_amendment: true,
+            },
         },
         vote: {
-            'initiator.configure_vote': true,
-            'initiator.manage_comments': true,
-            'contributor.participate_vote': true,
+            initiator: {
+                configure_vote: true,
+                manage_comments: true,
+            },
+            contributor: {
+                participate_vote: true,
+            },
         },
         mandate: {
-            'initiator.manage_mandates': true,
-            'initiator.manage_comments': true,
-            'contributor.participate_vote': true,
-            'mandated.candidate': true,
-            'contributor.comment_mandate': true,
+            initiator: {
+                manage_mandates: true,
+                manage_comments: true,
+            },
+            contributor: {
+                participate_vote: true,
+                comment_mandate: true,
+            },
+            mandated: {
+                candidate: true,
+            },
         },
         evaluate: {
-            'initiator.manage_deliverables': true,
-            'initiator.manage_comments': true,
-            'mandated.upload_deliverable': true,
-            'mandated.comment_evaluation': true,
-            'contributor.evaluate_deliverable': true,
-            'contributor.comment_evaluation': true,
-            'contributor.request_revocation': true,
+            initiator: {
+                manage_deliverables: true,
+                manage_comments: true,
+            },
+            mandated: {
+                upload_deliverable: true,
+                comment_evaluation: true,
+            },
+            contributor: {
+                evaluate_deliverable: true,
+                comment_evaluation: true,
+                request_revocation: true,
+            },
         },
         archived: {
-            'admin.purge': true,
+            admin: {
+                purge: true,
+            },
         },
     };
 
-    const initialPermissionsMatrix = Object.keys(settings.permissions?.perStatus ?? {}).length ? (settings.permissions?.perStatus ?? {}) : defaultPermissionMatrix;
+    const clonePermissionMatrix = (matrix: Record<string, Record<string, Record<string, boolean>>>): Record<string, Record<string, Record<string, boolean>>> =>
+        JSON.parse(JSON.stringify(matrix ?? {}));
 
-    let permissionsPerStatus: Record<string, Record<string, boolean>> = $state(JSON.parse(JSON.stringify(initialPermissionsMatrix)));
+    const mergePermissionMatrix = (
+        base: Record<string, Record<string, Record<string, boolean>>>,
+        overrides: Record<string, Record<string, Record<string, boolean>>>
+    ): Record<string, Record<string, Record<string, boolean>>> => {
+        const result = clonePermissionMatrix(base);
+
+        for (const [status, roles] of Object.entries(overrides ?? {})) {
+            if (!roles || typeof roles !== 'object') continue;
+
+            if (!result[status]) {
+                result[status] = {};
+            }
+
+            for (const [role, actions] of Object.entries(roles ?? {})) {
+                if (!actions || typeof actions !== 'object') continue;
+
+                if (!result[status][role]) {
+                    result[status][role] = {};
+                }
+
+                for (const [actionKey, allowed] of Object.entries(actions)) {
+                    if (typeof allowed === 'boolean') {
+                        result[status][role][actionKey] = allowed;
+                    }
+                }
+            }
+        }
+
+        return result;
+    };
+
+    const initialCatalogMatrix = mergePermissionMatrix(defaultPermissionMatrix, settings.permissionCatalog?.perStatus ?? {});
+    let permissionCatalog: Record<string, Record<string, Record<string, boolean>>> = $state(initialCatalogMatrix);
+    const initialPermissionsMatrix = mergePermissionMatrix(initialCatalogMatrix, settings.permissions?.perStatus ?? {});
+
+    let permissionsPerStatus: Record<string, Record<string, Record<string, boolean>>> = $state(initialPermissionsMatrix);
     let nonConformityThreshold: string = $state(String(settings.workflowAutomation?.nonConformityThreshold ?? 60));
     let evaluationAutoShiftDays: string = $state(String(settings.workflowAutomation?.evaluationAutoShiftDays ?? 14));
     let revocationAutoTriggerDelayDays: string = $state(String(settings.workflowAutomation?.revocationAutoTriggerDelayDays ?? 30));
@@ -198,36 +262,246 @@
     const statusOrder = ['draft', 'clarify', 'amend', 'vote', 'mandate', 'evaluate', 'archived'];
 
     const getStatuses = (): string[] => {
-        const merged = new Set<string>([...statusOrder, ...Object.keys(permissionsPerStatus ?? {})]);
+        const merged = new Set<string>([...statusOrder, ...Object.keys(permissionCatalog ?? {}), ...Object.keys(permissionsPerStatus ?? {})]);
         return Array.from(merged);
     };
 
-    const getActionsForStatus = (status: string): string[] => {
-        return Object.keys(permissionsPerStatus?.[status] ?? {}).sort();
+    const getRolesForStatus = (status: string): string[] => Object.keys(permissionsPerStatus?.[status] ?? {}).sort();
+
+    const getActionsForRole = (status: string, role: string): string[] => Object.keys(permissionsPerStatus?.[status]?.[role] ?? {}).sort();
+
+    const collectRolePoolForStatus = (status: string): Set<string> => {
+        const pool = new Set<string>(['admin', 'initiator', 'contributor', 'mandated']);
+        const collect = (matrix: Record<string, Record<string, Record<string, boolean>>>) => {
+            const roles = Object.keys(matrix?.[status] ?? {});
+            roles.forEach((role) => pool.add(role));
+        };
+        collect(defaultPermissionMatrix);
+        collect(permissionCatalog);
+        collect(permissionsPerStatus);
+        return pool;
     };
 
-    const formatStatusLabel = (status: string): string => {
-        return status
+    const collectActionPoolForStatus = (status: string): Set<string> => {
+        const pool = new Set<string>();
+        const collect = (matrix: Record<string, Record<string, Record<string, boolean>>>) => {
+            const roles = matrix?.[status];
+            for (const actions of Object.values(roles ?? {})) {
+                Object.keys(actions ?? {}).forEach((action) => pool.add(action));
+            }
+        };
+        collect(defaultPermissionMatrix);
+        collect(permissionCatalog);
+        collect(permissionsPerStatus);
+        return pool;
+    };
+
+    const getAvailableRolesForStatus = (status: string): string[] => {
+        const pool = collectRolePoolForStatus(status);
+        const existing = new Set(Object.keys(permissionsPerStatus?.[status] ?? {}));
+        return Array.from(pool)
+            .filter((role) => !existing.has(role))
+            .sort();
+    };
+
+    const getAvailableActionsForRole = (status: string, role: string): string[] => {
+        const pool = collectActionPoolForStatus(status);
+        const existing = new Set(Object.keys(permissionsPerStatus?.[status]?.[role] ?? {}));
+        return Array.from(pool)
+            .filter((action) => !existing.has(action))
+            .sort();
+    };
+
+    const formatStatusLabel = (status: string): string =>
+        status
             .split('_')
             .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
             .join(' ');
-    };
 
-    const formatActionLabel = (action: string): string => {
-        return action
-            .replace(/\./g, ' · ')
+    const formatRoleLabel = (role: string): string =>
+        role
             .split('_')
             .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
             .join(' ');
+
+    const formatActionLabel = (action: string): string =>
+        action
+            .split('_')
+            .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+            .join(' ');
+
+    const slugifyKey = (input: string): string =>
+        input
+            .normalize('NFD')
+            .replace(/\p{Diacritic}/gu, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '');
+
+    const registerRoleInCatalog = (status: string, role: string): void => {
+        const statusCatalog = permissionCatalog[status] ?? {};
+        permissionCatalog = {
+            ...permissionCatalog,
+            [status]: {
+                ...statusCatalog,
+                [role]: { ...(statusCatalog[role] ?? {}) },
+            },
+        };
     };
 
-    const handlePermissionToggle = (status: string, action: string, allowed: boolean): void => {
-        const current = permissionsPerStatus[status] ?? {};
+    const registerActionInCatalog = (status: string, role: string, action: string): void => {
+        const statusCatalog = permissionCatalog[status] ?? {};
+        const roleCatalog = statusCatalog[role] ?? {};
+        permissionCatalog = {
+            ...permissionCatalog,
+            [status]: {
+                ...statusCatalog,
+                [role]: {
+                    ...roleCatalog,
+                    [action]: true,
+                },
+            },
+        };
+    };
+
+    let roleSelections: Record<string, string> = $state({});
+    let actionSelections: Record<string, Record<string, string>> = $state({});
+
+    const setRoleSelection = (status: string, value: string) => {
+        roleSelections = { ...roleSelections, [status]: value };
+    };
+
+    const setActionSelection = (status: string, role: string, value: string) => {
+        const current = actionSelections[status] ?? {};
+        actionSelections = { ...actionSelections, [status]: { ...current, [role]: value } };
+    };
+
+    const confirmAddRole = (status: string): void => {
+        const key = roleSelections[status];
+        if (!key) return;
+        const available = getAvailableRolesForStatus(status);
+        if (!available.includes(key)) {
+            window.alert(m['admin.organization.propositions.permissions.errors.role-unavailable']());
+            return;
+        }
+        const existingStatus = permissionsPerStatus[status] ?? {};
+        registerRoleInCatalog(status, key);
         permissionsPerStatus = {
             ...permissionsPerStatus,
             [status]: {
-                ...current,
-                [action]: allowed,
+                ...existingStatus,
+                [key]: {},
+            },
+        };
+        roleSelections = { ...roleSelections, [status]: '' };
+    };
+
+    const confirmAddAction = (status: string, role: string): void => {
+        const key = actionSelections[status]?.[role];
+        if (!key) return;
+        const available = getAvailableActionsForRole(status, role);
+        if (!available.includes(key)) {
+            window.alert(m['admin.organization.propositions.permissions.errors.action-unavailable']());
+            return;
+        }
+        const statusPermissions = permissionsPerStatus[status] ?? {};
+        const rolePermissions = statusPermissions[role] ?? {};
+        registerActionInCatalog(status, role, key);
+        permissionsPerStatus = {
+            ...permissionsPerStatus,
+            [status]: {
+                ...statusPermissions,
+                [role]: {
+                    ...rolePermissions,
+                    [key]: false,
+                },
+            },
+        };
+        setActionSelection(status, role, '');
+    };
+
+    const promptCustomRole = (status: string): void => {
+        if (typeof window === 'undefined') return;
+        const rawRole = window.prompt(m['admin.organization.propositions.permissions.prompts.role-name']({ status: formatStatusLabel(status) }));
+        if (!rawRole) return;
+        const roleKey = slugifyKey(rawRole);
+        if (!roleKey) {
+            window.alert(m['admin.organization.propositions.permissions.errors.role-invalid']());
+            return;
+        }
+        if ((permissionCatalog[status] ?? {})[roleKey]) {
+            window.alert(m['admin.organization.propositions.permissions.errors.role-exists']());
+            return;
+        }
+
+        const rawAction = window.prompt(m['admin.organization.propositions.permissions.prompts.role-first-action']({ role: rawRole, status: formatStatusLabel(status) }));
+        if (!rawAction) {
+            window.alert(m['admin.organization.propositions.permissions.errors.role-needs-action']());
+            return;
+        }
+        const actionKey = slugifyKey(rawAction);
+        if (!actionKey) {
+            window.alert(m['admin.organization.propositions.permissions.errors.action-invalid']());
+            return;
+        }
+
+        registerRoleInCatalog(status, roleKey);
+        registerActionInCatalog(status, roleKey, actionKey);
+
+        const statusPermissions = permissionsPerStatus[status] ?? {};
+        permissionsPerStatus = {
+            ...permissionsPerStatus,
+            [status]: {
+                ...statusPermissions,
+                [roleKey]: {
+                    [actionKey]: false,
+                },
+            },
+        };
+    };
+
+    const promptCustomAction = (status: string, role: string): void => {
+        if (typeof window === 'undefined') return;
+        const rawAction = window.prompt(m['admin.organization.propositions.permissions.prompts.action-name']({ role: formatRoleLabel(role), status: formatStatusLabel(status) }));
+        if (!rawAction) return;
+        const actionKey = slugifyKey(rawAction);
+        if (!actionKey) {
+            window.alert(m['admin.organization.propositions.permissions.errors.action-invalid']());
+            return;
+        }
+        if ((permissionCatalog[status]?.[role] ?? {})[actionKey]) {
+            window.alert(m['admin.organization.propositions.permissions.errors.action-exists']());
+            return;
+        }
+
+        registerActionInCatalog(status, role, actionKey);
+
+        const statusPermissions = permissionsPerStatus[status] ?? {};
+        const rolePermissions = statusPermissions[role] ?? {};
+        permissionsPerStatus = {
+            ...permissionsPerStatus,
+            [status]: {
+                ...statusPermissions,
+                [role]: {
+                    ...rolePermissions,
+                    [actionKey]: false,
+                },
+            },
+        };
+    };
+
+    const handlePermissionToggle = (status: string, role: string, action: string, allowed: boolean): void => {
+        const statusPermissions = permissionsPerStatus[status] ?? {};
+        const rolePermissions = statusPermissions[role] ?? {};
+
+        permissionsPerStatus = {
+            ...permissionsPerStatus,
+            [status]: {
+                ...statusPermissions,
+                [role]: {
+                    ...rolePermissions,
+                    [action]: allowed,
+                },
             },
         };
     };
@@ -284,6 +558,21 @@
 
         isSubmitting = true;
 
+        const fallbackLabel = getLocaleLabel(fallbackLocale);
+        const ensureFallbackValue = (map: Record<string, string>, fieldLabel: string): boolean => {
+            if ((map[fallbackLocale] ?? '').trim().length === 0) {
+                isSubmitting = false;
+                cancel();
+                window.alert(m['admin.organization.validation.fallback-required']({ field: fieldLabel, locale: fallbackLabel }));
+                return false;
+            }
+            return true;
+        };
+
+        if (!ensureFallbackValue(nameByLocale, m['admin.organization.fields.name']())) return;
+        if (!ensureFallbackValue(descriptionByLocale, m['admin.organization.fields.description']())) return;
+        if (!ensureFallbackValue(copyrightByLocale, m['admin.organization.fields.copyright']())) return;
+
         formData.set('fallbackLocale', fallbackLocale);
 
         for (const locale of locales) {
@@ -306,10 +595,21 @@
         formData.set('propositionDefaults[evaluationOffsetDays]', evaluationOffsetDays.trim() || '0');
 
         for (const status of getStatuses()) {
-            const actions = getActionsForStatus(status);
-            for (const action of actions) {
-                const allowed = Boolean(permissionsPerStatus?.[status]?.[action]);
-                formData.set(`permissions[perStatus][${status}][${action}]`, allowed ? '1' : '0');
+            const roles = getRolesForStatus(status);
+            for (const role of roles) {
+                const actions = getActionsForRole(status, role);
+                for (const action of actions) {
+                    const allowed = Boolean(permissionsPerStatus?.[status]?.[role]?.[action]);
+                    formData.set(`permissions[perStatus][${status}][${role}][${action}]`, allowed ? '1' : '0');
+                }
+            }
+        }
+
+        for (const [status, roles] of Object.entries(permissionCatalog ?? {})) {
+            for (const [role, actions] of Object.entries(roles ?? {})) {
+                for (const action of Object.keys(actions ?? {})) {
+                    formData.set(`permissionCatalog[perStatus][${status}][${role}][${action}]`, 'true');
+                }
             }
         }
 
@@ -542,17 +842,17 @@
                     </FieldLabel>
 
                     <section class="space-y-4">
-                        <h3 class="text-sm font-semibold text-muted-foreground">Automatisations</h3>
+                        <h3 class="text-sm font-semibold text-muted-foreground">{m['admin.organization.propositions.automations.title']()}</h3>
                         <div class="grid gap-4 md:grid-cols-2">
-                            <FieldLabel forId="nonConformityThreshold" label="Seuil non conforme (%)">
+                            <FieldLabel forId="nonConformityThreshold" label={m['admin.organization.propositions.automations.non-conformity']()}>
                                 <Input id="nonConformityThreshold" type="number" name="workflowAutomation[nonConformityThreshold]" min={0} max={100} bind:value={nonConformityThreshold} required />
                             </FieldLabel>
 
-                            <FieldLabel forId="evaluationAutoShiftDays" label="Décalage auto évaluation (jours)">
+                            <FieldLabel forId="evaluationAutoShiftDays" label={m['admin.organization.propositions.automations.evaluation-shift']()}>
                                 <Input id="evaluationAutoShiftDays" type="number" name="workflowAutomation[evaluationAutoShiftDays]" min={0} max={365} bind:value={evaluationAutoShiftDays} required />
                             </FieldLabel>
 
-                            <FieldLabel forId="revocationAutoTriggerDelayDays" label="Délai auto révocation (jours)">
+                            <FieldLabel forId="revocationAutoTriggerDelayDays" label={m['admin.organization.propositions.automations.revocation-delay']()}>
                                 <Input
                                     id="revocationAutoTriggerDelayDays"
                                     type="number"
@@ -564,7 +864,7 @@
                                 />
                             </FieldLabel>
 
-                            <FieldLabel forId="deliverableNamingPattern" label="Patron nommage livrables">
+                            <FieldLabel forId="deliverableNamingPattern" label={m['admin.organization.propositions.automations.naming-pattern']()}>
                                 <Input id="deliverableNamingPattern" type="text" name="workflowAutomation[deliverableNamingPattern]" maxlength={255} bind:value={deliverableNamingPattern} />
                             </FieldLabel>
                         </div>
@@ -572,55 +872,134 @@
 
                     <section class="space-y-4">
                         <div>
-                            <h3 class="text-sm font-semibold text-muted-foreground">Permissions par statut</h3>
-                            <p class="text-xs text-muted-foreground">Activez les actions autorisées pour chaque rôle et statut.</p>
+                            <h3 class="text-sm font-semibold text-muted-foreground">{m['admin.organization.propositions.permissions.title']()}</h3>
+                            <p class="text-xs text-muted-foreground">{m['admin.organization.propositions.permissions.hint']()}</p>
                         </div>
-                        <div class="overflow-x-auto rounded-2xl border border-border/60 bg-white/70 shadow-sm dark:bg-slate-950/70">
-                            <table class="w-full min-w-[560px] divide-y divide-border/60 text-sm">
-                                <thead class="bg-muted/40">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left font-semibold uppercase tracking-wide text-muted-foreground">Statut</th>
-                                        <th class="px-4 py-3 text-left font-semibold uppercase tracking-wide text-muted-foreground">Action</th>
-                                        <th class="px-4 py-3 text-center font-semibold uppercase tracking-wide text-muted-foreground">Autorisé</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-border/60">
-                                    {#each getStatuses() as status}
-                                        {#each getActionsForStatus(status) as action}
-                                            <tr class="hover:bg-muted/30">
-                                                <td class="px-4 py-3 align-middle font-medium text-foreground/85">{formatStatusLabel(status)}</td>
-                                                <td class="px-4 py-3 align-middle text-foreground/80">{formatActionLabel(action)}</td>
-                                                <td class="px-4 py-3 text-center align-middle">
-                                                    <input
-                                                        class="size-4 rounded border-border/60 accent-primary"
-                                                        type="checkbox"
-                                                        checked={Boolean(permissionsPerStatus?.[status]?.[action])}
-                                                        onchange={(event) => handlePermissionToggle(status, action, (event.currentTarget as HTMLInputElement).checked)}
-                                                    />
-                                                </td>
-                                            </tr>
+                        <div class="space-y-5">
+                            {#each getStatuses() as status}
+                                <div class="overflow-hidden rounded-3xl border border-border/60 bg-white/80 shadow-sm dark:border-slate-800/70 dark:bg-slate-950/60">
+                                    <div class="border-b border-border/60 bg-muted/40 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground dark:border-slate-800/70">
+                                        {formatStatusLabel(status)}
+                                    </div>
+                                    <div class="space-y-4 p-4">
+                                        {#if getRolesForStatus(status).length === 0}
+                                            <p class="text-xs text-muted-foreground">{m['admin.organization.propositions.permissions.no-role']()}</p>
+                                        {/if}
+                                        {#each getRolesForStatus(status) as role}
+                                            <div class="rounded-2xl border border-border/50 bg-white/80 shadow-inner dark:border-slate-800/70 dark:bg-slate-900/70">
+                                                <div class="border-b border-border/50 px-4 py-2 text-sm font-semibold text-foreground/85 dark:border-slate-800/70">
+                                                    {formatRoleLabel(role)}
+                                                </div>
+                                                <div class="space-y-2 p-4">
+                                                    {#if getActionsForRole(status, role).length === 0}
+                                                        <p class="text-xs text-muted-foreground">{m['admin.organization.propositions.permissions.no-action']()}</p>
+                                                    {:else}
+                                                        {#each getActionsForRole(status, role) as action}
+                                                            <label
+                                                                class="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-white/70 px-4 py-3 text-sm font-medium text-foreground/80 shadow-sm transition hover:bg-muted/40 dark:border-slate-800/70 dark:bg-slate-950/70 dark:text-slate-200"
+                                                            >
+                                                                <span>{formatActionLabel(action)}</span>
+                                                                <input
+                                                                    class="size-4 rounded border-border/60 accent-primary"
+                                                                    type="checkbox"
+                                                                    checked={Boolean(permissionsPerStatus?.[status]?.[role]?.[action])}
+                                                                    onchange={(event) => handlePermissionToggle(status, role, action, (event.currentTarget as HTMLInputElement).checked)}
+                                                                />
+                                                            </label>
+                                                        {/each}
+                                                    {/if}
+                                                    <div class="flex flex-wrap items-center justify-end gap-2 pt-2">
+                                                        {#if getAvailableActionsForRole(status, role).length > 0}
+                                                            <select
+                                                                class="h-10 min-w-48 rounded-2xl border border-border/60 bg-white/80 px-3 text-sm font-medium text-foreground shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-slate-800/70 dark:bg-slate-900/70"
+                                                                value={actionSelections[status]?.[role] ?? ''}
+                                                                onchange={(event) => setActionSelection(status, role, (event.currentTarget as HTMLSelectElement).value)}
+                                                            >
+                                                                <option value="">{m['admin.organization.propositions.permissions.select-action']()}</option>
+                                                                {#each getAvailableActionsForRole(status, role) as actionOption}
+                                                                    <option value={actionOption}>{formatActionLabel(actionOption)}</option>
+                                                                {/each}
+                                                            </select>
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="outline"
+                                                                disabled={!actionSelections[status]?.[role]}
+                                                                onclick={() => confirmAddAction(status, role)}
+                                                            >
+                                                                {m['admin.organization.propositions.permissions.add-action']()}
+                                                            </Button>
+                                                        {:else}
+                                                            <select
+                                                                class="h-10 min-w-48 rounded-2xl border border-border/60 bg-white/60 px-3 text-sm font-medium text-muted-foreground shadow-sm outline-none"
+                                                                disabled
+                                                            >
+                                                                <option>{m['admin.organization.propositions.permissions.no-action-preset']()}</option>
+                                                            </select>
+                                                            <Button type="button" size="sm" variant="outline" disabled>
+                                                                {m['admin.organization.propositions.permissions.add-action']()}
+                                                            </Button>
+                                                        {/if}
+                                                        <Button type="button" size="sm" variant="ghost" onclick={() => promptCustomAction(status, role)}>
+                                                            {m['admin.organization.propositions.permissions.create-action']()}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         {/each}
-                                    {/each}
-                                </tbody>
-                            </table>
+                                        <div class="flex flex-wrap items-center justify-end gap-2 pt-3">
+                                            {#if getAvailableRolesForStatus(status).length > 0}
+                                                <select
+                                                    class="h-10 min-w-48 rounded-2xl border border-border/60 bg-white/80 px-3 text-sm font-medium text-foreground shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-slate-800/70 dark:bg-slate-900/70"
+                                                    value={roleSelections[status] ?? ''}
+                                                    onchange={(event) => setRoleSelection(status, (event.currentTarget as HTMLSelectElement).value)}
+                                                >
+                                                    <option value="">{m['admin.organization.propositions.permissions.select-role']()}</option>
+                                                    {#each getAvailableRolesForStatus(status) as roleOption}
+                                                        <option value={roleOption}>{formatRoleLabel(roleOption)}</option>
+                                                    {/each}
+                                                </select>
+                                                <Button type="button" size="sm" variant="outline" disabled={!roleSelections[status]} onclick={() => confirmAddRole(status)}>
+                                                    {m['admin.organization.propositions.permissions.add-role']()}
+                                                </Button>
+                                            {:else}
+                                                <select
+                                                    class="h-10 min-w-48 rounded-2xl border border-border/60 bg-white/60 px-3 text-sm font-medium text-muted-foreground shadow-sm outline-none"
+                                                    disabled
+                                                >
+                                                    <option>{m['admin.organization.propositions.permissions.no-role-preset']()}</option>
+                                                </select>
+                                                <Button type="button" size="sm" variant="outline" disabled>
+                                                    {m['admin.organization.propositions.permissions.add-role']()}
+                                                </Button>
+                                            {/if}
+                                            <Button type="button" size="sm" variant="ghost" onclick={() => promptCustomRole(status)}>
+                                                {m['admin.organization.propositions.permissions.create-role']()}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {/each}
                         </div>
                     </section>
                 </div>
             </div>
 
-            <div class="space-y-6" class:hidden={activeTab !== 'general'}>
-                <FieldLabel forId="logo" label={m['admin.organization.fields.logo.title']()} info={m['admin.organization.fields.logo.placeholder']()}>
-                    <Input type="file" name="logo" id="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" onchange={handleLogoChange} bind:ref={logoInputRef} />
-                </FieldLabel>
+            <div class="space-y-6">
+                <div class:hidden={activeTab !== 'general'}>
+                    <FieldLabel forId="logo" label={m['admin.organization.fields.logo.title']()} info={m['admin.organization.fields.logo.placeholder']()}>
+                        <Input type="file" name="logo" id="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" onchange={handleLogoChange} bind:ref={logoInputRef} />
+                    </FieldLabel>
 
-                <div class="space-y-3">
-                    <p class="text-sm font-semibold text-muted-foreground">{m['admin.organization.fields.logo.title']()}</p>
-                    <div class="flex h-36 w-36 items-center justify-center overflow-hidden rounded-3xl border border-border/60 bg-white/70 shadow-inner dark:bg-slate-900/70">
-                        {#if logoPreview}
-                            <img src={logoPreview} alt={nameByLocale[fallbackLocale]?.trim() || m['admin.organization.fields.logo.title']()} class="h-full w-full object-cover" />
-                        {:else}
-                            <span class="text-xs text-muted-foreground">{m['common.logo.alt']()}</span>
-                        {/if}
+                    <div class="space-y-3">
+                        <p class="text-sm font-semibold text-muted-foreground">{m['admin.organization.fields.logo.title']()}</p>
+                        <div class="flex h-36 w-36 items-center justify-center overflow-hidden rounded-3xl border border-border/60 bg-white/70 shadow-inner dark:bg-slate-900/70">
+                            {#if logoPreview}
+                                <img src={logoPreview} alt={nameByLocale[fallbackLocale]?.trim() || m['admin.organization.fields.logo.title']()} class="h-full w-full object-cover" />
+                            {:else}
+                                <span class="text-xs text-muted-foreground">{m['common.logo.alt']()}</span>
+                            {/if}
+                        </div>
                     </div>
                 </div>
 

@@ -22,6 +22,7 @@ export const load: PageServerLoad<{ settings: SerializedOrganizationSettings }> 
                 evaluationOffsetDays: 30,
             },
             permissions: { perStatus: {} },
+            permissionCatalog: { perStatus: {} },
             workflowAutomation: {
                 nonConformityThreshold: 60,
                 evaluationAutoShiftDays: 14,
@@ -35,6 +36,7 @@ export const load: PageServerLoad<{ settings: SerializedOrganizationSettings }> 
                 ...fallbackSettings,
                 ...data.settings,
                 permissions: data.settings.permissions ?? fallbackSettings.permissions,
+                permissionCatalog: data.settings.permissionCatalog ?? fallbackSettings.permissionCatalog,
                 workflowAutomation: data.settings.workflowAutomation ?? fallbackSettings.workflowAutomation,
             },
         };
@@ -57,6 +59,7 @@ export const load: PageServerLoad<{ settings: SerializedOrganizationSettings }> 
                     evaluationOffsetDays: 30,
                 },
                 permissions: { perStatus: {} },
+                permissionCatalog: { perStatus: {} },
                 workflowAutomation: {
                     nonConformityThreshold: 60,
                     evaluationAutoShiftDays: 14,
