@@ -1,16 +1,28 @@
 import { test, expect } from '@playwright/test';
+import { acquireMockServer, USE_REAL_BACKEND } from './mockServer';
 
 const title = `Test proposition ${Date.now()}`;
 
 async function login(page) {
     await page.goto('/fr/login');
-    await page.getByLabel("Email ou nom d'utilisateur").fill('playwright-user');
-    await page.getByLabel('Mot de passe').fill('dummy-password');
+    await page.locator('input[name="identity"]').fill('playwright-user');
+    await page.locator('input[name="password"]').fill('dummy-password');
     await page.getByRole('button', { name: 'Envoyer' }).click();
     await expect(page).toHaveURL(/\/fr\/?/); // login bypass redirects to /fr
 }
 
+let releaseMockServer: (() => Promise<void>) | undefined;
+
+test.beforeAll(async () => {
+    releaseMockServer = await acquireMockServer();
+});
+
+test.afterAll(async () => {
+    await releaseMockServer?.();
+});
+
 test.describe('Proposition creation flow', () => {
+    test.skip(USE_REAL_BACKEND, 'Mock creation relies on fake bootstrap data');
     test('fills mandatory fields and submits successfully', async ({ page }) => {
         await login(page);
 
@@ -21,11 +33,10 @@ test.describe('Proposition creation flow', () => {
         await page.getByLabel('Titre').fill(title);
         await page.locator('[data-editor="detailedDescription"] .ql-editor').fill('Description détaillée Playwright.');
         await page.locator('[data-editor="smartObjectives"] .ql-editor').fill('Objectifs SMART Playwright.');
-        await page.locator('textarea[name="impacts"]').fill('Impacts Playwright.');
         const categoryButton = page.getByRole('button', { name: /Sélectionnez une ou plusieurs catégories/ });
         await categoryButton.click();
         await page
-            .getByRole('button', { name: /Démocratie liquide/ })
+            .getByRole('option', { name: /Démocratie liquide/ })
             .first()
             .click();
         await page.locator('body').click({ position: { x: 5, y: 5 } });
@@ -42,12 +53,11 @@ test.describe('Proposition creation flow', () => {
 
         await page.getByRole('button', { name: 'Suivant' }).click();
 
-        await page.locator('textarea[name="impacts"]').fill('Impacts Playwright.');
-        const rescueButton = page.getByRole('button', { name: /Sélectionnez un ou plusieurs initiateurs/ });
+        await page.locator('textarea[name="impacts"]:visible').fill('Impacts Playwright.');
+        const rescueButton = page.getByRole('button', { name: /Rechercher un initiateur/ });
         await rescueButton.click();
-        const firstRescue = page.locator('div[role="listbox"] button').first();
-        await firstRescue.click();
-        await page.locator('body').click({ position: { x: 5, y: 5 } });
+        await page.getByRole('option').first().click();
+        await page.keyboard.press('Escape');
 
         await page.getByRole('button', { name: 'Publier la proposition' }).click();
 
