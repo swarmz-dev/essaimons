@@ -443,8 +443,7 @@
             .min(1),
     });
 
-    let isVoteDialogOpen: boolean = $state(false);
-    let voteForm = $state({
+    const defaultVoteForm = {
         title: '',
         description: '',
         phase: PropositionVotePhaseEnum.VOTE,
@@ -453,9 +452,14 @@
         closeAt: '',
         maxSelections: '',
         optionsText: 'For\nAgainst',
-    });
+    };
+
+    let isVoteDialogOpen: boolean = $state(false);
+    let voteForm = $state({ ...defaultVoteForm });
     let voteErrors: string[] = $state([]);
     let isVoteSubmitting: boolean = $state(false);
+    let voteOpenInput: HTMLInputElement | null = $state(null);
+    let voteCloseInput: HTMLInputElement | null = $state(null);
 
     const mandateSchema = z.object({
         title: z.string().trim().min(1).max(255),
@@ -1146,16 +1150,7 @@
                 },
                 ({ data: vote }) => {
                     propositionDetailStore.upsertVote(vote);
-                    voteForm = {
-                        title: '',
-                        description: '',
-                        phase: PropositionVotePhaseEnum.VOTE,
-                        method: PropositionVoteMethodEnum.BINARY,
-                        openAt: '',
-                        closeAt: '',
-                        maxSelections: '',
-                        optionsText: 'For\nAgainst',
-                    };
+                    voteForm = { ...defaultVoteForm };
                     isVoteDialogOpen = false;
                 },
                 ({ message }) => {
@@ -2775,7 +2770,19 @@
     </DialogContent>
 </Dialog>
 
-<Dialog open={isVoteDialogOpen} onOpenChange={(value: boolean) => (isVoteDialogOpen = value)}>
+<Dialog
+    open={isVoteDialogOpen}
+    onOpenChange={(value: boolean) => {
+        isVoteDialogOpen = value;
+        if (!value) {
+            voteForm = { ...defaultVoteForm };
+            voteErrors = [];
+            isVoteSubmitting = false;
+            voteOpenInput = null;
+            voteCloseInput = null;
+        }
+    }}
+>
     <DialogContent class="max-w-2xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.votes.dialog.title']()}</DialogTitle>
@@ -2800,8 +2807,28 @@
                         {/each}
                     </select>
                 </label>
-                <Input type="datetime-local" name="vote-open" label={m['proposition-detail.votes.form.openAt']()} bind:value={voteForm.openAt} />
-                <Input type="datetime-local" name="vote-close" label={m['proposition-detail.votes.form.closeAt']()} bind:value={voteForm.closeAt} />
+                <div class="relative">
+                    <Input type="datetime-local" name="vote-open" label={m['proposition-detail.votes.form.openAt']()} bind:value={voteForm.openAt} bind:ref={voteOpenInput} class="pr-12" />
+                    <button
+                        type="button"
+                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                        onclick={() => openNativeDatePicker(voteOpenInput)}
+                        aria-label={m['proposition-detail.votes.form.openAt']()}
+                    >
+                        <CalendarDays class="size-4" />
+                    </button>
+                </div>
+                <div class="relative">
+                    <Input type="datetime-local" name="vote-close" label={m['proposition-detail.votes.form.closeAt']()} bind:value={voteForm.closeAt} bind:ref={voteCloseInput} class="pr-12" />
+                    <button
+                        type="button"
+                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                        onclick={() => openNativeDatePicker(voteCloseInput)}
+                        aria-label={m['proposition-detail.votes.form.closeAt']()}
+                    >
+                        <CalendarDays class="size-4" />
+                    </button>
+                </div>
                 <Input type="number" name="vote-max-selections" min="0" label={m['proposition-detail.votes.form.maxSelections']()} bind:value={voteForm.maxSelections} />
             </div>
             <Textarea name="vote-description" label={m['proposition-detail.votes.form.description']()} rows={3} bind:value={voteForm.description} />
