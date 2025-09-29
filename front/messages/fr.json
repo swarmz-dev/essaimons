@@ -500,6 +500,9 @@
             "categories": {
                 "placeholder": "Filtrer par catégories"
             },
+            "statuses": {
+                "placeholder": "Filtrer par statut"
+            },
             "reset": "Réinitialiser les filtres"
         },
         "visual": {
@@ -508,6 +511,10 @@
         },
         "actions": {
             "view": "Voir la proposition"
+        },
+        "badges": {
+            "overdue": "En retard sur {phase}",
+            "status-since": "Phase entamée le {date}"
         },
         "dates": {
             "empty": "Non renseignée",
@@ -519,6 +526,7 @@
                 "title": "Titre",
                 "summary": "Résumé",
                 "categories": "Catégories",
+                "status": "Statut",
                 "vote": "Vote",
                 "updated": "Mise à jour"
             }
@@ -560,6 +568,15 @@
             "associated": "Propositions associées",
             "attachments": "Pièces jointes"
         },
+        "tabs": {
+            "overview": "Aperçu",
+            "clarifications": "Clarifications",
+            "amendments": "Amendements",
+            "vote": "Vote",
+            "mandates": "Mandats",
+            "followup": "Suivi & compte rendu",
+            "aria-label": "Sections du parcours de la proposition"
+        },
         "dates": {
             "clarification": "Clarification",
             "improvement": "Amélioration",
@@ -567,6 +584,153 @@
             "mandate": "Mandat",
             "evaluation": "Évaluation",
             "empty": "Non renseignée"
+        },
+        "timeline": {
+            "current": "En cours",
+            "completed": "Terminé",
+            "upcoming": "À venir",
+            "deliverables": "Livrables associés : {count}",
+            "vote-status": "Statut du vote : {status}"
+        },
+        "comments": {
+            "anonymous": "Contributeur·ice inconnu·e",
+            "empty": "Aucune contribution n'a été enregistrée pour cette section pour le moment.",
+            "add": "Ajouter une clarification",
+            "add-amendment": "Ajouter un commentaire d'amendement",
+            "section": {
+                "amendment": "Discussions d'amendement"
+            },
+            "dialog": {
+                "title": "Partager une clarification",
+                "description": "Les messages de clarification sont visibles par l'ensemble des participants authentifiés.",
+                "label": "Message de clarification",
+                "submit": "Publier la clarification"
+            },
+            "amendment-dialog": {
+                "title": "Partager un amendement",
+                "description": "Les commentaires d'amendement sont partagés avec les contributeurs concernés par cette phase.",
+                "label": "Message d'amendement",
+                "submit": "Publier le commentaire"
+            }
+        },
+        "events": {
+            "empty": "Aucun temps d'échange n'a encore été planifié.",
+            "add": "Planifier un échange",
+            "dialog": {
+                "title": "Planifier un échange",
+                "description": "Informez les participants des discussions ou jalons à venir.",
+                "submit": "Créer l'événement"
+            },
+            "form": {
+                "title": "Titre",
+                "type": "Type",
+                "startAt": "Début",
+                "endAt": "Fin",
+                "location": "Lieu",
+                "videoLink": "Lien vidéo",
+                "description": "Description"
+            },
+            "type": {
+                "milestone": "Jalon",
+                "exchange": "Échange",
+                "evaluation": "Évaluation"
+            }
+        },
+        "vote": {
+            "method": "Méthode : {method}"
+        },
+        "votes": {
+            "empty": "Aucun vote n'a encore été configuré.",
+            "add": "Configurer un vote",
+            "dialog": {
+                "title": "Configurer un vote",
+                "description": "Définissez la méthode, le calendrier et les options du vote avant son ouverture.",
+                "submit": "Créer le vote"
+            },
+            "form": {
+                "title": "Titre",
+                "phase": "Phase",
+                "method": "Méthode",
+                "openAt": "Ouverture",
+                "closeAt": "Clôture",
+                "maxSelections": "Sélections maximales",
+                "description": "Description",
+                "options": "Options (une par ligne)"
+            },
+            "options-empty": "Veuillez renseigner au moins une option de vote.",
+            "max-invalid": "Le nombre maximal de sélections doit être un nombre positif.",
+            "phase": {
+                "vote": "Vote",
+                "mandate": "Mandat",
+                "revocation": "Révocation"
+            },
+            "method-label": {
+                "binary": "Binaire",
+                "multi_choice": "Choix multiple",
+                "majority_judgment": "Jugement majoritaire"
+            }
+        },
+        "mandate": {
+            "holder": "Mandataire : {holder}"
+        },
+        "mandates": {
+            "empty": "Aucun mandat n'a encore été créé.",
+            "add": "Créer un mandat",
+            "dialog": {
+                "title": "Créer un mandat",
+                "description": "Attribuez des responsabilités et suivez les livrables associés à cette proposition.",
+                "submit": "Créer le mandat"
+            },
+            "form": {
+                "title": "Titre",
+                "description": "Description",
+                "holder": "Identifiant du mandataire",
+                "status": "Statut",
+                "targetObjectiveRef": "Objectif associé",
+                "initialDeadline": "Échéance initiale",
+                "currentDeadline": "Échéance actuelle"
+            },
+            "status": {
+                "draft": "Brouillon",
+                "pending": "En attente",
+                "active": "Actif",
+                "completed": "Terminé",
+                "revoked": "Révoqué"
+            }
+        },
+        "followup": {
+            "permissions": "Vue d'ensemble des permissions",
+            "role": "Rôle",
+            "actions": "Actions autorisées",
+            "permissions-empty": "Aucune permission spécifique définie pour ce statut.",
+            "automation": {
+                "title": "Paramètres d'automatisation",
+                "nonConformity": "Seuil de non-conformité : {threshold} %",
+                "evaluationShift": "Report automatique de l'évaluation : {days} jours",
+                "revocationDelay": "Délai de déclenchement de révocation : {days} jours",
+                "pattern": "Patron de nommage des livrables : {pattern}"
+            }
+        },
+        "status": {
+            "change": "Changer de statut",
+            "invalid": "Le statut sélectionné n'est pas disponible.",
+            "current": "Statut actuel",
+            "label": {
+                "draft": "Brouillon",
+                "clarify": "Clarification",
+                "amend": "Amendement",
+                "vote": "Vote",
+                "mandate": "Mandat",
+                "evaluate": "Évaluation",
+                "archived": "Archivé"
+            },
+            "dialog": {
+                "title": "Mettre à jour le statut",
+                "description": "Choisissez la prochaine étape du parcours. Les permissions sont vérifiées avant l'application.",
+                "target": "Nouveau statut",
+                "reason": "Motif du changement (optionnel)",
+                "submit": "Appliquer la transition"
+            }
         },
         "empty": {
             "expertise": "Aucune expertise complémentaire indiquée.",

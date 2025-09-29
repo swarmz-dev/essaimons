@@ -9,12 +9,13 @@
     import { Title } from '#lib/components/ui/title';
     import { m } from '#lib/paraglide/messages';
     import { goto } from '$app/navigation';
-    import type { PaginatedPropositions, SerializedPropositionCategory, SerializedPropositionListItem } from 'backend/types';
+    import type { PaginatedPropositions, SerializedPropositionCategory, SerializedPropositionListItem, PropositionStatusEnum } from 'backend/types';
     import { LayoutGrid, TableProperties, RotateCcw, ArrowRight } from '@lucide/svelte';
 
     type ActiveFilters = {
         search: string;
         categories: string[];
+        statuses: string[];
         view: 'card' | 'table';
         limit: number;
         page: number;
@@ -23,6 +24,7 @@
     type PageData = PaginatedPropositions & {
         filters: {
             categories: SerializedPropositionCategory[];
+            statuses: PropositionStatusEnum[];
         };
         activeFilters: ActiveFilters;
     };
@@ -31,11 +33,20 @@
 
     let query = $state(data.activeFilters.query ?? '');
     let selectedCategories = $state([...data.activeFilters.categories]);
+    let selectedStatuses = $state([...(data.activeFilters.statuses ?? [])]);
     let view: 'card' | 'table' = $state(data.activeFilters.view ?? 'card');
 
     const categoryOptions: MultiSelectOption[] = $derived(data.filters.categories.map((category: SerializedPropositionCategory) => ({ value: category.id, label: category.name })));
 
-    const hasActiveFilters = $derived(Boolean(query.trim()) || selectedCategories.length > 0);
+    const translateStatus = (status: PropositionStatusEnum | string): string => {
+        const key = `proposition-detail.status.label.${status}` as keyof typeof m;
+        const translator = m[key];
+        return typeof translator === 'function' ? translator() : status;
+    };
+
+    const statusOptions: MultiSelectOption[] = $derived((data.filters.statuses ?? []).map((status: PropositionStatusEnum) => ({ value: status, label: translateStatus(status) })));
+
+    const hasActiveFilters = $derived(Boolean(query.trim()) || selectedCategories.length > 0 || selectedStatuses.length > 0);
 
     const getVisualUrl = (item: SerializedPropositionListItem): string | undefined => {
         if (!item.visual) {
@@ -67,7 +78,53 @@
         return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date);
     };
 
-    const updateQuery = async (updates: { search?: string; categories?: string[]; page?: number; limit?: number; view?: 'card' | 'table' }): Promise<void> => {
+    const parseDateValue = (value?: string): number | null => {
+        if (!value) {
+            return null;
+        }
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return null;
+        }
+        return parsed.getTime();
+    };
+
+    const getOverduePhase = (item: SerializedPropositionListItem): string | null => {
+        const now = Date.now();
+
+        switch (item.status) {
+            case 'clarify': {
+                const deadline = parseDateValue(item.clarificationDeadline);
+                return deadline !== null && deadline < now ? 'clarification' : null;
+            }
+            case 'amend': {
+                const deadline = parseDateValue(item.improvementDeadline);
+                return deadline !== null && deadline < now ? 'improvement' : null;
+            }
+            case 'vote': {
+                const deadline = parseDateValue(item.voteDeadline);
+                return deadline !== null && deadline < now ? 'vote' : null;
+            }
+            case 'mandate': {
+                const deadline = parseDateValue(item.mandateDeadline);
+                return deadline !== null && deadline < now ? 'mandate' : null;
+            }
+            case 'evaluate': {
+                const deadline = parseDateValue(item.evaluationDeadline);
+                return deadline !== null && deadline < now ? 'evaluation' : null;
+            }
+            default:
+                return null;
+        }
+    };
+
+    const getPhaseLabel = (phase: string): string => {
+        const key = `proposition-detail.dates.${phase}` as keyof typeof m;
+        const translator = m[key];
+        return typeof translator === 'function' ? translator() : phase;
+    };
+
+    const updateQuery = async (updates: { search?: string; categories?: string[]; statuses?: string[]; page?: number; limit?: number; view?: 'card' | 'table' }): Promise<void> => {
         const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
         const originalQuery = params.toString();
 
@@ -90,9 +147,19 @@
             }
         }
 
+        if (updates.statuses !== undefined) {
+            params.delete('statuses');
+            if (updates.statuses.length) {
+                updates.statuses
+                    .map((status) => status?.toString().trim())
+                    .filter((status): status is string => Boolean(status))
+                    .forEach((status) => params.append('statuses', status));
+            }
+        }
+
         if (updates.page !== undefined) {
             params.set('page', String(Math.max(1, updates.page)));
-        } else if (updates.search !== undefined || updates.categories !== undefined) {
+        } else if (updates.search !== undefined || updates.categories !== undefined || updates.statuses !== undefined) {
             params.set('page', '1');
         }
 
@@ -133,8 +200,9 @@
 
         query = '';
         selectedCategories = [];
+        selectedStatuses = [];
 
-        await updateQuery({ search: '', categories: [], page: 1 });
+        await updateQuery({ search: '', categories: [], statuses: [], page: 1 });
     };
 
     const handleToggleView = async (nextView: 'card' | 'table'): Promise<void> => {
@@ -148,6 +216,7 @@
     $effect(() => {
         query = data.activeFilters.search ?? '';
         selectedCategories = [...data.activeFilters.categories];
+        selectedStatuses = [...(data.activeFilters.statuses ?? [])];
         view = data.activeFilters.view ?? 'card';
     });
 
@@ -156,6 +225,13 @@
             return;
         }
         void updateQuery({ categories: selectedCategories });
+    });
+
+    $effect(() => {
+        if (isSameSelection(selectedStatuses, data.activeFilters.statuses ?? [])) {
+            return;
+        }
+        void updateQuery({ statuses: selectedStatuses });
     });
 
     const openDetail = async (proposition: SerializedPropositionListItem): Promise<void> => {
@@ -184,7 +260,10 @@
     </div>
 
     <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <MultiSelect options={categoryOptions} bind:selectedValues={selectedCategories} placeholder={m['proposition-list.filters.categories.placeholder']()} class="w-full md:w-2/3" />
+        <div class="grid w-full gap-3 md:w-2/3 md:grid-cols-2">
+            <MultiSelect options={categoryOptions} bind:selectedValues={selectedCategories} placeholder={m['proposition-list.filters.categories.placeholder']()} />
+            <MultiSelect options={statusOptions} bind:selectedValues={selectedStatuses} placeholder={m['proposition-list.filters.statuses.placeholder']()} />
+        </div>
         <Button variant="ghost" onclick={handleResetFilters} disabled={!hasActiveFilters}>
             <RotateCcw class="size-4" />
             <span class="ml-2">{m['proposition-list.filters.reset']()}</span>
@@ -201,6 +280,18 @@
                 <Card class="flex flex-col justify-between">
                     <CardHeader class="space-y-3">
                         {@const visual = getVisualUrl(proposition)}
+                        {@const statusLabel = translateStatus(proposition.status)}
+                        {@const overduePhase = getOverduePhase(proposition)}
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold capitalize text-primary">
+                                {statusLabel}
+                            </span>
+                            {#if overduePhase}
+                                <span class="rounded-full bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive">
+                                    {m['proposition-list.badges.overdue']({ phase: getPhaseLabel(overduePhase) })}
+                                </span>
+                            {/if}
+                        </div>
                         {#if visual}
                             <div class="overflow-hidden rounded-xl border border-border/30 bg-muted/30">
                                 <img src={visual} alt={m['proposition-list.visual.alt']({ title: proposition.title })} class="h-40 w-full object-cover" loading="lazy" />
@@ -236,6 +327,11 @@
                                 <span class="ml-2">{formatDate(proposition.mandateDeadline)}</span>
                             </div>
                         </div>
+                        {#if proposition.statusStartedAt}
+                            <p class="text-xs text-muted-foreground">
+                                {m['proposition-list.badges.status-since']({ date: formatDate(proposition.statusStartedAt) })}
+                            </p>
+                        {/if}
                     </CardContent>
                     <CardFooter class="flex justify-end">
                         <Button variant="outline" class="gap-2" onclick={() => openDetail(proposition)}>
@@ -254,6 +350,7 @@
                         <TableHead>{m['proposition-list.table.columns.title']()}</TableHead>
                         <TableHead>{m['proposition-list.table.columns.summary']()}</TableHead>
                         <TableHead>{m['proposition-list.table.columns.categories']()}</TableHead>
+                        <TableHead>{m['proposition-list.table.columns.status']()}</TableHead>
                         <TableHead>{m['proposition-list.table.columns.vote']()}</TableHead>
                         <TableHead>{m['proposition-list.table.columns.updated']()}</TableHead>
                     </TableRow>
@@ -261,6 +358,7 @@
                 <TableBody>
                     {#each data.propositions as proposition, index (proposition.id ?? index)}
                         <TableRow class="cursor-pointer hover:bg-primary/5" onclick={() => openDetail(proposition)}>
+                            {@const tableOverdue = getOverduePhase(proposition)}
                             <TableCell class="font-semibold">{proposition.title}</TableCell>
                             <TableCell class="max-w-xs text-sm text-muted-foreground">{proposition.summary}</TableCell>
                             <TableCell>
@@ -268,6 +366,18 @@
                                     {#each proposition.categories as category (category.id)}
                                         <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{category.name}</span>
                                     {/each}
+                                </div>
+                            </TableCell>
+                            <TableCell class="text-sm">
+                                <div class="flex items-center gap-2">
+                                    <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary capitalize">
+                                        {translateStatus(proposition.status)}
+                                    </span>
+                                    {#if tableOverdue}
+                                        <span class="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
+                                            {m['proposition-list.badges.overdue']({ phase: getPhaseLabel(tableOverdue) })}
+                                        </span>
+                                    {/if}
                                 </div>
                             </TableCell>
                             <TableCell>{formatDate(proposition.voteDeadline)}</TableCell>

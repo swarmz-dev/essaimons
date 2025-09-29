@@ -1,4 +1,5 @@
 import vine from '@vinejs/vine';
+import { PropositionStatusEnum } from '#types/enum/proposition_status_enum';
 
 const isoDateRegex: RegExp = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -26,6 +27,7 @@ export const searchPropositionsValidator = vine.compile(
         page: vine.number().positive().optional(),
         limit: vine.number().positive().optional(),
         categoryIds: vine.array(vine.string().trim()).optional(),
+        statuses: vine.array(vine.enum(Object.values(PropositionStatusEnum))).optional(),
     })
 );
 

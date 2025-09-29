@@ -32,18 +32,21 @@ export default class PropositionController {
 
     public async search({ request, response }: HttpContext): Promise<void> {
         const rawCategoryIds: string[] = this.parseCsv(request.input('categories'));
+        const rawStatuses: string[] = this.parseCsv(request.input('statuses'));
 
-        const { query, page, limit, categoryIds } = await searchPropositionsValidator.validate({
+        const { query, page, limit, categoryIds, statuses } = await searchPropositionsValidator.validate({
             query: request.input('query'),
             page: request.input('page'),
             limit: request.input('limit'),
             categoryIds: rawCategoryIds,
+            statuses: rawStatuses,
         });
 
         const paginated: PaginatedPropositions = await this.propositionRepository.searchWithFilters(
             {
                 search: query && query.length ? query : undefined,
                 categoryIds: categoryIds?.length ? categoryIds : undefined,
+                statuses: statuses?.length ? statuses : undefined,
             },
             page || 1,
             limit || 12
@@ -55,6 +58,7 @@ export default class PropositionController {
             ...paginated,
             filters: {
                 categories: categories.map((category: PropositionCategory): SerializedPropositionCategory => category.apiSerialize()),
+                statuses: Object.values(PropositionStatusEnum),
             },
         });
     }

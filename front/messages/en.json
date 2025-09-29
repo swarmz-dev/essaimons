@@ -500,6 +500,9 @@
             "categories": {
                 "placeholder": "Filter by categories"
             },
+            "statuses": {
+                "placeholder": "Filter by status"
+            },
             "reset": "Reset filters"
         },
         "visual": {
@@ -508,6 +511,10 @@
         },
         "actions": {
             "view": "Open proposal"
+        },
+        "badges": {
+            "overdue": "Late on {phase}",
+            "status-since": "Stage started on {date}"
         },
         "dates": {
             "empty": "Not provided",
@@ -519,6 +526,7 @@
                 "title": "Title",
                 "summary": "Summary",
                 "categories": "Categories",
+                "status": "Status",
                 "vote": "Vote",
                 "updated": "Updated"
             }
@@ -560,6 +568,15 @@
             "associated": "Related proposals",
             "attachments": "Attachments"
         },
+        "tabs": {
+            "overview": "Overview",
+            "clarifications": "Clarifications",
+            "amendments": "Amendments",
+            "vote": "Vote",
+            "mandates": "Mandates",
+            "followup": "Follow-up & traceability",
+            "aria-label": "Proposal workflow sections"
+        },
         "dates": {
             "clarification": "Clarification",
             "improvement": "Improvement",
@@ -567,6 +584,153 @@
             "mandate": "Mandate",
             "evaluation": "Evaluation",
             "empty": "Not provided"
+        },
+        "timeline": {
+            "current": "In progress",
+            "completed": "Completed",
+            "upcoming": "Upcoming",
+            "deliverables": "Linked deliverables: {count}",
+            "vote-status": "Vote status: {status}"
+        },
+        "comments": {
+            "anonymous": "Unknown contributor",
+            "empty": "No contributions recorded for this section yet.",
+            "add": "Add a clarification",
+            "add-amendment": "Add an amendment comment",
+            "section": {
+                "amendment": "Amendment discussions"
+            },
+            "dialog": {
+                "title": "Share a clarification",
+                "description": "Clarification messages are visible to all authenticated participants.",
+                "label": "Clarification message",
+                "submit": "Publish clarification"
+            },
+            "amendment-dialog": {
+                "title": "Share an amendment",
+                "description": "Amendment comments are shared with contributors involved in this phase.",
+                "label": "Amendment message",
+                "submit": "Publish amendment comment"
+            }
+        },
+        "events": {
+            "empty": "No collective session has been scheduled yet.",
+            "add": "Schedule an exchange",
+            "dialog": {
+                "title": "Schedule an exchange",
+                "description": "Inform participants about upcoming discussions or key milestones.",
+                "submit": "Create event"
+            },
+            "form": {
+                "title": "Title",
+                "type": "Type",
+                "startAt": "Start",
+                "endAt": "End",
+                "location": "Location",
+                "videoLink": "Video link",
+                "description": "Description"
+            },
+            "type": {
+                "milestone": "Milestone",
+                "exchange": "Exchange",
+                "evaluation": "Evaluation"
+            }
+        },
+        "vote": {
+            "method": "Method: {method}"
+        },
+        "votes": {
+            "empty": "No vote has been configured yet.",
+            "add": "Configure a vote",
+            "dialog": {
+                "title": "Configure a vote",
+                "description": "Define the voting method, schedule and available options before it opens.",
+                "submit": "Create vote"
+            },
+            "form": {
+                "title": "Title",
+                "phase": "Phase",
+                "method": "Method",
+                "openAt": "Opens at",
+                "closeAt": "Closes at",
+                "maxSelections": "Maximum selections",
+                "description": "Description",
+                "options": "Options (one per line)"
+            },
+            "options-empty": "Please provide at least one voting option.",
+            "max-invalid": "Maximum selections must be a positive number.",
+            "phase": {
+                "vote": "Voting",
+                "mandate": "Mandate",
+                "revocation": "Revocation"
+            },
+            "method-label": {
+                "binary": "Binary",
+                "multi_choice": "Multiple choice",
+                "majority_judgment": "Majority judgment"
+            }
+        },
+        "mandate": {
+            "holder": "Mandated person: {holder}"
+        },
+        "mandates": {
+            "empty": "No mandates have been created yet.",
+            "add": "Create a mandate",
+            "dialog": {
+                "title": "Create a mandate",
+                "description": "Assign responsibilities and track deliverables for this proposal.",
+                "submit": "Create mandate"
+            },
+            "form": {
+                "title": "Title",
+                "description": "Description",
+                "holder": "Mandated user ID",
+                "status": "Status",
+                "targetObjectiveRef": "Related objective",
+                "initialDeadline": "Initial deadline",
+                "currentDeadline": "Current deadline"
+            },
+            "status": {
+                "draft": "Draft",
+                "pending": "Pending",
+                "active": "Active",
+                "completed": "Completed",
+                "revoked": "Revoked"
+            }
+        },
+        "followup": {
+            "permissions": "Permissions overview",
+            "role": "Role",
+            "actions": "Allowed actions",
+            "permissions-empty": "No permissions defined for this status.",
+            "automation": {
+                "title": "Automation settings",
+                "nonConformity": "Non-conformity threshold: {threshold}%",
+                "evaluationShift": "Automatic evaluation shift: {days} days",
+                "revocationDelay": "Revocation trigger delay: {days} days",
+                "pattern": "Deliverable naming pattern: {pattern}"
+            }
+        },
+        "status": {
+            "change": "Change status",
+            "invalid": "Selected status is not available.",
+            "current": "Current status",
+            "label": {
+                "draft": "Draft",
+                "clarify": "Clarify",
+                "amend": "Amend",
+                "vote": "Vote",
+                "mandate": "Mandate",
+                "evaluate": "Evaluate",
+                "archived": "Archived"
+            },
+            "dialog": {
+                "title": "Update proposal status",
+                "description": "Choose the next stage in the workflow. Permissions are verified before applying the transition.",
+                "target": "Next status",
+                "reason": "Transition reason (optional)",
+                "submit": "Apply transition"
+            }
         },
         "empty": {
             "expertise": "No additional expertise specified.",
