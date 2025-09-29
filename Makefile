@@ -87,7 +87,7 @@ build-prod:
 	cd front && npm install && npx paraglide-js compile && NODE_OPTIONS="--max-old-space-size=3000" npm run build && cd build && npm install --omit=dev
 
 migrate-prod:
-	cd back/build && node ace migration:run && node ace migration:run --connection=logs
+	cd back/build && node ace migration:run --force && node ace migration:run --connection=logs --force
 
 start-back-prod:
 	@echo "Restarting essaimons-v1-backend..."
