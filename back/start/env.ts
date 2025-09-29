@@ -37,6 +37,7 @@ export default await Env.create(new URL('../', import.meta.url), {
     DB_USER: Env.schema.string(),
     DB_PASSWORD: Env.schema.string.optional(),
     DB_DATABASE: Env.schema.string(),
+    DB_DATABASE_TEST: Env.schema.string.optional(),
 
     /*
   |----------------------------------------------------------
@@ -46,6 +47,7 @@ export default await Env.create(new URL('../', import.meta.url), {
     LOGS_DB_USER: Env.schema.string(),
     LOGS_DB_PASSWORD: Env.schema.string.optional(),
     LOGS_DB_DATABASE: Env.schema.string(),
+    LOGS_DB_DATABASE_TEST: Env.schema.string.optional(),
 
     /*
   |----------------------------------------------------------

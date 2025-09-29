@@ -17,3 +17,9 @@ export const serveStaticPropositionAttachmentFileValidator = vine.compile(
         attachmentId: vine.string().uuid(),
     })
 );
+
+export const serveStaticMandateDeliverableFileValidator = vine.compile(
+    vine.object({
+        deliverableId: vine.string().uuid(),
+    })
+);

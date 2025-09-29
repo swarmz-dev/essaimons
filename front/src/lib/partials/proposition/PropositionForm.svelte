@@ -5,6 +5,7 @@
     import FormBackground from '#components/background/FormBackground.svelte';
     import { Title } from '#lib/components/ui/title';
     import { Button } from '#lib/components/ui/button';
+    import LogoCropper from '#lib/components/ui/image/LogoCropper.svelte';
     import { m } from '#lib/paraglide/messages';
     import { showToast } from '#lib/services/toastService';
     import PropositionFormConcretization from './components/PropositionFormConcretization.svelte';
@@ -12,7 +13,9 @@
     import PropositionFormRobustness from './components/PropositionFormRobustness.svelte';
     import PropositionFormTabs from './components/PropositionFormTabs.svelte';
     import type { MultiSelectOption } from '#lib/components/ui/multi-select';
+    import { organizationSettings } from '#lib/stores/organizationStore';
     import type { SubmitFunction } from '@sveltejs/kit';
+    import { onDestroy, tick } from 'svelte';
     import type { FormError, PageDataError } from '../../../app';
     import * as zod from 'zod';
     import type { SerializedProposition, SerializedPropositionBootstrap, SerializedPropositionCategory, SerializedPropositionSummary, SerializedUserSummary } from 'backend/types';
@@ -50,6 +53,26 @@
 
         const normalized = value.toString().trim();
         return normalized.length ? normalized : undefined;
+    };
+
+    const addDays = (input: Date, days: number): Date => {
+        const result = new Date(input);
+        result.setDate(result.getDate() + days);
+        return result;
+    };
+
+    const formatDate = (input: Date): string => {
+        const year = input.getFullYear();
+        const month = String(input.getMonth() + 1).padStart(2, '0');
+        const day = String(input.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const normalizeOffset = (value: unknown): number => {
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+            return 0;
+        }
+        return Math.max(0, Math.floor(value));
     };
 
     let baseUserOptions: MultiSelectOption[] = $state([]);
@@ -183,11 +206,20 @@
     let mandateDeadline: string = $state('');
     let evaluationDeadline: string = $state('');
 
-    let visualFiles: FileList | undefined = $state();
+    let visualInputRef: HTMLInputElement | undefined = $state();
+    let pendingVisualFile: File | null = $state(null);
+    let croppedVisualFile: File | null = $state(null);
+    let visualFileName: string | null = $state(null);
+    let visualPreviewUrl: string | null = $state(null);
+    let showVisualCropper: boolean = $state(false);
+    let initialVisualPreviewUrl: string | null = null;
+    let initialVisualFileName: string | null = null;
+
     let attachmentFiles: FileList | undefined = $state();
     let attachmentsInputRef: HTMLInputElement | undefined = $state();
 
     let isSubmitting: boolean = $state(false);
+    let hasAppliedPropositionDefaults: boolean = $state(false);
     let hasInitializedFromProposition: boolean = $state(false);
 
     const concretizationValid: boolean = $derived(title.trim().length > 0 && detailedDescription.trim().length > 0 && smartObjectives.trim().length > 0 && categoryIds.length > 0);
@@ -241,6 +273,56 @@
     );
 
     $effect(() => {
+        if (isEditing || hasAppliedPropositionDefaults) {
+            return;
+        }
+
+        if (page.data.formError) {
+            hasAppliedPropositionDefaults = true;
+            return;
+        }
+
+        const defaults = $organizationSettings.propositionDefaults ?? {
+            clarificationOffsetDays: 0,
+            improvementOffsetDays: 0,
+            voteOffsetDays: 0,
+            mandateOffsetDays: 0,
+            evaluationOffsetDays: 0,
+        };
+
+        const clarificationOffset = normalizeOffset(defaults.clarificationOffsetDays);
+        const improvementOffset = normalizeOffset(defaults.improvementOffsetDays);
+        const voteOffset = normalizeOffset(defaults.voteOffsetDays);
+        const mandateOffset = normalizeOffset(defaults.mandateOffsetDays);
+        const evaluationOffset = normalizeOffset(defaults.evaluationOffsetDays);
+
+        const today = new Date();
+        const clarificationDate = addDays(today, clarificationOffset);
+        const improvementDate = addDays(clarificationDate, improvementOffset);
+        const voteDate = addDays(improvementDate, voteOffset);
+        const mandateDate = addDays(voteDate, mandateOffset);
+        const evaluationDate = addDays(mandateDate, evaluationOffset);
+
+        if (!clarificationDeadline.trim()) {
+            clarificationDeadline = formatDate(clarificationDate);
+        }
+        if (!improvementDeadline.trim()) {
+            improvementDeadline = formatDate(improvementDate);
+        }
+        if (!voteDeadline.trim()) {
+            voteDeadline = formatDate(voteDate);
+        }
+        if (!mandateDeadline.trim()) {
+            mandateDeadline = formatDate(mandateDate);
+        }
+        if (!evaluationDeadline.trim()) {
+            evaluationDeadline = formatDate(evaluationDate);
+        }
+
+        hasAppliedPropositionDefaults = true;
+    });
+
+    $effect(() => {
         if (isEditing && initialProposition) {
             metaTitle = m['proposition-edit.meta.title']({ title: initialProposition.title });
             metaDescription = m['proposition-edit.meta.description']({ title: initialProposition.title });
@@ -285,11 +367,24 @@
             .filter((value): value is string => Boolean(value));
         rescueInitiatorStrings = (initialProposition.rescueInitiators ?? []).map((rescue: SerializedUserSummary) => toOptionValue(rescue.id)).filter((value): value is string => Boolean(value));
 
+        if (initialProposition.visual) {
+            initialVisualPreviewUrl = `/assets/propositions/visual/${initialProposition.id}?no-cache=true`;
+            initialVisualFileName = initialProposition.visual.name ?? null;
+            visualPreviewUrl = initialVisualPreviewUrl;
+            visualFileName = initialVisualFileName;
+        }
+
         hasInitializedFromProposition = true;
     });
 
-    const submitHandler: SubmitFunction = async () => {
+    const submitHandler: SubmitFunction = async ({ formData }) => {
         isSubmitting = true;
+
+        if (croppedVisualFile) {
+            formData.delete('visual');
+            formData.append('visual', croppedVisualFile, croppedVisualFile.name);
+        }
+
         return async ({ result, update }) => {
             isSubmitting = false;
             if (result.type === 'failure') {
@@ -316,6 +411,65 @@
         return true;
     };
 
+    const revokePreviewUrl = (url: string | null): void => {
+        if (url && url.startsWith('blob:')) {
+            URL.revokeObjectURL(url);
+        }
+    };
+
+    const handleVisualChange = (event: Event): void => {
+        const input = event.currentTarget as HTMLInputElement;
+        const file = input.files?.[0] ?? null;
+        if (!file) {
+            pendingVisualFile = null;
+            showVisualCropper = false;
+            return;
+        }
+
+        pendingVisualFile = file;
+        showVisualCropper = true;
+    };
+
+    const handleVisualCropConfirm = (event: CustomEvent<{ file: File; previewUrl: string }>): void => {
+        const { file, previewUrl } = event.detail;
+        revokePreviewUrl(visualPreviewUrl);
+        croppedVisualFile = file;
+        visualFileName = file.name;
+        visualPreviewUrl = previewUrl;
+        showVisualCropper = false;
+        pendingVisualFile = null;
+        if (visualInputRef) {
+            visualInputRef.value = '';
+        }
+    };
+
+    const handleVisualCropCancel = (): void => {
+        pendingVisualFile = null;
+        showVisualCropper = false;
+        if (visualInputRef) {
+            visualInputRef.value = '';
+        }
+    };
+
+    const clearVisual = (): void => {
+        if (croppedVisualFile) {
+            revokePreviewUrl(visualPreviewUrl);
+        }
+        croppedVisualFile = null;
+        pendingVisualFile = null;
+        showVisualCropper = false;
+        if (visualInputRef) {
+            visualInputRef.value = '';
+        }
+        if (initialVisualPreviewUrl) {
+            visualPreviewUrl = initialVisualPreviewUrl;
+            visualFileName = initialVisualFileName;
+        } else {
+            visualPreviewUrl = null;
+            visualFileName = null;
+        }
+    };
+
     const handleAttachmentsChange = (event: Event): void => {
         if (validateAttachmentSelection(attachmentFiles)) {
             return;
@@ -331,25 +485,60 @@
         }
     };
 
-    const goToTab = (tabId: string): void => {
-        if (tabs.some((tab) => tab.id === tabId)) {
-            activeTab = tabId as TabId;
+    const focusTabFirstField = async (tabId: TabId): Promise<void> => {
+        await tick();
+
+        if (typeof document === 'undefined') {
+            return;
         }
+
+        let targetId: string | null = null;
+        switch (tabId) {
+            case 'concretization':
+                targetId = 'title';
+                break;
+            case 'horizontality':
+                targetId = 'summary';
+                break;
+            case 'robustness':
+                targetId = 'impacts';
+                break;
+        }
+
+        if (!targetId) {
+            return;
+        }
+
+        const element = document.getElementById(targetId) as HTMLInputElement | HTMLTextAreaElement | null;
+        element?.focus();
     };
 
-    const handlePrevious = (): void => {
+    const goToTabWithFocus = async (tabId: TabId): Promise<void> => {
+        if (!tabs.some((tab) => tab.id === tabId)) {
+            return;
+        }
+        activeTab = tabId;
+        await focusTabFirstField(tabId);
+    };
+
+    const goToTab = (tabId: string): void => {
+        void goToTabWithFocus(tabId as TabId);
+    };
+
+    const handlePrevious = async (): Promise<void> => {
         const currentIndex: number = tabs.findIndex((tab) => tab.id === activeTab);
         if (currentIndex > 0) {
-            activeTab = tabs[currentIndex - 1].id;
+            const previousTabId = tabs[currentIndex - 1].id as TabId;
+            await goToTabWithFocus(previousTabId);
         }
     };
 
-    const handleNext = (): void => {
+    const handleNext = async (): Promise<void> => {
         const currentIndex: number = tabs.findIndex((tab) => tab.id === activeTab);
         if (currentIndex < tabs.length - 1) {
-            const nextTabId = tabs[currentIndex + 1].id;
+            const nextTabId = tabs[currentIndex + 1].id as TabId;
             if ((nextTabId === 'horizontality' && concretizationValid) || (nextTabId === 'robustness' && horizontalityValid)) {
-                activeTab = nextTabId;
+                await goToTabWithFocus(nextTabId);
             }
         }
     };
@@ -398,6 +587,10 @@
         mandateDeadline = formData.mandateDeadline ?? mandateDeadline;
         evaluationDeadline = formData.evaluationDeadline ?? evaluationDeadline;
     });
+
+    onDestroy(() => {
+        revokePreviewUrl(visualPreviewUrl);
+    });
 </script>
 
 <Meta title={metaTitle} description={metaDescription} keywords={metaKeywords} pathname={metaPathname} />
@@ -425,7 +618,12 @@
                             bind:detailedDescription
                             bind:categoryIdsStrings
                             {categoryOptions}
-                            bind:visualFiles
+                            bind:visualInputRef
+                            {visualFileName}
+                            {visualPreviewUrl}
+                            onVisualChange={handleVisualChange}
+                            onVisualRemove={clearVisual}
+                            showVisualRemove={Boolean(croppedVisualFile)}
                             bind:attachmentFiles
                             bind:attachmentsInputRef
                             attachmentAccept={ATTACHMENT_ACCEPT}
@@ -487,3 +685,26 @@
         </div>
     </div>
 </section>
+
+{#if showVisualCropper && pendingVisualFile}
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+        <LogoCropper
+            file={pendingVisualFile}
+            previewWidth={480}
+            previewHeight={270}
+            outputWidth={1280}
+            outputHeight={720}
+            showBackgroundPicker={false}
+            title={m['proposition-create.crop.title']()}
+            instructions={m['proposition-create.crop.instructions']()}
+            zoomLabel={m['proposition-create.crop.zoom']()}
+            resetLabel={m['proposition-create.crop.reset']()}
+            cancelLabel={m['common.cancel']()}
+            applyLabel={m['proposition-create.crop.apply']()}
+            outputMimeType="image/jpeg"
+            outputQuality={0.9}
+            on:confirm={handleVisualCropConfirm}
+            on:cancel={handleVisualCropCancel}
+        />
+    </div>
+{/if}

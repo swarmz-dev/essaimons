@@ -9,12 +9,13 @@ import File from '#models/file';
 import SlugifyService from '#services/slugify_service';
 import path from 'node:path';
 import { cuid } from '@adonisjs/core/helpers';
-import { FileTypeEnum } from '#types/enum/file_type_enum';
+import { FileTypeEnum, PropositionStatusEnum, PropositionVisibilityEnum } from '#types';
 import { DateTime } from 'luxon';
 import { TransactionClientContract } from '@adonisjs/lucid/types/database';
 import PropositionCategoryRepository from '#repositories/proposition_category_repository';
 import FileService from '#services/file_service';
 import mime from 'mime-types';
+import PropositionWorkflowService, { PropositionWorkflowException } from '#services/proposition_workflow_service';
 
 interface CreatePropositionPayload {
     title: string;
@@ -46,7 +47,8 @@ export default class PropositionService {
         private readonly propositionCategoryRepository: PropositionCategoryRepository,
         private readonly userRepository: UserRepository,
         private readonly slugifyService: SlugifyService,
-        private readonly fileService: FileService
+        private readonly fileService: FileService,
+        private readonly propositionWorkflowService: PropositionWorkflowService
     ) {}
 
     public async create(payload: CreatePropositionPayload, creator: User, files: CreatePropositionFiles): Promise<Proposition> {
@@ -87,6 +89,11 @@ export default class PropositionService {
                     impacts: payload.impacts,
                     mandatesDescription: payload.mandatesDescription,
                     expertise: payload.expertise ?? null,
+                    status: PropositionStatusEnum.DRAFT,
+                    statusStartedAt: DateTime.now(),
+                    visibility: PropositionVisibilityEnum.PRIVATE,
+                    archivedAt: null,
+                    settingsSnapshot: {},
                     clarificationDeadline: clarificationDate,
                     improvementDeadline: improvementDate,
                     voteDeadline: voteDate,
@@ -102,6 +109,8 @@ export default class PropositionService {
 
             await proposition.related('categories').attach(categories.map((category: PropositionCategory): string => category.id));
             await proposition.related('rescueInitiators').attach(rescueUsers.map((user: User): string => user.id));
+
+            await this.propositionWorkflowService.recordInitialHistory(proposition, creator, trx);
 
             const visualFile: any | undefined | null = files.visual;
             if (visualFile && visualFile.size > 0) {
@@ -208,6 +217,11 @@ export default class PropositionService {
         const trx: TransactionClientContract = await db.transaction();
 
         try {
+            const canEdit = await this.propositionWorkflowService.canPerform(proposition, actor, 'edit_proposition');
+            if (!canEdit) {
+                throw new Error('messages.proposition.update.forbidden');
+            }
+
             const categories: PropositionCategory[] = await this.propositionCategoryRepository.getMultipleCategories(payload.categoryIds, trx);
             if (categories.length !== payload.categoryIds.length) {
                 throw new Error('messages.proposition.create.invalid-category');
@@ -423,5 +437,35 @@ export default class PropositionService {
             throw new Error('messages.proposition.create.invalid-date');
         }
         return dateTime;
+    }
+
+    public async transition(
+        proposition: Proposition,
+        actor: User,
+        targetStatus: PropositionStatusEnum,
+        options: { reason?: string | null; metadata?: Record<string, unknown> } = {}
+    ): Promise<Proposition> {
+        const trx: TransactionClientContract = await db.transaction();
+
+        try {
+            proposition.useTransaction(trx);
+            const trimmedReason = options.reason ? options.reason.trim() : undefined;
+
+            const updated = await this.propositionWorkflowService.transition(proposition, actor, targetStatus, {
+                reason: trimmedReason && trimmedReason.length ? trimmedReason : null,
+                metadata: options.metadata ?? {},
+                transaction: trx,
+            });
+
+            await trx.commit();
+
+            return updated;
+        } catch (error) {
+            await trx.rollback();
+            if (error instanceof PropositionWorkflowException) {
+                throw error;
+            }
+            throw error;
+        }
     }
 }

@@ -45,7 +45,11 @@
         },
         "organization": {
             "update": {
-                "success": "Profil de l'organisation mis à jour avec succès"
+                "success": "Profil de l'organisation mis à jour avec succès",
+                "error": {
+                    "missing": "Traduction manquante pour {field} en langue {locale}",
+                    "invalid-url": "Le lien du code source doit être une URL valide pour la langue {locale}"
+                }
             }
         }
     },
@@ -89,6 +93,9 @@
         },
         "serve-static-organization-logo": {
             "error": "Logo de l'organisation introuvable"
+        },
+        "serve-deliverable": {
+            "error": "Impossible de servir le fichier de livrable."
         }
     },
     "oauth": {
@@ -155,6 +162,17 @@
         "show": {
             "not-found": "La proposition demandée est introuvable.",
             "invalid-id": "L'identifiant de proposition fourni est invalide."
+        }
+    },
+    "deliverable": {
+        "upload": {
+            "file-required": "Un fichier de livrable est requis.",
+            "forbidden": "Vous n’êtes pas autorisé à téléverser des livrables pour ce mandat.",
+            "failed": "Impossible de téléverser le livrable."
+        },
+        "evaluate": {
+            "forbidden": "Vous n’êtes pas autorisé à évaluer ce livrable.",
+            "failed": "Impossible d’enregistrer l’évaluation."
         }
     }
 }

@@ -20,10 +20,12 @@ DB_PORT=5432
 DB_USER=superadmin
 DB_PASSWORD=xxx
 DB_DATABASE=essaimons_db
+# DB_DATABASE_TEST=essaimons_db_test
 
 LOGS_DB_USER=superadmin
 LOGS_DB_PASSWORD=xxx
 LOGS_DB_DATABASE=essaimons_db_logs
+# LOGS_DB_DATABASE_TEST=essaimons_db_logs_test
 
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
@@ -61,9 +63,11 @@ API_URI=""
 | `DB_USER`               | superadmin                                                                  |
 | `DB_PASSWORD`           | xxx                                                                         |
 | `DB_DATABASE`           | essaimons_db                                                                |
+| `DB_DATABASE_TEST`      | essaimons_db_test *(used when running the automated test suite)*            |
 | `LOG_DB_USER`           | superadmin                                                                  |
 | `LOG_DB_PASSWORD`       | xxx                                                                         |
 | `LOG_DB_DATABASE`       | essaimons_db_logs                                                           |
+| `LOGS_DB_DATABASE_TEST` | essaimons_db_logs_test *(used when running the automated test suite)*       |
 | `REDIS_HOST`            | 127.0.0.1                                                                   |
 | `REDIS_PORT`            | 6379                                                                        |
 | `REDIS_PASSWORD`        |                                                                             |

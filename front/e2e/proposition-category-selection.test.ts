@@ -1,10 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
-import { createServer, type Server } from 'http';
+import { acquireMockServer, USE_REAL_BACKEND } from './mockServer';
 
-const USE_REAL_BACKEND = process.env.PLAYWRIGHT_USE_REAL_BACKEND === 'true';
 const SEEDED_IDENTITY = process.env.E2E_SEEDED_IDENTITY ?? 'admin';
 const SEEDED_PASSWORD = process.env.E2E_SEEDED_PASSWORD ?? 'xxx';
-const REAL_BACKEND_ORIGIN = process.env.PLAYWRIGHT_REAL_BACKEND_ORIGIN ?? 'http://localhost:3333';
+const REAL_BACKEND_ORIGIN = process.env.PLAYWRIGHT_REAL_BACKEND_ORIGIN ?? 'http://127.0.0.1:3333';
 
 async function login(page: Page, identity: string, password: string) {
     if (USE_REAL_BACKEND) {
@@ -58,51 +57,14 @@ async function login(page: Page, identity: string, password: string) {
     await page.getByRole('button', { name: 'Envoyer' }).click();
 }
 
-let apiServer: Server | undefined;
+let releaseMockServer: (() => Promise<void>) | undefined;
 
 test.beforeAll(async () => {
-    if (USE_REAL_BACKEND) {
-        return;
-    }
-
-    apiServer = await new Promise<Server>((resolve) => {
-        const server = createServer((request, response) => {
-            const { method, url } = request;
-
-            if (method === 'GET' && url?.startsWith('/api/propositions/bootstrap')) {
-                response.writeHead(200, { 'Content-Type': 'application/json' });
-                response.end(
-                    JSON.stringify({
-                        users: [],
-                        categories: [{ id: 1, name: 'Démocratie liquide' }],
-                        propositions: [],
-                    })
-                );
-                return;
-            }
-
-            response.writeHead(404, { 'Content-Type': 'application/json' });
-            response.end(JSON.stringify({ message: 'Not found in mock API' }));
-        });
-
-        server.listen(3333, () => resolve(server));
-    });
+    releaseMockServer = await acquireMockServer();
 });
 
 test.afterAll(async () => {
-    if (!apiServer) {
-        return;
-    }
-
-    await new Promise<void>((resolve, reject) => {
-        apiServer?.close((error) => {
-            if (error) {
-                reject(error);
-            } else {
-                resolve();
-            }
-        });
-    });
+    await releaseMockServer?.();
 });
 
 test.describe('Proposition categories dropdown (mocked API)', () => {

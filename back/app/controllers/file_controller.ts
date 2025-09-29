@@ -2,12 +2,18 @@ import { HttpContext } from '@adonisjs/core/http';
 import { inject } from '@adonisjs/core';
 import UserRepository from '#repositories/user_repository';
 import User from '#models/user';
-import { serveStaticProfilePictureFileValidator, serveStaticPropositionVisualFileValidator, serveStaticPropositionAttachmentFileValidator } from '#validators/file';
+import {
+    serveStaticProfilePictureFileValidator,
+    serveStaticPropositionVisualFileValidator,
+    serveStaticPropositionAttachmentFileValidator,
+    serveStaticMandateDeliverableFileValidator,
+} from '#validators/file';
 import PropositionRepository from '#repositories/proposition_repository';
 import File from '#models/file';
 import { FileTypeEnum } from '#types/enum/file_type_enum';
 import Proposition from '#models/proposition';
 import FileService from '#services/file_service';
+import MandateDeliverable from '#models/mandate_deliverable';
 
 @inject()
 export default class FileController {
@@ -91,6 +97,31 @@ export default class FileController {
             return response.stream(stream);
         } catch (error) {
             return response.notFound({ error: i18n.t('messages.file.serve-static-proposition-attachment.error') });
+        }
+    }
+
+    public async serveMandateDeliverableFile({ request, response, i18n }: HttpContext) {
+        const { deliverableId } = await serveStaticMandateDeliverableFileValidator.validate(request.params());
+
+        const deliverable = await MandateDeliverable.query().where('id', deliverableId).preload('file').first();
+        const file = deliverable?.file;
+
+        if (!deliverable || !file || file.type !== FileTypeEnum.MANDATE_DELIVERABLE) {
+            return response.notFound({ error: i18n.t('messages.file.serve-deliverable.error') });
+        }
+
+        try {
+            const { stream, contentType, contentLength } = await this.fileService.stream(file.path);
+            if (contentType) {
+                response.header('Content-Type', contentType);
+            }
+            if (contentLength) {
+                response.header('Content-Length', contentLength.toString());
+            }
+
+            return response.stream(stream);
+        } catch (error) {
+            return response.notFound({ error: i18n.t('messages.file.serve-deliverable.error') });
         }
     }
 

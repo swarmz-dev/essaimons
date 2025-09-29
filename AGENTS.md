@@ -12,6 +12,8 @@ TypeScript is the default language, formatted by Prettier (`make format` or `mak
 ## Testing Guidelines
 Backend tests use Japa (`node ace test`) and expect fixtures under `back/database` when required; mirror feature files with `*.spec.ts` names inside `back/tests`. Frontend unit tests rely on Vitest with colocated `*.test.ts` files, while end-to-end coverage sits in `front/e2e`. Aim to extend or update tests alongside every feature change, and ensure Playwright recordings target stable selectors.
 
+## Validation Guidelines
+- Ensure organization settings forms validate user input on both tiers. The `sourceCodeUrl` field must be checked with Zod on the SvelteKit frontend and mirrored with Vine validators on the Adonis backend so only well-formed URLs are persisted.
+
 ## Commit & Pull Request Guidelines
 History favors short, imperative summaries (e.g., `Imp form submit button`, `fix/create-account-zod`). Keep the first line under 75 characters and add detail in the body when needed. For pull requests, include context, link the relevant issue, describe setup steps, and attach screenshots or terminal output when UI or CLI behavior changes. Verify `make format-check` and the relevant test commands before requesting review, and call out any known gaps or follow-up tasks in the PR description.
-

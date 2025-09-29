@@ -2,6 +2,22 @@ import env from '#start/env';
 import { defineConfig } from '@adonisjs/lucid';
 import { DatabaseConfig } from '@adonisjs/lucid/types/database';
 
+const isTestEnvironment = env.get('NODE_ENV') === 'test';
+
+const resolveAppDatabase = (): string => {
+    if (isTestEnvironment) {
+        return env.get('DB_DATABASE_TEST', env.get('DB_DATABASE'));
+    }
+    return env.get('DB_DATABASE');
+};
+
+const resolveLogsDatabase = (): string => {
+    if (isTestEnvironment) {
+        return env.get('LOGS_DB_DATABASE_TEST', env.get('LOGS_DB_DATABASE'));
+    }
+    return env.get('LOGS_DB_DATABASE');
+};
+
 const dbConfig: DatabaseConfig = defineConfig({
     connection: 'app',
     connections: {
@@ -12,7 +28,7 @@ const dbConfig: DatabaseConfig = defineConfig({
                 port: env.get('DB_PORT'),
                 user: env.get('DB_USER'),
                 password: env.get('DB_PASSWORD'),
-                database: env.get('DB_DATABASE'),
+                database: resolveAppDatabase(),
             },
             migrations: {
                 naturalSort: true,
@@ -26,7 +42,7 @@ const dbConfig: DatabaseConfig = defineConfig({
                 port: env.get('DB_PORT'),
                 user: env.get('LOGS_DB_USER'),
                 password: env.get('LOGS_DB_PASSWORD'),
-                database: env.get('LOGS_DB_DATABASE'),
+                database: resolveLogsDatabase(),
             },
             migrations: {
                 naturalSort: true,

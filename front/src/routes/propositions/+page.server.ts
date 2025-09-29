@@ -1,15 +1,17 @@
-import type { PaginatedPropositions, SerializedPropositionCategory } from 'backend/types';
+import { PropositionStatusEnum, type PaginatedPropositions, type SerializedPropositionCategory } from 'backend/types';
 import type { PageServerLoad } from './$types';
 
 type PropositionsListResponse = PaginatedPropositions & {
     filters: {
         categories: SerializedPropositionCategory[];
+        statuses: PropositionStatusEnum[];
     };
 };
 
 type ActiveFilters = {
     query: string;
     categories: string[];
+    statuses: string[];
     view: 'card' | 'table';
     limit: number;
     page: number;
@@ -45,8 +47,10 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
     const categoryParams: string[] = url.searchParams.getAll('categories');
     const categoryIds: string[] = parseIdentifierArray(categoryParams);
+    const statusParams: string[] = url.searchParams.getAll('statuses');
+    const statusFilters: string[] = parseIdentifierArray(statusParams);
 
-    const params: Record<string, string | number> = {
+    const params: Record<string, string | number | string[]> = {
         page: sanitizedPage,
         limit: sanitizedLimit,
     };
@@ -59,9 +63,14 @@ export const load: PageServerLoad = async ({ url, locals }) => {
         params.categories = categoryIds.join(',');
     }
 
+    if (statusFilters.length) {
+        params.statuses = statusFilters;
+    }
+
     const buildActiveFilters = (response?: PropositionsListResponse): ActiveFilters => ({
         query,
         categories: [...categoryIds],
+        statuses: [...statusFilters],
         view,
         limit: response?.limit ?? sanitizedLimit,
         page: response?.currentPage ?? sanitizedPage,
@@ -86,6 +95,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
             currentPage: 1,
             filters: {
                 categories: [],
+                statuses: Object.values(PropositionStatusEnum),
             },
             activeFilters: buildActiveFilters(),
         } satisfies PropositionsListResponse & { activeFilters: ActiveFilters };

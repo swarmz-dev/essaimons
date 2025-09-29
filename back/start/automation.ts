@@ -1,0 +1,42 @@
+import app from '@adonisjs/core/services/app';
+import logger from '@adonisjs/core/services/logger';
+import DeliverableAutomationService from '#services/deliverable_automation_service';
+import SettingsService from '#services/settings_service';
+
+const startAutomation = async () => {
+    if (app.inTest || process.env.NODE_ENV === 'test') {
+        return;
+    }
+    try {
+        const automationService = await app.container.make(DeliverableAutomationService);
+        const settingsService = await app.container.make(SettingsService);
+
+        const runSweep = async () => {
+            try {
+                await automationService.runRevocationSweep();
+            } catch (error) {
+                logger.error('automation.revocation.sweep_failed', {
+                    error: error instanceof Error ? error.message : error,
+                });
+            }
+        };
+
+        const scheduleNext = async () => {
+            const settings = await settingsService.getOrganizationSettings();
+            const interval = automationService.getRevocationSweepIntervalMs(settings.workflowAutomation?.revocationCheckFrequencyHours ?? 24);
+            setTimeout(async () => {
+                await runSweep();
+                await scheduleNext();
+            }, interval);
+        };
+
+        await runSweep();
+        await scheduleNext();
+    } catch (error) {
+        logger.error('automation.revocation.bootstrap_failed', {
+            error: error instanceof Error ? error.message : error,
+        });
+    }
+};
+
+startAutomation();

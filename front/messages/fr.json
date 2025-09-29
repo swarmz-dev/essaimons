@@ -5,6 +5,7 @@
         "continue": "Continuer",
         "language": "Langue",
         "close": "Fermer",
+        "view": "Voir",
         "edit": "Modifier",
         "update": "Mettre à jour",
         "delete": "Supprimer",
@@ -63,6 +64,10 @@
         "consent": "J'accepte les termes et conditions",
         "logo": {
             "alt": "Logo de Essaimons-V1"
+        },
+        "actions": {
+            "cancel": "Annuler",
+            "loading": "Enregistrement en cours…"
         }
     },
     "open-graph": {
@@ -273,10 +278,20 @@
                     "title": "Logo",
                     "placeholder": "Téléversez un logo carré (PNG, JPG, SVG, WEBP)",
                     "remove": "Supprimer le logo"
-                }
+                },
+                "fallback-locale": "Langue de repli",
+                "fallback-badge": "Référence"
             },
             "actions": {
                 "save": "Enregistrer les modifications"
+            },
+            "validation": {
+                "source-code-url": {
+                    "invalid": "Veuillez saisir une URL valide pour {locale}.",
+                    "required": "Le lien vers le code source est requis pour la langue de repli {locale}.",
+                    "max": "Le lien vers le code source doit contenir au maximum 2000 caractères pour {locale}."
+                },
+                "fallback-required": "{field} ({locale}) doit être renseigné."
             },
             "crop": {
                 "title": "Ajuster le logo",
@@ -287,6 +302,56 @@
                 "apply": "Appliquer",
                 "unsupported": "Le canvas n'est pas pris en charge par votre navigateur",
                 "background": "Couleur de fond"
+            },
+            "tabs": {
+                "general": "Général",
+                "propositions": "Propositions"
+            },
+            "propositions": {
+                "description": "Définissez les décalages par défaut appliqués lors de la création d’une proposition. Chaque valeur représente un nombre de jours après l’échéance précédente.",
+                "clarification": "Décalage clarification (jours)",
+                "improvement": "Décalage amendement (jours)",
+                "vote": "Décalage vote (jours)",
+                "mandate": "Décalage mandature (jours)",
+                "evaluation": "Décalage évaluation (jours)",
+                "automations": {
+                    "title": "Automatisations",
+                    "evaluation-shift": "Décalage auto évaluation (jours)",
+                    "revocation-delay": "Délai auto révocation (jours)",
+                    "naming-pattern": "Patron de nommage des livrables",
+                    "recalc-cooldown": "Temps minimal entre deux recalculs (minutes)",
+                    "non-conformity-percent": "Seuil non conforme (%)",
+                    "non-conformity-floor": "Plancher non conforme (votes)",
+                    "revocation-frequency": "Fréquence vérification révocation (heures)"
+                },
+                "permissions": {
+                    "title": "Permissions par statut",
+                    "hint": "Activez les actions autorisées pour chaque rôle et statut.",
+                    "no-role": "Aucun rôle configuré pour ce statut.",
+                    "no-action": "Aucune action définie pour ce rôle.",
+                    "select-action": "Sélectionner une action",
+                    "add-action": "Ajouter l’action",
+                    "create-action": "Créer une action personnalisée",
+                    "no-action-preset": "Aucune action prédéfinie",
+                    "select-role": "Sélectionner un rôle",
+                    "add-role": "Ajouter le rôle",
+                    "no-role-preset": "Aucun rôle prédéfini",
+                    "create-role": "Créer un rôle personnalisé",
+                    "prompts": {
+                        "role-name": "Nom du nouveau rôle pour {status}",
+                        "role-first-action": "Ajouter une première action pour {role} ({status})",
+                        "action-name": "Nom de la nouvelle action pour {role} ({status})"
+                    },
+                    "errors": {
+                        "role-unavailable": "Ce rôle n’est pas disponible pour ce statut.",
+                        "role-exists": "Ce rôle existe déjà pour ce statut.",
+                        "role-invalid": "Le nom du rôle doit contenir des caractères alphanumériques.",
+                        "action-unavailable": "Cette action n’est pas disponible pour ce rôle.",
+                        "action-exists": "Cette action existe déjà pour ce rôle.",
+                        "action-invalid": "Le nom de l’action doit contenir des caractères alphanumériques.",
+                        "role-needs-action": "Un rôle personnalisé doit comporter au moins une action."
+                    }
+                }
             }
         }
     },
@@ -321,7 +386,9 @@
             },
             "visual": {
                 "label": "Visuel",
-                "info": "Ajoutez un visuel représentatif pour faciliter l'identification de la proposition dans les espaces de partage. Formats images recommandés (PNG, JPG, WEBP)."
+                "info": "Ajoutez un visuel représentatif pour faciliter l'identification de la proposition dans les espaces de partage. Formats images recommandés (PNG, JPG, WEBP).",
+                "remove": "Supprimer l’image",
+                "preview-alt": "Aperçu du visuel de la proposition"
             },
             "categories": {
                 "label": "Catégories",
@@ -400,6 +467,13 @@
             "concretization-hint": "Renseignez le cadre général avant de passer aux aspects collaboratifs.",
             "horizontality-hint": "Documentez le contexte partagé, les délais et les mandatures associées.",
             "robustness-hint": "Analysez les impacts, les expertises nécessaires et les liens avec d'autres propositions."
+        },
+        "crop": {
+            "title": "Ajuster le visuel",
+            "instructions": "Redimensionnez et recadrez l’image afin qu’elle s’adapte à la mise en page de la proposition.",
+            "zoom": "Zoom",
+            "reset": "Réinitialiser",
+            "apply": "Enregistrer l’image"
         }
     },
     "proposition-edit": {
@@ -434,6 +508,9 @@
             "categories": {
                 "placeholder": "Filtrer par catégories"
             },
+            "statuses": {
+                "placeholder": "Filtrer par statut"
+            },
             "reset": "Réinitialiser les filtres"
         },
         "visual": {
@@ -442,6 +519,10 @@
         },
         "actions": {
             "view": "Voir la proposition"
+        },
+        "badges": {
+            "overdue": "En retard sur {phase}",
+            "status-since": "Phase entamée le {date}"
         },
         "dates": {
             "empty": "Non renseignée",
@@ -453,6 +534,7 @@
                 "title": "Titre",
                 "summary": "Résumé",
                 "categories": "Catégories",
+                "status": "Statut",
                 "vote": "Vote",
                 "updated": "Mise à jour"
             }
@@ -494,6 +576,15 @@
             "associated": "Propositions associées",
             "attachments": "Pièces jointes"
         },
+        "tabs": {
+            "overview": "Aperçu",
+            "clarifications": "Clarifications",
+            "amendments": "Amendements",
+            "vote": "Vote",
+            "mandates": "Mandats",
+            "followup": "Suivi & compte rendu",
+            "aria-label": "Sections du parcours de la proposition"
+        },
         "dates": {
             "clarification": "Clarification",
             "improvement": "Amélioration",
@@ -501,6 +592,222 @@
             "mandate": "Mandat",
             "evaluation": "Évaluation",
             "empty": "Non renseignée"
+        },
+        "timeline": {
+            "current": "En cours",
+            "completed": "Terminé",
+            "upcoming": "À venir",
+            "deliverables": "Livrables associés : {count}",
+            "vote-status": "Statut du vote : {status}"
+        },
+        "comments": {
+            "anonymous": "Contributeur·ice inconnu·e",
+            "empty": "Aucune contribution n'a été enregistrée pour cette section pour le moment.",
+            "add": "Ajouter une clarification",
+            "add-amendment": "Ajouter un commentaire d'amendement",
+            "section": {
+                "amendment": "Discussions d'amendement"
+            },
+            "dialog": {
+                "title": "Partager une clarification",
+                "description": "Les messages de clarification sont visibles par l'ensemble des participants authentifiés.",
+                "label": "Message de clarification",
+                "submit": "Publier la clarification"
+            },
+            "amendment-dialog": {
+                "title": "Partager un amendement",
+                "description": "Les commentaires d'amendement sont partagés avec les contributeurs concernés par cette phase.",
+                "label": "Message d'amendement",
+                "submit": "Publier le commentaire"
+            },
+            "reply": "Répondre",
+            "reply-dialog": {
+                "title": "Répondre à la clarification",
+                "description": "Ajoutez une réponse directement dans ce fil de clarification.",
+                "label": "Votre réponse",
+                "submit": "Publier la réponse"
+            },
+            "edit": "Modifier",
+            "save": "Enregistrer",
+            "edit-label": "Modifier le message",
+            "delete": "Supprimer",
+            "delete-confirm-title": "Supprimer la clarification",
+            "delete-confirm-description": "Cette clarification sera définitivement supprimée.",
+            "delete-confirm-submit": "Confirmer la suppression",
+            "delete-confirm-title-reply": "Supprimer la réponse",
+            "delete-confirm-description-reply": "Cette réponse sera définitivement supprimée."
+        },
+        "events": {
+            "empty": "Aucun temps d'échange n'a encore été planifié.",
+            "add": "Planifier un échange",
+            "dialog": {
+                "title": "Planifier un échange",
+                "description": "Informez les participants des discussions ou jalons à venir.",
+                "submit": "Créer l'événement",
+                "edit-title": "Modifier l'échange planifié",
+                "edit-description": "Mettez à jour les informations de la séance pour garder tout le monde aligné.",
+                "update": "Mettre à jour l'échange"
+            },
+            "detail": {
+                "schedule": "Horaire"
+            },
+            "form": {
+                "title": "Titre",
+                "type": "Type",
+                "startAt": "Début",
+                "endAt": "Fin",
+                "location": "Lieu",
+                "videoLink": "Lien vidéo",
+                "description": "Description"
+            },
+            "type": {
+                "milestone": "Jalon",
+                "exchange": "Échange",
+                "evaluation": "Évaluation"
+            },
+            "delete": {
+                "title": "Supprimer l'échange",
+                "description": "Cet échange sera retiré de la chronologie de la proposition.",
+                "confirm": "Supprimer l'échange",
+                "success": "L'échange a été supprimé."
+            }
+        },
+        "vote": {
+            "method": "Méthode : {method}"
+        },
+        "votes": {
+            "empty": "Aucun vote n'a encore été configuré.",
+            "add": "Configurer un vote",
+            "dialog": {
+                "title": "Configurer un vote",
+                "description": "Définissez la méthode, le calendrier et les options du vote avant son ouverture.",
+                "submit": "Créer le vote"
+            },
+            "form": {
+                "title": "Titre",
+                "phase": "Phase",
+                "method": "Méthode",
+                "openAt": "Ouverture",
+                "closeAt": "Clôture",
+                "maxSelections": "Sélections maximales",
+                "description": "Description",
+                "options": "Options (une par ligne)"
+            },
+            "options-empty": "Veuillez renseigner au moins une option de vote.",
+            "max-invalid": "Le nombre maximal de sélections doit être un nombre positif.",
+            "phase": {
+                "vote": "Vote",
+                "mandate": "Mandat",
+                "revocation": "Révocation"
+            },
+            "method-label": {
+                "binary": "Binaire",
+                "multi_choice": "Choix multiple",
+                "majority_judgment": "Jugement majoritaire"
+            }
+        },
+        "mandate": {
+            "holder": "Mandataire : {holder}"
+        },
+        "mandates": {
+            "empty": "Aucun mandat n'a encore été créé.",
+            "add": "Créer un mandat",
+            "dialog": {
+                "title": "Créer un mandat",
+                "description": "Attribuez des responsabilités et suivez les livrables associés à cette proposition.",
+                "submit": "Créer le mandat"
+            },
+            "form": {
+                "title": "Titre",
+                "description": "Description",
+                "holder": "Identifiant du mandataire",
+                "status": "Statut",
+                "targetObjectiveRef": "Objectif associé",
+                "initialDeadline": "Échéance initiale",
+                "currentDeadline": "Échéance actuelle"
+            },
+            "status": {
+                "draft": "Brouillon",
+                "pending": "En attente",
+                "active": "Actif",
+                "completed": "Terminé",
+                "revoked": "Révoqué"
+            },
+            "deliverables": {
+                "upload": "Téléverser un livrable",
+                "upload-success": "Livrable téléversé.",
+                "file-required": "Sélectionnez un fichier à téléverser.",
+                "dialog": {
+                    "title": "Téléverser un livrable",
+                    "description": "Ajoutez la dernière version du livrable. Les échéances seront recalculées automatiquement."
+                },
+                "label": "Libellé (optionnel)",
+                "objective": "Objectif lié (optionnel)",
+                "file": "Fichier du livrable",
+                "submit": "Téléverser",
+                "empty": "Aucun livrable téléversé pour le moment.",
+                "unnamed": "Livrable sans nom",
+                "status": {
+                    "pending": "En attente",
+                    "non_conform": "Non conforme",
+                    "escalated": "Révocation en cours",
+                    "resolved": "Résolu"
+                },
+                "download": "Télécharger le livrable",
+                "flagged": "Signalé le {date}",
+                "procedure": {
+                    "pending": "Procédure en attente",
+                    "escalated": "Vote de révocation programmé",
+                    "resolved": "Procédure terminée"
+                },
+                "evaluations": "{total} évaluation(s) • {nonConform} marquée(s) non conforme",
+                "evaluate": {
+                    "title": "Évaluer le livrable",
+                    "description": "Indiquez votre verdict et ajoutez un commentaire si nécessaire.",
+                    "verdict": "Verdict",
+                    "compliant": "Conforme",
+                    "non-conform": "Non conforme",
+                    "comment": "Commentaire (optionnel)",
+                    "submit": "Enregistrer l’évaluation"
+                },
+                "evaluate-success": "Évaluation enregistrée."
+            }
+        },
+        "followup": {
+            "permissions": "Vue d'ensemble des permissions",
+            "role": "Rôle",
+            "actions": "Actions autorisées",
+            "permissions-empty": "Aucune permission spécifique définie pour ce statut.",
+            "automation": {
+                "recalcCooldown": "Cooldown recalcul livrables : {minutes} min",
+                "nonConformityPercent": "Seuil non conforme : {percent} %",
+                "nonConformityFloor": "Plancher non conforme : {count} votes",
+                "evaluationShift": "Report automatique de l'évaluation : {days} jours",
+                "revocationDelay": "Délai avant révocation automatique : {days} jours",
+                "revocationFrequency": "Fréquence de vérification révocation : {hours} h",
+                "pattern": "Patron de nommage des livrables : {pattern}"
+            }
+        },
+        "status": {
+            "change": "Changer de statut",
+            "invalid": "Le statut sélectionné n'est pas disponible.",
+            "current": "Statut actuel",
+            "label": {
+                "draft": "Brouillon",
+                "clarify": "Clarification",
+                "amend": "Amendement",
+                "vote": "Vote",
+                "mandate": "Mandat",
+                "evaluate": "Évaluation",
+                "archived": "Archivé"
+            },
+            "dialog": {
+                "title": "Mettre à jour le statut",
+                "description": "Choisissez la prochaine étape du parcours. Les permissions sont vérifiées avant l'application.",
+                "target": "Nouveau statut",
+                "reason": "Motif du changement (optionnel)",
+                "submit": "Appliquer la transition"
+            }
         },
         "empty": {
             "expertise": "Aucune expertise complémentaire indiquée.",

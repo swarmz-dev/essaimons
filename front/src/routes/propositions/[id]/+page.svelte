@@ -13,15 +13,103 @@
         AlertDialogTitle,
     } from '#lib/components/ui/alert-dialog';
     import { Button, buttonVariants } from '#lib/components/ui/button';
+    import Tabs, { type TabItem } from '#lib/components/ui/tabs/Tabs.svelte';
+    import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#lib/components/ui/dialog';
+    import { Input } from '#lib/components/ui/input';
+    import { Textarea } from '#lib/components/ui/textarea';
     import { m } from '#lib/paraglide/messages';
     import { cn } from '#lib/utils';
-    import type { SerializedProposition, SerializedPropositionSummary, SerializedUserSummary } from 'backend/types';
-    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2 } from '@lucide/svelte';
+    import { wrappedFetch, extractFormErrors } from '#lib/services/requestService';
+    import { showToast } from '#lib/services/toastService';
+    import { propositionDetailStore } from '#lib/stores/propositionDetailStore';
+    import { organizationSettings } from '#lib/stores/organizationStore';
+    import { resolveWorkflowRole, isActionAllowed, buildRolePermissionMap } from '#lib/services/workflowPermissionService';
+    import type { SerializedProposition, SerializedPropositionSummary, SerializedStatusPermissions, SerializedUser, SerializedUserSummary } from 'backend/types';
+    import {
+        MandateStatusEnum,
+        PropositionCommentScopeEnum,
+        PropositionCommentVisibilityEnum,
+        PropositionEventTypeEnum,
+        PropositionStatusEnum,
+        PropositionVisibilityEnum,
+        PropositionVoteMethodEnum,
+        PropositionVotePhaseEnum,
+        DeliverableVerdictEnum,
+    } from 'backend/types';
+    import type { PropositionComment, PropositionEvent, PropositionMandate, PropositionTimelinePhase, PropositionVote, WorkflowRole } from '#lib/types/proposition';
+    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload, Loader2, Eye } from '@lucide/svelte';
+    import { z } from 'zod';
 
-    const { data } = $props<{ data: { proposition: SerializedProposition } }>();
-    const proposition = data.proposition;
+    const { data } = $props<{
+        data: {
+            proposition: SerializedProposition;
+            events: PropositionEvent[];
+            votes: PropositionVote[];
+            mandates: PropositionMandate[];
+            comments: PropositionComment[];
+        };
+    }>();
 
-    const visualUrl = proposition.visual ? `/assets/propositions/visual/${proposition.id}` : undefined;
+    propositionDetailStore.setPayload({
+        proposition: data.proposition,
+        events: data.events,
+        votes: data.votes,
+        mandates: data.mandates,
+        comments: data.comments,
+    });
+
+    const detailState = $derived($propositionDetailStore);
+    const proposition = $derived(detailState.proposition ?? data.proposition);
+    const events = $derived(detailState.events);
+    const votes = $derived(detailState.votes);
+    const mandates = $derived(detailState.mandates);
+    const comments = $derived(detailState.comments);
+
+    const perStatusPermissions = $derived(($organizationSettings.permissions?.perStatus ?? {}) as SerializedStatusPermissions);
+
+    const workflowAutomation = $derived($organizationSettings.workflowAutomation);
+
+    const currentStatus = $derived((proposition.status ?? PropositionStatusEnum.DRAFT) as PropositionStatusEnum);
+
+    const statusOrder: Record<PropositionStatusEnum, number> = {
+        [PropositionStatusEnum.DRAFT]: 0,
+        [PropositionStatusEnum.CLARIFY]: 1,
+        [PropositionStatusEnum.AMEND]: 2,
+        [PropositionStatusEnum.VOTE]: 3,
+        [PropositionStatusEnum.MANDATE]: 4,
+        [PropositionStatusEnum.EVALUATE]: 5,
+        [PropositionStatusEnum.ARCHIVED]: 6,
+    };
+
+    const currentStatusRank = $derived(statusOrder[currentStatus] ?? 0);
+
+    const user = $derived(page.data.user as SerializedUser | undefined);
+    const workflowRole: WorkflowRole = $derived(resolveWorkflowRole(proposition, user, mandates));
+
+    const canEditProposition = $derived(workflowRole === 'admin' || isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'edit_proposition'));
+    const canDeleteProposition = $derived(user?.role === 'admin');
+
+    const canCommentClarification = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'comment_clarification') || workflowRole === 'admin' || workflowRole === 'initiator');
+    const canCommentAmendment = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'comment_amendment') || workflowRole === 'admin' || workflowRole === 'initiator');
+    const canManageEvents = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'manage_events') || workflowRole === 'admin');
+    const canConfigureVote = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'configure_vote') || workflowRole === 'admin');
+    const canManageMandates = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'manage_mandates') || workflowRole === 'admin');
+    const canUploadDeliverable = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'upload_deliverable') || workflowRole === 'admin');
+    const canEvaluateDeliverable = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'evaluate_deliverable') || workflowRole === 'admin');
+
+    const canManageStatus = $derived(workflowRole === 'admin' || workflowRole === 'initiator');
+
+    const isEventEditableByCurrentUser = (event: PropositionEvent): boolean => {
+        if (!user) {
+            return false;
+        }
+        if (user.role === 'admin') {
+            return true;
+        }
+        return event.createdByUserId === user.id;
+    };
+
+    const visualUrl = $derived(proposition.visual ? `/assets/propositions/visual/${proposition.id}` : undefined);
 
     const normalizeId = (value?: string | number | null): string | undefined => {
         if (value === undefined || value === null) {
@@ -31,46 +119,8 @@
         return normalized.length ? normalized : undefined;
     };
 
-    let canEditProposition: boolean = $state(false);
-    let canDeleteProposition: boolean = $state(false);
-    let showDeleteDialog: boolean = $state(false);
-    let isDeleteSubmitting: boolean = $state(false);
-
-    $effect(() => {
-        const currentUser = page.data.user;
-        if (!currentUser) {
-            canEditProposition = false;
-            canDeleteProposition = false;
-            return;
-        }
-
-        canDeleteProposition = currentUser.role === 'admin';
-
-        if (canDeleteProposition) {
-            canEditProposition = true;
-            return;
-        }
-
-        const currentUserId = normalizeId((currentUser as any).id ?? (currentUser as any).frontId);
-        if (!currentUserId) {
-            canEditProposition = false;
-            return;
-        }
-
-        const creatorId = normalizeId(proposition.creator?.id);
-        if (creatorId && creatorId === currentUserId) {
-            canEditProposition = true;
-            return;
-        }
-
-        canEditProposition = proposition.rescueInitiators.some((rescue: SerializedUserSummary) => normalizeId(rescue.id) === currentUserId);
-    });
-
-    const handleDeleteSubmit = (): void => {
-        isDeleteSubmitting = true;
-    };
-
     const attachmentUrl = (fileId: string): string => `/assets/propositions/attachments/${fileId}`;
+    const deliverableUrl = (deliverableId: string): string => `/assets/propositions/deliverables/${deliverableId}`;
 
     const formatDate = (value?: string): string => {
         if (!value) {
@@ -118,13 +168,1243 @@
         return `${formatted} ${units[index]}`;
     };
 
-    const timelineEntries = [
-        { label: m['proposition-detail.dates.clarification'](), value: proposition.clarificationDeadline },
-        { label: m['proposition-detail.dates.improvement'](), value: proposition.improvementDeadline },
-        { label: m['proposition-detail.dates.vote'](), value: proposition.voteDeadline },
-        { label: m['proposition-detail.dates.mandate'](), value: proposition.mandateDeadline },
-        { label: m['proposition-detail.dates.evaluation'](), value: proposition.evaluationDeadline },
+    type DeliverableProcedureMeta = {
+        status?: string;
+        openedAt?: string;
+        escalatedAt?: string;
+        revocationRequestId?: string;
+        revocationVoteId?: string;
+    };
+
+    const getDeliverableProcedure = (deliverable: PropositionMandate['deliverables'][number]): DeliverableProcedureMeta | null => {
+        const metadata = deliverable.metadata as Record<string, unknown> | undefined;
+        const raw = metadata && typeof metadata === 'object' ? (metadata as any).procedure : null;
+        if (!raw || typeof raw !== 'object') {
+            return null;
+        }
+        return raw as DeliverableProcedureMeta;
+    };
+
+    const countNonConformEvaluations = (deliverable: PropositionMandate['deliverables'][number]): number => {
+        return (deliverable.evaluations ?? []).filter((evaluation) => evaluation.verdict === DeliverableVerdictEnum.NON_COMPLIANT).length;
+    };
+
+    const HTML_TAG_PATTERN = /<\s*\/?\s*[a-zA-Z][^>]*>/;
+    const containsHtml = (value?: string | null): boolean => {
+        if (!value) {
+            return false;
+        }
+        return HTML_TAG_PATTERN.test(value);
+    };
+
+    const buildTimeline = (): PropositionTimelinePhase[] => {
+        const deliverableCount = mandates.reduce((total, mandate) => total + (mandate.deliverables?.length ?? 0), 0);
+        const phases: Array<{
+            key: PropositionStatusEnum;
+            label: string;
+            deadline?: string | null;
+            extra?: PropositionTimelinePhase['extra'];
+        }> = [
+            {
+                key: PropositionStatusEnum.CLARIFY,
+                label: m['proposition-detail.dates.clarification'](),
+                deadline: proposition.clarificationDeadline,
+            },
+            {
+                key: PropositionStatusEnum.AMEND,
+                label: m['proposition-detail.dates.improvement'](),
+                deadline: proposition.improvementDeadline,
+            },
+            {
+                key: PropositionStatusEnum.VOTE,
+                label: m['proposition-detail.dates.vote'](),
+                deadline: proposition.voteDeadline,
+                extra: votes.length ? { voteStatus: votes[0].status } : undefined,
+            },
+            {
+                key: PropositionStatusEnum.MANDATE,
+                label: m['proposition-detail.dates.mandate'](),
+                deadline: proposition.mandateDeadline,
+                extra: deliverableCount ? { deliverableCount } : undefined,
+            },
+            {
+                key: PropositionStatusEnum.EVALUATE,
+                label: m['proposition-detail.dates.evaluation'](),
+                deadline: proposition.evaluationDeadline,
+                extra: deliverableCount ? { deliverableCount } : undefined,
+            },
+        ];
+
+        return phases.map((phase) => {
+            const rank = statusOrder[phase.key] ?? 0;
+            return {
+                key: phase.key,
+                label: phase.label,
+                deadline: phase.deadline,
+                completed: currentStatusRank > rank,
+                isCurrent: currentStatus === phase.key,
+                extra: phase.extra,
+            };
+        });
+    };
+
+    const timelinePhases = $derived(buildTimeline());
+
+    const getPhaseStatusLabel = (phase: PropositionTimelinePhase): string => {
+        if (phase.isCurrent) {
+            return m['proposition-detail.timeline.current']();
+        }
+        if (phase.completed) {
+            return m['proposition-detail.timeline.completed']();
+        }
+        return m['proposition-detail.timeline.upcoming']();
+    };
+
+    const commentsByScope = $derived({
+        clarification: comments.filter((comment) => comment.scope === PropositionCommentScopeEnum.CLARIFICATION && !comment.parentId),
+        amendment: comments.filter((comment) => comment.scope === PropositionCommentScopeEnum.AMENDMENT && !comment.parentId),
+        mandate: comments.filter((comment) => comment.scope === PropositionCommentScopeEnum.MANDATE && !comment.parentId),
+        evaluation: comments.filter((comment) => comment.scope === PropositionCommentScopeEnum.EVALUATION && !comment.parentId),
+    });
+
+    const eventTypeOptions = Object.values(PropositionEventTypeEnum);
+    const votePhaseOptions = Object.values(PropositionVotePhaseEnum);
+    const voteMethodOptions = Object.values(PropositionVoteMethodEnum);
+    const mandateStatusOptions = Object.values(MandateStatusEnum);
+
+    const translateEventType = (type: PropositionEventTypeEnum): string => {
+        const key = `proposition-detail.events.type.${type}` as keyof typeof m;
+        const translator = m[key];
+        return typeof translator === 'function' ? translator() : type;
+    };
+
+    const translateVotePhase = (phase: PropositionVotePhaseEnum): string => {
+        const key = `proposition-detail.votes.phase.${phase}` as keyof typeof m;
+        const translator = m[key];
+        return typeof translator === 'function' ? translator() : phase;
+    };
+
+    const translateVoteMethod = (method: PropositionVoteMethodEnum): string => {
+        const key = `proposition-detail.votes.method-label.${method}` as keyof typeof m;
+        const translator = m[key];
+        return typeof translator === 'function' ? translator() : method;
+    };
+
+    const translateMandateStatus = (status: MandateStatusEnum): string => {
+        const key = `proposition-detail.mandates.status.${status}` as keyof typeof m;
+        const translator = m[key];
+        return typeof translator === 'function' ? translator() : status;
+    };
+
+    const translateStatus = (status: PropositionStatusEnum): string => {
+        const key = `proposition-detail.status.label.${status}` as keyof typeof m;
+        const translator = m[key];
+        return typeof translator === 'function' ? translator() : status;
+    };
+
+    const normalizeOptional = (value?: string | null): string | undefined => {
+        if (!value) {
+            return undefined;
+        }
+        const trimmed = value.trim();
+        return trimmed.length ? trimmed : undefined;
+    };
+
+    const toIsoDateTime = (value?: string): string | undefined => {
+        const normalized = normalizeOptional(value);
+        if (!normalized) {
+            return undefined;
+        }
+        const parsed = new Date(normalized);
+        if (Number.isNaN(parsed.getTime())) {
+            return undefined;
+        }
+        return parsed.toISOString();
+    };
+
+    const fromIsoToLocalInput = (value?: string | null): string => {
+        if (!value) {
+            return '';
+        }
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return '';
+        }
+        return parsed.toISOString().slice(0, 16);
+    };
+
+    const commentSchema = z.object({
+        content: z.string().trim().min(1).max(2000),
+    });
+
+    const commentEndpoint = (commentId?: string | null): string => {
+        const normalizedPropositionId = normalizeId(proposition.id) ?? '';
+        const baseId = normalizedPropositionId.length ? encodeURIComponent(normalizedPropositionId) : 'unknown';
+        const base = `/propositions/${baseId}/comments`;
+        if (!commentId) {
+            return base;
+        }
+        const trimmedCommentId = commentId.toString().trim();
+        if (!trimmedCommentId) {
+            return base;
+        }
+        return `${base}/${encodeURIComponent(trimmedCommentId)}`;
+    };
+
+    let isClarificationDialogOpen: boolean = $state(false);
+    let clarificationContent: string = $state('');
+    let clarificationErrors: string[] = $state([]);
+    let isClarificationSubmitting: boolean = $state(false);
+    let isClarificationReplyDialogOpen: boolean = $state(false);
+    let clarificationReplyParentId: string | null = $state(null);
+    let clarificationReplyContent: string = $state('');
+    let clarificationReplyErrors: string[] = $state([]);
+    let isClarificationReplySubmitting: boolean = $state(false);
+    let isClarificationEditDialogOpen: boolean = $state(false);
+    let clarificationEditCommentId: string | null = $state(null);
+    let clarificationEditParentId: string | null = $state(null);
+    let clarificationEditContent: string = $state('');
+    let clarificationEditErrors: string[] = $state([]);
+    let isClarificationEditSubmitting: boolean = $state(false);
+    let isClarificationDeleteDialogOpen: boolean = $state(false);
+    let clarificationDeleteCommentId: string | null = $state(null);
+    let clarificationDeleteParentId: string | null = $state(null);
+    let isClarificationDeleteSubmitting: boolean = $state(false);
+
+    let isAmendmentDialogOpen: boolean = $state(false);
+    let amendmentContent: string = $state('');
+    let amendmentErrors: string[] = $state([]);
+    let isAmendmentSubmitting: boolean = $state(false);
+    let isAmendmentReplyDialogOpen: boolean = $state(false);
+    let amendmentReplyParentId: string | null = $state(null);
+    let amendmentReplyContent: string = $state('');
+    let amendmentReplyErrors: string[] = $state([]);
+    let isAmendmentReplySubmitting: boolean = $state(false);
+    let isAmendmentEditDialogOpen: boolean = $state(false);
+    let amendmentEditCommentId: string | null = $state(null);
+    let amendmentEditParentId: string | null = $state(null);
+    let amendmentEditContent: string = $state('');
+    let amendmentEditErrors: string[] = $state([]);
+    let isAmendmentEditSubmitting: boolean = $state(false);
+    let isAmendmentDeleteDialogOpen: boolean = $state(false);
+    let amendmentDeleteCommentId: string | null = $state(null);
+    let amendmentDeleteParentId: string | null = $state(null);
+    let isAmendmentDeleteSubmitting: boolean = $state(false);
+
+    const eventSchema = z.object({
+        title: z.string().trim().min(1).max(255),
+        type: z.nativeEnum(PropositionEventTypeEnum),
+        description: z.string().trim().max(1000).optional(),
+        startAt: z.string().trim().optional(),
+        endAt: z.string().trim().optional(),
+        location: z.string().trim().max(255).optional(),
+        videoLink: z.string().trim().max(255).optional(),
+    });
+
+    const defaultEventForm = {
+        title: '',
+        type: PropositionEventTypeEnum.EXCHANGE,
+        description: '',
+        startAt: '',
+        endAt: '',
+        location: '',
+        videoLink: '',
+    };
+
+    let isEventDialogOpen: boolean = $state(false);
+    let eventForm = $state({ ...defaultEventForm });
+    let eventErrors: string[] = $state([]);
+    let isEventSubmitting: boolean = $state(false);
+    let eventStartInput: HTMLInputElement | null = $state(null);
+    let eventEndInput: HTMLInputElement | null = $state(null);
+    let editingEventId: string | null = $state(null);
+    let selectedEventId: string | null = $state(null);
+    const selectedEvent = $derived(selectedEventId ? (events.find((event) => event.id === selectedEventId) ?? null) : null);
+    let isEventDetailDialogOpen: boolean = $state(false);
+    let isEventDeleteDialogOpen: boolean = $state(false);
+    let eventDeleteId: string | null = $state(null);
+    let isEventDeleteSubmitting: boolean = $state(false);
+
+    const voteSchema = z.object({
+        title: z.string().trim().min(1).max(255),
+        description: z.string().trim().max(1000).optional(),
+        phase: z.nativeEnum(PropositionVotePhaseEnum),
+        method: z.nativeEnum(PropositionVoteMethodEnum),
+        openAt: z.string().trim().optional(),
+        closeAt: z.string().trim().optional(),
+        maxSelections: z.number().min(0).optional(),
+        options: z
+            .array(
+                z.object({
+                    label: z.string().trim().min(1).max(255),
+                    description: z.string().trim().max(1000).optional(),
+                })
+            )
+            .min(1),
+    });
+
+    const defaultVoteForm = {
+        title: '',
+        description: '',
+        phase: PropositionVotePhaseEnum.VOTE,
+        method: PropositionVoteMethodEnum.BINARY,
+        openAt: '',
+        closeAt: '',
+        maxSelections: '',
+        optionsText: 'For\nAgainst',
+    };
+
+    let isVoteDialogOpen: boolean = $state(false);
+    let voteForm = $state({ ...defaultVoteForm });
+    let voteErrors: string[] = $state([]);
+    let isVoteSubmitting: boolean = $state(false);
+    let voteOpenInput: HTMLInputElement | null = $state(null);
+    let voteCloseInput: HTMLInputElement | null = $state(null);
+
+    const mandateSchema = z.object({
+        title: z.string().trim().min(1).max(255),
+        description: z.string().trim().max(1500).optional(),
+        holderUserId: z.string().trim().optional(),
+        status: z.nativeEnum(MandateStatusEnum),
+        targetObjectiveRef: z.string().trim().max(255).optional(),
+        initialDeadline: z.string().trim().optional(),
+        currentDeadline: z.string().trim().optional(),
+    });
+
+    const defaultMandateForm = {
+        title: '',
+        description: '',
+        holderUserId: '',
+        status: MandateStatusEnum.DRAFT,
+        targetObjectiveRef: '',
+        initialDeadline: '',
+        currentDeadline: '',
+    };
+
+    let isMandateDialogOpen: boolean = $state(false);
+    let mandateForm = $state({ ...defaultMandateForm });
+    let mandateErrors: string[] = $state([]);
+    let isMandateSubmitting: boolean = $state(false);
+
+    let isDeliverableDialogOpen: boolean = $state(false);
+    let deliverableMandateId: string | null = $state(null);
+    let deliverableForm = $state<{ label: string; objectiveRef: string; file: File | null }>({ label: '', objectiveRef: '', file: null });
+    let deliverableErrors: string[] = $state([]);
+    let isDeliverableSubmitting: boolean = $state(false);
+
+    let isEvaluationDialogOpen: boolean = $state(false);
+    let evaluationMandateId: string | null = $state(null);
+    let evaluationDeliverableId: string | null = $state(null);
+    let evaluationVerdict: DeliverableVerdictEnum = $state(DeliverableVerdictEnum.COMPLIANT);
+    let evaluationComment: string = $state('');
+    let evaluationErrors: string[] = $state([]);
+    let isEvaluationSubmitting: boolean = $state(false);
+
+    const transitionMap: Record<PropositionStatusEnum, PropositionStatusEnum[]> = {
+        [PropositionStatusEnum.DRAFT]: [PropositionStatusEnum.CLARIFY, PropositionStatusEnum.ARCHIVED],
+        [PropositionStatusEnum.CLARIFY]: [PropositionStatusEnum.AMEND, PropositionStatusEnum.ARCHIVED],
+        [PropositionStatusEnum.AMEND]: [PropositionStatusEnum.VOTE, PropositionStatusEnum.CLARIFY, PropositionStatusEnum.ARCHIVED],
+        [PropositionStatusEnum.VOTE]: [PropositionStatusEnum.MANDATE, PropositionStatusEnum.AMEND, PropositionStatusEnum.ARCHIVED],
+        [PropositionStatusEnum.MANDATE]: [PropositionStatusEnum.EVALUATE, PropositionStatusEnum.VOTE, PropositionStatusEnum.ARCHIVED],
+        [PropositionStatusEnum.EVALUATE]: [PropositionStatusEnum.MANDATE, PropositionStatusEnum.ARCHIVED],
+        [PropositionStatusEnum.ARCHIVED]: [],
+    };
+
+    const availableTransitions = $derived(transitionMap[currentStatus] ?? []);
+
+    let isStatusDialogOpen: boolean = $state(false);
+    let selectedStatus: PropositionStatusEnum = $state(PropositionStatusEnum.DRAFT);
+    let transitionReason: string = $state('');
+    let statusErrors: string[] = $state([]);
+    let isStatusSubmitting: boolean = $state(false);
+    const hasReachedStatus = (status: PropositionStatusEnum): boolean => {
+        return currentStatusRank >= (statusOrder[status] ?? 0);
+    };
+
+    const buildTabs = (): TabItem[] => [
+        {
+            id: 'overview',
+            label: m['proposition-detail.tabs.overview'](),
+        },
+        {
+            id: 'clarifications',
+            label: m['proposition-detail.tabs.clarifications'](),
+            badge: commentsByScope.clarification.length ? String(commentsByScope.clarification.length) : undefined,
+            disabled: !hasReachedStatus(PropositionStatusEnum.CLARIFY) && commentsByScope.clarification.length === 0,
+        },
+        {
+            id: 'amendments',
+            label: m['proposition-detail.tabs.amendments'](),
+            badge: events.length ? String(events.length) : undefined,
+            disabled: !hasReachedStatus(PropositionStatusEnum.AMEND) && events.length === 0,
+        },
+        {
+            id: 'vote',
+            label: m['proposition-detail.tabs.vote'](),
+            badge: votes.length ? String(votes.length) : undefined,
+            disabled: !hasReachedStatus(PropositionStatusEnum.VOTE) && votes.length === 0,
+        },
+        {
+            id: 'mandates',
+            label: m['proposition-detail.tabs.mandates'](),
+            badge: mandates.length ? String(mandates.length) : undefined,
+            disabled: !hasReachedStatus(PropositionStatusEnum.MANDATE) && mandates.length === 0,
+        },
+        {
+            id: 'followup',
+            label: m['proposition-detail.tabs.followup'](),
+            badge: commentsByScope.evaluation.length ? String(commentsByScope.evaluation.length) : undefined,
+            disabled: !hasReachedStatus(PropositionStatusEnum.EVALUATE) && commentsByScope.evaluation.length === 0 && mandates.every((mandate) => (mandate.deliverables ?? []).length === 0),
+        },
     ];
+
+    const tabItems = $derived(buildTabs());
+
+    let activeTab: string = $state('overview');
+
+    $effect(() => {
+        const isActiveAvailable = tabItems.some((tab) => tab.id === activeTab && !tab.disabled);
+        if (!isActiveAvailable) {
+            const firstAvailable = tabItems.find((tab) => !tab.disabled);
+            if (firstAvailable) {
+                activeTab = firstAvailable.id;
+            }
+        }
+    });
+
+    $effect(() => {
+        if (isStatusDialogOpen) {
+            if (!availableTransitions.includes(selectedStatus) && availableTransitions.length > 0) {
+                selectedStatus = availableTransitions[0];
+            }
+        } else {
+            selectedStatus = currentStatus;
+        }
+    });
+
+    const rolePermissionMatrix = $derived(buildRolePermissionMap(perStatusPermissions, currentStatus));
+
+    const submitClarificationComment = async (): Promise<void> => {
+        clarificationErrors = [];
+        const result = commentSchema.safeParse({ content: clarificationContent });
+        if (!result.success) {
+            clarificationErrors = result.error.issues.map((issue) => issue.message);
+            return;
+        }
+
+        isClarificationSubmitting = true;
+        try {
+            const response = await wrappedFetch(
+                commentEndpoint(),
+                {
+                    method: 'POST',
+                    body: {
+                        scope: PropositionCommentScopeEnum.CLARIFICATION,
+                        visibility: PropositionCommentVisibilityEnum.PUBLIC,
+                        content: result.data.content,
+                    },
+                },
+                ({ data: comment }) => {
+                    propositionDetailStore.upsertComment(comment);
+                    clarificationContent = '';
+                    clarificationErrors = [];
+                    isClarificationDialogOpen = false;
+                },
+                ({ message }) => {
+                    clarificationErrors = [message ?? m['common.error.default-message']()];
+                }
+            );
+
+            if (!response?.isSuccess && clarificationErrors.length === 0) {
+                clarificationErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isClarificationSubmitting = false;
+        }
+    };
+
+    const openClarificationReply = (parentId: string): void => {
+        clarificationReplyParentId = parentId;
+        clarificationReplyContent = '';
+        clarificationReplyErrors = [];
+        isClarificationReplySubmitting = false;
+        isClarificationReplyDialogOpen = true;
+    };
+
+    const submitClarificationReply = async (): Promise<void> => {
+        if (!clarificationReplyParentId) {
+            return;
+        }
+
+        clarificationReplyErrors = [];
+        const result = commentSchema.safeParse({ content: clarificationReplyContent });
+        if (!result.success) {
+            clarificationReplyErrors = result.error.issues.map((issue) => issue.message);
+            return;
+        }
+
+        isClarificationReplySubmitting = true;
+
+        try {
+            const response = await wrappedFetch(
+                commentEndpoint(),
+                {
+                    method: 'POST',
+                    body: {
+                        scope: PropositionCommentScopeEnum.CLARIFICATION,
+                        visibility: PropositionCommentVisibilityEnum.PUBLIC,
+                        content: result.data.content,
+                        parentId: clarificationReplyParentId,
+                    },
+                },
+                ({ data: comment }) => {
+                    propositionDetailStore.upsertComment(comment);
+                    clarificationReplyContent = '';
+                    clarificationReplyParentId = null;
+                    clarificationReplyErrors = [];
+                    isClarificationReplyDialogOpen = false;
+                },
+                ({ message }) => {
+                    clarificationReplyErrors = [message ?? m['common.error.default-message']()];
+                }
+            );
+
+            if (!response?.isSuccess && clarificationReplyErrors.length === 0) {
+                clarificationReplyErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isClarificationReplySubmitting = false;
+        }
+    };
+
+    const openClarificationEdit = (commentId: string, content: string, parentId: string | null = null): void => {
+        clarificationEditCommentId = commentId;
+        clarificationEditParentId = parentId;
+        clarificationEditContent = content;
+        clarificationEditErrors = [];
+        isClarificationEditSubmitting = false;
+        isClarificationEditDialogOpen = true;
+    };
+
+    const submitClarificationEdit = async (): Promise<void> => {
+        if (!clarificationEditCommentId) {
+            return;
+        }
+
+        clarificationEditErrors = [];
+        const result = commentSchema.safeParse({ content: clarificationEditContent });
+        if (!result.success) {
+            clarificationEditErrors = result.error.issues.map((issue) => issue.message);
+            return;
+        }
+
+        isClarificationEditSubmitting = true;
+
+        try {
+            const response = await wrappedFetch(
+                commentEndpoint(clarificationEditCommentId),
+                {
+                    method: 'PUT',
+                    body: {
+                        content: result.data.content,
+                    },
+                },
+                ({ data: comment }) => {
+                    propositionDetailStore.upsertComment(comment);
+                    clarificationEditContent = '';
+                    clarificationEditCommentId = null;
+                    clarificationEditParentId = null;
+                    clarificationEditErrors = [];
+                    isClarificationEditDialogOpen = false;
+                },
+                ({ message }) => {
+                    clarificationEditErrors = [message ?? m['common.error.default-message']()];
+                }
+            );
+
+            if (!response?.isSuccess && clarificationEditErrors.length === 0) {
+                clarificationEditErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isClarificationEditSubmitting = false;
+        }
+    };
+
+    const openClarificationDelete = (commentId: string, parentId: string | null = null): void => {
+        clarificationDeleteCommentId = commentId;
+        clarificationDeleteParentId = parentId;
+        isClarificationDeleteSubmitting = false;
+        isClarificationDeleteDialogOpen = true;
+    };
+
+    const submitClarificationDelete = async (): Promise<void> => {
+        if (!clarificationDeleteCommentId) {
+            return;
+        }
+
+        isClarificationDeleteSubmitting = true;
+
+        try {
+            const response = await wrappedFetch(
+                commentEndpoint(clarificationDeleteCommentId),
+                {
+                    method: 'DELETE',
+                },
+                async () => {
+                    propositionDetailStore.removeComment(clarificationDeleteCommentId!, clarificationDeleteParentId ?? undefined);
+                    clarificationDeleteCommentId = null;
+                    clarificationDeleteParentId = null;
+                    isClarificationDeleteDialogOpen = false;
+                },
+                async ({ message }) => {
+                    showToast(message ?? m['common.error.default-message'](), 'error');
+                }
+            );
+
+            if (!response?.isSuccess) {
+                showToast(m['common.error.default-message'](), 'error');
+            }
+        } finally {
+            isClarificationDeleteSubmitting = false;
+        }
+    };
+
+    const submitAmendmentComment = async (): Promise<void> => {
+        amendmentErrors = [];
+        const result = commentSchema.safeParse({ content: amendmentContent });
+        if (!result.success) {
+            amendmentErrors = result.error.issues.map((issue) => issue.message);
+            return;
+        }
+
+        isAmendmentSubmitting = true;
+        try {
+            const response = await wrappedFetch(
+                commentEndpoint(),
+                {
+                    method: 'POST',
+                    body: {
+                        scope: PropositionCommentScopeEnum.AMENDMENT,
+                        visibility: PropositionCommentVisibilityEnum.PUBLIC,
+                        content: result.data.content,
+                    },
+                },
+                ({ data: comment }) => {
+                    propositionDetailStore.upsertComment(comment);
+                    amendmentContent = '';
+                    isAmendmentDialogOpen = false;
+                },
+                ({ message }) => {
+                    amendmentErrors = [message ?? m['common.error.default-message']()];
+                }
+            );
+
+            if (!response?.isSuccess && amendmentErrors.length === 0) {
+                amendmentErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isAmendmentSubmitting = false;
+        }
+    };
+
+    const openAmendmentReply = (parentId: string): void => {
+        amendmentReplyParentId = parentId;
+        amendmentReplyContent = '';
+        amendmentReplyErrors = [];
+        isAmendmentReplySubmitting = false;
+        isAmendmentReplyDialogOpen = true;
+    };
+
+    const submitAmendmentReply = async (): Promise<void> => {
+        if (!amendmentReplyParentId) {
+            return;
+        }
+
+        amendmentReplyErrors = [];
+        const result = commentSchema.safeParse({ content: amendmentReplyContent });
+        if (!result.success) {
+            amendmentReplyErrors = result.error.issues.map((issue) => issue.message);
+            return;
+        }
+
+        isAmendmentReplySubmitting = true;
+        try {
+            const response = await wrappedFetch(
+                commentEndpoint(),
+                {
+                    method: 'POST',
+                    body: {
+                        scope: PropositionCommentScopeEnum.AMENDMENT,
+                        visibility: PropositionCommentVisibilityEnum.PUBLIC,
+                        content: result.data.content,
+                        parentId: amendmentReplyParentId,
+                    },
+                },
+                ({ data: comment }) => {
+                    propositionDetailStore.upsertComment(comment);
+                    amendmentReplyContent = '';
+                    amendmentReplyParentId = null;
+                    amendmentReplyErrors = [];
+                    isAmendmentReplyDialogOpen = false;
+                },
+                ({ message }) => {
+                    amendmentReplyErrors = [message ?? m['common.error.default-message']()];
+                }
+            );
+
+            if (!response?.isSuccess && amendmentReplyErrors.length === 0) {
+                amendmentReplyErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isAmendmentReplySubmitting = false;
+        }
+    };
+
+    const openAmendmentEdit = (commentId: string, content: string, parentId: string | null = null): void => {
+        amendmentEditCommentId = commentId;
+        amendmentEditParentId = parentId;
+        amendmentEditContent = content;
+        amendmentEditErrors = [];
+        isAmendmentEditSubmitting = false;
+        isAmendmentEditDialogOpen = true;
+    };
+
+    const submitAmendmentEdit = async (): Promise<void> => {
+        if (!amendmentEditCommentId) {
+            return;
+        }
+
+        amendmentEditErrors = [];
+        const result = commentSchema.safeParse({ content: amendmentEditContent });
+        if (!result.success) {
+            amendmentEditErrors = result.error.issues.map((issue) => issue.message);
+            return;
+        }
+
+        isAmendmentEditSubmitting = true;
+        try {
+            const response = await wrappedFetch(
+                commentEndpoint(amendmentEditCommentId),
+                {
+                    method: 'PUT',
+                    body: {
+                        content: result.data.content,
+                    },
+                },
+                ({ data: comment }) => {
+                    propositionDetailStore.upsertComment(comment);
+                    amendmentEditContent = '';
+                    amendmentEditCommentId = null;
+                    amendmentEditParentId = null;
+                    amendmentEditErrors = [];
+                    isAmendmentEditDialogOpen = false;
+                },
+                ({ message }) => {
+                    amendmentEditErrors = [message ?? m['common.error.default-message']()];
+                }
+            );
+
+            if (!response?.isSuccess && amendmentEditErrors.length === 0) {
+                amendmentEditErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isAmendmentEditSubmitting = false;
+        }
+    };
+
+    const openAmendmentDelete = (commentId: string, parentId: string | null = null): void => {
+        amendmentDeleteCommentId = commentId;
+        amendmentDeleteParentId = parentId;
+        isAmendmentDeleteSubmitting = false;
+        isAmendmentDeleteDialogOpen = true;
+    };
+
+    const submitAmendmentDelete = async (): Promise<void> => {
+        if (!amendmentDeleteCommentId) {
+            return;
+        }
+
+        const targetId = amendmentDeleteCommentId;
+        const targetParentId = amendmentDeleteParentId;
+
+        isAmendmentDeleteSubmitting = true;
+        try {
+            const response = await wrappedFetch(
+                commentEndpoint(targetId),
+                { method: 'DELETE' },
+                () => {
+                    propositionDetailStore.removeComment(targetId, targetParentId ?? undefined);
+                    amendmentDeleteCommentId = null;
+                    amendmentDeleteParentId = null;
+                    isAmendmentDeleteDialogOpen = false;
+                },
+                ({ message }) => {
+                    showToast(message ?? m['common.error.default-message'](), 'error');
+                }
+            );
+
+            if (!response?.isSuccess) {
+                showToast(m['common.error.default-message'](), 'error');
+            }
+        } finally {
+            isAmendmentDeleteSubmitting = false;
+        }
+    };
+
+    const resetEventForm = (): void => {
+        eventForm = { ...defaultEventForm };
+        eventErrors = [];
+    };
+
+    const openEventCreate = (): void => {
+        editingEventId = null;
+        resetEventForm();
+        isEventSubmitting = false;
+        isEventDialogOpen = true;
+    };
+
+    const openEventDetail = (eventId: string): void => {
+        selectedEventId = eventId;
+        isEventDetailDialogOpen = true;
+    };
+
+    const populateEventForm = (event: PropositionEvent): void => {
+        eventForm = {
+            title: event.title ?? '',
+            type: event.type,
+            description: event.description ?? '',
+            startAt: fromIsoToLocalInput(event.startAt),
+            endAt: fromIsoToLocalInput(event.endAt),
+            location: event.location ?? '',
+            videoLink: event.videoLink ?? '',
+        };
+    };
+
+    const openEventEdit = (event: PropositionEvent): void => {
+        populateEventForm(event);
+        editingEventId = event.id;
+        eventErrors = [];
+        isEventSubmitting = false;
+        isEventDialogOpen = true;
+        isEventDetailDialogOpen = false;
+    };
+
+    const confirmEventDelete = (eventId: string): void => {
+        eventDeleteId = eventId;
+        isEventDeleteSubmitting = false;
+        isEventDeleteDialogOpen = true;
+    };
+
+    const submitEvent = async (): Promise<void> => {
+        eventErrors = [];
+        const result = eventSchema.safeParse(eventForm);
+        if (!result.success) {
+            eventErrors = result.error.issues.map((issue) => issue.message);
+            return;
+        }
+
+        isEventSubmitting = true;
+        try {
+            const targetEventId = editingEventId;
+            const response = await wrappedFetch(
+                `/propositions/${proposition.id}/events${targetEventId ? `/${targetEventId}` : ''}`,
+                {
+                    method: targetEventId ? 'PUT' : 'POST',
+                    body: {
+                        title: result.data.title,
+                        type: result.data.type,
+                        description: normalizeOptional(result.data.description),
+                        startAt: toIsoDateTime(result.data.startAt),
+                        endAt: toIsoDateTime(result.data.endAt),
+                        location: normalizeOptional(result.data.location),
+                        videoLink: normalizeOptional(result.data.videoLink),
+                    },
+                },
+                ({ data: event }) => {
+                    propositionDetailStore.upsertEvent(event);
+                    const wasEdit = Boolean(targetEventId);
+                    resetEventForm();
+                    editingEventId = null;
+                    isEventDialogOpen = false;
+                    if (wasEdit) {
+                        selectedEventId = event.id;
+                        isEventDetailDialogOpen = true;
+                    }
+                },
+                ({ message }) => {
+                    eventErrors = [message ?? m['common.error.default-message']()];
+                }
+            );
+
+            if (!response?.isSuccess && eventErrors.length === 0) {
+                eventErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isEventSubmitting = false;
+        }
+    };
+
+    const submitEventDelete = async (): Promise<void> => {
+        if (!eventDeleteId) {
+            return;
+        }
+
+        isEventDeleteSubmitting = true;
+        try {
+            const response = await wrappedFetch(
+                `/propositions/${proposition.id}/events/${eventDeleteId}`,
+                { method: 'DELETE' },
+                () => {
+                    propositionDetailStore.removeEvent(eventDeleteId!);
+                    if (selectedEventId === eventDeleteId) {
+                        selectedEventId = null;
+                        isEventDetailDialogOpen = false;
+                    }
+                    eventDeleteId = null;
+                    isEventDeleteDialogOpen = false;
+                },
+                ({ message }) => {
+                    showToast(message ?? m['common.error.default-message'](), 'error');
+                }
+            );
+
+            if (!response?.isSuccess) {
+                showToast(m['common.error.default-message'](), 'error');
+            }
+        } finally {
+            isEventDeleteSubmitting = false;
+        }
+    };
+
+    const openNativeDatePicker = (input: HTMLInputElement | null): void => {
+        if (!input) {
+            return;
+        }
+        const candidate = input as HTMLInputElement & { showPicker?: () => void };
+        if (typeof candidate.showPicker === 'function') {
+            candidate.showPicker();
+            return;
+        }
+        input.focus();
+        input.click();
+    };
+
+    const submitVote = async (): Promise<void> => {
+        voteErrors = [];
+        const optionLines = voteForm.optionsText
+            .split('\n')
+            .map((line) => line.trim())
+            .filter((line) => line.length);
+
+        if (optionLines.length === 0) {
+            voteErrors = [m['proposition-detail.votes.options-empty']()];
+            return;
+        }
+
+        let maxSelectionsNumber: number | undefined;
+        if (voteForm.maxSelections) {
+            const parsed = Number(voteForm.maxSelections);
+            if (!Number.isFinite(parsed) || parsed < 0) {
+                voteErrors = [m['proposition-detail.votes.max-invalid']()];
+                return;
+            }
+            maxSelectionsNumber = parsed;
+        }
+
+        const parsed = voteSchema.safeParse({
+            title: voteForm.title,
+            description: normalizeOptional(voteForm.description),
+            phase: voteForm.phase,
+            method: voteForm.method,
+            openAt: voteForm.openAt,
+            closeAt: voteForm.closeAt,
+            maxSelections: maxSelectionsNumber,
+            options: optionLines.map((label) => ({ label, description: undefined })),
+        });
+
+        if (!parsed.success) {
+            voteErrors = parsed.error.issues.map((issue) => issue.message);
+            return;
+        }
+
+        isVoteSubmitting = true;
+        try {
+            const response = await wrappedFetch(
+                `/propositions/${proposition.id}/votes`,
+                {
+                    method: 'POST',
+                    body: {
+                        title: parsed.data.title,
+                        description: parsed.data.description,
+                        phase: parsed.data.phase,
+                        method: parsed.data.method,
+                        openAt: toIsoDateTime(parsed.data.openAt),
+                        closeAt: toIsoDateTime(parsed.data.closeAt),
+                        maxSelections: parsed.data.maxSelections,
+                        options: parsed.data.options.map((option, index) => ({
+                            label: option.label,
+                            description: option.description,
+                            position: index,
+                        })),
+                    },
+                },
+                ({ data: vote }) => {
+                    propositionDetailStore.upsertVote(vote);
+                    voteForm = { ...defaultVoteForm };
+                    isVoteDialogOpen = false;
+                },
+                ({ message }) => {
+                    voteErrors = [message ?? m['common.error.default-message']()];
+                }
+            );
+
+            if (!response?.isSuccess && voteErrors.length === 0) {
+                voteErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isVoteSubmitting = false;
+        }
+    };
+
+    const submitMandate = async (): Promise<void> => {
+        mandateErrors = [];
+        const parsed = mandateSchema.safeParse(mandateForm);
+        if (!parsed.success) {
+            mandateErrors = parsed.error.issues.map((issue) => issue.message);
+            return;
+        }
+
+        isMandateSubmitting = true;
+        try {
+            const response = await wrappedFetch(
+                `/propositions/${proposition.id}/mandates`,
+                {
+                    method: 'POST',
+                    body: {
+                        title: parsed.data.title,
+                        description: normalizeOptional(parsed.data.description),
+                        holderUserId: normalizeOptional(parsed.data.holderUserId),
+                        status: parsed.data.status,
+                        targetObjectiveRef: normalizeOptional(parsed.data.targetObjectiveRef),
+                        initialDeadline: toIsoDateTime(parsed.data.initialDeadline),
+                        currentDeadline: toIsoDateTime(parsed.data.currentDeadline),
+                    },
+                },
+                ({ data: mandate }) => {
+                    propositionDetailStore.upsertMandate(mandate);
+                    mandateForm = { ...defaultMandateForm };
+                    isMandateDialogOpen = false;
+                },
+                ({ message }) => {
+                    mandateErrors = [message ?? m['common.error.default-message']()];
+                }
+            );
+
+            if (!response?.isSuccess && mandateErrors.length === 0) {
+                mandateErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isMandateSubmitting = false;
+        }
+    };
+
+    const openDeliverableDialog = (mandateId: string): void => {
+        deliverableMandateId = mandateId;
+        deliverableForm = { label: '', objectiveRef: '', file: null };
+        deliverableErrors = [];
+        isDeliverableSubmitting = false;
+        isDeliverableDialogOpen = true;
+    };
+
+    const submitDeliverable = async (): Promise<void> => {
+        if (!deliverableMandateId) {
+            return;
+        }
+
+        deliverableErrors = [];
+
+        if (!deliverableForm.file) {
+            deliverableErrors = [m['proposition-detail.mandates.deliverables.file-required']()];
+            return;
+        }
+
+        isDeliverableSubmitting = true;
+
+        try {
+            const formData = new FormData();
+            if (deliverableForm.label.trim()) {
+                formData.set('label', deliverableForm.label.trim());
+            }
+            if (deliverableForm.objectiveRef.trim()) {
+                formData.set('objectiveRef', deliverableForm.objectiveRef.trim());
+            }
+            formData.set('file', deliverableForm.file);
+
+            const response = await wrappedFetch(
+                `/propositions/${proposition.id}/mandates/${deliverableMandateId}/deliverables`,
+                {
+                    method: 'POST',
+                    body: formData,
+                },
+                async ({ deliverable, mandate, proposition: updatedProposition }) => {
+                    propositionDetailStore.upsertMandate(mandate);
+                    propositionDetailStore.updateProposition(updatedProposition);
+                    showToast(m['proposition-detail.mandates.deliverables.upload-success'](), 'success');
+                    deliverableForm = { label: '', objectiveRef: '', file: null };
+                    isDeliverableDialogOpen = false;
+                },
+                async (data) => {
+                    deliverableErrors = extractFormErrors(data).map((entry) => entry.message);
+                }
+            );
+
+            if (!response?.isSuccess && deliverableErrors.length === 0) {
+                deliverableErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isDeliverableSubmitting = false;
+        }
+    };
+
+    const openEvaluationDialog = (mandateId: string, deliverableId: string): void => {
+        evaluationMandateId = mandateId;
+        evaluationDeliverableId = deliverableId;
+        evaluationVerdict = DeliverableVerdictEnum.COMPLIANT;
+        evaluationComment = '';
+        evaluationErrors = [];
+        isEvaluationSubmitting = false;
+        isEvaluationDialogOpen = true;
+    };
+
+    const submitEvaluation = async (): Promise<void> => {
+        if (!evaluationMandateId || !evaluationDeliverableId) {
+            return;
+        }
+
+        evaluationErrors = [];
+        isEvaluationSubmitting = true;
+
+        try {
+            const response = await wrappedFetch(
+                `/propositions/${proposition.id}/mandates/${evaluationMandateId}/deliverables/${evaluationDeliverableId}/evaluations`,
+                {
+                    method: 'POST',
+                    body: {
+                        verdict: evaluationVerdict,
+                        comment: evaluationComment.trim() || undefined,
+                    },
+                },
+                async ({ mandate }) => {
+                    propositionDetailStore.upsertMandate(mandate);
+                    showToast(m['proposition-detail.mandates.deliverables.evaluation-success'](), 'success');
+                    evaluationComment = '';
+                    isEvaluationDialogOpen = false;
+                },
+                async (data) => {
+                    evaluationErrors = extractFormErrors(data).map((entry) => entry.message);
+                }
+            );
+
+            if (!response?.isSuccess && evaluationErrors.length === 0) {
+                evaluationErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isEvaluationSubmitting = false;
+        }
+    };
+
+    const submitStatusChange = async (): Promise<void> => {
+        statusErrors = [];
+        if (!availableTransitions.includes(selectedStatus)) {
+            statusErrors = [m['proposition-detail.status.invalid']()];
+            return;
+        }
+
+        isStatusSubmitting = true;
+        try {
+            const response = await wrappedFetch(
+                `/propositions/${proposition.id}/status`,
+                {
+                    method: 'POST',
+                    body: {
+                        status: selectedStatus,
+                        reason: normalizeOptional(transitionReason),
+                    },
+                },
+                ({ data: updated }) => {
+                    propositionDetailStore.updateProposition(updated);
+                    transitionReason = '';
+                    isStatusDialogOpen = false;
+                },
+                ({ message }) => {
+                    statusErrors = [message ?? m['common.error.default-message']()];
+                }
+            );
+
+            if (!response?.isSuccess && statusErrors.length === 0) {
+                statusErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isStatusSubmitting = false;
+        }
+    };
+
+    const handleClarificationSubmit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        await submitClarificationComment();
+    };
+
+    const handleClarificationReplySubmit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        await submitClarificationReply();
+    };
+
+    const handleClarificationEditSubmit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        await submitClarificationEdit();
+    };
+
+    const handleAmendmentSubmit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        await submitAmendmentComment();
+    };
+
+    const handleAmendmentReplySubmit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        await submitAmendmentReply();
+    };
+
+    const handleAmendmentEditSubmit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        await submitAmendmentEdit();
+    };
+
+    const handleEventSubmit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        await submitEvent();
+    };
+
+    const handleVoteSubmit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        await submitVote();
+    };
+
+    const handleMandateSubmit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        await submitMandate();
+    };
+
+    const handleStatusSubmit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        await submitStatusChange();
+    };
+
+    let showDeleteDialog: boolean = $state(false);
+    let isDeleteSubmitting: boolean = $state(false);
+
+    const handleDeleteSubmit = (): void => {
+        isDeleteSubmitting = true;
+    };
 
     const printPage = (): void => {
         if (typeof window !== 'undefined') {
@@ -140,24 +1420,16 @@
         await goto(`/propositions/${linked.id}`);
     };
 
-    const HTML_TAG_PATTERN = /<\/?\s*[a-zA-Z][^>]*>/;
-    const containsHtml = (value?: string | null): boolean => {
-        if (!value) {
-            return false;
-        }
-        return HTML_TAG_PATTERN.test(value);
-    };
+    const hasExpertise = $derived(Boolean(proposition.expertise && proposition.expertise.trim().length));
+    const hasRescueInitiators = $derived((proposition.rescueInitiators ?? []).length > 0);
+    const hasAssociated = $derived((proposition.associatedPropositions ?? []).length > 0);
+    const hasAttachments = $derived((proposition.attachments ?? []).length > 0);
 
-    const hasExpertise = Boolean(proposition.expertise && proposition.expertise.trim().length);
-    const hasRescueInitiators = proposition.rescueInitiators.length > 0;
-    const hasAssociated = proposition.associatedPropositions.length > 0;
-    const hasAttachments = proposition.attachments.length > 0;
-
-    const detailedDescriptionHasHtml = containsHtml(proposition.detailedDescription);
-    const smartObjectivesHasHtml = containsHtml(proposition.smartObjectives);
-    const impactsHasHtml = containsHtml(proposition.impacts);
-    const mandatesHasHtml = containsHtml(proposition.mandatesDescription);
-    const expertiseHasHtml = containsHtml(proposition.expertise);
+    const detailedDescriptionHasHtml = $derived(containsHtml(proposition.detailedDescription));
+    const smartObjectivesHasHtml = $derived(containsHtml(proposition.smartObjectives));
+    const impactsHasHtml = $derived(containsHtml(proposition.impacts));
+    const mandatesHasHtml = $derived(containsHtml(proposition.mandatesDescription));
+    const expertiseHasHtml = $derived(containsHtml(proposition.expertise));
 </script>
 
 <Meta
@@ -178,6 +1450,12 @@
                 <Button variant="outline" class="gap-2" onclick={() => goto(`/propositions/${proposition.id}/edit`)}>
                     <Pencil class="size-4" />
                     {m['common.edit']()}
+                </Button>
+            {/if}
+            {#if canManageStatus && availableTransitions.length}
+                <Button variant="outline" class="gap-2" onclick={() => (isStatusDialogOpen = true)}>
+                    <RefreshCcw class="size-4" />
+                    {m['proposition-detail.status.change']()}
                 </Button>
             {/if}
             {#if canDeleteProposition}
@@ -217,6 +1495,10 @@
             <div class="flex-1 space-y-3">
                 <h1 class="text-3xl font-semibold text-foreground sm:text-4xl">{proposition.title}</h1>
                 <p class="text-base text-muted-foreground">{proposition.summary}</p>
+                <div class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                    <span class="font-semibold text-foreground">{m['proposition-detail.status.current']()}:</span>
+                    <span>{translateStatus(currentStatus)}</span>
+                </div>
                 <div class="flex flex-wrap gap-2">
                     {#each proposition.categories as category (category.id)}
                         <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
@@ -253,130 +1535,1400 @@
             {m['proposition-detail.sections.timeline']()}
         </h2>
         <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {#each timelineEntries as entry (entry.label)}
-                <div class="rounded-xl border border-border/40 bg-card/70 p-4 text-sm print:border-0 print:bg-transparent">
-                    <p class="font-semibold text-foreground">{entry.label}</p>
-                    <p class="mt-1 text-muted-foreground">{formatDate(entry.value)}</p>
+            {#each timelinePhases as phase (phase.key)}
+                <div
+                    class={cn(
+                        'rounded-xl border border-border/40 bg-card/70 p-4 text-sm print:border-0 print:bg-transparent',
+                        phase.isCurrent ? 'ring-2 ring-primary/50' : '',
+                        phase.completed ? 'opacity-90' : ''
+                    )}
+                >
+                    <div class="flex items-center justify-between gap-2">
+                        <p class="font-semibold text-foreground">{phase.label}</p>
+                        <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{getPhaseStatusLabel(phase)}</span>
+                    </div>
+                    <p class="mt-2 text-muted-foreground">{formatDate(phase.deadline)}</p>
+                    {#if phase.extra?.deliverableCount}
+                        <p class="mt-2 text-xs text-muted-foreground">
+                            {m['proposition-detail.timeline.deliverables']({ count: phase.extra.deliverableCount })}
+                        </p>
+                    {/if}
+                    {#if phase.extra?.voteStatus}
+                        <p class="mt-2 text-xs text-muted-foreground">
+                            {m['proposition-detail.timeline.vote-status']({ status: phase.extra.voteStatus })}
+                        </p>
+                    {/if}
                 </div>
             {/each}
         </div>
     </section>
 
-    <section class="grid gap-6 lg:grid-cols-[2fr,1fr]">
-        <div class="space-y-6">
-            <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                <h2 class="text-lg font-semibold">{m['proposition-detail.sections.description']()}</h2>
-                {#if detailedDescriptionHasHtml}
-                    <div class="mt-3 text-sm leading-relaxed text-foreground">
-                        {@html proposition.detailedDescription}
-                    </div>
-                {:else}
-                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.detailedDescription}</p>
-                {/if}
-            </article>
-            <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                <h2 class="text-lg font-semibold">{m['proposition-detail.sections.objectives']()}</h2>
-                {#if smartObjectivesHasHtml}
-                    <div class="mt-3 text-sm leading-relaxed text-foreground">
-                        {@html proposition.smartObjectives}
-                    </div>
-                {:else}
-                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.smartObjectives}</p>
-                {/if}
-            </article>
-            <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                <h2 class="text-lg font-semibold">{m['proposition-detail.sections.impacts']()}</h2>
-                {#if impactsHasHtml}
-                    <div class="mt-3 text-sm leading-relaxed text-foreground">
-                        {@html proposition.impacts}
-                    </div>
-                {:else}
-                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.impacts}</p>
-                {/if}
-            </article>
-            <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                <h2 class="text-lg font-semibold">{m['proposition-detail.sections.mandates']()}</h2>
-                {#if mandatesHasHtml}
-                    <div class="mt-3 text-sm leading-relaxed text-foreground">
-                        {@html proposition.mandatesDescription}
-                    </div>
-                {:else}
-                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.mandatesDescription}</p>
-                {/if}
-            </article>
-            <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                <h2 class="text-lg font-semibold">{m['proposition-detail.sections.expertise']()}</h2>
-                {#if hasExpertise}
-                    {#if expertiseHasHtml}
+    <section class="rounded-2xl bg-background/60 p-4 shadow-sm ring-1 ring-border/40 print:hidden">
+        <Tabs bind:value={activeTab} items={tabItems} ariaLabel={m['proposition-detail.tabs.aria-label']()} />
+    </section>
+
+    {#if activeTab === 'overview'}
+        <section class="grid gap-6 lg:grid-cols-[2fr,1fr]">
+            <div class="space-y-6">
+                <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
+                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.description']()}</h2>
+                    {#if detailedDescriptionHasHtml}
                         <div class="mt-3 text-sm leading-relaxed text-foreground">
-                            {@html proposition.expertise}
+                            {@html proposition.detailedDescription}
                         </div>
                     {:else}
-                        <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.expertise}</p>
+                        <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.detailedDescription}</p>
                     {/if}
-                {:else}
-                    <p class="mt-3 text-sm text-muted-foreground">{m['proposition-detail.empty.expertise']()}</p>
-                {/if}
-            </article>
-        </div>
+                </article>
+                <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
+                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.objectives']()}</h2>
+                    {#if smartObjectivesHasHtml}
+                        <div class="mt-3 text-sm leading-relaxed text-foreground">
+                            {@html proposition.smartObjectives}
+                        </div>
+                    {:else}
+                        <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.smartObjectives}</p>
+                    {/if}
+                </article>
+                <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
+                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.impacts']()}</h2>
+                    {#if impactsHasHtml}
+                        <div class="mt-3 text-sm leading-relaxed text-foreground">
+                            {@html proposition.impacts}
+                        </div>
+                    {:else}
+                        <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.impacts}</p>
+                    {/if}
+                </article>
+                <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
+                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.mandates']()}</h2>
+                    {#if mandatesHasHtml}
+                        <div class="mt-3 text-sm leading-relaxed text-foreground">
+                            {@html proposition.mandatesDescription}
+                        </div>
+                    {:else}
+                        <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.mandatesDescription}</p>
+                    {/if}
+                </article>
+                <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
+                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.expertise']()}</h2>
+                    {#if hasExpertise}
+                        {#if expertiseHasHtml}
+                            <div class="mt-3 text-sm leading-relaxed text-foreground">
+                                {@html proposition.expertise}
+                            </div>
+                        {:else}
+                            <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{proposition.expertise}</p>
+                        {/if}
+                    {:else}
+                        <p class="mt-3 text-sm text-muted-foreground">{m['proposition-detail.empty.expertise']()}</p>
+                    {/if}
+                </article>
+            </div>
 
-        <aside class="space-y-6">
-            <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                <h2 class="text-lg font-semibold">{m['proposition-detail.sections.rescue']()}</h2>
-                {#if hasRescueInitiators}
-                    <ul class="mt-3 space-y-2 text-sm text-foreground">
-                        {#each proposition.rescueInitiators as user (user.id)}
-                            <li class="rounded-lg border border-border/40 bg-muted/40 px-3 py-2 print:border-0 print:bg-transparent">
-                                {user.username}
-                            </li>
-                        {/each}
-                    </ul>
-                {:else}
-                    <p class="mt-3 text-sm text-muted-foreground">{m['proposition-detail.empty.rescue']()}</p>
-                {/if}
-            </article>
+            <aside class="space-y-6">
+                <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
+                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.rescue']()}</h2>
+                    {#if hasRescueInitiators}
+                        <ul class="mt-3 space-y-2 text-sm text-foreground">
+                            {#each proposition.rescueInitiators as user (user.id)}
+                                <li class="rounded-lg border border-border/40 bg-muted/40 px-3 py-2 print:border-0 print:bg-transparent">
+                                    {user.username}
+                                </li>
+                            {/each}
+                        </ul>
+                    {:else}
+                        <p class="mt-3 text-sm text-muted-foreground">{m['proposition-detail.empty.rescue']()}</p>
+                    {/if}
+                </article>
 
-            <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                <h2 class="text-lg font-semibold">{m['proposition-detail.sections.associated']()}</h2>
-                {#if hasAssociated}
-                    <ul class="mt-3 space-y-2 text-sm">
-                        {#each proposition.associatedPropositions as linked (linked.id)}
-                            <li>
-                                <Button variant="ghost" size="sm" class="px-0" onclick={() => openAssociated(linked)}>
-                                    {linked.title}
-                                </Button>
-                            </li>
-                        {/each}
-                    </ul>
-                {:else}
-                    <p class="mt-3 text-sm text-muted-foreground">{m['proposition-detail.empty.associated']()}</p>
-                {/if}
-            </article>
+                <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
+                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.associated']()}</h2>
+                    {#if hasAssociated}
+                        <ul class="mt-3 space-y-2 text-sm">
+                            {#each proposition.associatedPropositions as linked (linked.id)}
+                                <li>
+                                    <Button variant="ghost" size="sm" class="px-0" onclick={() => openAssociated(linked)}>
+                                        {linked.title}
+                                    </Button>
+                                </li>
+                            {/each}
+                        </ul>
+                    {:else}
+                        <p class="mt-3 text-sm text-muted-foreground">{m['proposition-detail.empty.associated']()}</p>
+                    {/if}
+                </article>
 
-            <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                <h2 class="text-lg font-semibold">{m['proposition-detail.sections.attachments']()}</h2>
-                {#if hasAttachments}
-                    <ul class="mt-3 space-y-3 text-sm">
-                        {#each proposition.attachments as attachment (attachment.id)}
-                            <li class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-muted/30 p-3 print:border-0 print:bg-transparent">
-                                <div>
-                                    <p class="font-semibold text-foreground">{attachment.name}</p>
-                                    <p class="text-xs text-muted-foreground">{attachment.mimeType} • {formatFileSize(attachment.size)}</p>
+                <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
+                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.attachments']()}</h2>
+                    {#if hasAttachments}
+                        <ul class="mt-3 space-y-3 text-sm">
+                            {#each proposition.attachments as attachment (attachment.id)}
+                                <li class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/40 bg-muted/30 p-3 print:border-0 print:bg-transparent">
+                                    <div>
+                                        <p class="font-semibold text-foreground">{attachment.name}</p>
+                                        <p class="text-xs text-muted-foreground">{attachment.mimeType} • {formatFileSize(attachment.size)}</p>
+                                    </div>
+                                    <a href={attachmentUrl(attachment.id)} download={attachment.name} class={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-2')}>
+                                        <Download class="size-4" />
+                                        {m['proposition-detail.actions.download']()}
+                                    </a>
+                                </li>
+                            {/each}
+                        </ul>
+                    {:else}
+                        <p class="mt-3 text-sm text-muted-foreground">{m['proposition-detail.empty.attachments']()}</p>
+                    {/if}
+                </article>
+            </aside>
+        </section>
+    {:else if activeTab === 'clarifications'}
+        <section class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40">
+            <h2 class="text-lg font-semibold text-foreground">{m['proposition-detail.tabs.clarifications']()}</h2>
+            {#if canCommentClarification}
+                <div class="mt-4 flex justify-end">
+                    <Button variant="outline" class="gap-2" onclick={() => (isClarificationDialogOpen = true)}>
+                        <Plus class="size-4" />
+                        {m['proposition-detail.comments.add']()}
+                    </Button>
+                </div>
+            {/if}
+            {#if commentsByScope.clarification.length}
+                <ul class="mt-4 space-y-4">
+                    {#each commentsByScope.clarification as comment (comment.id)}
+                        <li class="space-y-3 rounded-xl border border-border/40 bg-card/60 p-4">
+                            <div class="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                                <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                <div class="flex items-center gap-2">
+                                    <span>{formatDateTime(comment.createdAt)}</span>
+                                    {#if comment.editable}
+                                        <Button size="sm" variant="ghost" class="gap-1" onclick={() => openClarificationEdit(comment.id, comment.content)}>
+                                            <Pencil class="size-3.5" />
+                                            {m['proposition-detail.comments.edit']()}
+                                        </Button>
+                                        {#if (comment.replies ?? []).length === 0}
+                                            <Button size="sm" variant="ghost" class="gap-1 text-destructive hover:text-destructive" onclick={() => openClarificationDelete(comment.id)}>
+                                                <Trash2 class="size-3.5" />
+                                                {m['proposition-detail.comments.delete']()}
+                                            </Button>
+                                        {/if}
+                                    {/if}
                                 </div>
-                                <a href={attachmentUrl(attachment.id)} download={attachment.name} class={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-2')}>
-                                    <Download class="size-4" />
-                                    {m['proposition-detail.actions.download']()}
-                                </a>
+                            </div>
+                            <p class="text-sm text-foreground/90 whitespace-pre-wrap">{comment.content}</p>
+                            {#if canCommentClarification}
+                                <div class="flex flex-wrap justify-end">
+                                    <Button size="sm" variant="ghost" class="gap-1" onclick={() => openClarificationReply(comment.id)}>
+                                        <Plus class="size-3.5" />
+                                        {m['proposition-detail.comments.reply']()}
+                                    </Button>
+                                </div>
+                            {/if}
+                            {#if (comment.replies ?? []).length}
+                                <ul class="ml-4 space-y-2 border-l border-border/30 pl-4">
+                                    {#each comment.replies ?? [] as reply (reply.id)}
+                                        <li class="space-y-1 rounded-lg bg-background/60 p-3">
+                                            <div class="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                                                <span>{reply.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                                <div class="flex items-center gap-2">
+                                                    <span>{formatDateTime(reply.createdAt)}</span>
+                                                    {#if reply.editable}
+                                                        <Button size="sm" variant="ghost" class="gap-1" onclick={() => openClarificationEdit(reply.id, reply.content, comment.id)}>
+                                                            <Pencil class="size-3" />
+                                                            {m['proposition-detail.comments.edit']()}
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            class="gap-1 text-destructive hover:text-destructive"
+                                                            onclick={() => openClarificationDelete(reply.id, comment.id)}
+                                                        >
+                                                            <Trash2 class="size-3" />
+                                                            {m['proposition-detail.comments.delete']()}
+                                                        </Button>
+                                                    {/if}
+                                                </div>
+                                            </div>
+                                            <p class="text-sm text-foreground/85 whitespace-pre-wrap">{reply.content}</p>
+                                        </li>
+                                    {/each}
+                                </ul>
+                            {/if}
+                        </li>
+                    {/each}
+                </ul>
+            {:else}
+                <p class="mt-4 text-sm text-muted-foreground">{m['proposition-detail.comments.empty']()}</p>
+            {/if}
+        </section>
+    {:else if activeTab === 'amendments'}
+        <section class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 space-y-6">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-foreground">{m['proposition-detail.tabs.amendments']()}</h2>
+                <div class="flex flex-wrap justify-end gap-2">
+                    {#if canManageEvents}
+                        <Button variant="outline" class="gap-2" onclick={openEventCreate}>
+                            <Plus class="size-4" />
+                            {m['proposition-detail.events.add']()}
+                        </Button>
+                    {/if}
+                    {#if canCommentAmendment}
+                        <Button variant="outline" class="gap-2" onclick={() => (isAmendmentDialogOpen = true)}>
+                            <Plus class="size-4" />
+                            {m['proposition-detail.comments.add-amendment']()}
+                        </Button>
+                    {/if}
+                </div>
+            </div>
+            {#if events.length}
+                <ul class="mt-4 space-y-3">
+                    {#each events as event (event.id)}
+                        <li class="rounded-xl border border-border/40 bg-card/60 p-4">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div class="space-y-1">
+                                    <p class="font-semibold text-foreground">{event.title}</p>
+                                    <div class="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                                        <span>{translateEventType(event.type)}</span>
+                                        {#if event.startAt && event.endAt}
+                                            <span>{formatDateTime(event.startAt)} – {formatDateTime(event.endAt)}</span>
+                                        {:else if event.startAt}
+                                            <span>{formatDateTime(event.startAt)}</span>
+                                        {:else if event.endAt}
+                                            <span>{formatDateTime(event.endAt)}</span>
+                                        {/if}
+                                        {#if event.location}
+                                            <span>{event.location}</span>
+                                        {/if}
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <Button size="sm" variant="ghost" class="gap-1" onclick={() => openEventDetail(event.id)}>
+                                        <Eye class="size-4" />
+                                        {m['common.view']()}
+                                    </Button>
+                                    {#if isEventEditableByCurrentUser(event)}
+                                        <Button size="sm" variant="ghost" class="gap-1" onclick={() => openEventEdit(event)}>
+                                            <Pencil class="size-3.5" />
+                                            {m['common.edit']()}
+                                        </Button>
+                                        <Button size="sm" variant="ghost" class="gap-1 text-destructive hover:text-destructive" onclick={() => confirmEventDelete(event.id)}>
+                                            <Trash2 class="size-3.5" />
+                                            {m['common.delete']()}
+                                        </Button>
+                                    {/if}
+                                </div>
+                            </div>
+                            {#if event.description}
+                                <p class="mt-3 text-sm text-foreground/80 whitespace-pre-wrap">{event.description}</p>
+                            {/if}
+                            {#if event.videoLink}
+                                <p class="mt-2 text-xs text-muted-foreground">
+                                    <a href={event.videoLink} target="_blank" rel="noreferrer" class="underline underline-offset-2">
+                                        {event.videoLink}
+                                    </a>
+                                </p>
+                            {/if}
+                        </li>
+                    {/each}
+                </ul>
+            {:else}
+                <p class="mt-4 text-sm text-muted-foreground">{m['proposition-detail.events.empty']()}</p>
+            {/if}
+            <div class="space-y-3">
+                <h3 class="text-sm font-semibold text-foreground">{m['proposition-detail.comments.section.amendment']()}</h3>
+                {#if commentsByScope.amendment.length}
+                    <ul class="space-y-3">
+                        {#each commentsByScope.amendment as comment (comment.id)}
+                            <li class="space-y-3 rounded-xl border border-border/40 bg-card/60 p-4">
+                                <div class="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                                    <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span>{formatDateTime(comment.createdAt)}</span>
+                                        {#if comment.editable}
+                                            <Button size="sm" variant="ghost" class="gap-1" onclick={() => openAmendmentEdit(comment.id, comment.content)}>
+                                                <Pencil class="size-3.5" />
+                                                {m['proposition-detail.comments.edit']()}
+                                            </Button>
+                                            {#if (comment.replies ?? []).length === 0}
+                                                <Button size="sm" variant="ghost" class="gap-1 text-destructive hover:text-destructive" onclick={() => openAmendmentDelete(comment.id)}>
+                                                    <Trash2 class="size-3.5" />
+                                                    {m['proposition-detail.comments.delete']()}
+                                                </Button>
+                                            {/if}
+                                        {/if}
+                                    </div>
+                                </div>
+                                <p class="text-sm text-foreground/90 whitespace-pre-wrap">{comment.content}</p>
+                                {#if canCommentAmendment}
+                                    <div class="flex flex-wrap justify-end">
+                                        <Button size="sm" variant="ghost" class="gap-1" onclick={() => openAmendmentReply(comment.id)}>
+                                            <Plus class="size-3.5" />
+                                            {m['proposition-detail.comments.reply']()}
+                                        </Button>
+                                    </div>
+                                {/if}
+                                {#if (comment.replies ?? []).length}
+                                    <ul class="ml-4 space-y-2 border-l border-border/30 pl-4">
+                                        {#each comment.replies ?? [] as reply (reply.id)}
+                                            <li class="space-y-1 rounded-lg bg-background/60 p-3">
+                                                <div class="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                                                    <span>{reply.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                                    <div class="flex items-center gap-2">
+                                                        <span>{formatDateTime(reply.createdAt)}</span>
+                                                        {#if reply.editable}
+                                                            <Button size="sm" variant="ghost" class="gap-1" onclick={() => openAmendmentEdit(reply.id, reply.content, comment.id)}>
+                                                                <Pencil class="size-3" />
+                                                                {m['proposition-detail.comments.edit']()}
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                class="gap-1 text-destructive hover:text-destructive"
+                                                                onclick={() => openAmendmentDelete(reply.id, comment.id)}
+                                                            >
+                                                                <Trash2 class="size-3" />
+                                                                {m['proposition-detail.comments.delete']()}
+                                                            </Button>
+                                                        {/if}
+                                                    </div>
+                                                </div>
+                                                <p class="text-sm text-foreground/85 whitespace-pre-wrap">{reply.content}</p>
+                                            </li>
+                                        {/each}
+                                    </ul>
+                                {/if}
                             </li>
                         {/each}
                     </ul>
                 {:else}
-                    <p class="mt-3 text-sm text-muted-foreground">{m['proposition-detail.empty.attachments']()}</p>
+                    <p class="text-sm text-muted-foreground">{m['proposition-detail.comments.empty']()}</p>
+                {/if}
+            </div>
+        </section>
+    {:else if activeTab === 'vote'}
+        <section class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40">
+            <h2 class="text-lg font-semibold text-foreground">{m['proposition-detail.tabs.vote']()}</h2>
+            {#if canConfigureVote}
+                <div class="mt-4 flex justify-end">
+                    <Button variant="outline" class="gap-2" onclick={() => (isVoteDialogOpen = true)}>
+                        <Plus class="size-4" />
+                        {m['proposition-detail.votes.add']()}
+                    </Button>
+                </div>
+            {/if}
+            {#if votes.length}
+                <ul class="mt-4 space-y-4">
+                    {#each votes as vote (vote.id)}
+                        <li class="rounded-xl border border-border/40 bg-card/60 p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                                <div>
+                                    <p class="font-semibold text-foreground">{vote.title}</p>
+                                    <p class="text-xs text-muted-foreground">{m['proposition-detail.vote.method']({ method: translateVoteMethod(vote.method as PropositionVoteMethodEnum) })}</p>
+                                </div>
+                                <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{vote.status}</span>
+                            </div>
+                            {#if vote.description}
+                                <p class="mt-2 text-sm text-foreground/80">{vote.description}</p>
+                            {/if}
+                            <ul class="mt-3 space-y-2 text-sm text-muted-foreground">
+                                {#each vote.options as option (option.id)}
+                                    <li class="rounded border border-border/30 bg-background/80 px-3 py-2">
+                                        <span class="font-medium text-foreground">{option.label}</span>
+                                        {#if option.description}
+                                            <p class="text-xs text-muted-foreground">{option.description}</p>
+                                        {/if}
+                                    </li>
+                                {/each}
+                            </ul>
+                        </li>
+                    {/each}
+                </ul>
+            {:else}
+                <p class="mt-4 text-sm text-muted-foreground">{m['proposition-detail.votes.empty']()}</p>
+            {/if}
+        </section>
+    {:else if activeTab === 'mandates'}
+        <section class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40">
+            <h2 class="text-lg font-semibold text-foreground">{m['proposition-detail.tabs.mandates']()}</h2>
+            {#if canManageMandates}
+                <div class="mt-4 flex justify-end">
+                    <Button variant="outline" class="gap-2" onclick={() => (isMandateDialogOpen = true)}>
+                        <Plus class="size-4" />
+                        {m['proposition-detail.mandates.add']()}
+                    </Button>
+                </div>
+            {/if}
+            {#if mandates.length}
+                <ul class="mt-4 space-y-4">
+                    {#each mandates as mandate (mandate.id)}
+                        <li class="rounded-xl border border-border/40 bg-card/60 p-4 space-y-3">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <p class="text-base font-semibold text-foreground">{mandate.title}</p>
+                                    {#if mandate.description}
+                                        <p class="text-sm text-muted-foreground">{mandate.description}</p>
+                                    {/if}
+                                </div>
+                                <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{translateMandateStatus(mandate.status as MandateStatusEnum)}</span>
+                            </div>
+                            {#if mandate.holderUserId}
+                                <p class="text-xs text-muted-foreground">{m['proposition-detail.mandate.holder']({ holder: mandate.holder?.username ?? mandate.holderUserId })}</p>
+                            {/if}
+                            {#if canUploadDeliverable}
+                                <div class="flex justify-end">
+                                    <Button size="sm" variant="outline" class="gap-2" onclick={() => openDeliverableDialog(mandate.id)}>
+                                        <Upload class="size-4" />
+                                        {m['proposition-detail.mandates.deliverables.upload']()}
+                                    </Button>
+                                </div>
+                            {/if}
+                            <div class="space-y-2">
+                                {#if mandate.deliverables?.length}
+                                    <ul class="space-y-3">
+                                        {#each mandate.deliverables as deliverable (deliverable.id)}
+                                            {#key deliverable.id}
+                                                <li class="rounded-lg border border-border/30 bg-background/80 p-3">
+                                                    <div class="flex flex-wrap items-start justify-between gap-2">
+                                                        <div class="space-y-1">
+                                                            <p class="text-sm font-medium text-foreground">
+                                                                {deliverable.label ?? deliverable.file?.name ?? deliverable.autoFilename ?? m['proposition-detail.mandates.deliverables.unnamed']()}
+                                                            </p>
+                                                            <p class="text-xs text-muted-foreground">
+                                                                {formatDateTime(deliverable.uploadedAt)}
+                                                                {#if deliverable.file?.mimeType}
+                                                                    • {deliverable.file.mimeType}
+                                                                {/if}
+                                                                {#if typeof deliverable.file?.size === 'number'}
+                                                                    • {formatFileSize(deliverable.file.size)}
+                                                                {/if}
+                                                            </p>
+                                                        </div>
+                                                        <div class="flex items-center gap-2">
+                                                            <span
+                                                                class={cn(
+                                                                    'rounded-full px-2 py-1 text-xs font-medium capitalize',
+                                                                    deliverable.status === 'non_conform'
+                                                                        ? 'bg-destructive/10 text-destructive'
+                                                                        : deliverable.status === 'escalated'
+                                                                          ? 'bg-warning/10 text-warning-foreground'
+                                                                          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200'
+                                                                )}
+                                                            >
+                                                                {m[`proposition-detail.mandates.deliverables.status.${deliverable.status}` as keyof typeof m]()}
+                                                            </span>
+                                                            <a
+                                                                class={cn(buttonVariants({ variant: 'outline', size: 'icon' }), 'size-8')}
+                                                                href={deliverableUrl(deliverable.id)}
+                                                                download
+                                                                aria-label={m['proposition-detail.mandates.deliverables.download']()}
+                                                            >
+                                                                <Download class="size-4" />
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    {#if deliverable.nonConformityFlaggedAt}
+                                                        <p class="mt-2 text-xs text-red-500 dark:text-red-300">
+                                                            {m['proposition-detail.mandates.deliverables.flagged']({ date: formatDateTime(deliverable.nonConformityFlaggedAt) })}
+                                                        </p>
+                                                    {/if}
+                                                    {#if getDeliverableProcedure(deliverable)}
+                                                        {@const procedure = getDeliverableProcedure(deliverable)}
+                                                        <p class="mt-2 text-xs text-muted-foreground">
+                                                            {m[`proposition-detail.mandates.deliverables.procedure.${procedure?.status ?? 'pending'}` as keyof typeof m]()}
+                                                        </p>
+                                                    {/if}
+                                                    <p class="mt-2 text-xs text-muted-foreground">
+                                                        {m['proposition-detail.mandates.deliverables.evaluations']({
+                                                            total: deliverable.evaluations?.length ?? 0,
+                                                            nonConform: countNonConformEvaluations(deliverable),
+                                                        })}
+                                                    </p>
+                                                    {#if canEvaluateDeliverable}
+                                                        <div class="mt-3 flex flex-wrap gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="secondary"
+                                                                onclick={() => {
+                                                                    evaluationVerdict = DeliverableVerdictEnum.COMPLIANT;
+                                                                    openEvaluationDialog(mandate.id, deliverable.id);
+                                                                }}
+                                                            >
+                                                                {m['proposition-detail.mandates.deliverables.evaluate.compliant']()}
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onclick={() => {
+                                                                    evaluationVerdict = DeliverableVerdictEnum.NON_COMPLIANT;
+                                                                    openEvaluationDialog(mandate.id, deliverable.id);
+                                                                }}
+                                                            >
+                                                                {m['proposition-detail.mandates.deliverables.evaluate.non-conform']()}
+                                                            </Button>
+                                                        </div>
+                                                    {/if}
+                                                </li>
+                                            {/key}
+                                        {/each}
+                                    </ul>
+                                {:else}
+                                    <p class="text-xs text-muted-foreground">{m['proposition-detail.mandates.deliverables.empty']()}</p>
+                                {/if}
+                            </div>
+                        </li>
+                    {/each}
+                </ul>
+            {:else}
+                <p class="mt-4 text-sm text-muted-foreground">{m['proposition-detail.mandates.empty']()}</p>
+            {/if}
+        </section>
+    {:else if activeTab === 'followup'}
+        <section class="space-y-4">
+            <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40">
+                <h2 class="text-lg font-semibold text-foreground">{m['proposition-detail.followup.permissions']()}</h2>
+                {#if Object.keys(rolePermissionMatrix).length}
+                    <div class="mt-3 overflow-auto">
+                        <table class="w-full min-w-[320px] table-fixed border-collapse text-left text-sm">
+                            <thead>
+                                <tr class="text-xs uppercase tracking-wide text-muted-foreground">
+                                    <th class="border-b border-border/40 px-3 py-2">{m['proposition-detail.followup.role']()}</th>
+                                    <th class="border-b border-border/40 px-3 py-2">{m['proposition-detail.followup.actions']()}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {#each Object.entries(rolePermissionMatrix) as [role, actions]}
+                                    <tr>
+                                        <td class="border-b border-border/20 px-3 py-2 font-medium text-foreground">{role}</td>
+                                        <td class="border-b border-border/20 px-3 py-2">
+                                            <div class="flex flex-wrap gap-2 text-xs">
+                                                {#each Object.entries(actions) as [action, allowed]}
+                                                    {#if allowed}
+                                                        <span class="rounded-full bg-primary/10 px-2 py-1 font-medium text-primary">{action}</span>
+                                                    {/if}
+                                                {/each}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {/each}
+                            </tbody>
+                        </table>
+                    </div>
+                {:else}
+                    <p class="mt-2 text-sm text-muted-foreground">{m['proposition-detail.followup.permissions-empty']()}</p>
                 {/if}
             </article>
-        </aside>
-    </section>
+
+            <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40">
+                <h2 class="text-lg font-semibold text-foreground">{m['proposition-detail.followup.automation.title']()}</h2>
+                <ul class="mt-3 space-y-2 text-sm text-muted-foreground">
+                    <li>
+                        {m['proposition-detail.followup.automation.recalcCooldown']({ minutes: workflowAutomation.deliverableRecalcCooldownMinutes })}
+                    </li>
+                    <li>
+                        {m['proposition-detail.followup.automation.nonConformityPercent']({
+                            percent: workflowAutomation.nonConformityPercentThreshold,
+                        })}
+                    </li>
+                    <li>
+                        {m['proposition-detail.followup.automation.nonConformityFloor']({
+                            count: workflowAutomation.nonConformityAbsoluteFloor,
+                        })}
+                    </li>
+                    <li>
+                        {m['proposition-detail.followup.automation.evaluationShift']({
+                            days: workflowAutomation.evaluationAutoShiftDays,
+                        })}
+                    </li>
+                    <li>
+                        {m['proposition-detail.followup.automation.revocationDelay']({
+                            days: workflowAutomation.revocationAutoTriggerDelayDays,
+                        })}
+                    </li>
+                    <li>
+                        {m['proposition-detail.followup.automation.revocationFrequency']({
+                            hours: workflowAutomation.revocationCheckFrequencyHours,
+                        })}
+                    </li>
+                    <li>{m['proposition-detail.followup.automation.pattern']({ pattern: workflowAutomation.deliverableNamingPattern })}</li>
+                </ul>
+            </article>
+
+            <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40">
+                <h2 class="text-lg font-semibold text-foreground">{m['proposition-detail.tabs.followup']()}</h2>
+                {#if commentsByScope.evaluation.length}
+                    <ul class="mt-4 space-y-3">
+                        {#each commentsByScope.evaluation as comment (comment.id)}
+                            <li class="rounded-xl border border-border/40 bg-card/60 p-4">
+                                <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                    <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                    <span>{formatDateTime(comment.createdAt)}</span>
+                                </div>
+                                <p class="mt-2 text-sm text-foreground/90 whitespace-pre-wrap">{comment.content}</p>
+                            </li>
+                        {/each}
+                    </ul>
+                {:else}
+                    <p class="mt-4 text-sm text-muted-foreground">{m['proposition-detail.comments.empty']()}</p>
+                {/if}
+            </article>
+        </section>
+    {/if}
 </div>
+
+<Dialog open={isClarificationDialogOpen} onOpenChange={(value: boolean) => (isClarificationDialogOpen = value)}>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.comments.dialog.title']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.comments.dialog.description']()}</DialogDescription>
+        </DialogHeader>
+        <form class="space-y-4" onsubmit={handleClarificationSubmit}>
+            <Textarea name="clarification-content" label={m['proposition-detail.comments.dialog.label']()} rows={6} bind:value={clarificationContent} required />
+            {#if clarificationErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each clarificationErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isClarificationSubmitting} class="gap-2">
+                    {#if isClarificationSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.dialog.submit']()}
+                    {/if}
+                </Button>
+            </DialogFooter>
+        </form>
+    </DialogContent>
+</Dialog>
+
+<Dialog
+    open={isClarificationReplyDialogOpen}
+    onOpenChange={(value: boolean) => {
+        isClarificationReplyDialogOpen = value;
+        if (!value) {
+            clarificationReplyParentId = null;
+            clarificationReplyContent = '';
+            clarificationReplyErrors = [];
+            isClarificationReplySubmitting = false;
+        }
+    }}
+>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.comments.reply-dialog.title']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.comments.reply-dialog.description']()}</DialogDescription>
+        </DialogHeader>
+        <form class="space-y-4" onsubmit={handleClarificationReplySubmit}>
+            <Textarea name="clarification-reply" label={m['proposition-detail.comments.reply-dialog.label']()} rows={5} bind:value={clarificationReplyContent} required />
+            {#if clarificationReplyErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each clarificationReplyErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isClarificationReplySubmitting} class="gap-2">
+                    {#if isClarificationReplySubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.reply-dialog.submit']()}
+                    {/if}
+                </Button>
+            </DialogFooter>
+        </form>
+    </DialogContent>
+</Dialog>
+
+<Dialog
+    open={isClarificationEditDialogOpen}
+    onOpenChange={(value: boolean) => {
+        isClarificationEditDialogOpen = value;
+        if (!value) {
+            clarificationEditCommentId = null;
+            clarificationEditParentId = null;
+            clarificationEditContent = '';
+            clarificationEditErrors = [];
+            isClarificationEditSubmitting = false;
+        }
+    }}
+>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.comments.edit']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.comments.edit-label']()}</DialogDescription>
+        </DialogHeader>
+        <form class="space-y-4" onsubmit={handleClarificationEditSubmit}>
+            <Textarea name="clarification-edit" label={m['proposition-detail.comments.edit-label']()} rows={5} bind:value={clarificationEditContent} required />
+            {#if clarificationEditErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each clarificationEditErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isClarificationEditSubmitting} class="gap-2">
+                    {#if isClarificationEditSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.save']()}
+                    {/if}
+                </Button>
+            </DialogFooter>
+        </form>
+    </DialogContent>
+</Dialog>
+
+<Dialog
+    open={isAmendmentReplyDialogOpen}
+    onOpenChange={(value: boolean) => {
+        isAmendmentReplyDialogOpen = value;
+        if (!value) {
+            amendmentReplyParentId = null;
+            amendmentReplyContent = '';
+            amendmentReplyErrors = [];
+            isAmendmentReplySubmitting = false;
+        }
+    }}
+>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.comments.reply-dialog.title']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.comments.reply-dialog.description']()}</DialogDescription>
+        </DialogHeader>
+        <form class="space-y-4" onsubmit={handleAmendmentReplySubmit}>
+            <Textarea name="amendment-reply" label={m['proposition-detail.comments.reply-dialog.label']()} rows={5} bind:value={amendmentReplyContent} required />
+            {#if amendmentReplyErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each amendmentReplyErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isAmendmentReplySubmitting} class="gap-2">
+                    {#if isAmendmentReplySubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.reply-dialog.submit']()}
+                    {/if}
+                </Button>
+            </DialogFooter>
+        </form>
+    </DialogContent>
+</Dialog>
+
+<Dialog
+    open={isAmendmentEditDialogOpen}
+    onOpenChange={(value: boolean) => {
+        isAmendmentEditDialogOpen = value;
+        if (!value) {
+            amendmentEditCommentId = null;
+            amendmentEditParentId = null;
+            amendmentEditContent = '';
+            amendmentEditErrors = [];
+            isAmendmentEditSubmitting = false;
+        }
+    }}
+>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.comments.edit']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.comments.edit-label']()}</DialogDescription>
+        </DialogHeader>
+        <form class="space-y-4" onsubmit={handleAmendmentEditSubmit}>
+            <Textarea name="amendment-edit" label={m['proposition-detail.comments.edit-label']()} rows={5} bind:value={amendmentEditContent} required />
+            {#if amendmentEditErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each amendmentEditErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isAmendmentEditSubmitting} class="gap-2">
+                    {#if isAmendmentEditSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.save']()}
+                    {/if}
+                </Button>
+            </DialogFooter>
+        </form>
+    </DialogContent>
+</Dialog>
+
+{#if isAmendmentDeleteDialogOpen}
+    <AlertDialog
+        open={isAmendmentDeleteDialogOpen}
+        onOpenChange={(value: boolean) => {
+            isAmendmentDeleteDialogOpen = value;
+            if (!value) {
+                amendmentDeleteCommentId = null;
+                amendmentDeleteParentId = null;
+                isAmendmentDeleteSubmitting = false;
+            }
+        }}
+    >
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>
+                    {amendmentDeleteParentId ? m['proposition-detail.comments.delete-confirm-title-reply']() : m['proposition-detail.comments.delete-confirm-title']()}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                    {amendmentDeleteParentId ? m['proposition-detail.comments.delete-confirm-description-reply']() : m['proposition-detail.comments.delete-confirm-description']()}
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isAmendmentDeleteSubmitting}>{m['common.cancel']()}</AlertDialogCancel>
+                <AlertDialogAction onclick={submitAmendmentDelete} disabled={isAmendmentDeleteSubmitting} class="gap-2">
+                    {#if isAmendmentDeleteSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.delete-confirm-submit']()}
+                    {/if}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+{/if}
+
+{#if selectedEvent}
+    <Dialog
+        open={isEventDetailDialogOpen}
+        onOpenChange={(value: boolean) => {
+            isEventDetailDialogOpen = value;
+            if (!value) {
+                selectedEventId = null;
+            }
+        }}
+    >
+        <DialogContent class="max-w-lg space-y-4">
+            <DialogHeader>
+                <DialogTitle>{selectedEvent.title}</DialogTitle>
+                <DialogDescription>{translateEventType(selectedEvent.type)}</DialogDescription>
+            </DialogHeader>
+            <div class="space-y-4 text-sm text-foreground/90">
+                {#if selectedEvent.startAt || selectedEvent.endAt}
+                    <div class="flex flex-col gap-1">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {m['proposition-detail.events.detail.schedule']()}
+                        </span>
+                        <span>
+                            {#if selectedEvent.startAt && selectedEvent.endAt}
+                                {formatDateTime(selectedEvent.startAt)} – {formatDateTime(selectedEvent.endAt)}
+                            {:else if selectedEvent.startAt}
+                                {formatDateTime(selectedEvent.startAt)}
+                            {:else if selectedEvent.endAt}
+                                {formatDateTime(selectedEvent.endAt)}
+                            {/if}
+                        </span>
+                    </div>
+                {/if}
+                {#if selectedEvent.location}
+                    <div class="flex flex-col gap-1">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {m['proposition-detail.events.form.location']()}
+                        </span>
+                        <span>{selectedEvent.location}</span>
+                    </div>
+                {/if}
+                {#if selectedEvent.videoLink}
+                    <div class="flex flex-col gap-1">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {m['proposition-detail.events.form.videoLink']()}
+                        </span>
+                        <a href={selectedEvent.videoLink} target="_blank" rel="noreferrer" class="break-all underline underline-offset-2">
+                            {selectedEvent.videoLink}
+                        </a>
+                    </div>
+                {/if}
+                {#if selectedEvent.description}
+                    <div class="flex flex-col gap-1">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {m['proposition-detail.events.form.description']()}
+                        </span>
+                        <p class="whitespace-pre-wrap">{selectedEvent.description}</p>
+                    </div>
+                {/if}
+            </div>
+            <DialogFooter class="flex flex-wrap items-center justify-between gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.close']()}</Button>
+                </DialogClose>
+                {#if isEventEditableByCurrentUser(selectedEvent)}
+                    <div class="flex gap-2">
+                        <Button type="button" variant="outline" class="gap-1" onclick={() => openEventEdit(selectedEvent)}>
+                            <Pencil class="size-4" />
+                            {m['common.edit']()}
+                        </Button>
+                        <Button type="button" variant="destructive" class="gap-1" onclick={() => confirmEventDelete(selectedEvent.id)}>
+                            <Trash2 class="size-4" />
+                            {m['common.delete']()}
+                        </Button>
+                    </div>
+                {/if}
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+{/if}
+
+{#if isEventDeleteDialogOpen}
+    <AlertDialog
+        open={isEventDeleteDialogOpen}
+        onOpenChange={(value: boolean) => {
+            isEventDeleteDialogOpen = value;
+            if (!value) {
+                eventDeleteId = null;
+                isEventDeleteSubmitting = false;
+            }
+        }}
+    >
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>{m['proposition-detail.events.delete.title']()}</AlertDialogTitle>
+                <AlertDialogDescription>{m['proposition-detail.events.delete.description']()}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isEventDeleteSubmitting}>{m['common.cancel']()}</AlertDialogCancel>
+                <AlertDialogAction onclick={submitEventDelete} disabled={isEventDeleteSubmitting} class="gap-2">
+                    {#if isEventDeleteSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.events.delete.confirm']()}
+                    {/if}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+{/if}
+
+{#if isClarificationDeleteDialogOpen}
+    <Dialog
+        open
+        onOpenChange={(value: boolean) => {
+            isClarificationDeleteDialogOpen = value;
+            if (!value) {
+                clarificationDeleteCommentId = null;
+                clarificationDeleteParentId = null;
+                isClarificationDeleteSubmitting = false;
+            }
+        }}
+    >
+        <DialogContent class="max-w-md">
+            <DialogHeader>
+                <DialogTitle>
+                    {clarificationDeleteParentId ? m['proposition-detail.comments.delete-confirm-title-reply']() : m['proposition-detail.comments.delete-confirm-title']()}
+                </DialogTitle>
+                <DialogDescription>
+                    {clarificationDeleteParentId ? m['proposition-detail.comments.delete-confirm-description-reply']() : m['proposition-detail.comments.delete-confirm-description']()}
+                </DialogDescription>
+            </DialogHeader>
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="outline" disabled={isClarificationDeleteSubmitting}>
+                        {m['common.actions.cancel']()}
+                    </Button>
+                </DialogClose>
+                <Button type="button" variant="destructive" onclick={submitClarificationDelete} disabled={isClarificationDeleteSubmitting} class="gap-2">
+                    {#if isClarificationDeleteSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.delete-confirm-submit']()}
+                    {/if}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+{/if}
+
+<Dialog open={isDeliverableDialogOpen} onOpenChange={(value: boolean) => (isDeliverableDialogOpen = value)}>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.mandates.deliverables.dialog.title']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.mandates.deliverables.dialog.description']()}</DialogDescription>
+        </DialogHeader>
+        <div class="grid gap-4">
+            <Input id="deliverable-label" name="deliverable-label" label={m['proposition-detail.mandates.deliverables.label']()} bind:value={deliverableForm.label} />
+            <Input id="deliverable-objective" name="deliverable-objective" label={m['proposition-detail.mandates.deliverables.objective']()} bind:value={deliverableForm.objectiveRef} />
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-foreground" for="deliverable-file">{m['proposition-detail.mandates.deliverables.file']()}</label>
+                <input
+                    id="deliverable-file"
+                    name="deliverable-file"
+                    type="file"
+                    class="block w-full rounded-md border border-border/40 bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    onchange={(event) => (deliverableForm.file = (event.currentTarget as HTMLInputElement).files?.[0] ?? null)}
+                />
+            </div>
+            {#if deliverableErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each deliverableErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+        </div>
+        <DialogFooter>
+            <DialogClose asChild>
+                <Button type="button" variant="outline">{m['common.actions.cancel']()}</Button>
+            </DialogClose>
+            <Button type="button" onclick={submitDeliverable} disabled={isDeliverableSubmitting} class="gap-2">
+                {#if isDeliverableSubmitting}
+                    <Loader2 class="size-4 animate-spin" />
+                    {m['common.actions.loading']()}
+                {:else}
+                    {m['proposition-detail.mandates.deliverables.submit']()}
+                {/if}
+            </Button>
+        </DialogFooter>
+    </DialogContent>
+</Dialog>
+
+<Dialog open={isEvaluationDialogOpen} onOpenChange={(value: boolean) => (isEvaluationDialogOpen = value)}>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.mandates.deliverables.evaluate.title']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.mandates.deliverables.evaluate.description']()}</DialogDescription>
+        </DialogHeader>
+        <div class="grid gap-4">
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-foreground" for="deliverable-verdict">{m['proposition-detail.mandates.deliverables.evaluate.verdict']()}</label>
+                <select
+                    id="deliverable-verdict"
+                    name="deliverable-verdict"
+                    class="rounded-md border border-border/40 bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    bind:value={evaluationVerdict}
+                >
+                    <option value={DeliverableVerdictEnum.COMPLIANT}>{m['proposition-detail.mandates.deliverables.evaluate.compliant']()}</option>
+                    <option value={DeliverableVerdictEnum.NON_COMPLIANT}>{m['proposition-detail.mandates.deliverables.evaluate.non-conform']()}</option>
+                </select>
+            </div>
+            <Textarea id="deliverable-comment" name="deliverable-comment" label={m['proposition-detail.mandates.deliverables.evaluate.comment']()} rows={4} bind:value={evaluationComment} />
+            {#if evaluationErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each evaluationErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+        </div>
+        <DialogFooter>
+            <DialogClose asChild>
+                <Button type="button" variant="outline">{m['common.actions.cancel']()}</Button>
+            </DialogClose>
+            <Button type="button" onclick={submitEvaluation} disabled={isEvaluationSubmitting} class="gap-2">
+                {#if isEvaluationSubmitting}
+                    <Loader2 class="size-4 animate-spin" />
+                    {m['common.actions.loading']()}
+                {:else}
+                    {m['proposition-detail.mandates.deliverables.evaluate.submit']()}
+                {/if}
+            </Button>
+        </DialogFooter>
+    </DialogContent>
+</Dialog>
+
+<Dialog open={isAmendmentDialogOpen} onOpenChange={(value: boolean) => (isAmendmentDialogOpen = value)}>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.comments.amendment-dialog.title']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.comments.amendment-dialog.description']()}</DialogDescription>
+        </DialogHeader>
+        <form class="space-y-4" onsubmit={handleAmendmentSubmit}>
+            <Textarea name="amendment-content" label={m['proposition-detail.comments.amendment-dialog.label']()} rows={6} bind:value={amendmentContent} required />
+            {#if amendmentErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each amendmentErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isAmendmentSubmitting} class="gap-2">
+                    {#if isAmendmentSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.amendment-dialog.submit']()}
+                    {/if}
+                </Button>
+            </DialogFooter>
+        </form>
+    </DialogContent>
+</Dialog>
+
+<Dialog
+    open={isEventDialogOpen}
+    onOpenChange={(value: boolean) => {
+        isEventDialogOpen = value;
+        if (!value) {
+            editingEventId = null;
+            resetEventForm();
+            isEventSubmitting = false;
+            eventStartInput = null;
+            eventEndInput = null;
+        }
+    }}
+>
+    <DialogContent class="max-w-3xl p-8">
+        <DialogHeader>
+            <DialogTitle>
+                {editingEventId ? m['proposition-detail.events.dialog.edit-title']() : m['proposition-detail.events.dialog.title']()}
+            </DialogTitle>
+            <DialogDescription>
+                {editingEventId ? m['proposition-detail.events.dialog.edit-description']() : m['proposition-detail.events.dialog.description']()}
+            </DialogDescription>
+        </DialogHeader>
+        <form class="grid gap-4" onsubmit={handleEventSubmit}>
+            <Input name="event-title" label={m['proposition-detail.events.form.title']()} bind:value={eventForm.title} required />
+            <div class="grid gap-4 sm:grid-cols-2">
+                <label class="flex flex-col gap-2 text-sm text-foreground">
+                    {m['proposition-detail.events.form.type']()}
+                    <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={eventForm.type}>
+                        {#each eventTypeOptions as option}
+                            <option value={option}>{translateEventType(option)}</option>
+                        {/each}
+                    </select>
+                </label>
+                <div class="relative">
+                    <Input type="datetime-local" name="event-start" label={m['proposition-detail.events.form.startAt']()} bind:value={eventForm.startAt} bind:ref={eventStartInput} class="pr-12" />
+                    <button
+                        type="button"
+                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                        onclick={() => openNativeDatePicker(eventStartInput)}
+                        aria-label={m['proposition-detail.events.form.startAt']()}
+                    >
+                        <CalendarDays class="size-4" />
+                    </button>
+                </div>
+                <div class="relative">
+                    <Input type="datetime-local" name="event-end" label={m['proposition-detail.events.form.endAt']()} bind:value={eventForm.endAt} bind:ref={eventEndInput} class="pr-12" />
+                    <button
+                        type="button"
+                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                        onclick={() => openNativeDatePicker(eventEndInput)}
+                        aria-label={m['proposition-detail.events.form.endAt']()}
+                    >
+                        <CalendarDays class="size-4" />
+                    </button>
+                </div>
+                <Input name="event-location" label={m['proposition-detail.events.form.location']()} bind:value={eventForm.location} class="sm:col-span-2" />
+            </div>
+            <Input name="event-video" label={m['proposition-detail.events.form.videoLink']()} bind:value={eventForm.videoLink} />
+            <Textarea name="event-description" label={m['proposition-detail.events.form.description']()} rows={4} bind:value={eventForm.description} />
+            {#if eventErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each eventErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isEventSubmitting} class="gap-2">
+                    {#if isEventSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {editingEventId ? m['proposition-detail.events.dialog.update']() : m['proposition-detail.events.dialog.submit']()}
+                    {/if}
+                </Button>
+            </DialogFooter>
+        </form>
+    </DialogContent>
+</Dialog>
+
+<Dialog
+    open={isVoteDialogOpen}
+    onOpenChange={(value: boolean) => {
+        isVoteDialogOpen = value;
+        if (!value) {
+            voteForm = { ...defaultVoteForm };
+            voteErrors = [];
+            isVoteSubmitting = false;
+            voteOpenInput = null;
+            voteCloseInput = null;
+        }
+    }}
+>
+    <DialogContent class="max-w-2xl">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.votes.dialog.title']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.votes.dialog.description']()}</DialogDescription>
+        </DialogHeader>
+        <form class="grid gap-4" onsubmit={handleVoteSubmit}>
+            <Input name="vote-title" label={m['proposition-detail.votes.form.title']()} bind:value={voteForm.title} required />
+            <div class="grid gap-4 sm:grid-cols-2">
+                <label class="flex flex-col gap-2 text-sm text-foreground">
+                    {m['proposition-detail.votes.form.phase']()}
+                    <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={voteForm.phase}>
+                        {#each votePhaseOptions as option}
+                            <option value={option}>{translateVotePhase(option)}</option>
+                        {/each}
+                    </select>
+                </label>
+                <label class="flex flex-col gap-2 text-sm text-foreground">
+                    {m['proposition-detail.votes.form.method']()}
+                    <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={voteForm.method}>
+                        {#each voteMethodOptions as option}
+                            <option value={option}>{translateVoteMethod(option)}</option>
+                        {/each}
+                    </select>
+                </label>
+                <div class="relative">
+                    <Input type="datetime-local" name="vote-open" label={m['proposition-detail.votes.form.openAt']()} bind:value={voteForm.openAt} bind:ref={voteOpenInput} class="pr-12" />
+                    <button
+                        type="button"
+                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                        onclick={() => openNativeDatePicker(voteOpenInput)}
+                        aria-label={m['proposition-detail.votes.form.openAt']()}
+                    >
+                        <CalendarDays class="size-4" />
+                    </button>
+                </div>
+                <div class="relative">
+                    <Input type="datetime-local" name="vote-close" label={m['proposition-detail.votes.form.closeAt']()} bind:value={voteForm.closeAt} bind:ref={voteCloseInput} class="pr-12" />
+                    <button
+                        type="button"
+                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                        onclick={() => openNativeDatePicker(voteCloseInput)}
+                        aria-label={m['proposition-detail.votes.form.closeAt']()}
+                    >
+                        <CalendarDays class="size-4" />
+                    </button>
+                </div>
+                <Input type="number" name="vote-max-selections" min="0" label={m['proposition-detail.votes.form.maxSelections']()} bind:value={voteForm.maxSelections} />
+            </div>
+            <Textarea name="vote-description" label={m['proposition-detail.votes.form.description']()} rows={3} bind:value={voteForm.description} />
+            <Textarea name="vote-options" label={m['proposition-detail.votes.form.options']()} rows={4} bind:value={voteForm.optionsText} required />
+            {#if voteErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each voteErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isVoteSubmitting} class="gap-2">
+                    {#if isVoteSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.votes.dialog.submit']()}
+                    {/if}
+                </Button>
+            </DialogFooter>
+        </form>
+    </DialogContent>
+</Dialog>
+
+<Dialog open={isMandateDialogOpen} onOpenChange={(value: boolean) => (isMandateDialogOpen = value)}>
+    <DialogContent class="max-w-2xl">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.mandates.dialog.title']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.mandates.dialog.description']()}</DialogDescription>
+        </DialogHeader>
+        <form class="grid gap-4" onsubmit={handleMandateSubmit}>
+            <Input name="mandate-title" label={m['proposition-detail.mandates.form.title']()} bind:value={mandateForm.title} required />
+            <Textarea name="mandate-description" label={m['proposition-detail.mandates.form.description']()} rows={4} bind:value={mandateForm.description} />
+            <div class="grid gap-4 sm:grid-cols-2">
+                <Input name="mandate-holder" label={m['proposition-detail.mandates.form.holder']()} bind:value={mandateForm.holderUserId} />
+                <label class="flex flex-col gap-2 text-sm text-foreground">
+                    {m['proposition-detail.mandates.form.status']()}
+                    <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={mandateForm.status}>
+                        {#each mandateStatusOptions as option}
+                            <option value={option}>{translateMandateStatus(option)}</option>
+                        {/each}
+                    </select>
+                </label>
+                <Input name="mandate-target" label={m['proposition-detail.mandates.form.targetObjectiveRef']()} bind:value={mandateForm.targetObjectiveRef} />
+                <Input type="date" name="mandate-initial" label={m['proposition-detail.mandates.form.initialDeadline']()} bind:value={mandateForm.initialDeadline} />
+                <Input type="date" name="mandate-current" label={m['proposition-detail.mandates.form.currentDeadline']()} bind:value={mandateForm.currentDeadline} />
+            </div>
+            {#if mandateErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each mandateErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isMandateSubmitting}>{m['proposition-detail.mandates.dialog.submit']()}</Button>
+            </DialogFooter>
+        </form>
+    </DialogContent>
+</Dialog>
+
+<Dialog open={isStatusDialogOpen} onOpenChange={(value: boolean) => (isStatusDialogOpen = value)}>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.status.dialog.title']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.status.dialog.description']()}</DialogDescription>
+        </DialogHeader>
+        <form class="space-y-4" onsubmit={handleStatusSubmit}>
+            <label class="flex flex-col gap-2 text-sm text-foreground">
+                {m['proposition-detail.status.dialog.target']()}
+                <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={selectedStatus}>
+                    {#each availableTransitions as status}
+                        <option value={status}>{translateStatus(status)}</option>
+                    {/each}
+                </select>
+            </label>
+            <Textarea name="status-reason" label={m['proposition-detail.status.dialog.reason']()} rows={3} bind:value={transitionReason} />
+            {#if statusErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each statusErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isStatusSubmitting}>{m['proposition-detail.status.dialog.submit']()}</Button>
+            </DialogFooter>
+        </form>
+    </DialogContent>
+</Dialog>
 
 <style>
     @media print {

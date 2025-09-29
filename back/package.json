@@ -19,6 +19,8 @@
         "#repositories/*": "./app/repositories/*.js",
         "#mails/*": "./app/mails/*.js",
         "#services/*": "./app/services/*.js",
+        "#serializers/*": "./app/serializers/*.js",
+        "#types": "./app/types/index.js",
         "#types/*": "./app/types/*.js",
         "#listeners/*": "./app/listeners/*.js",
         "#events/*": "./app/events/*.js",

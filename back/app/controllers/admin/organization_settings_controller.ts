@@ -15,16 +15,44 @@ export default class OrganizationSettingsController {
     public async update({ request, response, i18n }: HttpContext) {
         const payload = await request.validateUsing(updateOrganizationSettingsValidator);
 
-        const settings = await this.settingsService.updateOrganizationSettings(
-            {
-                name: payload.name ?? null,
-                description: payload.description ?? null,
-                sourceCodeUrl: payload.sourceCodeUrl ?? null,
-                copyright: payload.copyright ?? null,
-                removeLogo: payload.removeLogo,
+        const fallbackLocale = payload.fallbackLocale.trim().toLowerCase();
+
+        const requiredFields: Array<keyof typeof payload> = ['name', 'description', 'sourceCodeUrl', 'copyright'];
+
+        for (const field of requiredFields) {
+            const translations = (payload as any)[field] as Record<string, string> | undefined;
+            const value = translations?.[fallbackLocale]?.trim();
+            if (!value) {
+                return response.badRequest({
+                    error: i18n.t('messages.admin.organization.update.error.missing', { locale: fallbackLocale, field }),
+                });
+            }
+            if (field === 'sourceCodeUrl') {
+                try {
+                    // eslint-disable-next-line no-new
+                    new URL(value);
+                } catch (error) {
+                    return response.badRequest({
+                        error: i18n.t('messages.admin.organization.update.error.invalid-url', { locale: fallbackLocale }),
+                    });
+                }
+            }
+        }
+
+        const settingsPayload = {
+            fallbackLocale,
+            translations: {
+                name: payload.name ?? {},
+                description: payload.description ?? {},
+                sourceCodeUrl: payload.sourceCodeUrl ?? {},
+                copyright: payload.copyright ?? {},
             },
-            payload.logo
-        );
+            ...(payload.propositionDefaults ? { propositionDefaults: payload.propositionDefaults } : {}),
+            ...(payload.permissions ? { permissions: payload.permissions } : {}),
+            ...(payload.workflowAutomation ? { workflowAutomation: payload.workflowAutomation } : {}),
+        };
+
+        const settings = await this.settingsService.updateOrganizationSettings(settingsPayload, payload.logo);
 
         return response.ok({
             settings,

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarTrigger } from '#lib/components/ui/sidebar';
+    import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarInset, SidebarMenu, SidebarMenuItem, SidebarTrigger, useSidebar } from '#lib/components/ui/sidebar';
     import { adminMenu, mainMenu, type MenuItemsListItem } from '#lib/services/menuService';
     import { profile } from '#lib/stores/profileStore';
     import Theme from '#components/Theme.svelte';
@@ -10,7 +10,10 @@
     import { cn } from '#lib/utils';
     import { m } from '#lib/paraglide/messages';
     import type { Snippet } from 'svelte';
-    import { organizationSettings } from '#lib/stores/organizationStore';
+    import { organizationSettings, translateField } from '#lib/stores/organizationStore';
+    import { language } from '#lib/stores/languageStore';
+    import { Button } from '#lib/components/ui/button';
+    import { ArrowLeft } from '@lucide/svelte';
 
     type Props = {
         children: Snippet;
@@ -23,7 +26,9 @@
 
     const DEFAULT_BRAND_NAME = 'Essaimons-V1';
     let navItems: MenuItemsListItem[] = $state(mainMenu.notConnected);
-    const brandName = $derived($organizationSettings.name ?? DEFAULT_BRAND_NAME);
+    const resolvedLocale = $derived($language);
+    const fallbackLocale = $derived($organizationSettings.fallbackLocale);
+    const brandName = $derived(translateField($organizationSettings.name, resolvedLocale, fallbackLocale) ?? DEFAULT_BRAND_NAME);
     const logoUrl = $derived($organizationSettings.logo ? `/assets/organization/logo/${$organizationSettings.logo.id}?no-cache=true` : null);
 
     $effect(() => {
@@ -39,45 +44,67 @@
     });
 
     const currentPath = $derived(page.url.pathname);
+    const currentLocation = $derived<string>(page.data.location ?? currentPath);
+
+    const matchesLocation = (href: string, location: string): boolean => {
+        if (href === '/') {
+            return location === '/';
+        }
+
+        return location === href || location.startsWith(`${href}/`);
+    };
 
     const isNavItemActive = (href: string): boolean => {
-        if (!currentPath) {
+        if (!currentLocation) {
             return false;
         }
 
-        if (href === '/') {
-            return currentPath === href;
+        let bestMatch: string | null = null;
+
+        for (const item of navItems) {
+            if (!matchesLocation(item.href, currentLocation)) {
+                continue;
+            }
+
+            if (!bestMatch || item.href.length > bestMatch.length) {
+                bestMatch = item.href;
+            }
         }
 
-        return currentPath.startsWith(href);
+        return bestMatch === href;
     };
 </script>
 
 <SidebarProvider bind:open={isOpen}>
+    {@const sidebar = useSidebar()}
     <Sidebar toggleButtonRef={triggerButtonRef} variant="floating" class="bg-sidebar/85 ring-1 ring-inset ring-sidebar-border/60 backdrop-blur-2xl shadow-2xl">
         <SidebarContent class="flex h-full flex-col gap-4 px-4 py-5">
             <SidebarGroup>
                 <SidebarGroupContent class="space-y-6">
-                    <div
-                        class="flex items-center justify-between gap-3 rounded-3xl border border-sidebar-border/50 bg-white/85 px-3.5 py-2.5 shadow-lg backdrop-blur-xl transition hover:border-primary/60 hover:bg-white/90 dark:bg-slate-950/80"
-                    >
-                        <Link href="/" class="group flex w-full items-center gap-4 text-left">
-                            <span class="grid size-10 place-items-center rounded-2xl bg-primary/15 text-primary shadow-inner overflow-hidden">
+                    <div class="flex items-center justify-between gap-3 px-1">
+                        <Link href="/" class="flex items-center gap-3 text-left text-base font-semibold !h-auto !w-auto !rounded-none !border-0 !bg-transparent !p-0 !shadow-none !text-foreground/90">
+                            <span class="grid size-10 place-items-center overflow-hidden rounded-xl">
                                 {#if logoUrl}
-                                    <img src={logoUrl} alt={brandName} class="size-7 rounded-xl object-cover" />
+                                    <img src={logoUrl} alt="" class="size-9 rounded-xl object-cover" />
                                 {:else}
-                                    <img src="/icons/favicon-96x96.png" alt={m['common.logo.alt']()} class="size-7 rounded-xl" />
+                                    <img src="/icons/favicon-96x96.png" alt="" class="size-9 rounded-xl object-cover" />
                                 {/if}
                             </span>
-                            <div class="flex min-w-0 flex-col leading-tight">
-                                <span class="truncate text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-muted-foreground">{m['common.logo.alt']()}</span>
-                                <span class="truncate text-base font-semibold text-foreground/90">{brandName}</span>
-                            </div>
+                            <span class="truncate">{brandName}</span>
                         </Link>
-                        <SidebarTrigger
+                        <Button
                             bind:ref={triggerButtonRef}
-                            class="flex size-10 items-center justify-center rounded-full border border-transparent bg-white/90 text-foreground shadow-sm transition hover:border-primary/50 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40 dark:bg-slate-900"
-                        />
+                            size="icon"
+                            variant="ghost"
+                            class="flex size-10 items-center justify-center rounded-full text-foreground transition hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+                            onclick={() => {
+                                sidebar.ignoreNextOutsideClick();
+                                sidebar.toggle();
+                            }}
+                        >
+                            <ArrowLeft class="size-5" />
+                            <span class="sr-only">{m['common.close']()}</span>
+                        </Button>
                     </div>
 
                     <SidebarMenu class="space-y-1.5">
@@ -116,9 +143,11 @@
             <div class="sticky top-6 z-20 mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between gap-4 rounded-full border border-sidebar-border/50 bg-white/85 px-4 py-3 shadow-xl backdrop-blur-2xl dark:bg-slate-950/80">
                     <div class="flex flex-1 items-center gap-3">
-                        <SidebarTrigger
-                            class="inline-flex size-11 items-center justify-center rounded-full border border-transparent bg-white/90 text-foreground shadow-md transition hover:border-primary/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40 dark:bg-slate-900"
-                        />
+                        {#if !isOpen}
+                            <SidebarTrigger
+                                class="inline-flex size-11 items-center justify-center rounded-full border border-transparent bg-white/90 text-foreground shadow-md transition hover:border-primary/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40 dark:bg-slate-900"
+                            />
+                        {/if}
 
                         {#if $profile}
                             <div class="hidden items-center gap-3 rounded-full border border-transparent bg-white/80 px-3 py-2 shadow-sm backdrop-blur-md md:flex dark:bg-slate-900/70">
@@ -127,12 +156,9 @@
                                 </span>
                                 <div class="flex flex-col leading-tight">
                                     <span class="text-sm font-semibold text-foreground/85">{$profile.username}</span>
-                                    <Link href="/profile" class="text-xs font-medium !text-muted-foreground hover:!text-primary">
-                                        {m['profile.title']()}
-                                    </Link>
                                 </div>
                             </div>
-                        {:else}
+                        {:else if !currentLocation.startsWith('/login')}
                             <Link
                                 href="/login"
                                 class="hidden items-center gap-2 rounded-full border border-sidebar-border/60 bg-white/80 px-4 py-2 text-sm font-semibold !text-foreground/80 shadow-sm transition hover:border-primary/60 hover:!text-primary md:inline-flex dark:bg-slate-900/70"

@@ -34,7 +34,7 @@ export default class PropositionRepository extends BaseRepository<typeof Proposi
         return query;
     }
 
-    public async searchWithFilters(filters: { search?: string; categoryIds?: string[] }, page: number, limit: number): Promise<PaginatedPropositions> {
+    public async searchWithFilters(filters: { search?: string; categoryIds?: string[]; statuses?: string[] }, page: number, limit: number): Promise<PaginatedPropositions> {
         const sanitizedLimit: number = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 50) : 12;
         const sanitizedPage: number = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
 
@@ -69,6 +69,9 @@ export default class PropositionRepository extends BaseRepository<typeof Proposi
                         }
                     });
                 });
+            })
+            .if(filters.statuses && filters.statuses.length > 0, (queryBuilder: ModelQueryBuilderContract<typeof Proposition>): void => {
+                queryBuilder.whereIn('status', filters.statuses!);
             });
 
         const propositions: ModelPaginatorContract<Proposition> = await query.paginate(sanitizedPage, sanitizedLimit);

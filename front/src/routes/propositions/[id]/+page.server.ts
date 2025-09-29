@@ -1,9 +1,19 @@
-import { error, fail } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import { redirect as flashRedirect } from 'sveltekit-flash-message/server';
+import type { AxiosResponse } from 'axios';
 import type { SerializedProposition } from 'backend/types';
+import type { PropositionComment, PropositionEvent, PropositionMandate, PropositionVote } from '#lib/types/proposition';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad<{ proposition: SerializedProposition }> = async ({ params, locals }) => {
+type PropositionDetailPageData = {
+    proposition: SerializedProposition;
+    events: PropositionEvent[];
+    votes: PropositionVote[];
+    mandates: PropositionMandate[];
+    comments: PropositionComment[];
+};
+
+export const load: PageServerLoad<PropositionDetailPageData> = async ({ params, locals }) => {
     const propositionId = params.id?.toString().trim();
 
     if (!propositionId) {
@@ -11,10 +21,35 @@ export const load: PageServerLoad<{ proposition: SerializedProposition }> = asyn
     }
 
     try {
-        const response = await locals.client.get<{ proposition: SerializedProposition }>(`api/propositions/${propositionId}`);
-        return {
-            proposition: response.data.proposition,
+        const { data: propositionPayload } = await locals.client.get<{ proposition: SerializedProposition }>(`api/propositions/${propositionId}`);
+
+        const [eventsResult, votesResult, mandatesResult, commentsResult] = await Promise.allSettled([
+            locals.client.get<{ events: PropositionEvent[] }>(`api/propositions/${propositionId}/events`),
+            locals.client.get<{ votes: PropositionVote[] }>(`api/propositions/${propositionId}/votes`),
+            locals.client.get<{ mandates: PropositionMandate[] }>(`api/propositions/${propositionId}/mandates`),
+            locals.client.get<{ comments: PropositionComment[] }>(`api/propositions/${propositionId}/comments`),
+        ]);
+
+        const extract = <T>(result: PromiseSettledResult<AxiosResponse<T>>, fallback: T): T => {
+            if (result.status === 'fulfilled') {
+                return result.value.data ?? fallback;
+            }
+            console.error('proposition.detail.partial.fetch.error', result.reason);
+            return fallback;
         };
+
+        const eventsPayload = extract(eventsResult, { events: [] });
+        const votesPayload = extract(votesResult, { votes: [] });
+        const mandatesPayload = extract(mandatesResult, { mandates: [] });
+        const commentsPayload = extract(commentsResult, { comments: [] });
+
+        return {
+            proposition: propositionPayload.proposition,
+            events: eventsPayload.events ?? [],
+            votes: votesPayload.votes ?? [],
+            mandates: mandatesPayload.mandates ?? [],
+            comments: commentsPayload.comments ?? [],
+        } satisfies PropositionDetailPageData;
     } catch (err: any) {
         const status: number | undefined = err?.response?.status;
         const message: string | undefined = err?.response?.data?.error;

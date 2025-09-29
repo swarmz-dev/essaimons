@@ -7,6 +7,7 @@ import PropositionRepository from '#repositories/proposition_repository';
 import PropositionCategoryRepository from '#repositories/proposition_category_repository';
 import UserRepository from '#repositories/user_repository';
 import { createPropositionValidator, searchPropositionsValidator, updatePropositionValidator } from '#validators/proposition';
+import { updatePropositionStatusValidator } from '#validators/proposition_status';
 import type Proposition from '#models/proposition';
 import type User from '#models/user';
 import { errors } from '@vinejs/vine';
@@ -16,7 +17,8 @@ import { SerializedPropositionSummary } from '#types/serialized/serialized_propo
 import { SerializedPropositionCategory } from '#types/serialized/serialized_proposition_category';
 import type { PaginatedPropositions } from '#types/paginated/paginated_propositions';
 import type { MultipartFile } from '#types/multipart_file';
-import { UserRoleEnum } from '#types/enum/user_role_enum';
+import { PropositionStatusEnum } from '#types/enum/proposition_status_enum';
+import PropositionWorkflowService, { PropositionWorkflowException } from '#services/proposition_workflow_service';
 
 @inject()
 export default class PropositionController {
@@ -24,23 +26,27 @@ export default class PropositionController {
         private readonly propositionService: PropositionService,
         private readonly propositionRepository: PropositionRepository,
         private readonly propositionCategoryRepository: PropositionCategoryRepository,
-        private readonly userRepository: UserRepository
+        private readonly userRepository: UserRepository,
+        private readonly propositionWorkflowService: PropositionWorkflowService
     ) {}
 
     public async search({ request, response }: HttpContext): Promise<void> {
         const rawCategoryIds: string[] = this.parseCsv(request.input('categories'));
+        const rawStatuses: string[] = this.parseCsv(request.input('statuses'));
 
-        const { query, page, limit, categoryIds } = await searchPropositionsValidator.validate({
+        const { query, page, limit, categoryIds, statuses } = await searchPropositionsValidator.validate({
             query: request.input('query'),
             page: request.input('page'),
             limit: request.input('limit'),
             categoryIds: rawCategoryIds,
+            statuses: rawStatuses,
         });
 
         const paginated: PaginatedPropositions = await this.propositionRepository.searchWithFilters(
             {
                 search: query && query.length ? query : undefined,
                 categoryIds: categoryIds?.length ? categoryIds : undefined,
+                statuses: statuses?.length ? statuses : undefined,
             },
             page || 1,
             limit || 12
@@ -52,6 +58,7 @@ export default class PropositionController {
             ...paginated,
             filters: {
                 categories: categories.map((category: PropositionCategory): SerializedPropositionCategory => category.apiSerialize()),
+                statuses: Object.values(PropositionStatusEnum),
             },
         });
     }
@@ -222,11 +229,8 @@ export default class PropositionController {
         }
 
         const actor: User = user as User;
-        const isAdmin: boolean = actor?.role === UserRoleEnum.ADMIN;
-        const isCreator: boolean = proposition.creatorId === actor?.id;
-        const isRescueInitiator: boolean = (proposition.rescueInitiators ?? []).some((rescueUser: User) => rescueUser.id === actor?.id);
-
-        if (!isAdmin && !isCreator && !isRescueInitiator) {
+        const canEdit = await this.propositionWorkflowService.canPerform(proposition, actor, 'edit_proposition');
+        if (!canEdit) {
             return response.forbidden({ error: i18n.t('messages.proposition.update.forbidden') });
         }
 
@@ -327,6 +331,64 @@ export default class PropositionController {
                 error: fallbackMessage,
                 ...(app.inProduction || !errorDetails ? {} : { details: errorDetails }),
             });
+        }
+    }
+
+    public async updateStatus(ctx: HttpContext): Promise<void> {
+        const { request, response, i18n, user } = ctx;
+
+        const identifierParam = request.param('id');
+        if (!identifierParam || typeof identifierParam !== 'string' || identifierParam.trim().length === 0) {
+            return response.badRequest({ error: i18n.t('messages.proposition.show.invalid-id') });
+        }
+
+        const proposition: Proposition | null = await this.propositionRepository.findByPublicId(identifierParam.trim(), [
+            'rescueInitiators',
+            'mandates',
+            'creator',
+            'categories',
+            'associatedPropositions',
+            'attachments',
+            'visual',
+        ]);
+
+        if (!proposition) {
+            return response.notFound({ error: i18n.t('messages.proposition.show.not-found') });
+        }
+
+        const actor: User = user as User;
+
+        const payload = await updatePropositionStatusValidator.validate({
+            status: request.input('status'),
+            reason: request.input('reason'),
+        });
+
+        try {
+            const updated = await this.propositionService.transition(proposition, actor, payload.status as PropositionStatusEnum, { reason: payload.reason });
+
+            await Promise.all([updated.load('categories'), updated.load('rescueInitiators'), updated.load('associatedPropositions'), updated.load('attachments'), updated.load('creator')]);
+
+            if (updated.visualFileId) {
+                await updated.load('visual');
+            }
+
+            return response.ok({ proposition: updated.apiSerialize() });
+        } catch (error) {
+            if (error instanceof PropositionWorkflowException) {
+                const message = error.code === 'invalid_transition' ? 'Invalid proposition transition' : 'You are not allowed to change the proposition status';
+                if (error.code === 'forbidden') {
+                    return response.forbidden({ error: message });
+                }
+                return response.badRequest({ error: message });
+            }
+
+            logger.error('proposition.status.update.error', {
+                message: error?.message,
+                stack: error?.stack,
+            });
+
+            const fallbackMessage = i18n.t('messages.proposition.update.error');
+            return response.badRequest({ error: fallbackMessage });
         }
     }
 

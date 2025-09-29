@@ -5,6 +5,7 @@
         "continue": "Continue",
         "language": "Language",
         "close": "Close",
+        "view": "View",
         "edit": "Edit",
         "update": "Update",
         "delete": "Delete",
@@ -63,6 +64,10 @@
         "consent": "I agree to the terms and conditions",
         "logo": {
             "alt": "Essaimons-V1's logo"
+        },
+        "actions": {
+            "cancel": "Cancel",
+            "loading": "Saving…"
         }
     },
     "open-graph": {
@@ -273,10 +278,20 @@
                     "title": "Logo",
                     "placeholder": "Upload a square logo (PNG, JPG, SVG, WEBP)",
                     "remove": "Remove current logo"
-                }
+                },
+                "fallback-locale": "Fallback language",
+                "fallback-badge": "Fallback"
             },
             "actions": {
                 "save": "Save changes"
+            },
+            "validation": {
+                "source-code-url": {
+                    "invalid": "Please enter a valid URL for {locale}.",
+                    "required": "Source code link is required for fallback locale {locale}.",
+                    "max": "Source code link must be 2000 characters or fewer for {locale}."
+                },
+                "fallback-required": "{field} ({locale}) must be provided."
             },
             "crop": {
                 "title": "Adjust logo",
@@ -287,6 +302,56 @@
                 "apply": "Apply",
                 "unsupported": "Canvas is not supported in your browser",
                 "background": "Background color"
+            },
+            "tabs": {
+                "general": "General",
+                "propositions": "Proposals"
+            },
+            "propositions": {
+                "description": "Configure default offsets applied when creating a proposal. Each value represents days after the previous milestone.",
+                "clarification": "Clarification offset (days)",
+                "improvement": "Improvement offset (days)",
+                "vote": "Vote offset (days)",
+                "mandate": "Mandate offset (days)",
+                "evaluation": "Evaluation offset (days)",
+                "automations": {
+                    "title": "Automations",
+                    "evaluation-shift": "Evaluation auto-shift (days)",
+                    "revocation-delay": "Revocation auto-trigger delay (days)",
+                    "naming-pattern": "Deliverable naming pattern",
+                    "recalc-cooldown": "Minimum cooldown between recalculations (minutes)",
+                    "non-conformity-percent": "Non-conformity threshold (%)",
+                    "non-conformity-floor": "Non-conformity floor (votes)",
+                    "revocation-frequency": "Revocation check frequency (hours)"
+                },
+                "permissions": {
+                    "title": "Permissions by status",
+                    "hint": "Enable the actions allowed for each role and status.",
+                    "no-role": "No role configured for this status.",
+                    "no-action": "No action defined for this role.",
+                    "select-action": "Select an action",
+                    "add-action": "Add action",
+                    "create-action": "Create custom action",
+                    "no-action-preset": "No predefined action",
+                    "select-role": "Select a role",
+                    "add-role": "Add role",
+                    "no-role-preset": "No predefined role",
+                    "create-role": "Create custom role",
+                    "prompts": {
+                        "role-name": "Name of the new role for {status}",
+                        "role-first-action": "Add an initial action for {role} ({status})",
+                        "action-name": "Name of the new action for {role} ({status})"
+                    },
+                    "errors": {
+                        "role-unavailable": "This role is not available for this status.",
+                        "role-exists": "This role already exists for this status.",
+                        "role-invalid": "The role name must contain alphanumeric characters.",
+                        "action-unavailable": "This action is not available for this role.",
+                        "action-exists": "This action already exists for this role.",
+                        "action-invalid": "The action name must contain alphanumeric characters.",
+                        "role-needs-action": "A custom role must include at least one action."
+                    }
+                }
             }
         }
     },
@@ -321,7 +386,9 @@
             },
             "visual": {
                 "label": "Visual",
-                "info": "Add a representative visual to help people recognise the proposal quickly. Image formats such as PNG, JPG, or WEBP are recommended."
+                "info": "Add a representative visual to help people recognise the proposal quickly. Image formats such as PNG, JPG, or WEBP are recommended.",
+                "remove": "Remove image",
+                "preview-alt": "Preview of the proposal visual"
             },
             "categories": {
                 "label": "Categories",
@@ -400,6 +467,13 @@
             "concretization-hint": "Complete the general framing before moving to collaborative aspects.",
             "horizontality-hint": "Document the shared context, deadlines, and mandates.",
             "robustness-hint": "Assess impacts, required expertise, and connections to other proposals."
+        },
+        "crop": {
+            "title": "Adjust visual",
+            "instructions": "Resize and crop the image so it fits the proposal layout.",
+            "zoom": "Zoom",
+            "reset": "Reset",
+            "apply": "Save image"
         }
     },
     "proposition-edit": {
@@ -434,6 +508,9 @@
             "categories": {
                 "placeholder": "Filter by categories"
             },
+            "statuses": {
+                "placeholder": "Filter by status"
+            },
             "reset": "Reset filters"
         },
         "visual": {
@@ -442,6 +519,10 @@
         },
         "actions": {
             "view": "Open proposal"
+        },
+        "badges": {
+            "overdue": "Late on {phase}",
+            "status-since": "Stage started on {date}"
         },
         "dates": {
             "empty": "Not provided",
@@ -453,6 +534,7 @@
                 "title": "Title",
                 "summary": "Summary",
                 "categories": "Categories",
+                "status": "Status",
                 "vote": "Vote",
                 "updated": "Updated"
             }
@@ -494,6 +576,15 @@
             "associated": "Related proposals",
             "attachments": "Attachments"
         },
+        "tabs": {
+            "overview": "Overview",
+            "clarifications": "Clarifications",
+            "amendments": "Amendments",
+            "vote": "Vote",
+            "mandates": "Mandates",
+            "followup": "Follow-up & traceability",
+            "aria-label": "Proposal workflow sections"
+        },
         "dates": {
             "clarification": "Clarification",
             "improvement": "Improvement",
@@ -501,6 +592,222 @@
             "mandate": "Mandate",
             "evaluation": "Evaluation",
             "empty": "Not provided"
+        },
+        "timeline": {
+            "current": "In progress",
+            "completed": "Completed",
+            "upcoming": "Upcoming",
+            "deliverables": "Linked deliverables: {count}",
+            "vote-status": "Vote status: {status}"
+        },
+        "comments": {
+            "anonymous": "Unknown contributor",
+            "empty": "No contributions recorded for this section yet.",
+            "add": "Add a clarification",
+            "add-amendment": "Add an amendment comment",
+            "section": {
+                "amendment": "Amendment discussions"
+            },
+            "dialog": {
+                "title": "Share a clarification",
+                "description": "Clarification messages are visible to all authenticated participants.",
+                "label": "Clarification message",
+                "submit": "Publish clarification"
+            },
+            "amendment-dialog": {
+                "title": "Share an amendment",
+                "description": "Amendment comments are shared with contributors involved in this phase.",
+                "label": "Amendment message",
+                "submit": "Publish amendment comment"
+            },
+            "reply": "Reply",
+            "reply-dialog": {
+                "title": "Reply to clarification",
+                "description": "Post a follow-up directly in this clarification thread.",
+                "label": "Your reply",
+                "submit": "Publish reply"
+            },
+            "edit": "Edit",
+            "save": "Save changes",
+            "edit-label": "Edit message",
+            "delete": "Delete",
+            "delete-confirm-title": "Delete clarification",
+            "delete-confirm-description": "This clarification will be permanently removed.",
+            "delete-confirm-submit": "Confirm deletion",
+            "delete-confirm-title-reply": "Delete reply",
+            "delete-confirm-description-reply": "This reply will be permanently removed."
+        },
+        "events": {
+            "empty": "No collective session has been scheduled yet.",
+            "add": "Schedule an exchange",
+            "dialog": {
+                "title": "Schedule an exchange",
+                "description": "Inform participants about upcoming discussions or key milestones.",
+                "submit": "Create event",
+                "edit-title": "Edit scheduled exchange",
+                "edit-description": "Update the session details to keep everyone aligned.",
+                "update": "Update event"
+            },
+            "detail": {
+                "schedule": "Schedule"
+            },
+            "form": {
+                "title": "Title",
+                "type": "Type",
+                "startAt": "Start",
+                "endAt": "End",
+                "location": "Location",
+                "videoLink": "Video link",
+                "description": "Description"
+            },
+            "type": {
+                "milestone": "Milestone",
+                "exchange": "Exchange",
+                "evaluation": "Evaluation"
+            },
+            "delete": {
+                "title": "Delete exchange",
+                "description": "This exchange will be removed from the proposal timeline.",
+                "confirm": "Delete exchange",
+                "success": "Exchange deleted."
+            }
+        },
+        "vote": {
+            "method": "Method: {method}"
+        },
+        "votes": {
+            "empty": "No vote has been configured yet.",
+            "add": "Configure a vote",
+            "dialog": {
+                "title": "Configure a vote",
+                "description": "Define the voting method, schedule and available options before it opens.",
+                "submit": "Create vote"
+            },
+            "form": {
+                "title": "Title",
+                "phase": "Phase",
+                "method": "Method",
+                "openAt": "Opens at",
+                "closeAt": "Closes at",
+                "maxSelections": "Maximum selections",
+                "description": "Description",
+                "options": "Options (one per line)"
+            },
+            "options-empty": "Please provide at least one voting option.",
+            "max-invalid": "Maximum selections must be a positive number.",
+            "phase": {
+                "vote": "Voting",
+                "mandate": "Mandate",
+                "revocation": "Revocation"
+            },
+            "method-label": {
+                "binary": "Binary",
+                "multi_choice": "Multiple choice",
+                "majority_judgment": "Majority judgment"
+            }
+        },
+        "mandate": {
+            "holder": "Mandated person: {holder}"
+        },
+        "mandates": {
+            "empty": "No mandates have been created yet.",
+            "add": "Create a mandate",
+            "dialog": {
+                "title": "Create a mandate",
+                "description": "Assign responsibilities and track deliverables for this proposal.",
+                "submit": "Create mandate"
+            },
+            "form": {
+                "title": "Title",
+                "description": "Description",
+                "holder": "Mandated user ID",
+                "status": "Status",
+                "targetObjectiveRef": "Related objective",
+                "initialDeadline": "Initial deadline",
+                "currentDeadline": "Current deadline"
+            },
+            "status": {
+                "draft": "Draft",
+                "pending": "Pending",
+                "active": "Active",
+                "completed": "Completed",
+                "revoked": "Revoked"
+            },
+            "deliverables": {
+                "upload": "Upload deliverable",
+                "upload-success": "Deliverable uploaded.",
+                "file-required": "Please select a file to upload.",
+                "dialog": {
+                    "title": "Upload a deliverable",
+                    "description": "Attach the latest version of the deliverable. Deadlines will be recalculated automatically."
+                },
+                "label": "Label (optional)",
+                "objective": "Linked objective (optional)",
+                "file": "Deliverable file",
+                "submit": "Upload",
+                "empty": "No deliverables uploaded yet.",
+                "unnamed": "Unnamed deliverable",
+                "status": {
+                    "pending": "Pending review",
+                    "non_conform": "Non-conform",
+                    "escalated": "Revocation in progress",
+                    "resolved": "Resolved"
+                },
+                "download": "Download deliverable",
+                "flagged": "Flagged on {date}",
+                "procedure": {
+                    "pending": "Procedure pending",
+                    "escalated": "Revocation vote scheduled",
+                    "resolved": "Procedure closed"
+                },
+                "evaluations": "{total} evaluation(s) • {nonConform} marked non-conform",
+                "evaluate": {
+                    "title": "Evaluate deliverable",
+                    "description": "Record your assessment and optionally add a comment.",
+                    "verdict": "Verdict",
+                    "compliant": "Compliant",
+                    "non-conform": "Non-conform",
+                    "comment": "Comment (optional)",
+                    "submit": "Record evaluation"
+                },
+                "evaluate-success": "Evaluation saved."
+            }
+        },
+        "followup": {
+            "permissions": "Permissions overview",
+            "role": "Role",
+            "actions": "Allowed actions",
+            "permissions-empty": "No permissions defined for this status.",
+            "automation": {
+                "recalcCooldown": "Deliverable recalculation cooldown: {minutes} min",
+                "nonConformityPercent": "Non-conformity threshold: {percent}%",
+                "nonConformityFloor": "Non-conformity floor: {count} votes",
+                "evaluationShift": "Automatic evaluation shift: {days} days",
+                "revocationDelay": "Inaction delay before revocation: {days} days",
+                "revocationFrequency": "Revocation check frequency: {hours} h",
+                "pattern": "Deliverable naming pattern: {pattern}"
+            }
+        },
+        "status": {
+            "change": "Change status",
+            "invalid": "Selected status is not available.",
+            "current": "Current status",
+            "label": {
+                "draft": "Draft",
+                "clarify": "Clarify",
+                "amend": "Amend",
+                "vote": "Vote",
+                "mandate": "Mandate",
+                "evaluate": "Evaluate",
+                "archived": "Archived"
+            },
+            "dialog": {
+                "title": "Update proposal status",
+                "description": "Choose the next stage in the workflow. Permissions are verified before applying the transition.",
+                "target": "Next status",
+                "reason": "Transition reason (optional)",
+                "submit": "Apply transition"
+            }
         },
         "empty": {
             "expertise": "No additional expertise specified.",

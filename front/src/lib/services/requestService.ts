@@ -13,23 +13,28 @@ export const wrappedFetch = async (
     onSuccess?: (data: any) => void | Promise<void>,
     onError?: (data: any) => void | Promise<void>
 ): Promise<any | undefined> => {
+    const headers = new Headers(options.headers ?? {});
     const fetchOptions: RequestInit = {
         ...options,
         body: undefined,
-        headers: options.headers ? { ...options.headers } : {},
+        headers,
+        credentials: options.credentials ?? 'include',
     };
 
     if (options.body instanceof FormData) {
         fetchOptions.body = options.body;
     } else if (options.body && typeof options.body === 'object') {
         fetchOptions.body = JSON.stringify(options.body);
+        if (!headers.has('Content-Type')) {
+            headers.set('Content-Type', 'application/json');
+        }
     }
 
     const response: Response = await fetch(input, fetchOptions);
 
     if (response.status === 401) {
         try {
-            await fetch(new URL('/logout'), { method: 'POST' });
+            await fetch('/logout', { method: 'POST', credentials: 'include' });
         } catch (error: any) {
             console.error(error);
         }

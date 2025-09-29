@@ -42,16 +42,44 @@ export const load: LayoutServerLoad = loadFlash(
         const user: SerializedUser | undefined = userCookie ? <SerializedUser>JSON.parse(userCookie) : undefined;
 
         let organization: SerializedOrganizationSettings = {
-            name: null,
-            description: null,
-            sourceCodeUrl: null,
-            copyright: null,
+            fallbackLocale: 'en',
+            locales: [],
+            name: {},
+            description: {},
+            sourceCodeUrl: {},
+            copyright: {},
             logo: null,
+            propositionDefaults: {
+                clarificationOffsetDays: 7,
+                improvementOffsetDays: 15,
+                voteOffsetDays: 7,
+                mandateOffsetDays: 15,
+                evaluationOffsetDays: 30,
+            },
+            permissions: { perStatus: {} },
+            permissionCatalog: { perStatus: {} },
+            workflowAutomation: {
+                deliverableRecalcCooldownMinutes: 10,
+                evaluationAutoShiftDays: 14,
+                nonConformityPercentThreshold: 10,
+                nonConformityAbsoluteFloor: 5,
+                revocationAutoTriggerDelayDays: 7,
+                revocationCheckFrequencyHours: 24,
+                deliverableNamingPattern: 'DELIV-{proposition}-{date}',
+            },
         };
 
         try {
             const { data } = await locals.client.get<{ settings: SerializedOrganizationSettings }>('api/settings/organization');
-            organization = data.settings ?? organization;
+            if (data?.settings) {
+                organization = {
+                    ...organization,
+                    ...data.settings,
+                    permissions: data.settings.permissions ?? organization.permissions,
+                    permissionCatalog: data.settings.permissionCatalog ?? organization.permissionCatalog,
+                    workflowAutomation: data.settings.workflowAutomation ?? organization.workflowAutomation,
+                };
+            }
         } catch (error: any) {
             console.error('load.organization.fetch.error', error?.response?.data ?? error);
         }

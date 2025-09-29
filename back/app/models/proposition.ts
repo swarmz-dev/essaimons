@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon';
-import { BaseModel, belongsTo, column, manyToMany } from '@adonisjs/lucid/orm';
-import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations';
+import { BaseModel, belongsTo, column, hasMany, manyToMany } from '@adonisjs/lucid/orm';
+import type { BelongsTo, HasMany, ManyToMany } from '@adonisjs/lucid/types/relations';
 import User from '#models/user';
 import File from '#models/file';
 import PropositionCategory from '#models/proposition_category';
@@ -10,6 +10,13 @@ import type { SerializedPropositionListItem } from '#types/serialized/serialized
 import { SerializedUserSummary } from '#types/serialized/serialized_user_summary';
 import { SerializedPropositionCategory } from '#types/serialized/serialized_proposition_category';
 import { SerializedFile } from '#types/serialized/serialized_file';
+import PropositionStatusHistory from '#models/proposition_status_history';
+import PropositionEvent from '#models/proposition_event';
+import PropositionVote from '#models/proposition_vote';
+import PropositionMandate from '#models/proposition_mandate';
+import PropositionComment from '#models/proposition_comment';
+import PropositionReaction from '#models/proposition_reaction';
+import { PropositionStatusEnum, PropositionVisibilityEnum } from '#types';
 
 export default class Proposition extends BaseModel {
     @column({ isPrimary: true })
@@ -39,6 +46,15 @@ export default class Proposition extends BaseModel {
     @column()
     declare expertise?: string | null;
 
+    @column()
+    declare status: PropositionStatusEnum;
+
+    @column.dateTime()
+    declare statusStartedAt: DateTime;
+
+    @column()
+    declare visibility: PropositionVisibilityEnum;
+
     @column.date()
     declare clarificationDeadline: DateTime;
 
@@ -53,6 +69,12 @@ export default class Proposition extends BaseModel {
 
     @column.date()
     declare evaluationDeadline: DateTime;
+
+    @column.dateTime()
+    declare archivedAt?: DateTime | null;
+
+    @column()
+    declare settingsSnapshot: Record<string, unknown>;
 
     @column()
     declare creatorId: string;
@@ -98,6 +120,24 @@ export default class Proposition extends BaseModel {
     })
     declare attachments: ManyToMany<typeof File>;
 
+    @hasMany((): typeof PropositionStatusHistory => PropositionStatusHistory)
+    declare statusHistory: HasMany<typeof PropositionStatusHistory>;
+
+    @hasMany((): typeof PropositionEvent => PropositionEvent)
+    declare events: HasMany<typeof PropositionEvent>;
+
+    @hasMany((): typeof PropositionVote => PropositionVote)
+    declare votes: HasMany<typeof PropositionVote>;
+
+    @hasMany((): typeof PropositionMandate => PropositionMandate)
+    declare mandates: HasMany<typeof PropositionMandate>;
+
+    @hasMany((): typeof PropositionComment => PropositionComment)
+    declare comments: HasMany<typeof PropositionComment>;
+
+    @hasMany((): typeof PropositionReaction => PropositionReaction)
+    declare reactions: HasMany<typeof PropositionReaction>;
+
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime;
 
@@ -119,11 +159,15 @@ export default class Proposition extends BaseModel {
             title: this.title,
             summary: this.summary,
             categories: (this.categories ?? []).map((category: PropositionCategory): SerializedPropositionCategory => category.apiSerialize()),
+            status: this.status,
+            visibility: this.visibility,
+            statusStartedAt: this.statusStartedAt?.toISO() ?? '',
             clarificationDeadline: this.clarificationDeadline?.toISODate() ?? '',
             improvementDeadline: this.improvementDeadline?.toISODate() ?? '',
             voteDeadline: this.voteDeadline?.toISODate() ?? '',
             mandateDeadline: this.mandateDeadline?.toISODate() ?? '',
             evaluationDeadline: this.evaluationDeadline?.toISODate() ?? '',
+            archivedAt: this.archivedAt?.toISO() ?? undefined,
             creator: this.creator ? this.creator.summarySerialize() : undefined,
             visual: this.visual?.apiSerialize(),
             createdAt: this.createdAt?.toString(),
@@ -142,11 +186,16 @@ export default class Proposition extends BaseModel {
             impacts: this.impacts,
             mandatesDescription: this.mandatesDescription,
             expertise: this.expertise,
+            status: this.status,
+            statusStartedAt: this.statusStartedAt.toISO() ?? '',
+            visibility: this.visibility,
             clarificationDeadline: this.clarificationDeadline.toISODate() ?? '',
             improvementDeadline: this.improvementDeadline.toISODate() ?? '',
             voteDeadline: this.voteDeadline.toISODate() ?? '',
             mandateDeadline: this.mandateDeadline.toISODate() ?? '',
             evaluationDeadline: this.evaluationDeadline.toISODate() ?? '',
+            archivedAt: this.archivedAt?.toISO() ?? undefined,
+            settingsSnapshot: this.settingsSnapshot ?? {},
             creator: this.creator.summarySerialize(),
             categories: (this.categories ?? []).map((category: PropositionCategory): SerializedPropositionCategory => category.apiSerialize()),
             rescueInitiators: (this.rescueInitiators ?? []).map((user: User): SerializedUserSummary => user.summarySerialize()),
