@@ -69,6 +69,7 @@
         if (item.disabled || value === item.id) {
             return;
         }
+        value = item.id;
         dispatch('change', item.id);
     };
 

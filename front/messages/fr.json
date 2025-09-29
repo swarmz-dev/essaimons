@@ -5,6 +5,7 @@
         "continue": "Continuer",
         "language": "Langue",
         "close": "Fermer",
+        "view": "Voir",
         "edit": "Modifier",
         "update": "Mettre à jour",
         "delete": "Supprimer",
@@ -63,6 +64,10 @@
         "consent": "J'accepte les termes et conditions",
         "logo": {
             "alt": "Logo de Essaimons-V1"
+        },
+        "actions": {
+            "cancel": "Annuler",
+            "loading": "Enregistrement en cours…"
         }
     },
     "open-graph": {
@@ -614,7 +619,23 @@
                 "description": "Les commentaires d'amendement sont partagés avec les contributeurs concernés par cette phase.",
                 "label": "Message d'amendement",
                 "submit": "Publier le commentaire"
-            }
+            },
+            "reply": "Répondre",
+            "reply-dialog": {
+                "title": "Répondre à la clarification",
+                "description": "Ajoutez une réponse directement dans ce fil de clarification.",
+                "label": "Votre réponse",
+                "submit": "Publier la réponse"
+            },
+            "edit": "Modifier",
+            "save": "Enregistrer",
+            "edit-label": "Modifier le message",
+            "delete": "Supprimer",
+            "delete-confirm-title": "Supprimer la clarification",
+            "delete-confirm-description": "Cette clarification sera définitivement supprimée.",
+            "delete-confirm-submit": "Confirmer la suppression",
+            "delete-confirm-title-reply": "Supprimer la réponse",
+            "delete-confirm-description-reply": "Cette réponse sera définitivement supprimée."
         },
         "events": {
             "empty": "Aucun temps d'échange n'a encore été planifié.",
@@ -622,7 +643,13 @@
             "dialog": {
                 "title": "Planifier un échange",
                 "description": "Informez les participants des discussions ou jalons à venir.",
-                "submit": "Créer l'événement"
+                "submit": "Créer l'événement",
+                "edit-title": "Modifier l'échange planifié",
+                "edit-description": "Mettez à jour les informations de la séance pour garder tout le monde aligné.",
+                "update": "Mettre à jour l'échange"
+            },
+            "detail": {
+                "schedule": "Horaire"
             },
             "form": {
                 "title": "Titre",
@@ -637,6 +664,12 @@
                 "milestone": "Jalon",
                 "exchange": "Échange",
                 "evaluation": "Évaluation"
+            },
+            "delete": {
+                "title": "Supprimer l'échange",
+                "description": "Cet échange sera retiré de la chronologie de la proposition.",
+                "confirm": "Supprimer l'échange",
+                "success": "L'échange a été supprimé."
             }
         },
         "vote": {
@@ -737,9 +770,7 @@
                     "comment": "Commentaire (optionnel)",
                     "submit": "Enregistrer l’évaluation"
                 },
-                "evaluate-success": "Évaluation enregistrée.",
-                "evaluate-compliant": "Marquer conforme",
-                "evaluate-non-conform": "Marquer non conforme"
+                "evaluate-success": "Évaluation enregistrée."
             }
         },
         "followup": {

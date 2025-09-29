@@ -4,7 +4,7 @@ import logger from '@adonisjs/core/services/logger';
 import PropositionRepository from '#repositories/proposition_repository';
 import PropositionEventService from '#services/proposition_event_service';
 import type Proposition from '#models/proposition';
-import type PropositionEvent from '#models/proposition_event';
+import PropositionEvent from '#models/proposition_event';
 import type User from '#models/user';
 import { createEventValidator, updateEventValidator } from '#validators/proposition_event';
 

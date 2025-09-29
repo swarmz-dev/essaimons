@@ -15,12 +15,14 @@ export default class PropositionCommentController {
         private readonly commentService: PropositionCommentService
     ) {}
 
-    public async index({ request, response }: HttpContext): Promise<void> {
+    public async index({ request, response, user }: HttpContext): Promise<void> {
         const proposition = await this.findProposition(request.param('id'), response);
         if (!proposition) return;
 
         const comments = await this.commentService.list(proposition);
-        return response.ok({ comments: comments.map((comment) => comment.toJSON()) });
+        const actor = (user ?? null) as User | null;
+        const formatted = comments.map((comment) => this.serializeComment(comment, actor));
+        return response.ok({ comments: formatted });
     }
 
     public async store(ctx: HttpContext): Promise<void> {
@@ -31,7 +33,7 @@ export default class PropositionCommentController {
         try {
             const payload = await createCommentValidator.validate(request.all());
             const created = await this.commentService.create(proposition, user as User, payload);
-            return response.created({ comment: created.toJSON() });
+            return response.created({ comment: this.serializeComment(created, user as User) });
         } catch (error) {
             if (error instanceof Error && error.message.startsWith('forbidden:')) {
                 return response.forbidden({ error: 'You are not allowed to comment on this proposition' });
@@ -52,7 +54,7 @@ export default class PropositionCommentController {
         try {
             const payload = await updateCommentValidator.validate(request.all());
             const updated = await this.commentService.update(proposition, comment, user as User, payload);
-            return response.ok({ comment: updated.toJSON() });
+            return response.ok({ comment: this.serializeComment(updated, user as User) });
         } catch (error) {
             if (error instanceof Error && error.message.startsWith('forbidden:')) {
                 return response.forbidden({ error: 'You are not allowed to edit this comment' });
@@ -72,7 +74,7 @@ export default class PropositionCommentController {
 
         try {
             await this.commentService.delete(proposition, comment, user as User);
-            return response.noContent();
+            return response.ok({ isSuccess: true });
         } catch (error) {
             if (error instanceof Error && error.message.startsWith('forbidden:')) {
                 return response.forbidden({ error: 'You are not allowed to delete this comment' });
@@ -106,5 +108,19 @@ export default class PropositionCommentController {
             return null;
         }
         return comment;
+    }
+
+    private serializeComment(comment: PropositionComment, actor: User | null): any {
+        const json = comment.toJSON();
+        const editable = !!actor && comment.authorId === actor.id;
+        const replies = (json.replies ?? []).map((reply: any) => ({
+            ...reply,
+            editable: !!actor && reply.authorId === actor.id,
+        }));
+        return {
+            ...json,
+            editable,
+            replies,
+        };
     }
 }

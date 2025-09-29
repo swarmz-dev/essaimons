@@ -147,6 +147,7 @@ export type PropositionComment = {
     updatedAt?: string;
     author?: SerializedUserSummary;
     replies?: PropositionComment[];
+    editable?: boolean;
 };
 
 export type PropositionTimelinePhase = {

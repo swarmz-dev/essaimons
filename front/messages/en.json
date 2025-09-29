@@ -5,6 +5,7 @@
         "continue": "Continue",
         "language": "Language",
         "close": "Close",
+        "view": "View",
         "edit": "Edit",
         "update": "Update",
         "delete": "Delete",
@@ -63,6 +64,10 @@
         "consent": "I agree to the terms and conditions",
         "logo": {
             "alt": "Essaimons-V1's logo"
+        },
+        "actions": {
+            "cancel": "Cancel",
+            "loading": "Saving…"
         }
     },
     "open-graph": {
@@ -614,7 +619,23 @@
                 "description": "Amendment comments are shared with contributors involved in this phase.",
                 "label": "Amendment message",
                 "submit": "Publish amendment comment"
-            }
+            },
+            "reply": "Reply",
+            "reply-dialog": {
+                "title": "Reply to clarification",
+                "description": "Post a follow-up directly in this clarification thread.",
+                "label": "Your reply",
+                "submit": "Publish reply"
+            },
+            "edit": "Edit",
+            "save": "Save changes",
+            "edit-label": "Edit message",
+            "delete": "Delete",
+            "delete-confirm-title": "Delete clarification",
+            "delete-confirm-description": "This clarification will be permanently removed.",
+            "delete-confirm-submit": "Confirm deletion",
+            "delete-confirm-title-reply": "Delete reply",
+            "delete-confirm-description-reply": "This reply will be permanently removed."
         },
         "events": {
             "empty": "No collective session has been scheduled yet.",
@@ -622,7 +643,13 @@
             "dialog": {
                 "title": "Schedule an exchange",
                 "description": "Inform participants about upcoming discussions or key milestones.",
-                "submit": "Create event"
+                "submit": "Create event",
+                "edit-title": "Edit scheduled exchange",
+                "edit-description": "Update the session details to keep everyone aligned.",
+                "update": "Update event"
+            },
+            "detail": {
+                "schedule": "Schedule"
             },
             "form": {
                 "title": "Title",
@@ -637,6 +664,12 @@
                 "milestone": "Milestone",
                 "exchange": "Exchange",
                 "evaluation": "Evaluation"
+            },
+            "delete": {
+                "title": "Delete exchange",
+                "description": "This exchange will be removed from the proposal timeline.",
+                "confirm": "Delete exchange",
+                "success": "Exchange deleted."
             }
         },
         "vote": {
@@ -737,9 +770,7 @@
                     "comment": "Comment (optional)",
                     "submit": "Record evaluation"
                 },
-                "evaluate-success": "Evaluation saved.",
-                "evaluate-compliant": "Mark as compliant",
-                "evaluate-non-conform": "Mark as non-conform"
+                "evaluate-success": "Evaluation saved."
             }
         },
         "followup": {

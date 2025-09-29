@@ -21,7 +21,14 @@ export default class PropositionCommentService {
     constructor(private readonly workflowService: PropositionWorkflowService) {}
 
     public async list(proposition: Proposition): Promise<PropositionComment[]> {
-        return proposition.related('comments').query().preload('replies').preload('author').orderBy('created_at', 'asc');
+        return proposition
+            .related('comments')
+            .query()
+            .preload('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id']))
+            .preload('replies', (replyQuery) => {
+                replyQuery.preload('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id'])).orderBy('created_at', 'asc');
+            })
+            .orderBy('created_at', 'asc');
     }
 
     public async create(proposition: Proposition, actor: User, payload: CreateCommentPayload): Promise<PropositionComment> {
@@ -41,7 +48,7 @@ export default class PropositionCommentService {
             content: normalizedContent,
         });
 
-        await comment.load('author');
+        await comment.load('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id']));
         return comment;
     }
 
@@ -60,6 +67,10 @@ export default class PropositionCommentService {
 
         comment.content = trimmed;
         await comment.save();
+        await comment.load('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id']));
+        await comment.load('replies', (replyQuery) => {
+            replyQuery.preload('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id'])).orderBy('created_at', 'asc');
+        });
         return comment;
     }
 
@@ -70,7 +81,11 @@ export default class PropositionCommentService {
                 throw new Error('forbidden:comments');
             }
         }
-        await comment.related('replies').query().delete();
+        const repliesCount = await comment.related('replies').query().count('* as total');
+        const total = Number(repliesCount[0]?.total ?? 0);
+        if (total > 0) {
+            throw new Error('comments.delete.has-children');
+        }
         await comment.delete();
     }
 

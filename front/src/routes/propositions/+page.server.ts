@@ -1,4 +1,4 @@
-import type { PaginatedPropositions, SerializedPropositionCategory, PropositionStatusEnum } from 'backend/types';
+import { PropositionStatusEnum, type PaginatedPropositions, type SerializedPropositionCategory } from 'backend/types';
 import type { PageServerLoad } from './$types';
 
 type PropositionsListResponse = PaginatedPropositions & {

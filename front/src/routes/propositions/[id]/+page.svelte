@@ -37,7 +37,7 @@
         DeliverableVerdictEnum,
     } from 'backend/types';
     import type { PropositionComment, PropositionEvent, PropositionMandate, PropositionTimelinePhase, PropositionVote, WorkflowRole } from '#lib/types/proposition';
-    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload } from '@lucide/svelte';
+    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload, Loader2, Eye } from '@lucide/svelte';
     import { z } from 'zod';
 
     const { data } = $props<{
@@ -89,8 +89,8 @@
     const canEditProposition = $derived(workflowRole === 'admin' || isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'edit_proposition'));
     const canDeleteProposition = $derived(user?.role === 'admin');
 
-    const canCommentClarification = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'comment_clarification') || workflowRole === 'admin');
-    const canCommentAmendment = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'comment_amendment') || workflowRole === 'admin');
+    const canCommentClarification = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'comment_clarification') || workflowRole === 'admin' || workflowRole === 'initiator');
+    const canCommentAmendment = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'comment_amendment') || workflowRole === 'admin' || workflowRole === 'initiator');
     const canManageEvents = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'manage_events') || workflowRole === 'admin');
     const canConfigureVote = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'configure_vote') || workflowRole === 'admin');
     const canManageMandates = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'manage_mandates') || workflowRole === 'admin');
@@ -98,6 +98,16 @@
     const canEvaluateDeliverable = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'evaluate_deliverable') || workflowRole === 'admin');
 
     const canManageStatus = $derived(workflowRole === 'admin' || workflowRole === 'initiator');
+
+    const isEventEditableByCurrentUser = (event: PropositionEvent): boolean => {
+        if (!user) {
+            return false;
+        }
+        if (user.role === 'admin') {
+            return true;
+        }
+        return event.createdByUserId === user.id;
+    };
 
     const visualUrl = $derived(proposition.visual ? `/assets/propositions/visual/${proposition.id}` : undefined);
 
@@ -312,19 +322,74 @@
         return parsed.toISOString();
     };
 
+    const fromIsoToLocalInput = (value?: string | null): string => {
+        if (!value) {
+            return '';
+        }
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return '';
+        }
+        return parsed.toISOString().slice(0, 16);
+    };
+
     const commentSchema = z.object({
         content: z.string().trim().min(1).max(2000),
     });
+
+    const commentEndpoint = (commentId?: string | null): string => {
+        const normalizedPropositionId = normalizeId(proposition.id) ?? '';
+        const baseId = normalizedPropositionId.length ? encodeURIComponent(normalizedPropositionId) : 'unknown';
+        const base = `/propositions/${baseId}/comments`;
+        if (!commentId) {
+            return base;
+        }
+        const trimmedCommentId = commentId.toString().trim();
+        if (!trimmedCommentId) {
+            return base;
+        }
+        return `${base}/${encodeURIComponent(trimmedCommentId)}`;
+    };
 
     let isClarificationDialogOpen: boolean = $state(false);
     let clarificationContent: string = $state('');
     let clarificationErrors: string[] = $state([]);
     let isClarificationSubmitting: boolean = $state(false);
+    let isClarificationReplyDialogOpen: boolean = $state(false);
+    let clarificationReplyParentId: string | null = $state(null);
+    let clarificationReplyContent: string = $state('');
+    let clarificationReplyErrors: string[] = $state([]);
+    let isClarificationReplySubmitting: boolean = $state(false);
+    let isClarificationEditDialogOpen: boolean = $state(false);
+    let clarificationEditCommentId: string | null = $state(null);
+    let clarificationEditParentId: string | null = $state(null);
+    let clarificationEditContent: string = $state('');
+    let clarificationEditErrors: string[] = $state([]);
+    let isClarificationEditSubmitting: boolean = $state(false);
+    let isClarificationDeleteDialogOpen: boolean = $state(false);
+    let clarificationDeleteCommentId: string | null = $state(null);
+    let clarificationDeleteParentId: string | null = $state(null);
+    let isClarificationDeleteSubmitting: boolean = $state(false);
 
     let isAmendmentDialogOpen: boolean = $state(false);
     let amendmentContent: string = $state('');
     let amendmentErrors: string[] = $state([]);
     let isAmendmentSubmitting: boolean = $state(false);
+    let isAmendmentReplyDialogOpen: boolean = $state(false);
+    let amendmentReplyParentId: string | null = $state(null);
+    let amendmentReplyContent: string = $state('');
+    let amendmentReplyErrors: string[] = $state([]);
+    let isAmendmentReplySubmitting: boolean = $state(false);
+    let isAmendmentEditDialogOpen: boolean = $state(false);
+    let amendmentEditCommentId: string | null = $state(null);
+    let amendmentEditParentId: string | null = $state(null);
+    let amendmentEditContent: string = $state('');
+    let amendmentEditErrors: string[] = $state([]);
+    let isAmendmentEditSubmitting: boolean = $state(false);
+    let isAmendmentDeleteDialogOpen: boolean = $state(false);
+    let amendmentDeleteCommentId: string | null = $state(null);
+    let amendmentDeleteParentId: string | null = $state(null);
+    let isAmendmentDeleteSubmitting: boolean = $state(false);
 
     const eventSchema = z.object({
         title: z.string().trim().min(1).max(255),
@@ -350,6 +415,15 @@
     let eventForm = $state({ ...defaultEventForm });
     let eventErrors: string[] = $state([]);
     let isEventSubmitting: boolean = $state(false);
+    let eventStartInput: HTMLInputElement | null = $state(null);
+    let eventEndInput: HTMLInputElement | null = $state(null);
+    let editingEventId: string | null = $state(null);
+    let selectedEventId: string | null = $state(null);
+    const selectedEvent = $derived(selectedEventId ? (events.find((event) => event.id === selectedEventId) ?? null) : null);
+    let isEventDetailDialogOpen: boolean = $state(false);
+    let isEventDeleteDialogOpen: boolean = $state(false);
+    let eventDeleteId: string | null = $state(null);
+    let isEventDeleteSubmitting: boolean = $state(false);
 
     const voteSchema = z.object({
         title: z.string().trim().min(1).max(255),
@@ -517,7 +591,7 @@
         isClarificationSubmitting = true;
         try {
             const response = await wrappedFetch(
-                `/propositions/${proposition.id}/comments`,
+                commentEndpoint(),
                 {
                     method: 'POST',
                     body: {
@@ -529,6 +603,7 @@
                 ({ data: comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     clarificationContent = '';
+                    clarificationErrors = [];
                     isClarificationDialogOpen = false;
                 },
                 ({ message }) => {
@@ -544,6 +619,152 @@
         }
     };
 
+    const openClarificationReply = (parentId: string): void => {
+        clarificationReplyParentId = parentId;
+        clarificationReplyContent = '';
+        clarificationReplyErrors = [];
+        isClarificationReplySubmitting = false;
+        isClarificationReplyDialogOpen = true;
+    };
+
+    const submitClarificationReply = async (): Promise<void> => {
+        if (!clarificationReplyParentId) {
+            return;
+        }
+
+        clarificationReplyErrors = [];
+        const result = commentSchema.safeParse({ content: clarificationReplyContent });
+        if (!result.success) {
+            clarificationReplyErrors = result.error.issues.map((issue) => issue.message);
+            return;
+        }
+
+        isClarificationReplySubmitting = true;
+
+        try {
+            const response = await wrappedFetch(
+                commentEndpoint(),
+                {
+                    method: 'POST',
+                    body: {
+                        scope: PropositionCommentScopeEnum.CLARIFICATION,
+                        visibility: PropositionCommentVisibilityEnum.PUBLIC,
+                        content: result.data.content,
+                        parentId: clarificationReplyParentId,
+                    },
+                },
+                ({ data: comment }) => {
+                    propositionDetailStore.upsertComment(comment);
+                    clarificationReplyContent = '';
+                    clarificationReplyParentId = null;
+                    clarificationReplyErrors = [];
+                    isClarificationReplyDialogOpen = false;
+                },
+                ({ message }) => {
+                    clarificationReplyErrors = [message ?? m['common.error.default-message']()];
+                }
+            );
+
+            if (!response?.isSuccess && clarificationReplyErrors.length === 0) {
+                clarificationReplyErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isClarificationReplySubmitting = false;
+        }
+    };
+
+    const openClarificationEdit = (commentId: string, content: string, parentId: string | null = null): void => {
+        clarificationEditCommentId = commentId;
+        clarificationEditParentId = parentId;
+        clarificationEditContent = content;
+        clarificationEditErrors = [];
+        isClarificationEditSubmitting = false;
+        isClarificationEditDialogOpen = true;
+    };
+
+    const submitClarificationEdit = async (): Promise<void> => {
+        if (!clarificationEditCommentId) {
+            return;
+        }
+
+        clarificationEditErrors = [];
+        const result = commentSchema.safeParse({ content: clarificationEditContent });
+        if (!result.success) {
+            clarificationEditErrors = result.error.issues.map((issue) => issue.message);
+            return;
+        }
+
+        isClarificationEditSubmitting = true;
+
+        try {
+            const response = await wrappedFetch(
+                commentEndpoint(clarificationEditCommentId),
+                {
+                    method: 'PUT',
+                    body: {
+                        content: result.data.content,
+                    },
+                },
+                ({ data: comment }) => {
+                    propositionDetailStore.upsertComment(comment);
+                    clarificationEditContent = '';
+                    clarificationEditCommentId = null;
+                    clarificationEditParentId = null;
+                    clarificationEditErrors = [];
+                    isClarificationEditDialogOpen = false;
+                },
+                ({ message }) => {
+                    clarificationEditErrors = [message ?? m['common.error.default-message']()];
+                }
+            );
+
+            if (!response?.isSuccess && clarificationEditErrors.length === 0) {
+                clarificationEditErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isClarificationEditSubmitting = false;
+        }
+    };
+
+    const openClarificationDelete = (commentId: string, parentId: string | null = null): void => {
+        clarificationDeleteCommentId = commentId;
+        clarificationDeleteParentId = parentId;
+        isClarificationDeleteSubmitting = false;
+        isClarificationDeleteDialogOpen = true;
+    };
+
+    const submitClarificationDelete = async (): Promise<void> => {
+        if (!clarificationDeleteCommentId) {
+            return;
+        }
+
+        isClarificationDeleteSubmitting = true;
+
+        try {
+            const response = await wrappedFetch(
+                commentEndpoint(clarificationDeleteCommentId),
+                {
+                    method: 'DELETE',
+                },
+                async () => {
+                    propositionDetailStore.removeComment(clarificationDeleteCommentId!, clarificationDeleteParentId ?? undefined);
+                    clarificationDeleteCommentId = null;
+                    clarificationDeleteParentId = null;
+                    isClarificationDeleteDialogOpen = false;
+                },
+                async ({ message }) => {
+                    showToast(message ?? m['common.error.default-message'](), 'error');
+                }
+            );
+
+            if (!response?.isSuccess) {
+                showToast(m['common.error.default-message'](), 'error');
+            }
+        } finally {
+            isClarificationDeleteSubmitting = false;
+        }
+    };
+
     const submitAmendmentComment = async (): Promise<void> => {
         amendmentErrors = [];
         const result = commentSchema.safeParse({ content: amendmentContent });
@@ -555,7 +776,7 @@
         isAmendmentSubmitting = true;
         try {
             const response = await wrappedFetch(
-                `/propositions/${proposition.id}/comments`,
+                commentEndpoint(),
                 {
                     method: 'POST',
                     body: {
@@ -582,6 +803,194 @@
         }
     };
 
+    const openAmendmentReply = (parentId: string): void => {
+        amendmentReplyParentId = parentId;
+        amendmentReplyContent = '';
+        amendmentReplyErrors = [];
+        isAmendmentReplySubmitting = false;
+        isAmendmentReplyDialogOpen = true;
+    };
+
+    const submitAmendmentReply = async (): Promise<void> => {
+        if (!amendmentReplyParentId) {
+            return;
+        }
+
+        amendmentReplyErrors = [];
+        const result = commentSchema.safeParse({ content: amendmentReplyContent });
+        if (!result.success) {
+            amendmentReplyErrors = result.error.issues.map((issue) => issue.message);
+            return;
+        }
+
+        isAmendmentReplySubmitting = true;
+        try {
+            const response = await wrappedFetch(
+                commentEndpoint(),
+                {
+                    method: 'POST',
+                    body: {
+                        scope: PropositionCommentScopeEnum.AMENDMENT,
+                        visibility: PropositionCommentVisibilityEnum.PUBLIC,
+                        content: result.data.content,
+                        parentId: amendmentReplyParentId,
+                    },
+                },
+                ({ data: comment }) => {
+                    propositionDetailStore.upsertComment(comment);
+                    amendmentReplyContent = '';
+                    amendmentReplyParentId = null;
+                    amendmentReplyErrors = [];
+                    isAmendmentReplyDialogOpen = false;
+                },
+                ({ message }) => {
+                    amendmentReplyErrors = [message ?? m['common.error.default-message']()];
+                }
+            );
+
+            if (!response?.isSuccess && amendmentReplyErrors.length === 0) {
+                amendmentReplyErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isAmendmentReplySubmitting = false;
+        }
+    };
+
+    const openAmendmentEdit = (commentId: string, content: string, parentId: string | null = null): void => {
+        amendmentEditCommentId = commentId;
+        amendmentEditParentId = parentId;
+        amendmentEditContent = content;
+        amendmentEditErrors = [];
+        isAmendmentEditSubmitting = false;
+        isAmendmentEditDialogOpen = true;
+    };
+
+    const submitAmendmentEdit = async (): Promise<void> => {
+        if (!amendmentEditCommentId) {
+            return;
+        }
+
+        amendmentEditErrors = [];
+        const result = commentSchema.safeParse({ content: amendmentEditContent });
+        if (!result.success) {
+            amendmentEditErrors = result.error.issues.map((issue) => issue.message);
+            return;
+        }
+
+        isAmendmentEditSubmitting = true;
+        try {
+            const response = await wrappedFetch(
+                commentEndpoint(amendmentEditCommentId),
+                {
+                    method: 'PUT',
+                    body: {
+                        content: result.data.content,
+                    },
+                },
+                ({ data: comment }) => {
+                    propositionDetailStore.upsertComment(comment);
+                    amendmentEditContent = '';
+                    amendmentEditCommentId = null;
+                    amendmentEditParentId = null;
+                    amendmentEditErrors = [];
+                    isAmendmentEditDialogOpen = false;
+                },
+                ({ message }) => {
+                    amendmentEditErrors = [message ?? m['common.error.default-message']()];
+                }
+            );
+
+            if (!response?.isSuccess && amendmentEditErrors.length === 0) {
+                amendmentEditErrors = [m['common.error.default-message']()];
+            }
+        } finally {
+            isAmendmentEditSubmitting = false;
+        }
+    };
+
+    const openAmendmentDelete = (commentId: string, parentId: string | null = null): void => {
+        amendmentDeleteCommentId = commentId;
+        amendmentDeleteParentId = parentId;
+        isAmendmentDeleteSubmitting = false;
+        isAmendmentDeleteDialogOpen = true;
+    };
+
+    const submitAmendmentDelete = async (): Promise<void> => {
+        if (!amendmentDeleteCommentId) {
+            return;
+        }
+
+        const targetId = amendmentDeleteCommentId;
+        const targetParentId = amendmentDeleteParentId;
+
+        isAmendmentDeleteSubmitting = true;
+        try {
+            const response = await wrappedFetch(
+                commentEndpoint(targetId),
+                { method: 'DELETE' },
+                () => {
+                    propositionDetailStore.removeComment(targetId, targetParentId ?? undefined);
+                    amendmentDeleteCommentId = null;
+                    amendmentDeleteParentId = null;
+                    isAmendmentDeleteDialogOpen = false;
+                },
+                ({ message }) => {
+                    showToast(message ?? m['common.error.default-message'](), 'error');
+                }
+            );
+
+            if (!response?.isSuccess) {
+                showToast(m['common.error.default-message'](), 'error');
+            }
+        } finally {
+            isAmendmentDeleteSubmitting = false;
+        }
+    };
+
+    const resetEventForm = (): void => {
+        eventForm = { ...defaultEventForm };
+        eventErrors = [];
+    };
+
+    const openEventCreate = (): void => {
+        editingEventId = null;
+        resetEventForm();
+        isEventSubmitting = false;
+        isEventDialogOpen = true;
+    };
+
+    const openEventDetail = (eventId: string): void => {
+        selectedEventId = eventId;
+        isEventDetailDialogOpen = true;
+    };
+
+    const populateEventForm = (event: PropositionEvent): void => {
+        eventForm = {
+            title: event.title ?? '',
+            type: event.type,
+            description: event.description ?? '',
+            startAt: fromIsoToLocalInput(event.startAt),
+            endAt: fromIsoToLocalInput(event.endAt),
+            location: event.location ?? '',
+            videoLink: event.videoLink ?? '',
+        };
+    };
+
+    const openEventEdit = (event: PropositionEvent): void => {
+        populateEventForm(event);
+        editingEventId = event.id;
+        eventErrors = [];
+        isEventSubmitting = false;
+        isEventDialogOpen = true;
+        isEventDetailDialogOpen = false;
+    };
+
+    const confirmEventDelete = (eventId: string): void => {
+        eventDeleteId = eventId;
+        isEventDeleteSubmitting = false;
+        isEventDeleteDialogOpen = true;
+    };
+
     const submitEvent = async (): Promise<void> => {
         eventErrors = [];
         const result = eventSchema.safeParse(eventForm);
@@ -592,10 +1001,11 @@
 
         isEventSubmitting = true;
         try {
+            const targetEventId = editingEventId;
             const response = await wrappedFetch(
-                `/propositions/${proposition.id}/events`,
+                `/propositions/${proposition.id}/events${targetEventId ? `/${targetEventId}` : ''}`,
                 {
-                    method: 'POST',
+                    method: targetEventId ? 'PUT' : 'POST',
                     body: {
                         title: result.data.title,
                         type: result.data.type,
@@ -608,8 +1018,14 @@
                 },
                 ({ data: event }) => {
                     propositionDetailStore.upsertEvent(event);
-                    eventForm = { ...defaultEventForm };
+                    const wasEdit = Boolean(targetEventId);
+                    resetEventForm();
+                    editingEventId = null;
                     isEventDialogOpen = false;
+                    if (wasEdit) {
+                        selectedEventId = event.id;
+                        isEventDetailDialogOpen = true;
+                    }
                 },
                 ({ message }) => {
                     eventErrors = [message ?? m['common.error.default-message']()];
@@ -622,6 +1038,51 @@
         } finally {
             isEventSubmitting = false;
         }
+    };
+
+    const submitEventDelete = async (): Promise<void> => {
+        if (!eventDeleteId) {
+            return;
+        }
+
+        isEventDeleteSubmitting = true;
+        try {
+            const response = await wrappedFetch(
+                `/propositions/${proposition.id}/events/${eventDeleteId}`,
+                { method: 'DELETE' },
+                () => {
+                    propositionDetailStore.removeEvent(eventDeleteId!);
+                    if (selectedEventId === eventDeleteId) {
+                        selectedEventId = null;
+                        isEventDetailDialogOpen = false;
+                    }
+                    eventDeleteId = null;
+                    isEventDeleteDialogOpen = false;
+                },
+                ({ message }) => {
+                    showToast(message ?? m['common.error.default-message'](), 'error');
+                }
+            );
+
+            if (!response?.isSuccess) {
+                showToast(m['common.error.default-message'](), 'error');
+            }
+        } finally {
+            isEventDeleteSubmitting = false;
+        }
+    };
+
+    const openNativeDatePicker = (input: HTMLInputElement | null): void => {
+        if (!input) {
+            return;
+        }
+        const candidate = input as HTMLInputElement & { showPicker?: () => void };
+        if (typeof candidate.showPicker === 'function') {
+            candidate.showPicker();
+            return;
+        }
+        input.focus();
+        input.click();
     };
 
     const submitVote = async (): Promise<void> => {
@@ -898,9 +1359,29 @@
         await submitClarificationComment();
     };
 
+    const handleClarificationReplySubmit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        await submitClarificationReply();
+    };
+
+    const handleClarificationEditSubmit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        await submitClarificationEdit();
+    };
+
     const handleAmendmentSubmit = async (event: Event): Promise<void> => {
         event.preventDefault();
         await submitAmendmentComment();
+    };
+
+    const handleAmendmentReplySubmit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        await submitAmendmentReply();
+    };
+
+    const handleAmendmentEditSubmit = async (event: Event): Promise<void> => {
+        event.preventDefault();
+        await submitAmendmentEdit();
     };
 
     const handleEventSubmit = async (event: Event): Promise<void> => {
@@ -1220,12 +1701,64 @@
             {#if commentsByScope.clarification.length}
                 <ul class="mt-4 space-y-4">
                     {#each commentsByScope.clarification as comment (comment.id)}
-                        <li class="space-y-2 rounded-xl border border-border/40 bg-card/60 p-4">
-                            <div class="flex items-center justify-between text-xs text-muted-foreground">
+                        <li class="space-y-3 rounded-xl border border-border/40 bg-card/60 p-4">
+                            <div class="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                                 <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
-                                <span>{formatDateTime(comment.createdAt)}</span>
+                                <div class="flex items-center gap-2">
+                                    <span>{formatDateTime(comment.createdAt)}</span>
+                                    {#if comment.editable}
+                                        <Button size="sm" variant="ghost" class="gap-1" onclick={() => openClarificationEdit(comment.id, comment.content)}>
+                                            <Pencil class="size-3.5" />
+                                            {m['proposition-detail.comments.edit']()}
+                                        </Button>
+                                        {#if (comment.replies ?? []).length === 0}
+                                            <Button size="sm" variant="ghost" class="gap-1 text-destructive hover:text-destructive" onclick={() => openClarificationDelete(comment.id)}>
+                                                <Trash2 class="size-3.5" />
+                                                {m['proposition-detail.comments.delete']()}
+                                            </Button>
+                                        {/if}
+                                    {/if}
+                                </div>
                             </div>
                             <p class="text-sm text-foreground/90 whitespace-pre-wrap">{comment.content}</p>
+                            {#if canCommentClarification}
+                                <div class="flex flex-wrap justify-end">
+                                    <Button size="sm" variant="ghost" class="gap-1" onclick={() => openClarificationReply(comment.id)}>
+                                        <Plus class="size-3.5" />
+                                        {m['proposition-detail.comments.reply']()}
+                                    </Button>
+                                </div>
+                            {/if}
+                            {#if (comment.replies ?? []).length}
+                                <ul class="ml-4 space-y-2 border-l border-border/30 pl-4">
+                                    {#each comment.replies ?? [] as reply (reply.id)}
+                                        <li class="space-y-1 rounded-lg bg-background/60 p-3">
+                                            <div class="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                                                <span>{reply.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                                <div class="flex items-center gap-2">
+                                                    <span>{formatDateTime(reply.createdAt)}</span>
+                                                    {#if reply.editable}
+                                                        <Button size="sm" variant="ghost" class="gap-1" onclick={() => openClarificationEdit(reply.id, reply.content, comment.id)}>
+                                                            <Pencil class="size-3" />
+                                                            {m['proposition-detail.comments.edit']()}
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            class="gap-1 text-destructive hover:text-destructive"
+                                                            onclick={() => openClarificationDelete(reply.id, comment.id)}
+                                                        >
+                                                            <Trash2 class="size-3" />
+                                                            {m['proposition-detail.comments.delete']()}
+                                                        </Button>
+                                                    {/if}
+                                                </div>
+                                            </div>
+                                            <p class="text-sm text-foreground/85 whitespace-pre-wrap">{reply.content}</p>
+                                        </li>
+                                    {/each}
+                                </ul>
+                            {/if}
                         </li>
                     {/each}
                 </ul>
@@ -1239,7 +1772,7 @@
                 <h2 class="text-lg font-semibold text-foreground">{m['proposition-detail.tabs.amendments']()}</h2>
                 <div class="flex flex-wrap justify-end gap-2">
                     {#if canManageEvents}
-                        <Button variant="outline" class="gap-2" onclick={() => (isEventDialogOpen = true)}>
+                        <Button variant="outline" class="gap-2" onclick={openEventCreate}>
                             <Plus class="size-4" />
                             {m['proposition-detail.events.add']()}
                         </Button>
@@ -1256,12 +1789,49 @@
                 <ul class="mt-4 space-y-3">
                     {#each events as event (event.id)}
                         <li class="rounded-xl border border-border/40 bg-card/60 p-4">
-                            <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
-                                <span class="font-semibold text-foreground">{event.title}</span>
-                                <span class="text-muted-foreground">{formatDateTime(event.startAt)}</span>
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div class="space-y-1">
+                                    <p class="font-semibold text-foreground">{event.title}</p>
+                                    <div class="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                                        <span>{translateEventType(event.type)}</span>
+                                        {#if event.startAt && event.endAt}
+                                            <span>{formatDateTime(event.startAt)} – {formatDateTime(event.endAt)}</span>
+                                        {:else if event.startAt}
+                                            <span>{formatDateTime(event.startAt)}</span>
+                                        {:else if event.endAt}
+                                            <span>{formatDateTime(event.endAt)}</span>
+                                        {/if}
+                                        {#if event.location}
+                                            <span>{event.location}</span>
+                                        {/if}
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <Button size="sm" variant="ghost" class="gap-1" onclick={() => openEventDetail(event.id)}>
+                                        <Eye class="size-4" />
+                                        {m['common.view']()}
+                                    </Button>
+                                    {#if isEventEditableByCurrentUser(event)}
+                                        <Button size="sm" variant="ghost" class="gap-1" onclick={() => openEventEdit(event)}>
+                                            <Pencil class="size-3.5" />
+                                            {m['common.edit']()}
+                                        </Button>
+                                        <Button size="sm" variant="ghost" class="gap-1 text-destructive hover:text-destructive" onclick={() => confirmEventDelete(event.id)}>
+                                            <Trash2 class="size-3.5" />
+                                            {m['common.delete']()}
+                                        </Button>
+                                    {/if}
+                                </div>
                             </div>
                             {#if event.description}
-                                <p class="mt-2 text-sm text-foreground/80">{event.description}</p>
+                                <p class="mt-3 text-sm text-foreground/80 whitespace-pre-wrap">{event.description}</p>
+                            {/if}
+                            {#if event.videoLink}
+                                <p class="mt-2 text-xs text-muted-foreground">
+                                    <a href={event.videoLink} target="_blank" rel="noreferrer" class="underline underline-offset-2">
+                                        {event.videoLink}
+                                    </a>
+                                </p>
                             {/if}
                         </li>
                     {/each}
@@ -1274,12 +1844,64 @@
                 {#if commentsByScope.amendment.length}
                     <ul class="space-y-3">
                         {#each commentsByScope.amendment as comment (comment.id)}
-                            <li class="rounded-xl border border-border/40 bg-card/60 p-4">
-                                <div class="flex items-center justify-between text-xs text-muted-foreground">
+                            <li class="space-y-3 rounded-xl border border-border/40 bg-card/60 p-4">
+                                <div class="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                                     <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
-                                    <span>{formatDateTime(comment.createdAt)}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span>{formatDateTime(comment.createdAt)}</span>
+                                        {#if comment.editable}
+                                            <Button size="sm" variant="ghost" class="gap-1" onclick={() => openAmendmentEdit(comment.id, comment.content)}>
+                                                <Pencil class="size-3.5" />
+                                                {m['proposition-detail.comments.edit']()}
+                                            </Button>
+                                            {#if (comment.replies ?? []).length === 0}
+                                                <Button size="sm" variant="ghost" class="gap-1 text-destructive hover:text-destructive" onclick={() => openAmendmentDelete(comment.id)}>
+                                                    <Trash2 class="size-3.5" />
+                                                    {m['proposition-detail.comments.delete']()}
+                                                </Button>
+                                            {/if}
+                                        {/if}
+                                    </div>
                                 </div>
-                                <p class="mt-2 text-sm text-foreground/90 whitespace-pre-wrap">{comment.content}</p>
+                                <p class="text-sm text-foreground/90 whitespace-pre-wrap">{comment.content}</p>
+                                {#if canCommentAmendment}
+                                    <div class="flex flex-wrap justify-end">
+                                        <Button size="sm" variant="ghost" class="gap-1" onclick={() => openAmendmentReply(comment.id)}>
+                                            <Plus class="size-3.5" />
+                                            {m['proposition-detail.comments.reply']()}
+                                        </Button>
+                                    </div>
+                                {/if}
+                                {#if (comment.replies ?? []).length}
+                                    <ul class="ml-4 space-y-2 border-l border-border/30 pl-4">
+                                        {#each comment.replies ?? [] as reply (reply.id)}
+                                            <li class="space-y-1 rounded-lg bg-background/60 p-3">
+                                                <div class="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                                                    <span>{reply.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                                    <div class="flex items-center gap-2">
+                                                        <span>{formatDateTime(reply.createdAt)}</span>
+                                                        {#if reply.editable}
+                                                            <Button size="sm" variant="ghost" class="gap-1" onclick={() => openAmendmentEdit(reply.id, reply.content, comment.id)}>
+                                                                <Pencil class="size-3" />
+                                                                {m['proposition-detail.comments.edit']()}
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                class="gap-1 text-destructive hover:text-destructive"
+                                                                onclick={() => openAmendmentDelete(reply.id, comment.id)}
+                                                            >
+                                                                <Trash2 class="size-3" />
+                                                                {m['proposition-detail.comments.delete']()}
+                                                            </Button>
+                                                        {/if}
+                                                    </div>
+                                                </div>
+                                                <p class="text-sm text-foreground/85 whitespace-pre-wrap">{reply.content}</p>
+                                            </li>
+                                        {/each}
+                                    </ul>
+                                {/if}
                             </li>
                         {/each}
                     </ul>
@@ -1436,7 +2058,7 @@
                                                                     openEvaluationDialog(mandate.id, deliverable.id);
                                                                 }}
                                                             >
-                                                                {m['proposition-detail.mandates.deliverables.evaluate-compliant']()}
+                                                                {m['proposition-detail.mandates.deliverables.evaluate.compliant']()}
                                                             </Button>
                                                             <Button
                                                                 size="sm"
@@ -1446,7 +2068,7 @@
                                                                     openEvaluationDialog(mandate.id, deliverable.id);
                                                                 }}
                                                             >
-                                                                {m['proposition-detail.mandates.deliverables.evaluate-non-conform']()}
+                                                                {m['proposition-detail.mandates.deliverables.evaluate.non-conform']()}
                                                             </Button>
                                                         </div>
                                                     {/if}
@@ -1577,13 +2199,379 @@
                 <DialogClose asChild>
                     <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                 </DialogClose>
-                <Button type="submit" disabled={isClarificationSubmitting}>
-                    {m['proposition-detail.comments.dialog.submit']()}
+                <Button type="submit" disabled={isClarificationSubmitting} class="gap-2">
+                    {#if isClarificationSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.dialog.submit']()}
+                    {/if}
                 </Button>
             </DialogFooter>
         </form>
     </DialogContent>
 </Dialog>
+
+<Dialog
+    open={isClarificationReplyDialogOpen}
+    onOpenChange={(value: boolean) => {
+        isClarificationReplyDialogOpen = value;
+        if (!value) {
+            clarificationReplyParentId = null;
+            clarificationReplyContent = '';
+            clarificationReplyErrors = [];
+            isClarificationReplySubmitting = false;
+        }
+    }}
+>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.comments.reply-dialog.title']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.comments.reply-dialog.description']()}</DialogDescription>
+        </DialogHeader>
+        <form class="space-y-4" onsubmit={handleClarificationReplySubmit}>
+            <Textarea name="clarification-reply" label={m['proposition-detail.comments.reply-dialog.label']()} rows={5} bind:value={clarificationReplyContent} required />
+            {#if clarificationReplyErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each clarificationReplyErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isClarificationReplySubmitting} class="gap-2">
+                    {#if isClarificationReplySubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.reply-dialog.submit']()}
+                    {/if}
+                </Button>
+            </DialogFooter>
+        </form>
+    </DialogContent>
+</Dialog>
+
+<Dialog
+    open={isClarificationEditDialogOpen}
+    onOpenChange={(value: boolean) => {
+        isClarificationEditDialogOpen = value;
+        if (!value) {
+            clarificationEditCommentId = null;
+            clarificationEditParentId = null;
+            clarificationEditContent = '';
+            clarificationEditErrors = [];
+            isClarificationEditSubmitting = false;
+        }
+    }}
+>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.comments.edit']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.comments.edit-label']()}</DialogDescription>
+        </DialogHeader>
+        <form class="space-y-4" onsubmit={handleClarificationEditSubmit}>
+            <Textarea name="clarification-edit" label={m['proposition-detail.comments.edit-label']()} rows={5} bind:value={clarificationEditContent} required />
+            {#if clarificationEditErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each clarificationEditErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isClarificationEditSubmitting} class="gap-2">
+                    {#if isClarificationEditSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.save']()}
+                    {/if}
+                </Button>
+            </DialogFooter>
+        </form>
+    </DialogContent>
+</Dialog>
+
+<Dialog
+    open={isAmendmentReplyDialogOpen}
+    onOpenChange={(value: boolean) => {
+        isAmendmentReplyDialogOpen = value;
+        if (!value) {
+            amendmentReplyParentId = null;
+            amendmentReplyContent = '';
+            amendmentReplyErrors = [];
+            isAmendmentReplySubmitting = false;
+        }
+    }}
+>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.comments.reply-dialog.title']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.comments.reply-dialog.description']()}</DialogDescription>
+        </DialogHeader>
+        <form class="space-y-4" onsubmit={handleAmendmentReplySubmit}>
+            <Textarea name="amendment-reply" label={m['proposition-detail.comments.reply-dialog.label']()} rows={5} bind:value={amendmentReplyContent} required />
+            {#if amendmentReplyErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each amendmentReplyErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isAmendmentReplySubmitting} class="gap-2">
+                    {#if isAmendmentReplySubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.reply-dialog.submit']()}
+                    {/if}
+                </Button>
+            </DialogFooter>
+        </form>
+    </DialogContent>
+</Dialog>
+
+<Dialog
+    open={isAmendmentEditDialogOpen}
+    onOpenChange={(value: boolean) => {
+        isAmendmentEditDialogOpen = value;
+        if (!value) {
+            amendmentEditCommentId = null;
+            amendmentEditParentId = null;
+            amendmentEditContent = '';
+            amendmentEditErrors = [];
+            isAmendmentEditSubmitting = false;
+        }
+    }}
+>
+    <DialogContent class="max-w-lg">
+        <DialogHeader>
+            <DialogTitle>{m['proposition-detail.comments.edit']()}</DialogTitle>
+            <DialogDescription>{m['proposition-detail.comments.edit-label']()}</DialogDescription>
+        </DialogHeader>
+        <form class="space-y-4" onsubmit={handleAmendmentEditSubmit}>
+            <Textarea name="amendment-edit" label={m['proposition-detail.comments.edit-label']()} rows={5} bind:value={amendmentEditContent} required />
+            {#if amendmentEditErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each amendmentEditErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isAmendmentEditSubmitting} class="gap-2">
+                    {#if isAmendmentEditSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.save']()}
+                    {/if}
+                </Button>
+            </DialogFooter>
+        </form>
+    </DialogContent>
+</Dialog>
+
+{#if isAmendmentDeleteDialogOpen}
+    <AlertDialog
+        open={isAmendmentDeleteDialogOpen}
+        onOpenChange={(value: boolean) => {
+            isAmendmentDeleteDialogOpen = value;
+            if (!value) {
+                amendmentDeleteCommentId = null;
+                amendmentDeleteParentId = null;
+                isAmendmentDeleteSubmitting = false;
+            }
+        }}
+    >
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>
+                    {amendmentDeleteParentId ? m['proposition-detail.comments.delete-confirm-title-reply']() : m['proposition-detail.comments.delete-confirm-title']()}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                    {amendmentDeleteParentId ? m['proposition-detail.comments.delete-confirm-description-reply']() : m['proposition-detail.comments.delete-confirm-description']()}
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isAmendmentDeleteSubmitting}>{m['common.cancel']()}</AlertDialogCancel>
+                <AlertDialogAction onclick={submitAmendmentDelete} disabled={isAmendmentDeleteSubmitting} class="gap-2">
+                    {#if isAmendmentDeleteSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.delete-confirm-submit']()}
+                    {/if}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+{/if}
+
+{#if selectedEvent}
+    <Dialog
+        open={isEventDetailDialogOpen}
+        onOpenChange={(value: boolean) => {
+            isEventDetailDialogOpen = value;
+            if (!value) {
+                selectedEventId = null;
+            }
+        }}
+    >
+        <DialogContent class="max-w-lg space-y-4">
+            <DialogHeader>
+                <DialogTitle>{selectedEvent.title}</DialogTitle>
+                <DialogDescription>{translateEventType(selectedEvent.type)}</DialogDescription>
+            </DialogHeader>
+            <div class="space-y-4 text-sm text-foreground/90">
+                {#if selectedEvent.startAt || selectedEvent.endAt}
+                    <div class="flex flex-col gap-1">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {m['proposition-detail.events.detail.schedule']()}
+                        </span>
+                        <span>
+                            {#if selectedEvent.startAt && selectedEvent.endAt}
+                                {formatDateTime(selectedEvent.startAt)} – {formatDateTime(selectedEvent.endAt)}
+                            {:else if selectedEvent.startAt}
+                                {formatDateTime(selectedEvent.startAt)}
+                            {:else if selectedEvent.endAt}
+                                {formatDateTime(selectedEvent.endAt)}
+                            {/if}
+                        </span>
+                    </div>
+                {/if}
+                {#if selectedEvent.location}
+                    <div class="flex flex-col gap-1">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {m['proposition-detail.events.form.location']()}
+                        </span>
+                        <span>{selectedEvent.location}</span>
+                    </div>
+                {/if}
+                {#if selectedEvent.videoLink}
+                    <div class="flex flex-col gap-1">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {m['proposition-detail.events.form.videoLink']()}
+                        </span>
+                        <a href={selectedEvent.videoLink} target="_blank" rel="noreferrer" class="break-all underline underline-offset-2">
+                            {selectedEvent.videoLink}
+                        </a>
+                    </div>
+                {/if}
+                {#if selectedEvent.description}
+                    <div class="flex flex-col gap-1">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {m['proposition-detail.events.form.description']()}
+                        </span>
+                        <p class="whitespace-pre-wrap">{selectedEvent.description}</p>
+                    </div>
+                {/if}
+            </div>
+            <DialogFooter class="flex flex-wrap items-center justify-between gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="ghost">{m['common.close']()}</Button>
+                </DialogClose>
+                {#if isEventEditableByCurrentUser(selectedEvent)}
+                    <div class="flex gap-2">
+                        <Button type="button" variant="outline" class="gap-1" onclick={() => openEventEdit(selectedEvent)}>
+                            <Pencil class="size-4" />
+                            {m['common.edit']()}
+                        </Button>
+                        <Button type="button" variant="destructive" class="gap-1" onclick={() => confirmEventDelete(selectedEvent.id)}>
+                            <Trash2 class="size-4" />
+                            {m['common.delete']()}
+                        </Button>
+                    </div>
+                {/if}
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+{/if}
+
+{#if isEventDeleteDialogOpen}
+    <AlertDialog
+        open={isEventDeleteDialogOpen}
+        onOpenChange={(value: boolean) => {
+            isEventDeleteDialogOpen = value;
+            if (!value) {
+                eventDeleteId = null;
+                isEventDeleteSubmitting = false;
+            }
+        }}
+    >
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>{m['proposition-detail.events.delete.title']()}</AlertDialogTitle>
+                <AlertDialogDescription>{m['proposition-detail.events.delete.description']()}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isEventDeleteSubmitting}>{m['common.cancel']()}</AlertDialogCancel>
+                <AlertDialogAction onclick={submitEventDelete} disabled={isEventDeleteSubmitting} class="gap-2">
+                    {#if isEventDeleteSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.events.delete.confirm']()}
+                    {/if}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+{/if}
+
+{#if isClarificationDeleteDialogOpen}
+    <Dialog
+        open
+        onOpenChange={(value: boolean) => {
+            isClarificationDeleteDialogOpen = value;
+            if (!value) {
+                clarificationDeleteCommentId = null;
+                clarificationDeleteParentId = null;
+                isClarificationDeleteSubmitting = false;
+            }
+        }}
+    >
+        <DialogContent class="max-w-md">
+            <DialogHeader>
+                <DialogTitle>
+                    {clarificationDeleteParentId ? m['proposition-detail.comments.delete-confirm-title-reply']() : m['proposition-detail.comments.delete-confirm-title']()}
+                </DialogTitle>
+                <DialogDescription>
+                    {clarificationDeleteParentId ? m['proposition-detail.comments.delete-confirm-description-reply']() : m['proposition-detail.comments.delete-confirm-description']()}
+                </DialogDescription>
+            </DialogHeader>
+            <DialogFooter class="flex justify-end gap-2">
+                <DialogClose asChild>
+                    <Button type="button" variant="outline" disabled={isClarificationDeleteSubmitting}>
+                        {m['common.actions.cancel']()}
+                    </Button>
+                </DialogClose>
+                <Button type="button" variant="destructive" onclick={submitClarificationDelete} disabled={isClarificationDeleteSubmitting} class="gap-2">
+                    {#if isClarificationDeleteSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.delete-confirm-submit']()}
+                    {/if}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+{/if}
 
 <Dialog open={isDeliverableDialogOpen} onOpenChange={(value: boolean) => (isDeliverableDialogOpen = value)}>
     <DialogContent class="max-w-lg">
@@ -1601,7 +2589,7 @@
                     name="deliverable-file"
                     type="file"
                     class="block w-full rounded-md border border-border/40 bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    on:change={(event) => (deliverableForm.file = event.currentTarget.files?.[0] ?? null)}
+                    onchange={(event) => (deliverableForm.file = (event.currentTarget as HTMLInputElement).files?.[0] ?? null)}
                 />
             </div>
             {#if deliverableErrors.length}
@@ -1616,8 +2604,13 @@
             <DialogClose asChild>
                 <Button type="button" variant="outline">{m['common.actions.cancel']()}</Button>
             </DialogClose>
-            <Button type="button" onclick={submitDeliverable} disabled={isDeliverableSubmitting}>
-                {isDeliverableSubmitting ? m['common.actions.loading']() : m['proposition-detail.mandates.deliverables.submit']()}
+            <Button type="button" onclick={submitDeliverable} disabled={isDeliverableSubmitting} class="gap-2">
+                {#if isDeliverableSubmitting}
+                    <Loader2 class="size-4 animate-spin" />
+                    {m['common.actions.loading']()}
+                {:else}
+                    {m['proposition-detail.mandates.deliverables.submit']()}
+                {/if}
             </Button>
         </DialogFooter>
     </DialogContent>
@@ -1655,8 +2648,13 @@
             <DialogClose asChild>
                 <Button type="button" variant="outline">{m['common.actions.cancel']()}</Button>
             </DialogClose>
-            <Button type="button" onclick={submitEvaluation} disabled={isEvaluationSubmitting}>
-                {isEvaluationSubmitting ? m['common.actions.loading']() : m['proposition-detail.mandates.deliverables.evaluate.submit']()}
+            <Button type="button" onclick={submitEvaluation} disabled={isEvaluationSubmitting} class="gap-2">
+                {#if isEvaluationSubmitting}
+                    <Loader2 class="size-4 animate-spin" />
+                    {m['common.actions.loading']()}
+                {:else}
+                    {m['proposition-detail.mandates.deliverables.evaluate.submit']()}
+                {/if}
             </Button>
         </DialogFooter>
     </DialogContent>
@@ -1681,17 +2679,40 @@
                 <DialogClose asChild>
                     <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                 </DialogClose>
-                <Button type="submit" disabled={isAmendmentSubmitting}>{m['proposition-detail.comments.amendment-dialog.submit']()}</Button>
+                <Button type="submit" disabled={isAmendmentSubmitting} class="gap-2">
+                    {#if isAmendmentSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.comments.amendment-dialog.submit']()}
+                    {/if}
+                </Button>
             </DialogFooter>
         </form>
     </DialogContent>
 </Dialog>
 
-<Dialog open={isEventDialogOpen} onOpenChange={(value: boolean) => (isEventDialogOpen = value)}>
-    <DialogContent class="max-w-2xl">
+<Dialog
+    open={isEventDialogOpen}
+    onOpenChange={(value: boolean) => {
+        isEventDialogOpen = value;
+        if (!value) {
+            editingEventId = null;
+            resetEventForm();
+            isEventSubmitting = false;
+            eventStartInput = null;
+            eventEndInput = null;
+        }
+    }}
+>
+    <DialogContent class="max-w-3xl p-8">
         <DialogHeader>
-            <DialogTitle>{m['proposition-detail.events.dialog.title']()}</DialogTitle>
-            <DialogDescription>{m['proposition-detail.events.dialog.description']()}</DialogDescription>
+            <DialogTitle>
+                {editingEventId ? m['proposition-detail.events.dialog.edit-title']() : m['proposition-detail.events.dialog.title']()}
+            </DialogTitle>
+            <DialogDescription>
+                {editingEventId ? m['proposition-detail.events.dialog.edit-description']() : m['proposition-detail.events.dialog.description']()}
+            </DialogDescription>
         </DialogHeader>
         <form class="grid gap-4" onsubmit={handleEventSubmit}>
             <Input name="event-title" label={m['proposition-detail.events.form.title']()} bind:value={eventForm.title} required />
@@ -1704,9 +2725,29 @@
                         {/each}
                     </select>
                 </label>
-                <Input type="datetime-local" name="event-start" label={m['proposition-detail.events.form.startAt']()} bind:value={eventForm.startAt} />
-                <Input type="datetime-local" name="event-end" label={m['proposition-detail.events.form.endAt']()} bind:value={eventForm.endAt} />
-                <Input name="event-location" label={m['proposition-detail.events.form.location']()} bind:value={eventForm.location} />
+                <div class="relative">
+                    <Input type="datetime-local" name="event-start" label={m['proposition-detail.events.form.startAt']()} bind:value={eventForm.startAt} bind:ref={eventStartInput} class="pr-12" />
+                    <button
+                        type="button"
+                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                        onclick={() => openNativeDatePicker(eventStartInput)}
+                        aria-label={m['proposition-detail.events.form.startAt']()}
+                    >
+                        <CalendarDays class="size-4" />
+                    </button>
+                </div>
+                <div class="relative">
+                    <Input type="datetime-local" name="event-end" label={m['proposition-detail.events.form.endAt']()} bind:value={eventForm.endAt} bind:ref={eventEndInput} class="pr-12" />
+                    <button
+                        type="button"
+                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                        onclick={() => openNativeDatePicker(eventEndInput)}
+                        aria-label={m['proposition-detail.events.form.endAt']()}
+                    >
+                        <CalendarDays class="size-4" />
+                    </button>
+                </div>
+                <Input name="event-location" label={m['proposition-detail.events.form.location']()} bind:value={eventForm.location} class="sm:col-span-2" />
             </div>
             <Input name="event-video" label={m['proposition-detail.events.form.videoLink']()} bind:value={eventForm.videoLink} />
             <Textarea name="event-description" label={m['proposition-detail.events.form.description']()} rows={4} bind:value={eventForm.description} />
@@ -1721,7 +2762,14 @@
                 <DialogClose asChild>
                     <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                 </DialogClose>
-                <Button type="submit" disabled={isEventSubmitting}>{m['proposition-detail.events.dialog.submit']()}</Button>
+                <Button type="submit" disabled={isEventSubmitting} class="gap-2">
+                    {#if isEventSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {editingEventId ? m['proposition-detail.events.dialog.update']() : m['proposition-detail.events.dialog.submit']()}
+                    {/if}
+                </Button>
             </DialogFooter>
         </form>
     </DialogContent>
@@ -1769,7 +2817,14 @@
                 <DialogClose asChild>
                     <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                 </DialogClose>
-                <Button type="submit" disabled={isVoteSubmitting}>{m['proposition-detail.votes.dialog.submit']()}</Button>
+                <Button type="submit" disabled={isVoteSubmitting} class="gap-2">
+                    {#if isVoteSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.votes.dialog.submit']()}
+                    {/if}
+                </Button>
             </DialogFooter>
         </form>
     </DialogContent>
