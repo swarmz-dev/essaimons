@@ -12,7 +12,7 @@ import PropositionVote from '#models/proposition_vote';
 import VoteOption from '#models/vote_option';
 import type User from '#models/user';
 import SettingsService from '#services/settings_service';
-import { DeliverableVerdictEnum, MandateRevocationStatusEnum, PropositionVoteMethodEnum, PropositionVotePhaseEnum, PropositionVoteStatusEnum } from '#types';
+import { DeliverableVerdictEnum, MandateRevocationStatusEnum, MandateStatusEnum, PropositionStatusEnum, PropositionVoteMethodEnum, PropositionVotePhaseEnum, PropositionVoteStatusEnum } from '#types';
 
 interface MandateAutomationHistoryEntry {
     mandateDeadline: string;
@@ -51,6 +51,22 @@ interface DeliverableMetadata {
     [key: string]: unknown;
 }
 
+interface WorkflowAutomationSettings {
+    deliverableRecalcCooldownMinutes?: number;
+    evaluationAutoShiftDays?: number;
+    nonConformityPercentThreshold?: number;
+    nonConformityAbsoluteFloor?: number;
+    revocationAutoTriggerDelayDays?: number;
+    revocationCheckFrequencyHours?: number;
+}
+
+interface RecalculateOptions {
+    deliverable?: MandateDeliverable;
+    actor?: User;
+    trx?: TransactionClientContract;
+    reason: 'upload' | 'late_detection';
+}
+
 @inject()
 export default class DeliverableAutomationService {
     constructor(private readonly settingsService: SettingsService) {}
@@ -61,74 +77,26 @@ export default class DeliverableAutomationService {
     }
 
     public async handleDeliverableCreated(proposition: Proposition, mandate: PropositionMandate, deliverable: MandateDeliverable, actor: User, trx?: TransactionClientContract): Promise<void> {
+        logger.info('automation.handleDeliverableCreated.start');
         const settings = await this.settingsService.getOrganizationSettings();
+        logger.info('automation.handleDeliverableCreated.settings-loaded');
         const automation = settings.workflowAutomation;
         const now = DateTime.now();
-        const cooldownMinutes = automation.deliverableRecalcCooldownMinutes ?? 10;
+        const cooldownMinutes = Math.max(automation?.deliverableRecalcCooldownMinutes ?? 10, 0);
 
-        if (mandate.lastAutomationRunAt) {
-            const diff = now.diff(mandate.lastAutomationRunAt, 'minutes').minutes;
-            if (diff < cooldownMinutes) {
-                return;
-            }
+        if (this.shouldThrottleAutomation(mandate, cooldownMinutes, now)) {
+            logger.info('automation.handleDeliverableCreated.throttled');
+            return;
         }
 
-        if (trx) {
-            proposition.useTransaction(trx);
-            mandate.useTransaction(trx);
-            deliverable.useTransaction(trx);
-        }
-
-        const evaluationShift = automation.evaluationAutoShiftDays ?? 0;
-        const mandateMetadata = this.getMandateMetadata(mandate);
-        const previousMandateDeadline = proposition.mandateDeadline ?? mandate.currentDeadline ?? now;
-        const previousEvaluationDeadline = proposition.evaluationDeadline ?? previousMandateDeadline.plus({ days: evaluationShift });
-        const isLate = previousEvaluationDeadline ? now > previousEvaluationDeadline : false;
-
-        if (isLate) {
-            mandateMetadata.deadlineHistory.push({
-                mandateDeadline: this.ensureIsoString(previousMandateDeadline),
-                evaluationDeadline: this.ensureIsoString(previousEvaluationDeadline),
-                status: 'missed',
-                recalculatedAt: this.ensureIsoString(now),
-            });
-        }
-
-        const base = isLate ? now : (previousEvaluationDeadline ?? now);
-        const nextMandateDeadline = base.plus({ days: evaluationShift });
-        const nextEvaluationDeadline = nextMandateDeadline.plus({ days: evaluationShift });
-
-        mandateMetadata.deadlineHistory.push({
-            mandateDeadline: this.ensureIsoString(nextMandateDeadline),
-            evaluationDeadline: this.ensureIsoString(nextEvaluationDeadline),
-            status: 'scheduled',
-            recalculatedAt: this.ensureIsoString(now),
+        logger.info('automation.handleDeliverableCreated.recalculating-deadlines');
+        await this.recalculateDeadlines(proposition, mandate, automation ?? {}, now, {
+            deliverable,
+            actor,
+            trx,
+            reason: 'upload',
         });
-
-        proposition.mandateDeadline = nextMandateDeadline;
-        proposition.evaluationDeadline = nextEvaluationDeadline;
-        await proposition.save();
-
-        mandate.currentDeadline = nextMandateDeadline;
-        mandate.lastAutomationRunAt = now;
-        mandate.metadata = mandateMetadata;
-        await mandate.save();
-
-        const deliverableMetadata = this.getDeliverableMetadata(deliverable);
-        deliverableMetadata.status = deliverableMetadata.status ?? 'pending';
-        deliverableMetadata.lastRecalculatedAt = this.ensureIsoString(now);
-        deliverable.metadata = deliverableMetadata;
-        deliverable.evaluationDeadlineSnapshot = nextEvaluationDeadline;
-        await deliverable.save();
-
-        logger.info('automation.deliverable.recalculated', {
-            propositionId: proposition.id,
-            mandateId: mandate.id,
-            deliverableId: deliverable.id,
-            nextMandateDeadline: this.ensureIsoString(nextMandateDeadline),
-            nextEvaluationDeadline: this.ensureIsoString(nextEvaluationDeadline),
-            actorId: actor.id,
-        });
+        logger.info('automation.handleDeliverableCreated.completed');
     }
 
     public async handleEvaluationRecorded(proposition: Proposition, mandate: PropositionMandate, deliverable: MandateDeliverable, actor: User, trx?: TransactionClientContract): Promise<void> {
@@ -169,6 +137,9 @@ export default class DeliverableAutomationService {
             };
         }
 
+        deliverableMetadata.status = 'non_conform';
+        deliverableMetadata.lastRecalculatedAt = deliverableMetadata.lastRecalculatedAt ?? this.ensureIsoString(now);
+
         if (deliverable.status !== 'non_conform') {
             deliverable.status = 'non_conform';
             deliverable.nonConformityFlaggedAt = now;
@@ -198,6 +169,55 @@ export default class DeliverableAutomationService {
             nonConformVotes,
             actorId: actor.id,
         });
+    }
+
+    public async runDeadlineSweep(): Promise<void> {
+        const settings = await this.settingsService.getOrganizationSettings();
+        const automation = settings.workflowAutomation ?? {};
+        const evaluationShift = automation.evaluationAutoShiftDays ?? 0;
+
+        if (evaluationShift <= 0) {
+            return;
+        }
+
+        const now = DateTime.now();
+        const cooldownMinutes = Math.max(automation.deliverableRecalcCooldownMinutes ?? 10, 0);
+        const thresholdSql = now.toSQL();
+
+        const mandates = await PropositionMandate.query()
+            .whereIn('status', [MandateStatusEnum.ACTIVE, MandateStatusEnum.PENDING])
+            .whereHas('proposition', (builder) => {
+                builder.where('status', PropositionStatusEnum.EVALUATE).whereNotNull('evaluation_deadline');
+                if (thresholdSql) {
+                    builder.where('evaluation_deadline', '<=', thresholdSql);
+                }
+            })
+            .preload('proposition');
+
+        for (const mandate of mandates) {
+            try {
+                const proposition = mandate.proposition as Proposition | undefined;
+                if (!proposition?.evaluationDeadline) {
+                    continue;
+                }
+
+                const tickNow = DateTime.now();
+
+                if (this.shouldThrottleAutomation(mandate, cooldownMinutes, tickNow)) {
+                    continue;
+                }
+
+                await this.recalculateDeadlines(proposition, mandate, automation, tickNow, {
+                    reason: 'late_detection',
+                });
+            } catch (error) {
+                logger.error('automation.deadline.sweep.error', {
+                    mandateId: mandate.id,
+                    propositionId: mandate.propositionId,
+                    error: error instanceof Error ? error.message : error,
+                });
+            }
+        }
     }
 
     public async runRevocationSweep(): Promise<void> {
@@ -275,6 +295,87 @@ export default class DeliverableAutomationService {
             ...raw,
             procedure,
         };
+    }
+
+    private shouldThrottleAutomation(mandate: PropositionMandate, cooldownMinutes: number, now: DateTime): boolean {
+        if (cooldownMinutes <= 0) {
+            return false;
+        }
+
+        if (!mandate.lastAutomationRunAt) {
+            return false;
+        }
+
+        const diff = now.diff(mandate.lastAutomationRunAt, 'minutes').minutes;
+        return diff < cooldownMinutes;
+    }
+
+    private async recalculateDeadlines(proposition: Proposition, mandate: PropositionMandate, automation: WorkflowAutomationSettings, now: DateTime, options: RecalculateOptions): Promise<void> {
+        const trx = options.trx;
+
+        if (trx) {
+            proposition.useTransaction(trx);
+            mandate.useTransaction(trx);
+            options.deliverable?.useTransaction(trx);
+        }
+
+        const evaluationShift = automation.evaluationAutoShiftDays ?? 0;
+        const mandateMetadata = this.getMandateMetadata(mandate);
+        const previousMandateDeadline = proposition.mandateDeadline ?? mandate.currentDeadline ?? now;
+        const previousEvaluationDeadline = proposition.evaluationDeadline ?? previousMandateDeadline.plus({ days: evaluationShift });
+        const isLate = previousEvaluationDeadline ? now > previousEvaluationDeadline : false;
+
+        if (isLate) {
+            mandateMetadata.deadlineHistory.push({
+                mandateDeadline: this.ensureIsoString(previousMandateDeadline),
+                evaluationDeadline: this.ensureIsoString(previousEvaluationDeadline),
+                status: 'missed',
+                recalculatedAt: this.ensureIsoString(now),
+            });
+        }
+
+        const pivot = isLate ? now : (previousEvaluationDeadline ?? now);
+        const nextMandateDeadline = pivot.plus({ days: evaluationShift });
+        const nextEvaluationDeadline = nextMandateDeadline.plus({ days: evaluationShift });
+
+        mandateMetadata.deadlineHistory.push({
+            mandateDeadline: this.ensureIsoString(nextMandateDeadline),
+            evaluationDeadline: this.ensureIsoString(nextEvaluationDeadline),
+            status: 'scheduled',
+            recalculatedAt: this.ensureIsoString(now),
+        });
+
+        proposition.mandateDeadline = nextMandateDeadline;
+        proposition.evaluationDeadline = nextEvaluationDeadline;
+        await proposition.save();
+
+        const previousAutomationRunAt = mandate.lastAutomationRunAt ?? null;
+
+        mandate.currentDeadline = nextMandateDeadline;
+        mandate.lastAutomationRunAt = now;
+        mandate.metadata = mandateMetadata;
+        await mandate.save();
+
+        const deliverable = options.deliverable;
+        if (deliverable) {
+            const deliverableMetadata = this.getDeliverableMetadata(deliverable);
+            deliverableMetadata.status = deliverable.status ?? deliverableMetadata.status ?? 'pending';
+            deliverableMetadata.lastRecalculatedAt = this.ensureIsoString(now);
+            deliverable.metadata = deliverableMetadata;
+            deliverable.evaluationDeadlineSnapshot = nextEvaluationDeadline;
+            await deliverable.save();
+        }
+
+        logger.info('automation.deliverable.recalculated', {
+            propositionId: proposition.id,
+            mandateId: mandate.id,
+            deliverableId: deliverable?.id ?? null,
+            nextMandateDeadline: this.ensureIsoString(nextMandateDeadline),
+            nextEvaluationDeadline: this.ensureIsoString(nextEvaluationDeadline),
+            actorId: options.actor?.id ?? null,
+            reason: options.reason,
+            previousAutomationRunAt: previousAutomationRunAt ? this.ensureIsoString(previousAutomationRunAt) : null,
+        });
     }
 
     private async ensureRevocationRequest(
@@ -404,6 +505,8 @@ export default class DeliverableAutomationService {
             procedure.status = 'escalated';
             procedure.escalatedAt = this.ensureIsoString(now);
             procedure.revocationVoteId = vote.id;
+            deliverable.status = 'escalated';
+            deliverableMetadata.status = 'escalated';
             deliverableMetadata.procedure = procedure;
             deliverable.metadata = deliverableMetadata;
             await deliverable.save();

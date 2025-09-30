@@ -176,8 +176,16 @@ test.group('Deliverable automation service', (group) => {
 
         assert.isTrue((proposition.evaluationDeadline?.toJSDate()?.getTime() ?? 0) > originalEvaluationDeadline, 'evaluation deadline should move forward');
         assert.exists(mandate.lastAutomationRunAt, 'mandate last automation run is stored');
-        assert.isArray(mandate.metadata?.deadlineHistory ?? []);
+        const history = (mandate.metadata as any)?.deadlineHistory ?? [];
+        assert.isArray(history);
+        assert.isAtLeast(history.length, 1);
+        assert.equal(history[history.length - 1]?.status, 'scheduled');
+
+        await deliverable.refresh();
         assert.equal(deliverable.status, 'pending');
+        const deliverableMetadata = deliverable.metadata as any;
+        assert.equal(deliverableMetadata?.status, 'pending');
+        assert.exists(deliverableMetadata?.lastRecalculatedAt);
     }).timeout(20000);
 
     test('handleEvaluationRecorded flags non-conform deliverable and opens procedure', async ({ assert }) => {
@@ -208,6 +216,8 @@ test.group('Deliverable automation service', (group) => {
 
         assert.equal(deliverable.status, 'non_conform');
         assert.exists(deliverable.nonConformityFlaggedAt);
+        const deliverableMetadata = deliverable.metadata as any;
+        assert.equal(deliverableMetadata?.status, 'non_conform');
         const procedure = (deliverable.metadata as any)?.procedure;
         assert.equal(procedure?.status, 'pending');
         assert.exists(procedure?.revocationRequestId);
@@ -270,9 +280,63 @@ test.group('Deliverable automation service', (group) => {
             assert.lengthOf(vote.options, 2);
         }
 
-        const procedure = (deliverable.metadata as any)?.procedure;
+        const deliverableMetadata = deliverable.metadata as any;
+        assert.equal(deliverable.status, 'escalated');
+        assert.equal(deliverableMetadata?.status, 'escalated');
+        const procedure = deliverableMetadata?.procedure;
         assert.equal(procedure?.status, 'escalated');
         assert.equal(procedure?.revocationRequestId, request.id);
         assert.equal(procedure?.revocationVoteId, request.voteId);
+    }).timeout(20000);
+
+    test('runDeadlineSweep recalculates overdue mandates', async ({ assert }) => {
+        const service = await app.container.make(DeliverableAutomationService);
+        const creator = await createUser('automation-deadline');
+        const { proposition, mandate } = await createPropositionWithMandate(creator);
+
+        const pastMandateDeadline = DateTime.now().minus({ days: 3 });
+        const pastEvaluationDeadline = DateTime.now().minus({ days: 1 });
+        const previousAutomationRun = DateTime.now().minus({ days: 2 });
+
+        proposition.mandateDeadline = pastMandateDeadline;
+        proposition.evaluationDeadline = pastEvaluationDeadline;
+        await proposition.save();
+
+        mandate.currentDeadline = pastMandateDeadline;
+        mandate.lastAutomationRunAt = previousAutomationRun;
+        mandate.metadata = { deadlineHistory: [] };
+        await mandate.save();
+
+        await service.runDeadlineSweep();
+
+        await proposition.refresh();
+        await mandate.refresh();
+
+        const updatedMandateDeadline = mandate.currentDeadline;
+        const updatedEvaluationDeadline = proposition.evaluationDeadline;
+        const updatedAutomationRun = mandate.lastAutomationRunAt;
+
+        assert.exists(updatedMandateDeadline);
+        assert.exists(updatedEvaluationDeadline);
+        assert.exists(updatedAutomationRun);
+        assert.isTrue((updatedAutomationRun as DateTime).diff(previousAutomationRun, 'seconds').seconds > 0);
+
+        const base = (updatedAutomationRun as DateTime) ?? DateTime.now();
+        const expectedMandateDeadline = base.plus({ days: 5 });
+        const expectedEvaluationDeadline = expectedMandateDeadline.plus({ days: 5 });
+
+        if (updatedMandateDeadline) {
+            const mandateDiff = Math.abs(updatedMandateDeadline.diff(expectedMandateDeadline, 'minutes').minutes);
+            assert.isBelow(mandateDiff, 10, 'mandate deadline should be shifted by evaluationAutoShiftDays');
+        }
+
+        if (updatedEvaluationDeadline) {
+            assert.equal(updatedEvaluationDeadline.toISODate(), expectedEvaluationDeadline.toISODate(), 'evaluation deadline should cascade shift');
+        }
+
+        const history = (mandate.metadata as any)?.deadlineHistory ?? [];
+        assert.isAtLeast(history.length, 2);
+        assert.equal(history[history.length - 2]?.status, 'missed');
+        assert.equal(history[history.length - 1]?.status, 'scheduled');
     }).timeout(20000);
 });

@@ -17,6 +17,7 @@
     import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#lib/components/ui/dialog';
     import { Input } from '#lib/components/ui/input';
     import { Textarea } from '#lib/components/ui/textarea';
+    import { MultiSelect, type MultiSelectOption } from '#lib/components/ui/multi-select';
     import { m } from '#lib/paraglide/messages';
     import { cn } from '#lib/utils';
     import { wrappedFetch, extractFormErrors } from '#lib/services/requestService';
@@ -118,6 +119,13 @@
         const normalized = value.toString().trim();
         return normalized.length ? normalized : undefined;
     };
+
+    const userOptions: MultiSelectOption[] = $derived(
+        (data.users ?? []).flatMap((user: SerializedUserSummary) => {
+            const value = normalizeId(user.id);
+            return value ? [{ value, label: user.username }] : [];
+        })
+    );
 
     const attachmentUrl = (fileId: string): string => `/assets/propositions/attachments/${fileId}`;
     const deliverableUrl = (deliverableId: string): string => `/assets/propositions/deliverables/${deliverableId}`;
@@ -485,6 +493,14 @@
     let mandateForm = $state({ ...defaultMandateForm });
     let mandateErrors: string[] = $state([]);
     let isMandateSubmitting: boolean = $state(false);
+    let mandateHolderSelection: string[] = $state([]);
+
+    $effect(() => {
+        const selected = mandateHolderSelection[0] ?? '';
+        if ((mandateForm.holderUserId ?? '') !== selected) {
+            mandateForm.holderUserId = selected;
+        }
+    });
 
     let isDeliverableDialogOpen: boolean = $state(false);
     let deliverableMandateId: string | null = $state(null);
@@ -1193,6 +1209,7 @@
                 ({ data: mandate }) => {
                     propositionDetailStore.upsertMandate(mandate);
                     mandateForm = { ...defaultMandateForm };
+                    mandateHolderSelection = [];
                     isMandateDialogOpen = false;
                 },
                 ({ message }) => {
@@ -1217,17 +1234,22 @@
     };
 
     const submitDeliverable = async (): Promise<void> => {
+        console.log('submitDeliverable called', { deliverableMandateId });
+
         if (!deliverableMandateId) {
+            console.log('No deliverableMandateId, returning');
             return;
         }
 
         deliverableErrors = [];
 
         if (!deliverableForm.file) {
+            console.log('No file selected');
             deliverableErrors = [m['proposition-detail.mandates.deliverables.file-required']()];
             return;
         }
 
+        console.log('Setting isDeliverableSubmitting = true');
         isDeliverableSubmitting = true;
 
         try {
@@ -1240,13 +1262,17 @@
             }
             formData.set('file', deliverableForm.file);
 
+            const url = `/propositions/${proposition.id}/mandates/${deliverableMandateId}/deliverables`;
+            console.log('About to fetch:', url);
+
             const response = await wrappedFetch(
-                `/propositions/${proposition.id}/mandates/${deliverableMandateId}/deliverables`,
+                url,
                 {
                     method: 'POST',
                     body: formData,
                 },
                 async ({ deliverable, mandate, proposition: updatedProposition }) => {
+                    console.log('Success callback called');
                     propositionDetailStore.upsertMandate(mandate);
                     propositionDetailStore.updateProposition(updatedProposition);
                     showToast(m['proposition-detail.mandates.deliverables.upload-success'](), 'success');
@@ -1254,14 +1280,20 @@
                     isDeliverableDialogOpen = false;
                 },
                 async (data) => {
+                    console.log('Error callback called', data);
                     deliverableErrors = extractFormErrors(data).map((entry) => entry.message);
                 }
             );
 
+            console.log('Response received:', response);
+
             if (!response?.isSuccess && deliverableErrors.length === 0) {
                 deliverableErrors = [m['common.error.default-message']()];
             }
+        } catch (error) {
+            console.error('Exception in submitDeliverable:', error);
         } finally {
+            console.log('Setting isDeliverableSubmitting = false');
             isDeliverableSubmitting = false;
         }
     };
@@ -2867,7 +2899,16 @@
             <Input name="mandate-title" label={m['proposition-detail.mandates.form.title']()} bind:value={mandateForm.title} required />
             <Textarea name="mandate-description" label={m['proposition-detail.mandates.form.description']()} rows={4} bind:value={mandateForm.description} />
             <div class="grid gap-4 sm:grid-cols-2">
-                <Input name="mandate-holder" label={m['proposition-detail.mandates.form.holder']()} bind:value={mandateForm.holderUserId} />
+                <label class="flex flex-col gap-2 text-sm text-foreground">
+                    {m['proposition-detail.mandates.form.holder']()}
+                    <MultiSelect
+                        class="text-sm"
+                        options={userOptions}
+                        placeholder={m['proposition-detail.mandates.form.holderPlaceholder']()}
+                        bind:selectedValues={mandateHolderSelection}
+                        maxSelections={1}
+                    />
+                </label>
                 <label class="flex flex-col gap-2 text-sm text-foreground">
                     {m['proposition-detail.mandates.form.status']()}
                     <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={mandateForm.status}>

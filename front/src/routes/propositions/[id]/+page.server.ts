@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { redirect as flashRedirect } from 'sveltekit-flash-message/server';
 import type { AxiosResponse } from 'axios';
-import type { SerializedProposition } from 'backend/types';
+import type { SerializedProposition, SerializedPropositionBootstrap, SerializedUserSummary } from 'backend/types';
 import type { PropositionComment, PropositionEvent, PropositionMandate, PropositionVote } from '#lib/types/proposition';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -11,6 +11,7 @@ type PropositionDetailPageData = {
     votes: PropositionVote[];
     mandates: PropositionMandate[];
     comments: PropositionComment[];
+    users: SerializedUserSummary[];
 };
 
 export const load: PageServerLoad<PropositionDetailPageData> = async ({ params, locals }) => {
@@ -23,11 +24,12 @@ export const load: PageServerLoad<PropositionDetailPageData> = async ({ params, 
     try {
         const { data: propositionPayload } = await locals.client.get<{ proposition: SerializedProposition }>(`api/propositions/${propositionId}`);
 
-        const [eventsResult, votesResult, mandatesResult, commentsResult] = await Promise.allSettled([
+        const [eventsResult, votesResult, mandatesResult, commentsResult, bootstrapResult] = await Promise.allSettled([
             locals.client.get<{ events: PropositionEvent[] }>(`api/propositions/${propositionId}/events`),
             locals.client.get<{ votes: PropositionVote[] }>(`api/propositions/${propositionId}/votes`),
             locals.client.get<{ mandates: PropositionMandate[] }>(`api/propositions/${propositionId}/mandates`),
             locals.client.get<{ comments: PropositionComment[] }>(`api/propositions/${propositionId}/comments`),
+            locals.client.get<SerializedPropositionBootstrap>('api/propositions/bootstrap'),
         ]);
 
         const extract = <T>(result: PromiseSettledResult<AxiosResponse<T>>, fallback: T): T => {
@@ -42,6 +44,7 @@ export const load: PageServerLoad<PropositionDetailPageData> = async ({ params, 
         const votesPayload = extract(votesResult, { votes: [] });
         const mandatesPayload = extract(mandatesResult, { mandates: [] });
         const commentsPayload = extract(commentsResult, { comments: [] });
+        const bootstrapPayload = extract(bootstrapResult, { users: [], categories: [], propositions: [] } satisfies SerializedPropositionBootstrap);
 
         return {
             proposition: propositionPayload.proposition,
@@ -49,6 +52,7 @@ export const load: PageServerLoad<PropositionDetailPageData> = async ({ params, 
             votes: votesPayload.votes ?? [],
             mandates: mandatesPayload.mandates ?? [],
             comments: commentsPayload.comments ?? [],
+            users: bootstrapPayload.users ?? [],
         } satisfies PropositionDetailPageData;
     } catch (err: any) {
         const status: number | undefined = err?.response?.status;

@@ -58,7 +58,7 @@ export const actions: Actions = {
 
             cookies.set('token', data.token.token, {
                 path: '/',
-                httpOnly: true,
+                httpOnly: false, // Disabled to allow client-side access
                 sameSite: 'lax',
                 maxAge: 60 * 60 * 24 * 7,
             });

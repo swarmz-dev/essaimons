@@ -13,6 +13,14 @@ const startAutomation = async () => {
 
         const runSweep = async () => {
             try {
+                await automationService.runDeadlineSweep();
+            } catch (error) {
+                logger.error('automation.deadline.sweep_failed', {
+                    error: error instanceof Error ? error.message : error,
+                });
+            }
+
+            try {
                 await automationService.runRevocationSweep();
             } catch (error) {
                 logger.error('automation.revocation.sweep_failed', {
@@ -30,7 +38,8 @@ const startAutomation = async () => {
             }, interval);
         };
 
-        await runSweep();
+        // Temporarily disabled for debugging
+        // await runSweep();
         await scheduleNext();
     } catch (error) {
         logger.error('automation.revocation.bootstrap_failed', {

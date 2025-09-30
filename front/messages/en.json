@@ -720,7 +720,8 @@
             "form": {
                 "title": "Title",
                 "description": "Description",
-                "holder": "Mandated user ID",
+                "holder": "Mandated user",
+                "holderPlaceholder": "Search for a mandated member",
                 "status": "Status",
                 "targetObjectiveRef": "Related objective",
                 "initialDeadline": "Initial deadline",

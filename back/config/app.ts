@@ -33,8 +33,8 @@ export const http = defineConfig({
         domain: app.inProduction ? `.${env.get('DOMAIN')}` : undefined,
         path: '/',
         maxAge: '1h',
-        httpOnly: true,
+        httpOnly: false, // Temporarily disabled for debugging
         secure: app.inProduction,
-        sameSite: app.inProduction ? 'none' : 'lax',
+        sameSite: app.inProduction ? 'none' : false,
     },
 });

@@ -36,7 +36,18 @@ export default class PropositionMandateController {
             if (error instanceof Error && error.message.startsWith('forbidden:')) {
                 return response.forbidden({ error: 'You are not allowed to manage mandates for this proposition' });
             }
-            logger.error('proposition.mandates.create.error', { message: error?.message, stack: error?.stack });
+            console.error('=== MANDATE CREATE ERROR ===');
+            console.error('Payload:', JSON.stringify(request.all(), null, 2));
+            console.error('Error message:', error?.message);
+            console.error('Error messages:', error?.messages);
+            console.error('Error errors:', error?.errors);
+            console.error('Full error:', error);
+            logger.error('proposition.mandates.create.error', {
+                message: error?.message,
+                stack: error?.stack,
+                errors: error?.messages || error?.errors,
+                payload: request.all(),
+            });
             return response.badRequest({ error: error?.message ?? 'Unable to create mandate' });
         }
     }

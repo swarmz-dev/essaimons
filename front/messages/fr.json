@@ -720,7 +720,8 @@
             "form": {
                 "title": "Titre",
                 "description": "Description",
-                "holder": "Identifiant du mandataire",
+                "holder": "Mandataire",
+                "holderPlaceholder": "Rechercher un mandataire",
                 "status": "Statut",
                 "targetObjectiveRef": "Objectif associé",
                 "initialDeadline": "Échéance initiale",

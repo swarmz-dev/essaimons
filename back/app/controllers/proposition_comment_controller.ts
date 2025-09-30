@@ -74,7 +74,7 @@ export default class PropositionCommentController {
 
         try {
             await this.commentService.delete(proposition, comment, user as User);
-            return response.ok({ isSuccess: true });
+            return response.noContent();
         } catch (error) {
             if (error instanceof Error && error.message.startsWith('forbidden:')) {
                 return response.forbidden({ error: 'You are not allowed to delete this comment' });
