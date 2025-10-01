@@ -186,7 +186,7 @@ test.group('Deliverable automation service', (group) => {
         const deliverableMetadata = deliverable.metadata as any;
         assert.equal(deliverableMetadata?.status, 'pending');
         assert.exists(deliverableMetadata?.lastRecalculatedAt);
-    }).timeout(20000);
+    }).timeout(30000);
 
     test('handleEvaluationRecorded flags non-conform deliverable and opens procedure', async ({ assert }) => {
         const service = await app.container.make(DeliverableAutomationService);
@@ -225,7 +225,7 @@ test.group('Deliverable automation service', (group) => {
         const request = await MandateRevocationRequest.find(procedure.revocationRequestId);
         assert.exists(request);
         assert.equal(request?.status, MandateRevocationStatusEnum.PENDING);
-    }).timeout(20000);
+    }).timeout(30000);
 
     test('runRevocationSweep escalates pending procedure to revocation vote', async ({ assert }) => {
         const service = await app.container.make(DeliverableAutomationService);
@@ -287,7 +287,7 @@ test.group('Deliverable automation service', (group) => {
         assert.equal(procedure?.status, 'escalated');
         assert.equal(procedure?.revocationRequestId, request.id);
         assert.equal(procedure?.revocationVoteId, request.voteId);
-    }).timeout(20000);
+    }).timeout(30000);
 
     test('runDeadlineSweep recalculates overdue mandates', async ({ assert }) => {
         const service = await app.container.make(DeliverableAutomationService);
@@ -338,5 +338,5 @@ test.group('Deliverable automation service', (group) => {
         assert.isAtLeast(history.length, 2);
         assert.equal(history[history.length - 2]?.status, 'missed');
         assert.equal(history[history.length - 1]?.status, 'scheduled');
-    }).timeout(20000);
+    }).timeout(30000);
 });

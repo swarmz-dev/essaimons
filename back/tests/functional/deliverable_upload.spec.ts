@@ -5,22 +5,64 @@ import PropositionMandate from '#models/proposition_mandate';
 import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { DateTime } from 'luxon';
+import { PropositionStatusEnum, PropositionVisibilityEnum, MandateStatusEnum, UserRoleEnum } from '#types';
 
 test.group('Deliverable upload', () => {
     test('upload deliverable to mandate', async ({ client, assert }) => {
         // Get a user
-        const user = await User.query().first();
+        let user = await User.query().first();
+        if (!user) {
+            user = await User.create({
+                username: `deliverable-user-${Date.now()}`,
+                email: `deliverable-user-${Date.now()}@example.com`,
+                password: 'password',
+                role: UserRoleEnum.ADMIN,
+                enabled: true,
+                acceptedTermsAndConditions: true,
+            });
+        }
+
         assert.isNotNull(user, 'User should exist');
 
-        // Find proposition 209
-        const proposition = await Proposition.query().where('public_id', 209).first();
+        // Create proposition + mandate owned by the user to ensure permissions
+        const proposition = await Proposition.create({
+            title: `Deliverable upload test ${Date.now()}`,
+            summary: 'Functional deliverable upload',
+            detailedDescription: 'Functional deliverable upload description',
+            smartObjectives: 'SMART',
+            impacts: 'Positive',
+            mandatesDescription: 'Mandate description',
+            expertise: null,
+            status: PropositionStatusEnum.EVALUATE,
+            statusStartedAt: DateTime.now(),
+            visibility: PropositionVisibilityEnum.PRIVATE,
+            clarificationDeadline: DateTime.now().plus({ days: 5 }),
+            improvementDeadline: DateTime.now().plus({ days: 10 }),
+            voteDeadline: DateTime.now().plus({ days: 15 }),
+            mandateDeadline: DateTime.now().plus({ days: 20 }),
+            evaluationDeadline: DateTime.now().plus({ days: 25 }),
+            archivedAt: null,
+            settingsSnapshot: {},
+            creatorId: user!.id,
+            visualFileId: null,
+        });
 
-        assert.isNotNull(proposition, 'Proposition 209 should exist');
+        await proposition.refresh();
+        assert.exists(proposition.frontId, 'Proposition front id should be defined');
 
-        // Find mandate
-        const mandate = await PropositionMandate.query().where('id', '8acd9401-6a42-4cf7-a724-e4335ae86a94').first();
-
-        assert.isNotNull(mandate, 'Mandate should exist');
+        const mandate = await PropositionMandate.create({
+            propositionId: proposition.id,
+            title: 'Test Mandate',
+            description: null,
+            holderUserId: user!.id,
+            status: MandateStatusEnum.ACTIVE,
+            targetObjectiveRef: null,
+            initialDeadline: proposition.mandateDeadline,
+            currentDeadline: proposition.mandateDeadline,
+            lastStatusUpdateAt: DateTime.now(),
+            metadata: {},
+        });
 
         // Create test file
         const testFilePath = join(tmpdir(), 'test-deliverable.txt');
@@ -31,14 +73,11 @@ test.group('Deliverable upload', () => {
 
         // Make API request
         const response = await client
-            .post(`/api/propositions/${proposition!.publicId}/mandates/${mandate!.id}/deliverables`)
+            .post(`/api/propositions/${proposition.frontId}/mandates/${mandate.id}/deliverables`)
             .bearerToken(token.value!.release())
             .file('file', testFilePath)
             .field('label', 'Test deliverable')
             .field('objectiveRef', 'Test objective');
-
-        console.log('Response status:', response.status());
-        console.log('Response body:', response.body());
 
         response.assertStatus(201);
         assert.isTrue(response.body().isSuccess);
