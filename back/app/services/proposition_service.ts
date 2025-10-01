@@ -26,7 +26,7 @@ interface CreatePropositionPayload {
     mandatesDescription: string;
     expertise?: string | null;
     clarificationDeadline: string;
-    improvementDeadline: string;
+    amendmentDeadline: string;
     voteDeadline: string;
     mandateDeadline: string;
     evaluationDeadline: string;
@@ -75,7 +75,7 @@ export default class PropositionService {
             }
 
             const clarificationDate: DateTime = this.parseIsoDate(payload.clarificationDeadline);
-            const improvementDate: DateTime = this.parseIsoDate(payload.improvementDeadline);
+            const amendmentDate: DateTime = this.parseIsoDate(payload.amendmentDeadline);
             const voteDate: DateTime = this.parseIsoDate(payload.voteDeadline);
             const mandateDate: DateTime = this.parseIsoDate(payload.mandateDeadline);
             const evaluationDate: DateTime = this.parseIsoDate(payload.evaluationDeadline);
@@ -95,7 +95,7 @@ export default class PropositionService {
                     archivedAt: null,
                     settingsSnapshot: {},
                     clarificationDeadline: clarificationDate,
-                    improvementDeadline: improvementDate,
+                    amendmentDeadline: amendmentDate,
                     voteDeadline: voteDate,
                     mandateDeadline: mandateDate,
                     evaluationDeadline: evaluationDate,
@@ -242,7 +242,7 @@ export default class PropositionService {
             }
 
             const clarificationDate: DateTime = this.parseIsoDate(payload.clarificationDeadline);
-            const improvementDate: DateTime = this.parseIsoDate(payload.improvementDeadline);
+            const amendmentDate: DateTime = this.parseIsoDate(payload.amendmentDeadline);
             const voteDate: DateTime = this.parseIsoDate(payload.voteDeadline);
             const mandateDate: DateTime = this.parseIsoDate(payload.mandateDeadline);
             const evaluationDate: DateTime = this.parseIsoDate(payload.evaluationDeadline);
@@ -258,7 +258,7 @@ export default class PropositionService {
                 mandatesDescription: payload.mandatesDescription,
                 expertise: payload.expertise ?? null,
                 clarificationDeadline: clarificationDate,
-                improvementDeadline: improvementDate,
+                amendmentDeadline: amendmentDate,
                 voteDeadline: voteDate,
                 mandateDeadline: mandateDate,
                 evaluationDeadline: evaluationDate,

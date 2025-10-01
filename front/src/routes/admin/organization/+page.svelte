@@ -122,7 +122,7 @@
     let isSubmitting: boolean = $state(false);
     let activeTab: 'general' | 'propositions' = $state('general');
     let clarificationOffsetDays: string = $state(String(settings.propositionDefaults?.clarificationOffsetDays ?? 7));
-    let improvementOffsetDays: string = $state(String(settings.propositionDefaults?.improvementOffsetDays ?? 15));
+    let amendmentOffsetDays: string = $state(String(settings.propositionDefaults?.amendmentOffsetDays ?? 15));
     let voteOffsetDays: string = $state(String(settings.propositionDefaults?.voteOffsetDays ?? 7));
     let mandateOffsetDays: string = $state(String(settings.propositionDefaults?.mandateOffsetDays ?? 15));
     let evaluationOffsetDays: string = $state(String(settings.propositionDefaults?.evaluationOffsetDays ?? 30));
@@ -592,7 +592,7 @@
         }
 
         formData.set('propositionDefaults[clarificationOffsetDays]', clarificationOffsetDays.trim() || '0');
-        formData.set('propositionDefaults[improvementOffsetDays]', improvementOffsetDays.trim() || '0');
+        formData.set('propositionDefaults[amendmentOffsetDays]', amendmentOffsetDays.trim() || '0');
         formData.set('propositionDefaults[voteOffsetDays]', voteOffsetDays.trim() || '0');
         formData.set('propositionDefaults[mandateOffsetDays]', mandateOffsetDays.trim() || '0');
         formData.set('propositionDefaults[evaluationOffsetDays]', evaluationOffsetDays.trim() || '0');
@@ -831,8 +831,8 @@
                         <Input id="clarificationOffsetDays" type="number" name="propositionDefaults[clarificationOffsetDays]" min={0} bind:value={clarificationOffsetDays} required />
                     </FieldLabel>
 
-                    <FieldLabel forId="improvementOffsetDays" label={m['admin.organization.propositions.improvement']()}>
-                        <Input id="improvementOffsetDays" type="number" name="propositionDefaults[improvementOffsetDays]" min={0} bind:value={improvementOffsetDays} required />
+                    <FieldLabel forId="amendmentOffsetDays" label={m['admin.organization.propositions.amendment']()}>
+                        <Input id="amendmentOffsetDays" type="number" name="propositionDefaults[amendmentOffsetDays]" min={0} bind:value={amendmentOffsetDays} required />
                     </FieldLabel>
 
                     <FieldLabel forId="voteOffsetDays" label={m['admin.organization.propositions.vote']()}>

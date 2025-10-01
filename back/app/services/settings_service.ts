@@ -42,7 +42,7 @@ interface OrganizationSettingsValue {
     logoFileId: string | null;
     propositionDefaults?: {
         clarificationOffsetDays: number;
-        improvementOffsetDays: number;
+        amendmentOffsetDays: number;
         voteOffsetDays: number;
         mandateOffsetDays: number;
         evaluationOffsetDays: number;
@@ -68,7 +68,7 @@ interface UpdateOrganizationSettingsPayload {
 
 const DEFAULT_PROPOSITION_DEFAULTS = {
     clarificationOffsetDays: 7,
-    improvementOffsetDays: 15,
+    amendmentOffsetDays: 15,
     voteOffsetDays: 7,
     mandateOffsetDays: 15,
     evaluationOffsetDays: 30,
@@ -310,7 +310,7 @@ export default class SettingsService {
 
             return {
                 clarificationOffsetDays: normalize(input.clarificationOffsetDays, fallback.clarificationOffsetDays),
-                improvementOffsetDays: normalize(input.improvementOffsetDays, fallback.improvementOffsetDays),
+                amendmentOffsetDays: normalize(input.amendmentOffsetDays, fallback.amendmentOffsetDays),
                 voteOffsetDays: normalize(input.voteOffsetDays, fallback.voteOffsetDays),
                 mandateOffsetDays: normalize(input.mandateOffsetDays, fallback.mandateOffsetDays),
                 evaluationOffsetDays: normalize(input.evaluationOffsetDays, fallback.evaluationOffsetDays),
@@ -489,7 +489,7 @@ export default class SettingsService {
             const defaults = payload.propositionDefaults;
             value.propositionDefaults = {
                 clarificationOffsetDays: normalizeOffset(defaults?.clarificationOffsetDays, value.propositionDefaults?.clarificationOffsetDays ?? DEFAULT_PROPOSITION_DEFAULTS.clarificationOffsetDays),
-                improvementOffsetDays: normalizeOffset(defaults?.improvementOffsetDays, value.propositionDefaults?.improvementOffsetDays ?? DEFAULT_PROPOSITION_DEFAULTS.improvementOffsetDays),
+                amendmentOffsetDays: normalizeOffset(defaults?.amendmentOffsetDays, value.propositionDefaults?.amendmentOffsetDays ?? DEFAULT_PROPOSITION_DEFAULTS.amendmentOffsetDays),
                 voteOffsetDays: normalizeOffset(defaults?.voteOffsetDays, value.propositionDefaults?.voteOffsetDays ?? DEFAULT_PROPOSITION_DEFAULTS.voteOffsetDays),
                 mandateOffsetDays: normalizeOffset(defaults?.mandateOffsetDays, value.propositionDefaults?.mandateOffsetDays ?? DEFAULT_PROPOSITION_DEFAULTS.mandateOffsetDays),
                 evaluationOffsetDays: normalizeOffset(defaults?.evaluationOffsetDays, value.propositionDefaults?.evaluationOffsetDays ?? DEFAULT_PROPOSITION_DEFAULTS.evaluationOffsetDays),

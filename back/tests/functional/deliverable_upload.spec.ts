@@ -38,7 +38,7 @@ test.group('Deliverable upload', () => {
             statusStartedAt: DateTime.now(),
             visibility: PropositionVisibilityEnum.PRIVATE,
             clarificationDeadline: DateTime.now().plus({ days: 5 }),
-            improvementDeadline: DateTime.now().plus({ days: 10 }),
+            amendmentDeadline: DateTime.now().plus({ days: 10 }),
             voteDeadline: DateTime.now().plus({ days: 15 }),
             mandateDeadline: DateTime.now().plus({ days: 20 }),
             evaluationDeadline: DateTime.now().plus({ days: 25 }),

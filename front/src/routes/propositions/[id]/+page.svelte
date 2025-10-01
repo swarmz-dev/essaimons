@@ -220,8 +220,8 @@
             },
             {
                 key: PropositionStatusEnum.AMEND,
-                label: m['proposition-detail.dates.improvement'](),
-                deadline: proposition.improvementDeadline,
+                label: m['proposition-detail.dates.amendment'](),
+                deadline: proposition.amendmentDeadline,
             },
             {
                 key: PropositionStatusEnum.VOTE,

@@ -17,7 +17,7 @@ export type OrganizationSettings = {
     logo: SerializedFile | null;
     propositionDefaults: {
         clarificationOffsetDays: number;
-        improvementOffsetDays: number;
+        amendmentOffsetDays: number;
         voteOffsetDays: number;
         mandateOffsetDays: number;
         evaluationOffsetDays: number;
@@ -49,7 +49,7 @@ const defaultSettings: OrganizationSettings = {
     logo: null,
     propositionDefaults: {
         clarificationOffsetDays: 7,
-        improvementOffsetDays: 15,
+        amendmentOffsetDays: 15,
         voteOffsetDays: 7,
         mandateOffsetDays: 15,
         evaluationOffsetDays: 30,

@@ -47,7 +47,7 @@ export const actions = {
             associatedPropositionIds: toArray(formData.get('associatedPropositionIds')),
             rescueInitiatorIds: toArray(formData.get('rescueInitiatorIds')),
             clarificationDeadline: toString(formData.get('clarificationDeadline')),
-            improvementDeadline: toString(formData.get('improvementDeadline')),
+            amendmentDeadline: toString(formData.get('amendmentDeadline')),
             voteDeadline: toString(formData.get('voteDeadline')),
             mandateDeadline: toString(formData.get('mandateDeadline')),
             evaluationDeadline: toString(formData.get('evaluationDeadline')),
@@ -73,7 +73,7 @@ export const actions = {
         setField('associatedPropositionIds', normalizedPayload.associatedPropositionIds);
         setField('rescueInitiatorIds', normalizedPayload.rescueInitiatorIds);
         setField('clarificationDeadline', normalizedPayload.clarificationDeadline);
-        setField('improvementDeadline', normalizedPayload.improvementDeadline);
+        setField('amendmentDeadline', normalizedPayload.amendmentDeadline);
         setField('voteDeadline', normalizedPayload.voteDeadline);
         setField('mandateDeadline', normalizedPayload.mandateDeadline);
         setField('evaluationDeadline', normalizedPayload.evaluationDeadline);

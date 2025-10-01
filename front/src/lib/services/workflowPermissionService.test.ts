@@ -15,7 +15,7 @@ const baseProposition: any = {
     statusStartedAt: new Date().toISOString(),
     visibility: PropositionVisibilityEnum.PRIVATE,
     clarificationDeadline: '',
-    improvementDeadline: '',
+    amendmentDeadline: '',
     voteDeadline: '',
     mandateDeadline: '',
     evaluationDeadline: '',

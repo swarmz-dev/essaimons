@@ -15,7 +15,7 @@ const propositionPayloadSchema = vine.object({
     associatedPropositionIds: vine.array(vine.string().trim().minLength(1)).optional(),
     rescueInitiatorIds: vine.array(vine.string().trim().minLength(1)),
     clarificationDeadline: vine.string().trim().regex(isoDateRegex),
-    improvementDeadline: vine.string().trim().regex(isoDateRegex),
+    amendmentDeadline: vine.string().trim().regex(isoDateRegex),
     voteDeadline: vine.string().trim().regex(isoDateRegex),
     mandateDeadline: vine.string().trim().regex(isoDateRegex),
     evaluationDeadline: vine.string().trim().regex(isoDateRegex),

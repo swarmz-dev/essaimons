@@ -98,8 +98,8 @@
                 return deadline !== null && deadline < now ? 'clarification' : null;
             }
             case 'amend': {
-                const deadline = parseDateValue(item.improvementDeadline);
-                return deadline !== null && deadline < now ? 'improvement' : null;
+                const deadline = parseDateValue(item.amendmentDeadline);
+                return deadline !== null && deadline < now ? 'amendment' : null;
             }
             case 'vote': {
                 const deadline = parseDateValue(item.voteDeadline);

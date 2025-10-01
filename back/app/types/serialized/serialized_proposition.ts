@@ -18,7 +18,7 @@ export type SerializedProposition = {
     statusStartedAt: string;
     visibility: PropositionVisibilityEnum;
     clarificationDeadline: string;
-    improvementDeadline: string;
+    amendmentDeadline: string;
     voteDeadline: string;
     mandateDeadline: string;
     evaluationDeadline: string;

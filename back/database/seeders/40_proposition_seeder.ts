@@ -292,7 +292,7 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
             const clarificationDeadline: DateTime<true> = DateTime.now()
                 .plus({ days: 28 + index * 4 })
                 .startOf('day');
-            const improvementDeadline: DateTime<true> = clarificationDeadline.plus({ days: 14 });
+            const amendmentDeadline: DateTime<true> = clarificationDeadline.plus({ days: 14 });
             const voteDeadline: DateTime<true> = clarificationDeadline.plus({ days: 35 });
             const mandateDeadline: DateTime<true> = clarificationDeadline.plus({ days: 90 });
             const evaluationDeadline: DateTime<true> = clarificationDeadline.plus({ days: 200 });
@@ -311,7 +311,7 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
                 archivedAt: null,
                 settingsSnapshot: {},
                 clarificationDeadline,
-                improvementDeadline,
+                amendmentDeadline,
                 voteDeadline,
                 mandateDeadline,
                 evaluationDeadline,

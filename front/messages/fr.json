@@ -371,7 +371,7 @@
             },
             "horizontality": {
                 "title": "Informations d'horizontalité",
-                "description": "Précisez le résumé de contexte, les échéances clés et la description des mandatures."
+                "description": "Précisez le résumé de contexte, les échéances clés et la description des mandats."
             },
             "robustness": {
                 "title": "Informations de robustesse",
@@ -412,15 +412,15 @@
                 "info": "Exposez l'origine de la proposition : idée, problématique rencontrée, événement déclencheur, échanges préparatoires ou propositions précédentes."
             },
             "mandates-description": {
-                "label": "Description des mandatures",
+                "label": "Description des mandats",
                 "info": "Précisez pour chaque mandat les actions attendues, les objectifs SMART associés, les moyens estimés, les compétences requises et les modalités d'attribution."
             },
             "clarification-deadline": {
                 "label": "Échéance de clarification",
                 "info": "Date limite pour clarifier le contenu initial de la proposition avec les parties prenantes."
             },
-            "improvement-deadline": {
-                "label": "Échéance d'amélioration",
+            "amendment-deadline": {
+                "label": "Échéance d'amendement",
                 "info": "Date cible pour finaliser les ajustements issus des retours et contributions."
             },
             "vote-deadline": {
@@ -428,7 +428,7 @@
                 "info": "Date prévue pour soumettre la proposition au vote ou à la décision formelle."
             },
             "mandate-deadline": {
-                "label": "Échéance de mise en œuvre des mandatures",
+                "label": "Échéance de mise en œuvre des mandats",
                 "info": "Date à laquelle les mandats doivent être opérationnels si la proposition est retenue."
             },
             "evaluation-deadline": {
@@ -465,7 +465,7 @@
             "submit": "Publier la proposition",
             "submitting": "Envoi en cours…",
             "concretization-hint": "Renseignez le cadre général avant de passer aux aspects collaboratifs.",
-            "horizontality-hint": "Documentez le contexte partagé, les délais et les mandatures associées.",
+            "horizontality-hint": "Documentez le contexte partagé, les délais et les mandats associés.",
             "robustness-hint": "Analysez les impacts, les expertises nécessaires et les liens avec d'autres propositions."
         },
         "crop": {
