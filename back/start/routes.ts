@@ -27,17 +27,6 @@ const SettingsController = () => import('#controllers/settings_controller');
 
 router.get('healthcheck', [HealthCheckController]);
 
-// Test upload endpoint
-router.post('test-upload', async ({ request, response }) => {
-    console.log('=== TEST UPLOAD ENDPOINT HIT ===');
-    const file = request.file('file');
-    console.log('File received:', file ? 'YES' : 'NO');
-    if (file) {
-        console.log('File details:', { name: file.clientName, size: file.size, type: file.type });
-    }
-    return response.ok({ success: true, fileReceived: !!file });
-});
-
 router
     .group((): void => {
         router.get('/settings/organization', [SettingsController, 'organization']);

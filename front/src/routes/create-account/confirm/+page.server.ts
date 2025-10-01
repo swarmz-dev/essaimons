@@ -20,14 +20,14 @@ export const load: PageServerLoad = loadFlash(async (event): Promise<never> => {
     if (isSuccess) {
         cookies.set('user', JSON.stringify(data.user), {
             path: '/',
-            httpOnly: false,
+            httpOnly: true,
             sameSite: 'lax',
             maxAge: 60 * 60 * 24 * 7,
         });
 
         cookies.set('token', data.token.token, {
             path: '/',
-            httpOnly: false,
+            httpOnly: true,
             sameSite: 'lax',
             maxAge: 60 * 60 * 24 * 7,
         });

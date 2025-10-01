@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon';
 import hash from '@adonisjs/core/services/hash';
 import { compose } from '@adonisjs/core/helpers';
-import { afterCreate, BaseModel, belongsTo, column } from '@adonisjs/lucid/orm';
+import { afterCreate, beforeFind, beforeFetch, BaseModel, belongsTo, column } from '@adonisjs/lucid/orm';
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid';
 import type { BelongsTo } from '@adonisjs/lucid/types/relations';
 import type { SerializedUser } from '#types/serialized/serialized_user';
@@ -67,12 +67,11 @@ export default class User extends compose(BaseModel, AuthFinder) {
         });
     }
 
-    // Disabled because it causes errors when profilePictureId is null
-    // @beforeFind()
-    // @beforeFetch()
-    // public static preloadDefaults(userQuery: any): void {
-    //     userQuery.preload('profilePicture');
-    // }
+    @beforeFind()
+    @beforeFetch()
+    public static preloadDefaults(userQuery: any): void {
+        userQuery.preload('profilePicture');
+    }
 
     static accessTokens: DbAccessTokensProvider<typeof User> = DbAccessTokensProvider.forModel(User, {
         expiresIn: '30 days',
@@ -97,7 +96,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
             role: this.role,
             enabled: this.enabled,
             acceptedTermsAndConditions: this.acceptedTermsAndConditions,
-            profilePicture: this.profilePictureId && this.$preloaded.profilePicture ? this.profilePicture?.apiSerialize() : undefined,
+            profilePicture: this.profilePicture?.apiSerialize(),
             updatedAt: this.updatedAt?.toString(),
             createdAt: this.createdAt?.toString(),
         };
