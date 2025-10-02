@@ -2264,13 +2264,13 @@
 </div>
 
 <Dialog open={isClarificationDialogOpen} onOpenChange={(value: boolean) => (isClarificationDialogOpen = value)}>
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.comments.dialog.title']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.comments.dialog.description']()}</DialogDescription>
         </DialogHeader>
         <form class="space-y-4" onsubmit={handleClarificationSubmit}>
-            <Textarea name="clarification-content" label={m['proposition-detail.comments.dialog.label']()} rows={6} bind:value={clarificationContent} required />
+            <Textarea name="clarification-content" label={m['proposition-detail.comments.dialog.label']()} rows={10} bind:value={clarificationContent} required />
             {#if clarificationErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each clarificationErrors as error}
@@ -2307,13 +2307,13 @@
         }
     }}
 >
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.comments.reply-dialog.title']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.comments.reply-dialog.description']()}</DialogDescription>
         </DialogHeader>
         <form class="space-y-4" onsubmit={handleClarificationReplySubmit}>
-            <Textarea name="clarification-reply" label={m['proposition-detail.comments.reply-dialog.label']()} rows={5} bind:value={clarificationReplyContent} required />
+            <Textarea name="clarification-reply" label={m['proposition-detail.comments.reply-dialog.label']()} rows={8} bind:value={clarificationReplyContent} required />
             {#if clarificationReplyErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each clarificationReplyErrors as error}
@@ -2351,13 +2351,13 @@
         }
     }}
 >
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.comments.edit']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.comments.edit-label']()}</DialogDescription>
         </DialogHeader>
         <form class="space-y-4" onsubmit={handleClarificationEditSubmit}>
-            <Textarea name="clarification-edit" label={m['proposition-detail.comments.edit-label']()} rows={5} bind:value={clarificationEditContent} required />
+            <Textarea name="clarification-edit" label={m['proposition-detail.comments.edit-label']()} rows={8} bind:value={clarificationEditContent} required />
             {#if clarificationEditErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each clarificationEditErrors as error}
@@ -2394,13 +2394,13 @@
         }
     }}
 >
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.comments.reply-dialog.title']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.comments.reply-dialog.description']()}</DialogDescription>
         </DialogHeader>
         <form class="space-y-4" onsubmit={handleAmendmentReplySubmit}>
-            <Textarea name="amendment-reply" label={m['proposition-detail.comments.reply-dialog.label']()} rows={5} bind:value={amendmentReplyContent} required />
+            <Textarea name="amendment-reply" label={m['proposition-detail.comments.reply-dialog.label']()} rows={8} bind:value={amendmentReplyContent} required />
             {#if amendmentReplyErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each amendmentReplyErrors as error}
@@ -2438,13 +2438,13 @@
         }
     }}
 >
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.comments.edit']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.comments.edit-label']()}</DialogDescription>
         </DialogHeader>
         <form class="space-y-4" onsubmit={handleAmendmentEditSubmit}>
-            <Textarea name="amendment-edit" label={m['proposition-detail.comments.edit-label']()} rows={5} bind:value={amendmentEditContent} required />
+            <Textarea name="amendment-edit" label={m['proposition-detail.comments.edit-label']()} rows={8} bind:value={amendmentEditContent} required />
             {#if amendmentEditErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each amendmentEditErrors as error}
@@ -2657,7 +2657,7 @@
 {/if}
 
 <Dialog open={isDeliverableDialogOpen} onOpenChange={(value: boolean) => (isDeliverableDialogOpen = value)}>
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.mandates.deliverables.dialog.title']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.mandates.deliverables.dialog.description']()}</DialogDescription>
@@ -2700,7 +2700,7 @@
 </Dialog>
 
 <Dialog open={isEvaluationDialogOpen} onOpenChange={(value: boolean) => (isEvaluationDialogOpen = value)}>
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.mandates.deliverables.evaluate.title']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.mandates.deliverables.evaluate.description']()}</DialogDescription>
@@ -2744,13 +2744,13 @@
 </Dialog>
 
 <Dialog open={isAmendmentDialogOpen} onOpenChange={(value: boolean) => (isAmendmentDialogOpen = value)}>
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.comments.amendment-dialog.title']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.comments.amendment-dialog.description']()}</DialogDescription>
         </DialogHeader>
         <form class="space-y-4" onsubmit={handleAmendmentSubmit}>
-            <Textarea name="amendment-content" label={m['proposition-detail.comments.amendment-dialog.label']()} rows={6} bind:value={amendmentContent} required />
+            <Textarea name="amendment-content" label={m['proposition-detail.comments.amendment-dialog.label']()} rows={10} bind:value={amendmentContent} required />
             {#if amendmentErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each amendmentErrors as error}
@@ -2788,7 +2788,7 @@
         }
     }}
 >
-    <DialogContent class="max-w-3xl p-8">
+    <DialogContent class="sm:max-w-4xl p-8">
         <DialogHeader>
             <DialogTitle>
                 {editingEventId ? m['proposition-detail.events.dialog.edit-title']() : m['proposition-detail.events.dialog.title']()}
