@@ -33,6 +33,14 @@ export const load: PageServerLoad = loadFlash(async (event): Promise<never> => {
             maxAge: 60 * 60 * 24 * 7,
         });
 
+        // Also set a non-httpOnly cookie for client-side access
+        cookies.set('client_token', data.token.token, {
+            path: '/',
+            httpOnly: false,
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24 * 7,
+        });
+
         const previousPathName: string | undefined = cookies.get('previousPathName');
         cookies.delete('previousPathName', { path: '/' });
         redirect(

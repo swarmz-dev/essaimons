@@ -87,6 +87,7 @@ const DEFAULT_PERMISSIONS: PermissionMatrix = {
         initiator: {
             edit_proposition: true,
             manage_comments: true,
+            comment_clarification: true,
         },
         contributor: {
             comment_clarification: true,
@@ -97,6 +98,7 @@ const DEFAULT_PERMISSIONS: PermissionMatrix = {
             edit_proposition: true,
             manage_events: true,
             manage_comments: true,
+            comment_amendment: true,
         },
         contributor: {
             comment_amendment: true,
@@ -115,6 +117,7 @@ const DEFAULT_PERMISSIONS: PermissionMatrix = {
         initiator: {
             manage_mandates: true,
             manage_comments: true,
+            comment_mandate: true,
         },
         contributor: {
             participate_vote: true,
@@ -128,6 +131,7 @@ const DEFAULT_PERMISSIONS: PermissionMatrix = {
         initiator: {
             manage_deliverables: true,
             manage_comments: true,
+            comment_evaluation: true,
         },
         mandated: {
             upload_deliverable: true,

@@ -36,7 +36,7 @@ export const wrappedFetch = async (
 
     // Add Authorization header with token from cookie
     if (browser) {
-        const token = getCookie('token');
+        const token = getCookie('client_token');
         if (token) {
             headers.set('Authorization', `Bearer ${token}`);
         }
@@ -75,19 +75,27 @@ export const wrappedFetch = async (
             return { isSuccess: false, ...errorData };
         }
 
+        // Handle 204 No Content responses
+        if (response.status === 204) {
+            await onSuccess?.({});
+            return { isSuccess: true };
+        }
+
         const data: any = await response.json();
 
         if (data.message) {
-            showToast(data.message, data.isSuccess ? 'success' : 'error');
+            showToast(data.message, data.isSuccess !== false ? 'success' : 'error');
         }
 
-        if (data.isSuccess) {
-            await onSuccess?.(data);
-        } else {
+        // If isSuccess is explicitly false, call onError
+        // Otherwise, for successful HTTP responses, call onSuccess
+        if (data.isSuccess === false) {
             await onError?.(data);
+        } else {
+            await onSuccess?.(data);
         }
 
-        return data;
+        return { isSuccess: true, ...data };
     } catch (error: any) {
         console.error('Request error:', error);
         return { isSuccess: false, error: error?.message || 'Unknown error' };

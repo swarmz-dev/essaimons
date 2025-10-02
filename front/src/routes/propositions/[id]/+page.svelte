@@ -630,7 +630,7 @@
                         content: result.data.content,
                     },
                 },
-                ({ data: comment }) => {
+                ({ comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     clarificationContent = '';
                     clarificationErrors = [];
@@ -683,7 +683,7 @@
                         parentId: clarificationReplyParentId,
                     },
                 },
-                ({ data: comment }) => {
+                ({ comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     clarificationReplyContent = '';
                     clarificationReplyParentId = null;
@@ -735,7 +735,7 @@
                         content: result.data.content,
                     },
                 },
-                ({ data: comment }) => {
+                ({ comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     clarificationEditContent = '';
                     clarificationEditCommentId = null;
@@ -815,7 +815,7 @@
                         content: result.data.content,
                     },
                 },
-                ({ data: comment }) => {
+                ({ comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     amendmentContent = '';
                     isAmendmentDialogOpen = false;
@@ -866,7 +866,7 @@
                         parentId: amendmentReplyParentId,
                     },
                 },
-                ({ data: comment }) => {
+                ({ comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     amendmentReplyContent = '';
                     amendmentReplyParentId = null;
@@ -917,7 +917,7 @@
                         content: result.data.content,
                     },
                 },
-                ({ data: comment }) => {
+                ({ comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     amendmentEditContent = '';
                     amendmentEditCommentId = null;
@@ -1046,7 +1046,7 @@
                         videoLink: normalizeOptional(result.data.videoLink),
                     },
                 },
-                ({ data: event }) => {
+                ({ event }) => {
                     propositionDetailStore.upsertEvent(event);
                     const wasEdit = Boolean(targetEventId);
                     resetEventForm();
@@ -1174,7 +1174,7 @@
                         })),
                     },
                 },
-                ({ data: vote }) => {
+                ({ vote }) => {
                     propositionDetailStore.upsertVote(vote);
                     voteForm = { ...defaultVoteForm };
                     isVoteDialogOpen = false;
@@ -1216,7 +1216,7 @@
                         currentDeadline: toIsoDateTime(parsed.data.currentDeadline),
                     },
                 },
-                ({ data: mandate }) => {
+                ({ mandate }) => {
                     propositionDetailStore.upsertMandate(mandate);
                     mandateForm = { ...defaultMandateForm };
                     mandateHolderSelection = [];
@@ -1373,7 +1373,7 @@
                         reason: normalizeOptional(transitionReason),
                     },
                 },
-                ({ data: updated }) => {
+                ({ proposition: updated }) => {
                     propositionDetailStore.updateProposition(updated);
                     transitionReason = '';
                     isStatusDialogOpen = false;
