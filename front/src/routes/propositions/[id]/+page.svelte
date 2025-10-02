@@ -38,7 +38,7 @@
         DeliverableVerdictEnum,
     } from 'backend/types';
     import type { PropositionComment, PropositionEvent, PropositionMandate, PropositionTimelinePhase, PropositionVote, WorkflowRole } from '#lib/types/proposition';
-    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload, Loader2, Eye } from '@lucide/svelte';
+    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload, Loader2, Eye, MessageCircle } from '@lucide/svelte';
     import { z } from 'zod';
 
     const { data } = $props<{
@@ -433,6 +433,7 @@
     let eventForm = $state({ ...defaultEventForm });
     let eventErrors: string[] = $state([]);
     let isEventSubmitting: boolean = $state(false);
+    let isCreatingDiscordEvent: boolean = $state(false);
     let eventStartInput: HTMLInputElement | null = $state(null);
     let eventEndInput: HTMLInputElement | null = $state(null);
     let editingEventId: string | null = $state(null);
@@ -1067,6 +1068,44 @@
             }
         } finally {
             isEventSubmitting = false;
+        }
+    };
+
+    const handleCreateDiscordEvent = async (): Promise<void> => {
+        if (!eventForm.title || !eventForm.startAt) {
+            return;
+        }
+
+        isCreatingDiscordEvent = true;
+        eventErrors = [];
+
+        try {
+            const response = await wrappedFetch(
+                '/discord/events',
+                {
+                    method: 'POST',
+                    body: {
+                        name: eventForm.title,
+                        startTime: eventForm.startAt,
+                        endTime: eventForm.endAt || undefined,
+                        description: eventForm.description || undefined,
+                    },
+                },
+                ({ inviteUrl }) => {
+                    if (inviteUrl) {
+                        eventForm.videoLink = inviteUrl;
+                    }
+                },
+                ({ error }) => {
+                    eventErrors = [error ?? "Erreur lors de la création de l'événement Discord"];
+                }
+            );
+
+            if (!response?.isSuccess && eventErrors.length === 0) {
+                eventErrors = ["Erreur lors de la création de l'événement Discord"];
+            }
+        } finally {
+            isCreatingDiscordEvent = false;
         }
     };
 
@@ -2798,18 +2837,35 @@
                     {/each}
                 </ul>
             {/if}
-            <DialogFooter class="flex justify-end gap-2">
-                <DialogClose asChild>
-                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
-                </DialogClose>
-                <Button type="submit" disabled={isEventSubmitting} class="gap-2">
-                    {#if isEventSubmitting}
+            <DialogFooter class="flex justify-between gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onclick={handleCreateDiscordEvent}
+                    disabled={isEventSubmitting || isCreatingDiscordEvent || !eventForm.title || !eventForm.startAt}
+                    class="gap-2"
+                >
+                    {#if isCreatingDiscordEvent}
                         <Loader2 class="size-4 animate-spin" />
-                        {m['common.actions.loading']()}
+                        Création Discord...
                     {:else}
-                        {editingEventId ? m['proposition-detail.events.dialog.update']() : m['proposition-detail.events.dialog.submit']()}
+                        <MessageCircle class="size-4" />
+                        Créer événement Discord
                     {/if}
                 </Button>
+                <div class="flex gap-2">
+                    <DialogClose asChild>
+                        <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                    </DialogClose>
+                    <Button type="submit" disabled={isEventSubmitting} class="gap-2">
+                        {#if isEventSubmitting}
+                            <Loader2 class="size-4 animate-spin" />
+                            {m['common.actions.loading']()}
+                        {:else}
+                            {editingEventId ? m['proposition-detail.events.dialog.update']() : m['proposition-detail.events.dialog.submit']()}
+                        {/if}
+                    </Button>
+                </div>
             </DialogFooter>
         </form>
     </DialogContent>

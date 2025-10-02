@@ -51,6 +51,18 @@
                     "invalid-url": "Fallback source code link must be a valid URL for locale {locale}"
                 }
             }
+        },
+        "discord": {
+            "update": {
+                "success": "Discord settings updated successfully",
+                "error": "Error updating Discord settings"
+            },
+            "list-guilds": {
+                "error": "Error retrieving Discord servers"
+            },
+            "list-channels": {
+                "error": "Error retrieving Discord channels"
+            }
         }
     },
     "auth": {
@@ -173,6 +185,15 @@
         "evaluate": {
             "forbidden": "You are not allowed to evaluate this deliverable.",
             "failed": "Unable to record the evaluation."
+        }
+    },
+    "discord": {
+        "create-event": {
+            "success": "Discord event created successfully",
+            "error": {
+                "not-configured": "Discord integration is not configured",
+                "default": "Error creating Discord event"
+            }
         }
     }
 }

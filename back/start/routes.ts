@@ -10,6 +10,7 @@ const UnsubscribeController = () => import('@adonisjs/transmit/controllers/unsub
 const AdminUserController = () => import('#controllers/admin/user_controller');
 const AdminPropositionCategoryController = () => import('#controllers/admin/proposition_category_controller');
 const AdminOrganizationSettingsController = () => import('#controllers/admin/organization_settings_controller');
+const AdminDiscordController = () => import('#controllers/admin/discord_controller');
 
 // App controllers
 const HealthCheckController = () => import('#controllers/health_checks_controller');
@@ -24,6 +25,7 @@ const PropositionMandateController = () => import('#controllers/proposition_mand
 const PropositionMandateDeliverableController = () => import('#controllers/proposition_mandate_deliverable_controller');
 const PropositionCommentController = () => import('#controllers/proposition_comment_controller');
 const SettingsController = () => import('#controllers/settings_controller');
+const DiscordEventController = () => import('#controllers/discord_event_controller');
 
 router.get('healthcheck', [HealthCheckController]);
 
@@ -101,6 +103,15 @@ router
                                 router.post('/', [AdminOrganizationSettingsController, 'update']);
                             })
                             .prefix('organization');
+
+                        router
+                            .group((): void => {
+                                router.get('/', [AdminDiscordController, 'show']);
+                                router.post('/', [AdminDiscordController, 'update']);
+                                router.post('/guilds', [AdminDiscordController, 'listGuilds']);
+                                router.post('/channels', [AdminDiscordController, 'listChannels']);
+                            })
+                            .prefix('discord');
                     })
                     .prefix('admin')
                     .use([middleware.isAdmin()]);
@@ -151,6 +162,8 @@ router
                         router.delete('/:id/comments/:commentId', [PropositionCommentController, 'destroy']);
                     })
                     .prefix('propositions');
+
+                router.post('/discord/events', [DiscordEventController, 'create']);
 
                 router
                     .group((): void => {
