@@ -161,7 +161,7 @@
 
     const canEditProposition = $derived(workflowRole === 'admin' || isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'edit_proposition'));
     const canDeleteProposition = $derived(user?.role === 'admin');
-    const canParticipateVote = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'participate_vote'));
+    const canParticipateVote = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'participate_vote') || workflowRole === 'initiator' || workflowRole === 'admin');
 
     const canCommentClarification = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'comment_clarification') || workflowRole === 'admin' || workflowRole === 'initiator');
     const canCommentAmendment = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'comment_amendment') || workflowRole === 'admin' || workflowRole === 'initiator');

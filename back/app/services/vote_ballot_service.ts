@@ -30,9 +30,12 @@ export default class VoteBallotService {
     }
 
     public async cast(proposition: Proposition, vote: PropositionVote, actor: User, payload: CastBallotPayload): Promise<VoteBallot> {
-        // Vérifier la permission de voter
+        // Vérifier la permission de voter (contributors, initiators, and admins can vote)
         const allowed = await this.workflowService.canPerform(proposition, actor, 'participate_vote');
-        if (!allowed) {
+        const isInitiator = proposition.creatorId === actor.id;
+        const isAdmin = actor.role === 'admin';
+
+        if (!allowed && !isInitiator && !isAdmin) {
             throw new Error('forbidden:vote');
         }
 
@@ -169,7 +172,7 @@ export default class VoteBallotService {
         return counts;
     }
 
-    private calculateMajorityJudgmentResults(vote: PropositionVote, ballots: VoteBallot[]): Record<string, { ratings: number[]; medianRating: number }> {
+    private calculateMajorityJudgmentResults(vote: PropositionVote, ballots: VoteBallot[]): Record<string, { ratings: number[]; median: number; average: number }> {
         const ratings: Record<string, number[]> = {};
         vote.options.forEach((opt) => (ratings[opt.id] = []));
 
@@ -184,13 +187,15 @@ export default class VoteBallotService {
             }
         }
 
-        const results: Record<string, { ratings: number[]; medianRating: number }> = {};
+        const results: Record<string, { ratings: number[]; median: number; average: number }> = {};
         for (const [optionId, optionRatings] of Object.entries(ratings)) {
             const sorted = [...optionRatings].sort((a, b) => a - b);
             const median = sorted.length > 0 ? sorted[Math.floor(sorted.length / 2)] : 0;
+            const average = sorted.length > 0 ? sorted.reduce((sum, val) => sum + val, 0) / sorted.length : 0;
             results[optionId] = {
                 ratings: optionRatings,
-                medianRating: median,
+                median,
+                average,
             };
         }
 
