@@ -2760,39 +2760,35 @@
         </DialogHeader>
         <form class="grid gap-4" onsubmit={handleEventSubmit}>
             <Input name="event-title" label={m['proposition-detail.events.form.title']()} bind:value={eventForm.title} required />
-            <div class="grid gap-4 sm:grid-cols-2">
-                <label class="flex flex-col gap-2 text-sm text-foreground">
-                    {m['proposition-detail.events.form.type']()}
-                    <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={eventForm.type}>
-                        {#each eventTypeOptions as option}
-                            <option value={option}>{translateEventType(option)}</option>
-                        {/each}
-                    </select>
-                </label>
-                <div class="relative">
-                    <Input type="datetime-local" name="event-start" label={m['proposition-detail.events.form.startAt']()} bind:value={eventForm.startAt} bind:ref={eventStartInput} class="pr-12" />
-                    <button
-                        type="button"
-                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                        onclick={() => openNativeDatePicker(eventStartInput)}
-                        aria-label={m['proposition-detail.events.form.startAt']()}
-                    >
-                        <CalendarDays class="size-4" />
-                    </button>
-                </div>
-                <div class="relative">
-                    <Input type="datetime-local" name="event-end" label={m['proposition-detail.events.form.endAt']()} bind:value={eventForm.endAt} bind:ref={eventEndInput} class="pr-12" />
-                    <button
-                        type="button"
-                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                        onclick={() => openNativeDatePicker(eventEndInput)}
-                        aria-label={m['proposition-detail.events.form.endAt']()}
-                    >
-                        <CalendarDays class="size-4" />
-                    </button>
-                </div>
-                <Input name="event-location" label={m['proposition-detail.events.form.location']()} bind:value={eventForm.location} class="sm:col-span-2" />
-            </div>
+            <label class="flex flex-col gap-2 text-sm text-foreground">
+                {m['proposition-detail.events.form.type']()}
+                <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={eventForm.type}>
+                    {#each eventTypeOptions as option}
+                        <option value={option}>{translateEventType(option)}</option>
+                    {/each}
+                </select>
+            </label>
+            <label class="flex flex-col gap-2 text-sm text-foreground">
+                {m['proposition-detail.events.form.startAt']()}
+                <input
+                    type="datetime-local"
+                    name="event-start"
+                    class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    bind:value={eventForm.startAt}
+                    bind:this={eventStartInput}
+                />
+            </label>
+            <label class="flex flex-col gap-2 text-sm text-foreground">
+                {m['proposition-detail.events.form.endAt']()}
+                <input
+                    type="datetime-local"
+                    name="event-end"
+                    class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    bind:value={eventForm.endAt}
+                    bind:this={eventEndInput}
+                />
+            </label>
+            <Input name="event-location" label={m['proposition-detail.events.form.location']()} bind:value={eventForm.location} />
             <Input name="event-video" label={m['proposition-detail.events.form.videoLink']()} bind:value={eventForm.videoLink} />
             <Textarea name="event-description" label={m['proposition-detail.events.form.description']()} rows={4} bind:value={eventForm.description} />
             {#if eventErrors.length}

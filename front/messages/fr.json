@@ -663,8 +663,8 @@
                 "description": "Description"
             },
             "type": {
-                "milestone": "Jalon",
-                "exchange": "Échange",
+                "milestone": "Amendement",
+                "exchange": "Candidature",
                 "evaluation": "Évaluation"
             },
             "delete": {

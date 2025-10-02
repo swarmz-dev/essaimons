@@ -663,8 +663,8 @@
                 "description": "Description"
             },
             "type": {
-                "milestone": "Milestone",
-                "exchange": "Exchange",
+                "milestone": "Amendment",
+                "exchange": "Application",
                 "evaluation": "Evaluation"
             },
             "delete": {
