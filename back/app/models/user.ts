@@ -70,7 +70,13 @@ export default class User extends compose(BaseModel, AuthFinder) {
     @beforeFind()
     @beforeFetch()
     public static preloadDefaults(userQuery: any): void {
-        userQuery.preload('profilePicture');
+        // Only preload profilePicture if we're selecting all columns or explicitly including profile_picture_id
+        // This prevents errors when using select() without profile_picture_id
+        const hasSelect = userQuery.knexQuery._statements?.some((s: any) => s.grouping === 'columns');
+        if (!hasSelect) {
+            // No select() was used, safe to preload
+            userQuery.preload('profilePicture');
+        }
     }
 
     static accessTokens: DbAccessTokensProvider<typeof User> = DbAccessTokensProvider.forModel(User, {

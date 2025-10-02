@@ -185,7 +185,7 @@ export default class DeliverableAutomationService {
         const thresholdSql = now.toSQL();
 
         const mandates = await PropositionMandate.query()
-            .whereIn('status', [MandateStatusEnum.ACTIVE, MandateStatusEnum.PENDING])
+            .whereIn('status', [MandateStatusEnum.ACTIVE, MandateStatusEnum.TO_ASSIGN])
             .whereHas('proposition', (builder) => {
                 builder.where('status', PropositionStatusEnum.EVALUATE).whereNotNull('evaluation_deadline');
                 if (thresholdSql) {

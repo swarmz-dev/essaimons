@@ -739,6 +739,7 @@
         "mandates": {
             "empty": "Aucun mandat n'a encore été créé.",
             "add": "Créer un mandat",
+            "apply": "Proposer une candidature",
             "dialog": {
                 "title": "Créer un mandat",
                 "description": "Attribuez des responsabilités et suivez les livrables associés à cette proposition.",
@@ -755,8 +756,7 @@
                 "currentDeadline": "Échéance actuelle"
             },
             "status": {
-                "draft": "Brouillon",
-                "pending": "En attente",
+                "to_assign": "À mandater",
                 "active": "Actif",
                 "completed": "Terminé",
                 "revoked": "Révoqué"

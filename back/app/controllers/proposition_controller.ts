@@ -368,7 +368,14 @@ export default class PropositionController {
         try {
             const updated = await this.propositionService.transition(proposition, actor, payload.status as PropositionStatusEnum, { reason: payload.reason });
 
-            await Promise.all([updated.load('categories'), updated.load('rescueInitiators'), updated.load('associatedPropositions'), updated.load('attachments'), updated.load('creator')]);
+            await Promise.all([
+                updated.load('categories'),
+                updated.load('rescueInitiators'),
+                updated.load('associatedPropositions'),
+                updated.load('attachments'),
+                updated.load('creator'),
+                updated.load('mandates'),
+            ]);
 
             if (updated.visualFileId) {
                 await updated.load('visual');

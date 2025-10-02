@@ -23,6 +23,7 @@ const PropositionEventController = () => import('#controllers/proposition_event_
 const PropositionVoteController = () => import('#controllers/proposition_vote_controller');
 const PropositionMandateController = () => import('#controllers/proposition_mandate_controller');
 const PropositionMandateDeliverableController = () => import('#controllers/proposition_mandate_deliverable_controller');
+const MandateApplicationController = () => import('#controllers/mandate_application_controller');
 const PropositionCommentController = () => import('#controllers/proposition_comment_controller');
 const SettingsController = () => import('#controllers/settings_controller');
 const DiscordEventController = () => import('#controllers/discord_event_controller');
@@ -157,6 +158,8 @@ router
                         router.post('/:id/mandates', [PropositionMandateController, 'store']);
                         router.put('/:id/mandates/:mandateId', [PropositionMandateController, 'update']);
                         router.delete('/:id/mandates/:mandateId', [PropositionMandateController, 'destroy']);
+
+                        router.post('/:id/mandates/:mandateId/applications', [MandateApplicationController, 'store']);
 
                         router.get('/:id/mandates/:mandateId/deliverables', [PropositionMandateDeliverableController, 'index']);
                         router.post('/:id/mandates/:mandateId/deliverables', [PropositionMandateDeliverableController, 'store']);

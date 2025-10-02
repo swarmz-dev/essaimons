@@ -739,6 +739,7 @@
         "mandates": {
             "empty": "No mandates have been created yet.",
             "add": "Create a mandate",
+            "apply": "Apply for this mandate",
             "dialog": {
                 "title": "Create a mandate",
                 "description": "Assign responsibilities and track deliverables for this proposal.",
@@ -755,8 +756,7 @@
                 "currentDeadline": "Current deadline"
             },
             "status": {
-                "draft": "Draft",
-                "pending": "Pending",
+                "to_assign": "To assign",
                 "active": "Active",
                 "completed": "Completed",
                 "revoked": "Revoked"

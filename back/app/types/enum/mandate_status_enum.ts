@@ -1,6 +1,5 @@
 export enum MandateStatusEnum {
-    DRAFT = 'draft',
-    PENDING = 'pending',
+    TO_ASSIGN = 'to_assign',
     ACTIVE = 'active',
     COMPLETED = 'completed',
     REVOKED = 'revoked',

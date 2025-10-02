@@ -89,6 +89,12 @@ export function serializeMandateRevocationRequest(request: MandateRevocationRequ
 }
 
 export function serializeMandate(mandate: PropositionMandate): SerializedMandate {
+    // Vérifier si les relations sont préchargées avant d'y accéder
+    const holderPreloaded = mandate.$preloaded?.holder !== undefined;
+    const deliverablesPreloaded = mandate.$preloaded?.deliverables !== undefined;
+    const applicationsPreloaded = mandate.$preloaded?.applications !== undefined;
+    const revocationRequestsPreloaded = mandate.$preloaded?.revocationRequests !== undefined;
+
     return {
         id: mandate.id,
         propositionId: mandate.propositionId,
@@ -104,9 +110,9 @@ export function serializeMandate(mandate: PropositionMandate): SerializedMandate
         metadata: mandate.metadata ?? {},
         createdAt: toIso(mandate.createdAt) ?? undefined,
         updatedAt: toIso(mandate.updatedAt) ?? undefined,
-        holder: serializeUserSummary(mandate.holder as User | undefined),
-        deliverables: (mandate.deliverables ?? []).map(serializeMandateDeliverable),
-        applications: (mandate.applications ?? []).map(serializeMandateApplication),
-        revocationRequests: (mandate.revocationRequests ?? []).map(serializeMandateRevocationRequest),
+        holder: holderPreloaded ? serializeUserSummary(mandate.holder as User | undefined) : undefined,
+        deliverables: deliverablesPreloaded ? (mandate.deliverables ?? []).map(serializeMandateDeliverable) : [],
+        applications: applicationsPreloaded ? (mandate.applications ?? []).map(serializeMandateApplication) : [],
+        revocationRequests: revocationRequestsPreloaded ? (mandate.revocationRequests ?? []).map(serializeMandateRevocationRequest) : [],
     };
 }

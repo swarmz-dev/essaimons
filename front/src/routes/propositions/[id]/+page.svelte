@@ -39,7 +39,7 @@
         DeliverableVerdictEnum,
     } from 'backend/types';
     import type { PropositionComment, PropositionEvent, PropositionMandate, PropositionTimelinePhase, PropositionVote, WorkflowRole } from '#lib/types/proposition';
-    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload, Loader2, Eye, MessageCircle, CheckCircle } from '@lucide/svelte';
+    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload, Loader2, Eye, MessageCircle, CheckCircle, UserPlus } from '@lucide/svelte';
     import { z } from 'zod';
 
     const { data } = $props<{
@@ -623,7 +623,7 @@
         title: '',
         description: '',
         holderUserId: '',
-        status: MandateStatusEnum.DRAFT,
+        status: MandateStatusEnum.TO_ASSIGN,
         targetObjectiveRef: '',
         initialDeadline: '',
         currentDeadline: '',
@@ -651,6 +651,12 @@
     let isEvaluationDialogOpen: boolean = $state(false);
     let evaluationMandateId: string | null = $state(null);
     let evaluationDeliverableId: string | null = $state(null);
+
+    let isApplicationDialogOpen: boolean = $state(false);
+    let applicationMandateId: string | null = $state(null);
+    let applicationForm = $state({ description: '', proposedStartDate: '', proposedEndDate: '' });
+    let applicationErrors: string[] = $state([]);
+    let isApplicationSubmitting: boolean = $state(false);
     let evaluationVerdict: DeliverableVerdictEnum = $state(DeliverableVerdictEnum.COMPLIANT);
     let evaluationComment: string = $state('');
     let evaluationErrors: string[] = $state([]);
@@ -1616,6 +1622,68 @@
             }
         } finally {
             isMandateSubmitting = false;
+        }
+    };
+
+    const openEditMandate = (mandate: any): void => {
+        // TODO: Populate form with mandate data and open dialog
+    };
+
+    const deleteMandate = async (mandateId: string): Promise<void> => {
+        try {
+            await wrappedFetch(`/propositions/${proposition.id}/mandates/${mandateId}`, { method: 'DELETE' }, () => {
+                propositionDetailStore.removeMandate(mandateId);
+            });
+        } catch (error) {
+            console.error('Error deleting mandate:', error);
+        }
+    };
+
+    const openApplicationDialog = (mandateId: string): void => {
+        applicationMandateId = mandateId;
+        applicationForm = { description: '', proposedStartDate: '', proposedEndDate: '' };
+        applicationErrors = [];
+        isApplicationSubmitting = false;
+        isApplicationDialogOpen = true;
+    };
+
+    const submitApplication = async (): Promise<void> => {
+        if (!applicationMandateId) {
+            return;
+        }
+
+        applicationErrors = [];
+
+        if (!applicationForm.description.trim()) {
+            applicationErrors = ['La description est obligatoire'];
+            return;
+        }
+
+        isApplicationSubmitting = true;
+
+        try {
+            await wrappedFetch(
+                `/propositions/${proposition.id}/mandates/${applicationMandateId}/applications`,
+                {
+                    method: 'POST',
+                    body: {
+                        description: applicationForm.description,
+                    },
+                },
+                ({ application, mandate }) => {
+                    propositionDetailStore.upsertMandate(mandate);
+                    showToast('Candidature soumise avec succès', 'success');
+                    applicationForm = { description: '', proposedStartDate: '', proposedEndDate: '' };
+                    isApplicationDialogOpen = false;
+                },
+                (data) => {
+                    applicationErrors = extractFormErrors(data).map((entry) => entry.message);
+                }
+            );
+        } catch (error) {
+            console.error('Exception in submitApplication:', error);
+        } finally {
+            isApplicationSubmitting = false;
         }
     };
 
@@ -2696,11 +2764,38 @@
                                         <p class="text-sm text-muted-foreground">{mandate.description}</p>
                                     {/if}
                                 </div>
-                                <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{translateMandateStatus(mandate.status as MandateStatusEnum)}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{translateMandateStatus(mandate.status as MandateStatusEnum)}</span>
+                                    {#if canManageMandates && mandate.status === MandateStatusEnum.TO_ASSIGN}
+                                        <Button size="sm" variant="ghost" class="gap-1" onclick={() => openEditMandate(mandate)}>
+                                            <Pencil class="size-3.5" />
+                                            {m['common.edit']()}
+                                        </Button>
+                                        <Button size="sm" variant="ghost" class="gap-1 text-destructive hover:text-destructive" onclick={() => deleteMandate(mandate.id)}>
+                                            <Trash2 class="size-3.5" />
+                                            {m['common.delete']()}
+                                        </Button>
+                                    {/if}
+                                </div>
                             </div>
                             {#if mandate.holderUserId}
                                 <p class="text-xs text-muted-foreground">{m['proposition-detail.mandate.holder']({ holder: mandate.holder?.username ?? mandate.holderUserId })}</p>
                             {/if}
+
+                            {#if mandate.status === MandateStatusEnum.TO_ASSIGN && user}
+                                {@const hasApplied = mandate.applications?.some((app) => app.applicantUserId === user.id)}
+                                <div class="flex justify-end">
+                                    {#if hasApplied}
+                                        <p class="text-sm text-muted-foreground italic">Candidature soumise</p>
+                                    {:else}
+                                        <Button size="sm" variant="outline" class="gap-2" onclick={() => openApplicationDialog(mandate.id)}>
+                                            <UserPlus class="size-4" />
+                                            {m['proposition-detail.mandates.apply']()}
+                                        </Button>
+                                    {/if}
+                                </div>
+                            {/if}
+
                             {#if canUploadDeliverable}
                                 <div class="flex justify-end">
                                     <Button size="sm" variant="outline" class="gap-2" onclick={() => openDeliverableDialog(mandate.id)}>
@@ -3406,6 +3501,65 @@
     </DialogContent>
 </Dialog>
 
+<Dialog open={isApplicationDialogOpen} onOpenChange={(value: boolean) => (isApplicationDialogOpen = value)}>
+    <DialogContent class="sm:max-w-5xl">
+        <DialogHeader>
+            <DialogTitle>Proposer une candidature</DialogTitle>
+            <DialogDescription>Présentez votre candidature pour ce mandat</DialogDescription>
+        </DialogHeader>
+        <div class="grid gap-4">
+            <Textarea
+                id="application-description"
+                name="application-description"
+                label="Description (obligatoire)"
+                placeholder="Présentez-vous et expliquez pourquoi vous êtes le bon candidat pour ce mandat..."
+                rows={6}
+                bind:value={applicationForm.description}
+            />
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-foreground" for="application-start-date">Date de début proposée (optionnel)</label>
+                <input
+                    id="application-start-date"
+                    name="application-start-date"
+                    type="datetime-local"
+                    class="rounded-md border border-border/40 bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary w-full"
+                    bind:value={applicationForm.proposedStartDate}
+                />
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-foreground" for="application-end-date">Date de fin proposée (optionnel)</label>
+                <input
+                    id="application-end-date"
+                    name="application-end-date"
+                    type="datetime-local"
+                    class="rounded-md border border-border/40 bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary w-full"
+                    bind:value={applicationForm.proposedEndDate}
+                />
+            </div>
+            {#if applicationErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each applicationErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+        </div>
+        <DialogFooter>
+            <DialogClose asChild>
+                <Button type="button" variant="outline">Annuler</Button>
+            </DialogClose>
+            <Button type="button" onclick={submitApplication} disabled={isApplicationSubmitting} class="gap-2">
+                {#if isApplicationSubmitting}
+                    <Loader2 class="size-4 animate-spin" />
+                    Envoi en cours...
+                {:else}
+                    Soumettre la candidature
+                {/if}
+            </Button>
+        </DialogFooter>
+    </DialogContent>
+</Dialog>
+
 <Dialog open={isAmendmentDialogOpen} onOpenChange={(value: boolean) => (isAmendmentDialogOpen = value)}>
     <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
@@ -3692,8 +3846,24 @@
                     </select>
                 </label>
                 <Input name="mandate-target" label={m['proposition-detail.mandates.form.targetObjectiveRef']()} bind:value={mandateForm.targetObjectiveRef} />
-                <Input type="date" name="mandate-initial" label={m['proposition-detail.mandates.form.initialDeadline']()} bind:value={mandateForm.initialDeadline} />
-                <Input type="date" name="mandate-current" label={m['proposition-detail.mandates.form.currentDeadline']()} bind:value={mandateForm.currentDeadline} />
+                <label class="flex flex-col gap-2 text-sm text-foreground">
+                    {m['proposition-detail.mandates.form.initialDeadline']()}
+                    <input
+                        type="date"
+                        name="mandate-initial"
+                        class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        bind:value={mandateForm.initialDeadline}
+                    />
+                </label>
+                <label class="flex flex-col gap-2 text-sm text-foreground">
+                    {m['proposition-detail.mandates.form.currentDeadline']()}
+                    <input
+                        type="date"
+                        name="mandate-current"
+                        class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        bind:value={mandateForm.currentDeadline}
+                    />
+                </label>
             </div>
             {#if mandateErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">

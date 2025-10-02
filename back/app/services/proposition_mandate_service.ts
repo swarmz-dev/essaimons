@@ -32,7 +32,7 @@ export default class PropositionMandateService {
             .related('mandates')
             .query()
             .preload('holder', (query: ModelQueryBuilderContract<typeof User>) => {
-                query.select(['id', 'front_id', 'username']);
+                query.select(['id', 'front_id', 'username', 'profile_picture_id']);
             })
             .preload('deliverables', (query) => {
                 query
@@ -70,7 +70,7 @@ export default class PropositionMandateService {
         const normalized = await this.normalizePayload(payload);
         const mandate = await PropositionMandate.create({
             propositionId: proposition.id,
-            status: normalized.status ?? MandateStatusEnum.DRAFT,
+            status: normalized.status ?? MandateStatusEnum.TO_ASSIGN,
             title: normalized.title,
             description: normalized.description ?? null,
             holderUserId: normalized.holderUserId ?? null,
@@ -80,7 +80,7 @@ export default class PropositionMandateService {
         });
 
         await mandate.load('holder', (query: ModelQueryBuilderContract<typeof User>) => {
-            query.select(['id', 'front_id', 'username']);
+            query.select(['id', 'front_id', 'username', 'profile_picture_id']);
         });
 
         return mandate;
@@ -117,7 +117,7 @@ export default class PropositionMandateService {
         await mandate.save();
 
         await mandate.load('holder', (query: ModelQueryBuilderContract<typeof User>) => {
-            query.select(['id', 'front_id', 'username']);
+            query.select(['id', 'front_id', 'username', 'profile_picture_id']);
         });
 
         return mandate;
