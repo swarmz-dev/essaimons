@@ -123,6 +123,7 @@ test.group('Proposition uploads', (group) => {
                     voteDeadline: DateTime.now().plus({ days: 3 }).toISODate(),
                     mandateDeadline: DateTime.now().plus({ days: 4 }).toISODate(),
                     evaluationDeadline: DateTime.now().plus({ days: 5 }).toISODate(),
+                    isDraft: false,
                 })
                 .file('visual', visualPath)
                 .file('attachments', attachmentPath);

@@ -463,7 +463,9 @@
             "previous": "Précédent",
             "next": "Suivant",
             "submit": "Publier la proposition",
-            "submitting": "Envoi en cours…",
+            "submitting": "Publication en cours…",
+            "save-draft": "Enregistrer un brouillon",
+            "saving-draft": "Enregistrement en cours…",
             "concretization-hint": "Renseignez le cadre général avant de passer aux aspects collaboratifs.",
             "horizontality-hint": "Documentez le contexte partagé, les délais et les mandats associés.",
             "robustness-hint": "Analysez les impacts, les expertises nécessaires et les liens avec d'autres propositions."

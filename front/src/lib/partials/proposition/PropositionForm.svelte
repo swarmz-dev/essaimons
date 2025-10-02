@@ -89,6 +89,9 @@
     let pageTitleText: string = $state('');
     let submitLabel: string = $state('');
     let submittingLabel: string = $state('');
+    let saveDraftLabel: string = $state('');
+    let savingDraftLabel: string = $state('');
+    let isDraft: boolean = $state(false);
 
     $effect(() => {
         baseUserOptions = (bootstrap.users ?? []).flatMap((user: SerializedUserSummary) => {
@@ -339,6 +342,8 @@
             pageTitleText = m['proposition-create.title']();
             submitLabel = m['proposition-create.navigation.submit']();
             submittingLabel = m['proposition-create.navigation.submitting']();
+            saveDraftLabel = m['proposition-create.navigation.save-draft']();
+            savingDraftLabel = m['proposition-create.navigation.saving-draft']();
         }
     });
 
@@ -385,6 +390,8 @@
             formData.append('visual', croppedVisualFile, croppedVisualFile.name);
         }
 
+        formData.set('isDraft', String(isDraft));
+
         return async ({ result, update }) => {
             isSubmitting = false;
             if (result.type === 'failure') {
@@ -393,6 +400,14 @@
                 await update();
             }
         };
+    };
+
+    const handleSaveDraft = () => {
+        isDraft = true;
+    };
+
+    const handlePublish = () => {
+        isDraft = false;
     };
 
     const validateAttachmentSelection = (files?: FileList | null): boolean => {
@@ -670,7 +685,12 @@
                                     {m['proposition-create.navigation.next']()}
                                 </Button>
                             {:else}
-                                <Button type="submit" disabled={!canSubmit} loading={isSubmitting} loadingLabel={submittingLabel}>
+                                {#if !isEditing}
+                                    <Button type="submit" variant="outline" disabled={!canSubmit} loading={isSubmitting && isDraft} loadingLabel={savingDraftLabel} onclick={handleSaveDraft}>
+                                        {saveDraftLabel}
+                                    </Button>
+                                {/if}
+                                <Button type="submit" disabled={!canSubmit} loading={isSubmitting && !isDraft} loadingLabel={submittingLabel} onclick={handlePublish}>
                                     {submitLabel}
                                 </Button>
                             {/if}

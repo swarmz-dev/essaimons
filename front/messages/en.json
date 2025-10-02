@@ -463,7 +463,9 @@
             "previous": "Previous",
             "next": "Next",
             "submit": "Publish proposal",
-            "submitting": "Submitting…",
+            "submitting": "Publishing…",
+            "save-draft": "Save as draft",
+            "saving-draft": "Saving…",
             "concretization-hint": "Complete the general framing before moving to collaborative aspects.",
             "horizontality-hint": "Document the shared context, deadlines, and mandates.",
             "robustness-hint": "Assess impacts, required expertise, and connections to other proposals."

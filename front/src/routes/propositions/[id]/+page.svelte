@@ -82,6 +82,16 @@
         [PropositionStatusEnum.ARCHIVED]: 6,
     };
 
+    const allStatuses = [
+        PropositionStatusEnum.DRAFT,
+        PropositionStatusEnum.CLARIFY,
+        PropositionStatusEnum.AMEND,
+        PropositionStatusEnum.VOTE,
+        PropositionStatusEnum.MANDATE,
+        PropositionStatusEnum.EVALUATE,
+        PropositionStatusEnum.ARCHIVED,
+    ];
+
     const currentStatusRank = $derived(statusOrder[currentStatus] ?? 0);
 
     const user = $derived(page.data.user as SerializedUser | undefined);
@@ -1485,7 +1495,14 @@
                 </Button>
             {/if}
             {#if canManageStatus && availableTransitions.length}
-                <Button variant="outline" class="gap-2" onclick={() => (isStatusDialogOpen = true)}>
+                <Button
+                    variant="outline"
+                    class="gap-2"
+                    onclick={() => {
+                        isStatusDialogOpen = true;
+                        selectedStatus = availableTransitions[0];
+                    }}
+                >
                     <RefreshCcw class="size-4" />
                     {m['proposition-detail.status.change']()}
                 </Button>
@@ -2947,9 +2964,13 @@
         <form class="space-y-4" onsubmit={handleStatusSubmit}>
             <label class="flex flex-col gap-2 text-sm text-foreground">
                 {m['proposition-detail.status.dialog.target']()}
-                <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={selectedStatus}>
-                    {#each availableTransitions as status}
-                        <option value={status}>{translateStatus(status)}</option>
+                <select class="status-select rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40" bind:value={selectedStatus}>
+                    {#each allStatuses as status}
+                        {@const isCurrentStatus = status === currentStatus}
+                        {@const isAvailable = availableTransitions.includes(status)}
+                        <option value={status} disabled={!isAvailable} class:font-bold={isCurrentStatus}>
+                            {translateStatus(status)}{isCurrentStatus ? ' (actuel)' : ''}
+                        </option>
                     {/each}
                 </select>
             </label>
@@ -2972,6 +2993,15 @@
 </Dialog>
 
 <style>
+    /* Style for status select dropdown */
+    .status-select option.font-bold {
+        font-weight: 700;
+    }
+
+    .status-select option:disabled {
+        color: #999;
+    }
+
     @media print {
         :global(body) {
             background: #fff !important;

@@ -19,6 +19,7 @@ const propositionPayloadSchema = vine.object({
     voteDeadline: vine.string().trim().regex(isoDateRegex),
     mandateDeadline: vine.string().trim().regex(isoDateRegex),
     evaluationDeadline: vine.string().trim().regex(isoDateRegex),
+    isDraft: vine.boolean().optional(),
 });
 
 export const searchPropositionsValidator = vine.compile(

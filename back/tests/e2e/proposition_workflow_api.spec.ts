@@ -84,6 +84,7 @@ const createPropositionFixture = async (client: any) => {
             voteDeadline: DateTime.now().plus({ days: 15 }).toISODate(),
             mandateDeadline: DateTime.now().plus({ days: 45 }).toISODate(),
             evaluationDeadline: DateTime.now().plus({ days: 90 }).toISODate(),
+            isDraft: false,
         });
 
     createResponse.assertStatus(201);
@@ -166,6 +167,7 @@ test.group('Proposition workflow API', (group) => {
                 voteDeadline: DateTime.now().plus({ days: 15 }).toISODate(),
                 mandateDeadline: DateTime.now().plus({ days: 45 }).toISODate(),
                 evaluationDeadline: DateTime.now().plus({ days: 90 }).toISODate(),
+                isDraft: true,
             });
 
         createResponse.assertStatus(201);
@@ -224,6 +226,7 @@ test.group('Proposition workflow API', (group) => {
                 voteDeadline: DateTime.now().plus({ days: 15 }).toISODate(),
                 mandateDeadline: DateTime.now().plus({ days: 45 }).toISODate(),
                 evaluationDeadline: DateTime.now().plus({ days: 90 }).toISODate(),
+                isDraft: true,
             });
 
         createResponse.assertStatus(201);

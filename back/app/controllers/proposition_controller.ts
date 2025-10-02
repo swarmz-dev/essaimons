@@ -143,6 +143,7 @@ export default class PropositionController {
                 categoryIds,
                 associatedPropositionIds,
                 rescueInitiatorIds,
+                isDraft: request.input('isDraft'),
             });
 
             const proposition: Proposition = await this.propositionService.create(payload, user as User, {

@@ -33,6 +33,7 @@ interface CreatePropositionPayload {
     categoryIds: string[];
     associatedPropositionIds?: string[];
     rescueInitiatorIds: string[];
+    isDraft?: boolean;
 }
 
 interface CreatePropositionFiles {
@@ -80,6 +81,10 @@ export default class PropositionService {
             const mandateDate: DateTime = this.parseIsoDate(payload.mandateDeadline);
             const evaluationDate: DateTime = this.parseIsoDate(payload.evaluationDeadline);
 
+            const isDraft = payload.isDraft ?? false;
+            const initialStatus = isDraft ? PropositionStatusEnum.DRAFT : PropositionStatusEnum.CLARIFY;
+            const initialVisibility = isDraft ? PropositionVisibilityEnum.PRIVATE : PropositionVisibilityEnum.PUBLIC;
+
             const proposition: Proposition = await Proposition.create(
                 {
                     title: payload.title,
@@ -89,9 +94,9 @@ export default class PropositionService {
                     impacts: payload.impacts,
                     mandatesDescription: payload.mandatesDescription,
                     expertise: payload.expertise ?? null,
-                    status: PropositionStatusEnum.DRAFT,
+                    status: initialStatus,
                     statusStartedAt: DateTime.now(),
-                    visibility: PropositionVisibilityEnum.PRIVATE,
+                    visibility: initialVisibility,
                     archivedAt: null,
                     settingsSnapshot: {},
                     clarificationDeadline: clarificationDate,

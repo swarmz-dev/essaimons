@@ -64,6 +64,7 @@ test.group('Proposition workflow schema', (group) => {
             evaluationDeadline: DateTime.now().plus({ days: 90 }).toISODate()!,
             categoryIds: [String(category.frontId ?? category.id)],
             rescueInitiatorIds: [String(rescue.frontId ?? rescue.id)],
+            isDraft: true,
         };
 
         const proposition: Proposition = await propositionService.create(payload, creator, {});

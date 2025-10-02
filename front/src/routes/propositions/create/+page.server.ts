@@ -51,6 +51,7 @@ export const actions = {
             voteDeadline: toString(formData.get('voteDeadline')),
             mandateDeadline: toString(formData.get('mandateDeadline')),
             evaluationDeadline: toString(formData.get('evaluationDeadline')),
+            isDraft: toString(formData.get('isDraft')) === 'true',
         };
 
         const apiFormData = new FormData();
@@ -77,6 +78,7 @@ export const actions = {
         setField('voteDeadline', normalizedPayload.voteDeadline);
         setField('mandateDeadline', normalizedPayload.mandateDeadline);
         setField('evaluationDeadline', normalizedPayload.evaluationDeadline);
+        apiFormData.set('isDraft', String(normalizedPayload.isDraft));
 
         const visual = formData.get('visual');
         if (visual instanceof File && visual.size > 0) {
