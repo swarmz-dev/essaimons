@@ -703,11 +703,25 @@
                 "openAt": "Ouverture",
                 "closeAt": "Clôture",
                 "maxSelections": "Sélections maximales",
+                "majorityJudgment": "Jugement majoritaire",
                 "description": "Description",
                 "options": "Options (une par ligne)"
             },
             "options-empty": "Veuillez renseigner au moins une option de vote.",
-            "max-invalid": "Le nombre maximal de sélections doit être un nombre positif.",
+            "max-invalid": "Le nombre maximal de sélections doit être au moins 1.",
+            "errors": {
+                "title-required": "Le titre est requis",
+                "title-too-long": "Le titre ne peut pas dépasser 255 caractères",
+                "description-too-long": "La description ne peut pas dépasser 1000 caractères",
+                "max-selections-invalid": "Le nombre maximal de sélections doit être un nombre positif",
+                "option-label-required": "Le libellé de l'option est requis",
+                "option-label-too-long": "Le libellé de l'option ne peut pas dépasser 255 caractères",
+                "option-description-too-long": "La description de l'option ne peut pas dépasser 1000 caractères",
+                "options-required": "Au moins une option est requise",
+                "open-at-required": "La date d'ouverture est requise",
+                "close-at-required": "La date de clôture est requise",
+                "close-before-open": "La date de clôture doit être après la date d'ouverture"
+            },
             "phase": {
                 "vote": "Vote",
                 "mandate": "Mandat",

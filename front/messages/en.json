@@ -703,11 +703,25 @@
                 "openAt": "Opens at",
                 "closeAt": "Closes at",
                 "maxSelections": "Maximum selections",
+                "majorityJudgment": "Majority judgment",
                 "description": "Description",
                 "options": "Options (one per line)"
             },
             "options-empty": "Please provide at least one voting option.",
-            "max-invalid": "Maximum selections must be a positive number.",
+            "max-invalid": "Maximum selections must be at least 1.",
+            "errors": {
+                "title-required": "Title is required",
+                "title-too-long": "Title cannot exceed 255 characters",
+                "description-too-long": "Description cannot exceed 1000 characters",
+                "max-selections-invalid": "Maximum selections must be a positive number",
+                "option-label-required": "Option label is required",
+                "option-label-too-long": "Option label cannot exceed 255 characters",
+                "option-description-too-long": "Option description cannot exceed 1000 characters",
+                "options-required": "At least one option is required",
+                "open-at-required": "Opening date is required",
+                "close-at-required": "Closing date is required",
+                "close-before-open": "Closing date must be after opening date"
+            },
             "phase": {
                 "vote": "Voting",
                 "mandate": "Mandate",

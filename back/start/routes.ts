@@ -147,6 +147,12 @@ router
                         router.post('/:id/votes/:voteId/status', [PropositionVoteController, 'changeStatus']);
                         router.delete('/:id/votes/:voteId', [PropositionVoteController, 'destroy']);
 
+                        const VoteBallotController = () => import('#controllers/vote_ballot_controller');
+                        router.get('/:id/votes/:voteId/ballot', [VoteBallotController, 'show']);
+                        router.post('/:id/votes/:voteId/ballot', [VoteBallotController, 'store']);
+                        router.get('/:id/votes/:voteId/results', [VoteBallotController, 'results']);
+                        router.delete('/:id/votes/:voteId/ballot', [VoteBallotController, 'destroy']);
+
                         router.get('/:id/mandates', [PropositionMandateController, 'index']);
                         router.post('/:id/mandates', [PropositionMandateController, 'store']);
                         router.put('/:id/mandates/:mandateId', [PropositionMandateController, 'update']);

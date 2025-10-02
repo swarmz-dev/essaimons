@@ -35,10 +35,11 @@
         PropositionVisibilityEnum,
         PropositionVoteMethodEnum,
         PropositionVotePhaseEnum,
+        PropositionVoteStatusEnum,
         DeliverableVerdictEnum,
     } from 'backend/types';
     import type { PropositionComment, PropositionEvent, PropositionMandate, PropositionTimelinePhase, PropositionVote, WorkflowRole } from '#lib/types/proposition';
-    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload, Loader2, Eye, MessageCircle } from '@lucide/svelte';
+    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload, Loader2, Eye, MessageCircle, CheckCircle } from '@lucide/svelte';
     import { z } from 'zod';
 
     const { data } = $props<{
@@ -97,8 +98,70 @@
     const user = $derived(page.data.user as SerializedUser | undefined);
     const workflowRole: WorkflowRole = $derived(resolveWorkflowRole(proposition, user, mandates));
 
+    // État pour le temps actuel, mis à jour toutes les secondes
+    let currentTime = $state(new Date());
+    let scheduledRefreshTimeouts: number[] = $state([]);
+
+    // Mettre à jour le temps toutes les secondes et vérifier les transitions de statut
+    $effect(() => {
+        const interval = setInterval(() => {
+            const oldTime = currentTime;
+            currentTime = new Date();
+
+            // Vérifier si un vote devrait changer de statut
+            votes?.forEach((vote) => {
+                const now = currentTime.getTime();
+                const openAt = vote.openAt ? new Date(vote.openAt).getTime() : null;
+                const closeAt = vote.closeAt ? new Date(vote.closeAt).getTime() : null;
+
+                // Si le vote scheduled atteint son heure d'ouverture
+                if (vote.status === 'scheduled' && openAt && openAt <= now && openAt > oldTime.getTime()) {
+                    const timeoutId = window.setTimeout(() => refreshVotes(), 1000);
+                    scheduledRefreshTimeouts.push(timeoutId);
+                }
+
+                // Si le vote open atteint son heure de clôture
+                if (vote.status === 'open' && closeAt && closeAt <= now && closeAt > oldTime.getTime()) {
+                    const timeoutId = window.setTimeout(() => refreshVotes(), 1000);
+                    scheduledRefreshTimeouts.push(timeoutId);
+                }
+            });
+        }, 1000);
+
+        return () => {
+            clearInterval(interval);
+            scheduledRefreshTimeouts.forEach((id) => clearTimeout(id));
+        };
+    });
+
+    // Rafraîchir les votes une seule fois au chargement initial
+    let hasInitiallyRefreshed = $state(false);
+    $effect(() => {
+        if (votes && votes.length > 0 && !hasInitiallyRefreshed) {
+            hasInitiallyRefreshed = true;
+            refreshVotes();
+        }
+    });
+
+    // Charger les bulletins et résultats lorsque les votes changent
+    $effect(() => {
+        if (votes && votes.length > 0) {
+            votes.forEach((vote) => {
+                // Charger le bulletin de l'utilisateur si connecté
+                if (user && vote.status === 'open') {
+                    fetchUserBallot(vote.id);
+                }
+                // Charger les résultats si le vote est clôturé
+                if (vote.status === 'closed') {
+                    fetchVoteResults(vote.id);
+                }
+            });
+        }
+    });
+
     const canEditProposition = $derived(workflowRole === 'admin' || isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'edit_proposition'));
     const canDeleteProposition = $derived(user?.role === 'admin');
+    const canParticipateVote = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'participate_vote'));
 
     const canCommentClarification = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'comment_clarification') || workflowRole === 'admin' || workflowRole === 'initiator');
     const canCommentAmendment = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'comment_amendment') || workflowRole === 'admin' || workflowRole === 'initiator');
@@ -351,6 +414,49 @@
         return parsed.toISOString().slice(0, 16);
     };
 
+    const getVoteTimeRemaining = (vote: PropositionVote, currentTime: Date): { text: string; color: string } | null => {
+        const now = currentTime.getTime();
+        const openAt = vote.openAt ? new Date(vote.openAt).getTime() : null;
+        const closeAt = vote.closeAt ? new Date(vote.closeAt).getTime() : null;
+
+        // Si le vote est scheduled ou draft et a une date d'ouverture future
+        if ((vote.status === 'scheduled' || vote.status === 'draft') && openAt && openAt > now) {
+            const diff = openAt - now;
+            return { text: formatTimeRemaining(diff, 'Ouvre dans'), color: 'text-blue-600 dark:text-blue-400' };
+        }
+
+        // Si le vote est open et a une date de clôture future
+        if (vote.status === 'open' && closeAt && closeAt > now) {
+            const diff = closeAt - now;
+            return { text: formatTimeRemaining(diff, 'Ferme dans'), color: 'text-orange-600 dark:text-orange-400' };
+        }
+
+        // Si le vote est scheduled mais l'heure d'ouverture est dépassée
+        if (vote.status === 'scheduled' && openAt && openAt <= now && closeAt && closeAt > now) {
+            const diff = closeAt - now;
+            return { text: formatTimeRemaining(diff, 'Ferme dans'), color: 'text-orange-600 dark:text-orange-400' };
+        }
+
+        return null;
+    };
+
+    const formatTimeRemaining = (ms: number, prefix: string): string => {
+        const seconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
+        if (days > 0) {
+            return `${prefix} ${days}j ${hours % 24}h`;
+        } else if (hours > 0) {
+            return `${prefix} ${hours}h ${minutes % 60}min`;
+        } else if (minutes > 0) {
+            return `${prefix} ${minutes}min`;
+        } else {
+            return `${prefix} ${seconds}s`;
+        }
+    };
+
     const commentSchema = z.object({
         content: z.string().trim().min(1).max(2000),
     });
@@ -446,41 +552,62 @@
     let eventDeleteId: string | null = $state(null);
     let isEventDeleteSubmitting: boolean = $state(false);
 
-    const voteSchema = z.object({
-        title: z.string().trim().min(1).max(255),
-        description: z.string().trim().max(1000).optional(),
-        phase: z.nativeEnum(PropositionVotePhaseEnum),
-        method: z.nativeEnum(PropositionVoteMethodEnum),
-        openAt: z.string().trim().optional(),
-        closeAt: z.string().trim().optional(),
-        maxSelections: z.number().min(0).optional(),
-        options: z
-            .array(
-                z.object({
-                    label: z.string().trim().min(1).max(255),
-                    description: z.string().trim().max(1000).optional(),
-                })
-            )
-            .min(1),
-    });
+    const getVoteSchema = () =>
+        z
+            .object({
+                title: z.string().trim().min(1, m['proposition-detail.votes.errors.title-required']()).max(255, m['proposition-detail.votes.errors.title-too-long']()),
+                description: z.string().trim().max(1000, m['proposition-detail.votes.errors.description-too-long']()).optional(),
+                phase: z.nativeEnum(PropositionVotePhaseEnum),
+                method: z.nativeEnum(PropositionVoteMethodEnum),
+                openAt: z.string().trim().min(1, m['proposition-detail.votes.errors.open-at-required']()),
+                closeAt: z.string().trim().min(1, m['proposition-detail.votes.errors.close-at-required']()),
+                maxSelections: z.number().min(0, m['proposition-detail.votes.errors.max-selections-invalid']()).optional(),
+                options: z
+                    .array(
+                        z.object({
+                            label: z.string().trim().min(1, m['proposition-detail.votes.errors.option-label-required']()).max(255, m['proposition-detail.votes.errors.option-label-too-long']()),
+                            description: z.string().trim().max(1000, m['proposition-detail.votes.errors.option-description-too-long']()).optional(),
+                        })
+                    )
+                    .min(1, m['proposition-detail.votes.errors.options-required']()),
+            })
+            .refine(
+                (data) => {
+                    if (data.openAt && data.closeAt) {
+                        return new Date(data.openAt) < new Date(data.closeAt);
+                    }
+                    return true;
+                },
+                {
+                    message: m['proposition-detail.votes.errors.close-before-open'](),
+                    path: ['closeAt'],
+                }
+            );
 
     const defaultVoteForm = {
         title: '',
         description: '',
         phase: PropositionVotePhaseEnum.VOTE,
-        method: PropositionVoteMethodEnum.BINARY,
         openAt: '',
         closeAt: '',
-        maxSelections: '',
+        maxSelections: 1,
+        isMajorityJudgment: false,
         optionsText: 'For\nAgainst',
     };
 
     let isVoteDialogOpen: boolean = $state(false);
     let voteForm = $state({ ...defaultVoteForm });
     let voteErrors: string[] = $state([]);
+    let voteFieldErrors: Record<string, string | undefined> = $state({});
     let isVoteSubmitting: boolean = $state(false);
     let voteOpenInput: HTMLInputElement | null = $state(null);
     let voteCloseInput: HTMLInputElement | null = $state(null);
+
+    // États pour voter
+    let userBallots = $state<Record<string, any>>({});
+    let isCastingVote = $state<Record<string, boolean>>({});
+    let ballotSelections = $state<Record<string, any>>({});
+    let voteResults = $state<Record<string, any>>({});
 
     const mandateSchema = z.object({
         title: z.string().trim().min(1).max(255),
@@ -1181,31 +1308,42 @@
 
     const submitVote = async (): Promise<void> => {
         voteErrors = [];
+        voteFieldErrors = {};
         const optionLines = voteForm.optionsText
             .split('\n')
             .map((line) => line.trim())
             .filter((line) => line.length);
 
         if (optionLines.length === 0) {
-            voteErrors = [m['proposition-detail.votes.options-empty']()];
+            voteFieldErrors.optionsText = m['proposition-detail.votes.options-empty']();
             return;
         }
 
         let maxSelectionsNumber: number | undefined;
         if (voteForm.maxSelections) {
             const parsed = Number(voteForm.maxSelections);
-            if (!Number.isFinite(parsed) || parsed < 0) {
-                voteErrors = [m['proposition-detail.votes.max-invalid']()];
+            if (!Number.isFinite(parsed) || parsed < 1) {
+                voteFieldErrors.maxSelections = m['proposition-detail.votes.max-invalid']();
                 return;
             }
             maxSelectionsNumber = parsed;
         }
 
-        const parsed = voteSchema.safeParse({
+        // Déterminer automatiquement la méthode basée sur les paramètres
+        let method: PropositionVoteMethodEnum;
+        if (voteForm.isMajorityJudgment) {
+            method = PropositionVoteMethodEnum.MAJORITY_JUDGMENT;
+        } else if (maxSelectionsNumber === 1) {
+            method = PropositionVoteMethodEnum.BINARY;
+        } else {
+            method = PropositionVoteMethodEnum.MULTI_CHOICE;
+        }
+
+        const parsed = getVoteSchema().safeParse({
             title: voteForm.title,
             description: normalizeOptional(voteForm.description),
             phase: voteForm.phase,
-            method: voteForm.method,
+            method: method,
             openAt: voteForm.openAt,
             closeAt: voteForm.closeAt,
             maxSelections: maxSelectionsNumber,
@@ -1213,7 +1351,10 @@
         });
 
         if (!parsed.success) {
-            voteErrors = parsed.error.issues.map((issue) => issue.message);
+            parsed.error.issues.forEach((issue) => {
+                const path = issue.path.join('.');
+                voteFieldErrors[path] = issue.message;
+            });
             return;
         }
 
@@ -1253,6 +1394,185 @@
             }
         } finally {
             isVoteSubmitting = false;
+        }
+    };
+
+    const openEditVote = (vote: PropositionVote): void => {
+        // TODO: Populate form with vote data and open dialog
+    };
+
+    const publishVote = async (voteId: string): Promise<void> => {
+        try {
+            await wrappedFetch(
+                `/propositions/${proposition.id}/votes/${voteId}/status`,
+                {
+                    method: 'POST',
+                    body: {
+                        status: PropositionVoteStatusEnum.SCHEDULED,
+                    },
+                },
+                ({ vote }) => {
+                    propositionDetailStore.upsertVote(vote);
+                },
+                ({ message }) => {
+                    console.error('Failed to publish vote:', message);
+                }
+            );
+        } catch (error) {
+            console.error('Error publishing vote:', error);
+        }
+    };
+
+    const openVote = async (voteId: string): Promise<void> => {
+        try {
+            await wrappedFetch(
+                `/propositions/${proposition.id}/votes/${voteId}/status`,
+                {
+                    method: 'POST',
+                    body: {
+                        status: PropositionVoteStatusEnum.OPEN,
+                    },
+                },
+                ({ vote }) => {
+                    propositionDetailStore.upsertVote(vote);
+                },
+                ({ message }) => {
+                    console.error('Failed to open vote:', message);
+                }
+            );
+        } catch (error) {
+            console.error('Error opening vote:', error);
+        }
+    };
+
+    const closeVote = async (voteId: string): Promise<void> => {
+        try {
+            await wrappedFetch(
+                `/propositions/${proposition.id}/votes/${voteId}/status`,
+                {
+                    method: 'POST',
+                    body: {
+                        status: PropositionVoteStatusEnum.CLOSED,
+                    },
+                },
+                ({ vote }) => {
+                    propositionDetailStore.upsertVote(vote);
+                },
+                ({ message }) => {
+                    console.error('Failed to close vote:', message);
+                }
+            );
+        } catch (error) {
+            console.error('Error closing vote:', error);
+        }
+    };
+
+    const deleteVote = async (voteId: string): Promise<void> => {
+        try {
+            await wrappedFetch(
+                `/propositions/${proposition.id}/votes/${voteId}`,
+                {
+                    method: 'DELETE',
+                },
+                () => {
+                    propositionDetailStore.removeVote(voteId);
+                },
+                ({ message }) => {
+                    console.error('Failed to delete vote:', message);
+                }
+            );
+        } catch (error) {
+            console.error('Error deleting vote:', error);
+        }
+    };
+
+    const fetchUserBallot = async (voteId: string): Promise<void> => {
+        try {
+            await wrappedFetch(`/propositions/${proposition.id}/votes/${voteId}/ballot`, { method: 'GET' }, ({ ballot }) => {
+                userBallots[voteId] = ballot;
+            });
+        } catch (error) {
+            console.error('Error fetching ballot:', error);
+        }
+    };
+
+    const fetchVoteResults = async (voteId: string): Promise<void> => {
+        try {
+            await wrappedFetch(`/propositions/${proposition.id}/votes/${voteId}/results`, { method: 'GET' }, ({ results }) => {
+                voteResults[voteId] = results;
+            });
+        } catch (error) {
+            console.error('Error fetching results:', error);
+        }
+    };
+
+    const refreshVotes = async (): Promise<void> => {
+        try {
+            await wrappedFetch(`/propositions/${proposition.id}/votes`, { method: 'GET' }, ({ votes: updatedVotes }) => {
+                updatedVotes.forEach((vote: any) => {
+                    propositionDetailStore.upsertVote(vote);
+                });
+            });
+        } catch (error) {
+            console.error('Error refreshing votes:', error);
+        }
+    };
+
+    const castBallot = async (vote: PropositionVote): Promise<void> => {
+        isCastingVote[vote.id] = true;
+
+        try {
+            let payload: any = {};
+
+            if (vote.method === PropositionVoteMethodEnum.BINARY) {
+                payload.optionId = ballotSelections[vote.id];
+            } else if (vote.method === PropositionVoteMethodEnum.MULTI_CHOICE) {
+                payload.optionIds = ballotSelections[vote.id] || [];
+            } else if (vote.method === PropositionVoteMethodEnum.MAJORITY_JUDGMENT) {
+                payload.ratings = ballotSelections[vote.id] || {};
+            }
+
+            await wrappedFetch(
+                `/propositions/${proposition.id}/votes/${vote.id}/ballot`,
+                {
+                    method: 'POST',
+                    body: payload,
+                },
+                ({ ballot }) => {
+                    userBallots[vote.id] = ballot;
+                    ballotSelections[vote.id] = null;
+                },
+                ({ error }) => {
+                    console.error('Error casting ballot:', error);
+                    alert(error || 'Erreur lors du vote');
+                }
+            );
+        } catch (error) {
+            console.error('Error casting ballot:', error);
+        } finally {
+            isCastingVote[vote.id] = false;
+        }
+    };
+
+    const revokeBallot = async (voteId: string): Promise<void> => {
+        if (!confirm('Voulez-vous vraiment révoquer votre vote ?')) {
+            return;
+        }
+
+        try {
+            await wrappedFetch(
+                `/propositions/${proposition.id}/votes/${voteId}/ballot`,
+                { method: 'DELETE' },
+                () => {
+                    userBallots[voteId] = null;
+                },
+                ({ error }) => {
+                    console.error('Error revoking ballot:', error);
+                    alert(error || 'Erreur lors de la révocation');
+                }
+            );
+        } catch (error) {
+            console.error('Error revoking ballot:', error);
         }
     };
 
@@ -1308,22 +1628,17 @@
     };
 
     const submitDeliverable = async (): Promise<void> => {
-        console.log('submitDeliverable called', { deliverableMandateId });
-
         if (!deliverableMandateId) {
-            console.log('No deliverableMandateId, returning');
             return;
         }
 
         deliverableErrors = [];
 
         if (!deliverableForm.file) {
-            console.log('No file selected');
             deliverableErrors = [m['proposition-detail.mandates.deliverables.file-required']()];
             return;
         }
 
-        console.log('Setting isDeliverableSubmitting = true');
         isDeliverableSubmitting = true;
 
         try {
@@ -1337,7 +1652,6 @@
             formData.set('file', deliverableForm.file);
 
             const url = `/propositions/${proposition.id}/mandates/${deliverableMandateId}/deliverables`;
-            console.log('About to fetch:', url);
 
             const response = await wrappedFetch(
                 url,
@@ -1346,7 +1660,6 @@
                     body: formData,
                 },
                 async ({ deliverable, mandate, proposition: updatedProposition }) => {
-                    console.log('Success callback called');
                     propositionDetailStore.upsertMandate(mandate);
                     propositionDetailStore.updateProposition(updatedProposition);
                     showToast(m['proposition-detail.mandates.deliverables.upload-success'](), 'success');
@@ -1354,12 +1667,9 @@
                     isDeliverableDialogOpen = false;
                 },
                 async (data) => {
-                    console.log('Error callback called', data);
                     deliverableErrors = extractFormErrors(data).map((entry) => entry.message);
                 }
             );
-
-            console.log('Response received:', response);
 
             if (!response?.isSuccess && deliverableErrors.length === 0) {
                 deliverableErrors = [m['common.error.default-message']()];
@@ -1367,7 +1677,6 @@
         } catch (error) {
             console.error('Exception in submitDeliverable:', error);
         } finally {
-            console.log('Setting isDeliverableSubmitting = false');
             isDeliverableSubmitting = false;
         }
     };
@@ -2140,25 +2449,224 @@
                     {#each votes as vote (vote.id)}
                         <li class="rounded-xl border border-border/40 bg-card/60 p-4">
                             <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-foreground">{vote.title}</p>
                                     <p class="text-xs text-muted-foreground">{m['proposition-detail.vote.method']({ method: translateVoteMethod(vote.method as PropositionVoteMethodEnum) })}</p>
+                                    <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                                        {#if vote.openAt}
+                                            <span>Ouverture : {formatDateTime(vote.openAt)}</span>
+                                        {/if}
+                                        {#if vote.closeAt}
+                                            <span>Clôture : {formatDateTime(vote.closeAt)}</span>
+                                        {/if}
+                                    </div>
+                                    {#if getVoteTimeRemaining(vote, currentTime)}
+                                        {@const timeInfo = getVoteTimeRemaining(vote, currentTime)}
+                                        <p class="mt-1 text-xs font-medium {timeInfo.color}">{timeInfo.text}</p>
+                                    {/if}
                                 </div>
-                                <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{vote.status}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-400">{translateVotePhase(vote.phase)}</span>
+                                    <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{vote.status}</span>
+                                    {#if canConfigureVote}
+                                        <Button size="sm" variant="ghost" class="gap-1" onclick={() => openEditVote(vote)}>
+                                            <Pencil class="size-3.5" />
+                                            {m['common.edit']()}
+                                        </Button>
+                                        {#if vote.status === 'draft'}
+                                            <Button size="sm" variant="default" class="gap-1" onclick={() => publishVote(vote.id)}>
+                                                <CheckCircle class="size-3.5" />
+                                                Publier
+                                            </Button>
+                                        {/if}
+                                        {#if workflowRole === 'admin' && vote.status === 'scheduled'}
+                                            <Button size="sm" variant="default" class="gap-1" onclick={() => openVote(vote.id)}>
+                                                <CheckCircle class="size-3.5" />
+                                                Ouvrir
+                                            </Button>
+                                        {/if}
+                                        {#if workflowRole === 'admin' && vote.status === 'open'}
+                                            <Button size="sm" variant="outline" class="gap-1" onclick={() => closeVote(vote.id)}>Clôturer</Button>
+                                        {/if}
+                                        {#if workflowRole === 'admin'}
+                                            <Button size="sm" variant="ghost" class="gap-1 text-destructive hover:text-destructive" onclick={() => deleteVote(vote.id)}>
+                                                <Trash2 class="size-3.5" />
+                                                {m['common.delete']()}
+                                            </Button>
+                                        {/if}
+                                    {/if}
+                                </div>
                             </div>
                             {#if vote.description}
                                 <p class="mt-2 text-sm text-foreground/80">{vote.description}</p>
                             {/if}
-                            <ul class="mt-3 space-y-2 text-sm text-muted-foreground">
-                                {#each vote.options as option (option.id)}
-                                    <li class="rounded border border-border/30 bg-background/80 px-3 py-2">
-                                        <span class="font-medium text-foreground">{option.label}</span>
-                                        {#if option.description}
-                                            <p class="text-xs text-muted-foreground">{option.description}</p>
+
+                            <!-- Show options list only if user can't vote or has already voted -->
+                            {#if !(vote.status === 'open' && canParticipateVote && !userBallots[vote.id])}
+                                <ul class="mt-3 space-y-2 text-sm text-muted-foreground">
+                                    {#each vote.options as option (option.id)}
+                                        <li class="rounded border border-border/30 bg-background/80 px-3 py-2">
+                                            <span class="font-medium text-foreground">{option.label}</span>
+                                            {#if option.description}
+                                                <p class="text-xs text-muted-foreground">{option.description}</p>
+                                            {/if}
+                                        </li>
+                                    {/each}
+                                </ul>
+                            {/if}
+
+                            <!-- Vote casting UI -->
+                            {#if vote.status === 'open' && canParticipateVote}
+                                {#if userBallots[vote.id]}
+                                    <div class="mt-4 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
+                                        ✓ Vous avez déjà voté
+                                        <Button size="sm" variant="ghost" class="ml-2 text-xs text-destructive hover:text-destructive" onclick={() => revokeBallot(vote.id)}>Révoquer mon vote</Button>
+                                    </div>
+                                {:else}
+                                    <div class="mt-4 rounded-lg border border-border/40 bg-background/50 p-4">
+                                        <h4 class="mb-3 text-sm font-semibold text-foreground">Voter</h4>
+
+                                        {#if vote.method === PropositionVoteMethodEnum.BINARY}
+                                            <!-- Binary vote: radio buttons -->
+                                            <div class="space-y-2">
+                                                {#each vote.options as option (option.id)}
+                                                    <label class="flex cursor-pointer items-center gap-3 rounded-md border border-border/30 bg-background px-3 py-2 hover:border-primary/40">
+                                                        <input type="radio" name="vote-{vote.id}" value={option.id} bind:group={ballotSelections[vote.id]} class="size-4" />
+                                                        <div class="flex-1">
+                                                            <span class="text-sm font-medium text-foreground">{option.label}</span>
+                                                            {#if option.description}
+                                                                <p class="text-xs text-muted-foreground">{option.description}</p>
+                                                            {/if}
+                                                        </div>
+                                                    </label>
+                                                {/each}
+                                            </div>
+                                            <Button class="mt-3 w-full" onclick={() => castBallot(vote)} disabled={!ballotSelections[vote.id] || isCastingVote[vote.id]}>
+                                                {isCastingVote[vote.id] ? 'Envoi...' : 'Confirmer mon vote'}
+                                            </Button>
+                                        {:else if vote.method === PropositionVoteMethodEnum.MULTI_CHOICE}
+                                            <!-- Multi-choice: checkboxes with max selections -->
+                                            <p class="mb-2 text-xs text-muted-foreground">Sélectionnez jusqu'à {vote.maxSelections} option{vote.maxSelections > 1 ? 's' : ''}</p>
+                                            <div class="space-y-2">
+                                                {#each vote.options as option (option.id)}
+                                                    {@const selected = ballotSelections[vote.id] || []}
+                                                    {@const isChecked = selected.includes(option.id)}
+                                                    {@const canCheck = isChecked || selected.length < (vote.maxSelections || 1)}
+                                                    <label
+                                                        class="flex cursor-pointer items-center gap-3 rounded-md border border-border/30 bg-background px-3 py-2 {canCheck
+                                                            ? 'hover:border-primary/40'
+                                                            : 'opacity-50'}"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            value={option.id}
+                                                            checked={isChecked}
+                                                            disabled={!canCheck}
+                                                            onchange={(e) => {
+                                                                const target = e.target as HTMLInputElement;
+                                                                if (!ballotSelections[vote.id]) ballotSelections[vote.id] = [];
+                                                                if (target.checked) {
+                                                                    ballotSelections[vote.id] = [...ballotSelections[vote.id], option.id];
+                                                                } else {
+                                                                    ballotSelections[vote.id] = ballotSelections[vote.id].filter((id: string) => id !== option.id);
+                                                                }
+                                                            }}
+                                                            class="size-4"
+                                                        />
+                                                        <div class="flex-1">
+                                                            <span class="text-sm font-medium text-foreground">{option.label}</span>
+                                                            {#if option.description}
+                                                                <p class="text-xs text-muted-foreground">{option.description}</p>
+                                                            {/if}
+                                                        </div>
+                                                    </label>
+                                                {/each}
+                                            </div>
+                                            <Button class="mt-3 w-full" onclick={() => castBallot(vote)} disabled={!ballotSelections[vote.id]?.length || isCastingVote[vote.id]}>
+                                                {isCastingVote[vote.id] ? 'Envoi...' : 'Confirmer mon vote'}
+                                            </Button>
+                                        {:else if vote.method === PropositionVoteMethodEnum.MAJORITY_JUDGMENT}
+                                            <!-- Majority judgment: rating dropdown for each option -->
+                                            <p class="mb-2 text-xs text-muted-foreground">Évaluez chaque option de 0 (insuffisant) à 5 (excellent)</p>
+                                            <div class="space-y-2">
+                                                {#each vote.options as option (option.id)}
+                                                    <div class="flex items-center gap-3 rounded-md border border-border/30 bg-background px-3 py-2">
+                                                        <div class="flex-1">
+                                                            <span class="text-sm font-medium text-foreground">{option.label}</span>
+                                                            {#if option.description}
+                                                                <p class="text-xs text-muted-foreground">{option.description}</p>
+                                                            {/if}
+                                                        </div>
+                                                        <select
+                                                            class="rounded border border-border/60 bg-background px-2 py-1 text-sm"
+                                                            onchange={(e) => {
+                                                                const target = e.target as HTMLSelectElement;
+                                                                if (!ballotSelections[vote.id]) ballotSelections[vote.id] = {};
+                                                                ballotSelections[vote.id][option.id] = Number(target.value);
+                                                            }}
+                                                        >
+                                                            <option value="">--</option>
+                                                            <option value="0">0</option>
+                                                            <option value="1">1</option>
+                                                            <option value="2">2</option>
+                                                            <option value="3">3</option>
+                                                            <option value="4">4</option>
+                                                            <option value="5">5</option>
+                                                        </select>
+                                                    </div>
+                                                {/each}
+                                            </div>
+                                            {@const ratings = ballotSelections[vote.id] || {}}
+                                            {@const allRated = vote.options.every((opt) => ratings[opt.id] !== undefined)}
+                                            <Button class="mt-3 w-full" onclick={() => castBallot(vote)} disabled={!allRated || isCastingVote[vote.id]}>
+                                                {isCastingVote[vote.id] ? 'Envoi...' : 'Confirmer mon vote'}
+                                            </Button>
                                         {/if}
-                                    </li>
-                                {/each}
-                            </ul>
+                                    </div>
+                                {/if}
+                            {/if}
+
+                            <!-- Vote results -->
+                            {#if vote.status === 'closed' && voteResults[vote.id]}
+                                {@const results = voteResults[vote.id]}
+                                <div class="mt-4 rounded-lg border border-border/40 bg-background/50 p-4">
+                                    <h4 class="mb-3 text-sm font-semibold text-foreground">Résultats ({results.totalVotes} vote{results.totalVotes > 1 ? 's' : ''})</h4>
+
+                                    {#if vote.method === PropositionVoteMethodEnum.BINARY || vote.method === PropositionVoteMethodEnum.MULTI_CHOICE}
+                                        {@const optionCounts = results.optionCounts || {}}
+                                        <div class="space-y-2">
+                                            {#each vote.options as option (option.id)}
+                                                {@const count = optionCounts[option.id] || 0}
+                                                {@const percentage = results.totalVotes > 0 ? Math.round((count / results.totalVotes) * 100) : 0}
+                                                <div class="rounded-md border border-border/30 bg-background px-3 py-2">
+                                                    <div class="flex items-center justify-between text-sm">
+                                                        <span class="font-medium text-foreground">{option.label}</span>
+                                                        <span class="text-xs text-muted-foreground">{count} ({percentage}%)</span>
+                                                    </div>
+                                                    <div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted">
+                                                        <div class="h-full bg-primary transition-all" style="width: {percentage}%"></div>
+                                                    </div>
+                                                </div>
+                                            {/each}
+                                        </div>
+                                    {:else if vote.method === PropositionVoteMethodEnum.MAJORITY_JUDGMENT}
+                                        {@const optionRatings = results.optionRatings || {}}
+                                        <div class="space-y-2">
+                                            {#each vote.options as option (option.id)}
+                                                {@const stats = optionRatings[option.id] || { median: 0, average: 0 }}
+                                                {@const median = stats.median ?? 0}
+                                                {@const average = stats.average ?? 0}
+                                                <div class="rounded-md border border-border/30 bg-background px-3 py-2">
+                                                    <div class="flex items-center justify-between text-sm">
+                                                        <span class="font-medium text-foreground">{option.label}</span>
+                                                        <span class="text-xs text-muted-foreground">Médiane: {median} | Moyenne: {average.toFixed(1)}</span>
+                                                    </div>
+                                                </div>
+                                            {/each}
+                                        </div>
+                                    {/if}
+                                </div>
+                            {/if}
                         </li>
                     {/each}
                 </ul>
@@ -3048,6 +3556,7 @@
         if (!value) {
             voteForm = { ...defaultVoteForm };
             voteErrors = [];
+            voteFieldErrors = {};
             isVoteSubmitting = false;
             voteOpenInput = null;
             voteCloseInput = null;
@@ -3060,7 +3569,12 @@
             <DialogDescription>{m['proposition-detail.votes.dialog.description']()}</DialogDescription>
         </DialogHeader>
         <form class="grid gap-4" onsubmit={handleVoteSubmit}>
-            <Input name="vote-title" label={m['proposition-detail.votes.form.title']()} bind:value={voteForm.title} required />
+            <div>
+                <Input name="vote-title" label={m['proposition-detail.votes.form.title']()} bind:value={voteForm.title} required />
+                {#if voteFieldErrors.title}
+                    <p class="mt-1 text-xs text-destructive">{voteFieldErrors.title}</p>
+                {/if}
+            </div>
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="flex flex-col gap-2 text-sm text-foreground">
                     {m['proposition-detail.votes.form.phase']()}
@@ -3070,40 +3584,61 @@
                         {/each}
                     </select>
                 </label>
-                <label class="flex flex-col gap-2 text-sm text-foreground">
-                    {m['proposition-detail.votes.form.method']()}
-                    <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={voteForm.method}>
-                        {#each voteMethodOptions as option}
-                            <option value={option}>{translateVoteMethod(option)}</option>
-                        {/each}
-                    </select>
-                </label>
-                <div class="relative">
-                    <Input type="datetime-local" name="vote-open" label={m['proposition-detail.votes.form.openAt']()} bind:value={voteForm.openAt} bind:ref={voteOpenInput} class="pr-12" />
-                    <button
-                        type="button"
-                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                        onclick={() => openNativeDatePicker(voteOpenInput)}
-                        aria-label={m['proposition-detail.votes.form.openAt']()}
-                    >
-                        <CalendarDays class="size-4" />
-                    </button>
+                <div>
+                    <Input type="number" name="vote-max-selections" min="1" label={m['proposition-detail.votes.form.maxSelections']()} bind:value={voteForm.maxSelections} required />
+                    {#if voteFieldErrors.maxSelections}
+                        <p class="mt-1 text-xs text-destructive">{voteFieldErrors.maxSelections}</p>
+                    {/if}
                 </div>
-                <div class="relative">
-                    <Input type="datetime-local" name="vote-close" label={m['proposition-detail.votes.form.closeAt']()} bind:value={voteForm.closeAt} bind:ref={voteCloseInput} class="pr-12" />
-                    <button
-                        type="button"
-                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                        onclick={() => openNativeDatePicker(voteCloseInput)}
-                        aria-label={m['proposition-detail.votes.form.closeAt']()}
-                    >
-                        <CalendarDays class="size-4" />
-                    </button>
+                <div>
+                    <label class="flex flex-col gap-2 text-sm text-foreground">
+                        {m['proposition-detail.votes.form.openAt']()}
+                        <input
+                            type="datetime-local"
+                            name="vote-open"
+                            class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                            bind:value={voteForm.openAt}
+                            bind:this={voteOpenInput}
+                            required
+                        />
+                    </label>
+                    {#if voteFieldErrors.openAt}
+                        <p class="mt-1 text-xs text-destructive">{voteFieldErrors.openAt}</p>
+                    {/if}
                 </div>
-                <Input type="number" name="vote-max-selections" min="0" label={m['proposition-detail.votes.form.maxSelections']()} bind:value={voteForm.maxSelections} />
+                <div>
+                    <label class="flex flex-col gap-2 text-sm text-foreground">
+                        {m['proposition-detail.votes.form.closeAt']()}
+                        <input
+                            type="datetime-local"
+                            name="vote-close"
+                            class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                            bind:value={voteForm.closeAt}
+                            bind:this={voteCloseInput}
+                            required
+                        />
+                    </label>
+                    {#if voteFieldErrors.closeAt}
+                        <p class="mt-1 text-xs text-destructive">{voteFieldErrors.closeAt}</p>
+                    {/if}
+                </div>
             </div>
-            <Textarea name="vote-description" label={m['proposition-detail.votes.form.description']()} rows={3} bind:value={voteForm.description} />
-            <Textarea name="vote-options" label={m['proposition-detail.votes.form.options']()} rows={4} bind:value={voteForm.optionsText} required />
+            <label class="flex items-center gap-2 text-sm text-foreground">
+                <input type="checkbox" name="vote-majority-judgment" class="size-4 rounded border-border/60" bind:checked={voteForm.isMajorityJudgment} />
+                {m['proposition-detail.votes.form.majorityJudgment']()}
+            </label>
+            <div>
+                <Textarea name="vote-description" label={m['proposition-detail.votes.form.description']()} rows={3} bind:value={voteForm.description} />
+                {#if voteFieldErrors.description}
+                    <p class="mt-1 text-xs text-destructive">{voteFieldErrors.description}</p>
+                {/if}
+            </div>
+            <div>
+                <Textarea name="vote-options" label={m['proposition-detail.votes.form.options']()} rows={4} bind:value={voteForm.optionsText} required />
+                {#if voteFieldErrors.optionsText || voteFieldErrors.options}
+                    <p class="mt-1 text-xs text-destructive">{voteFieldErrors.optionsText || voteFieldErrors.options}</p>
+                {/if}
+            </div>
             {#if voteErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each voteErrors as error}
