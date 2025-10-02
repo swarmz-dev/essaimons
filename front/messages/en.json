@@ -637,7 +637,18 @@
             "delete-confirm-description": "This clarification will be permanently removed.",
             "delete-confirm-submit": "Confirm deletion",
             "delete-confirm-title-reply": "Delete reply",
-            "delete-confirm-description-reply": "This reply will be permanently removed."
+            "delete-confirm-description-reply": "This reply will be permanently removed.",
+            "sections": {
+                "general": "General",
+                "description": "Detailed Description",
+                "smart_objectives": "SMART Objectives",
+                "impacts": "Impacts",
+                "mandates": "Mandate Description",
+                "expertise": "Expertise to Involve",
+                "rescue": "Initiator Resource",
+                "associated": "Related Proposals",
+                "attachments": "Attachments"
+            }
         },
         "events": {
             "empty": "No collective session has been scheduled yet.",

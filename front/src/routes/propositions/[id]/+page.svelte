@@ -373,6 +373,8 @@
     let clarificationContent: string = $state('');
     let clarificationErrors: string[] = $state([]);
     let isClarificationSubmitting: boolean = $state(false);
+    let clarificationSection: string = $state('general');
+    let amendmentSection: string = $state('general');
     let isClarificationReplyDialogOpen: boolean = $state(false);
     let clarificationReplyParentId: string | null = $state(null);
     let clarificationReplyContent: string = $state('');
@@ -610,6 +612,25 @@
     });
 
     const rolePermissionMatrix = $derived(buildRolePermissionMap(perStatusPermissions, currentStatus));
+    const openCommentForSection = (section: string): void => {
+        if (currentStatus === PropositionStatusEnum.CLARIFY) {
+            clarificationSection = section;
+            isClarificationDialogOpen = true;
+        } else if (currentStatus === PropositionStatusEnum.AMEND) {
+            amendmentSection = section;
+            isAmendmentDialogOpen = true;
+        }
+    };
+
+    const getSectionLabel = (section?: string | null): string | null => {
+        if (!section || section === 'general') {
+            return null;
+        }
+        const key = `proposition-detail.comments.sections.${section}`;
+        return m[key as keyof typeof m]?.() ?? null;
+    };
+
+    const canCommentOnSection = $derived(currentStatus === PropositionStatusEnum.CLARIFY || currentStatus === PropositionStatusEnum.AMEND);
 
     const submitClarificationComment = async (): Promise<void> => {
         clarificationErrors = [];
@@ -629,11 +650,13 @@
                         scope: PropositionCommentScopeEnum.CLARIFICATION,
                         visibility: PropositionCommentVisibilityEnum.PUBLIC,
                         content: result.data.content,
+                        section: clarificationSection,
                     },
                 },
                 ({ comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     clarificationContent = '';
+                    clarificationSection = 'general';
                     clarificationErrors = [];
                     isClarificationDialogOpen = false;
                 },
@@ -814,11 +837,13 @@
                         scope: PropositionCommentScopeEnum.AMENDMENT,
                         visibility: PropositionCommentVisibilityEnum.PUBLIC,
                         content: result.data.content,
+                        section: amendmentSection,
                     },
                 },
                 ({ comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     amendmentContent = '';
+                    amendmentSection = 'general';
                     isAmendmentDialogOpen = false;
                 },
                 ({ message }) => {
@@ -1659,7 +1684,19 @@
         <section class="grid gap-6 lg:grid-cols-[2fr,1fr]">
             <div class="space-y-6">
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.description']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.description']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('description')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if detailedDescriptionHasHtml}
                         <div class="mt-3 text-sm leading-relaxed text-foreground">
                             {@html proposition.detailedDescription}
@@ -1669,7 +1706,19 @@
                     {/if}
                 </article>
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.objectives']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.objectives']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('smart_objectives')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if smartObjectivesHasHtml}
                         <div class="mt-3 text-sm leading-relaxed text-foreground">
                             {@html proposition.smartObjectives}
@@ -1679,7 +1728,19 @@
                     {/if}
                 </article>
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.impacts']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.impacts']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('impacts')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if impactsHasHtml}
                         <div class="mt-3 text-sm leading-relaxed text-foreground">
                             {@html proposition.impacts}
@@ -1689,7 +1750,19 @@
                     {/if}
                 </article>
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.mandates']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.mandates']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('mandates')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if mandatesHasHtml}
                         <div class="mt-3 text-sm leading-relaxed text-foreground">
                             {@html proposition.mandatesDescription}
@@ -1699,7 +1772,19 @@
                     {/if}
                 </article>
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.expertise']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.expertise']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('expertise')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if hasExpertise}
                         {#if expertiseHasHtml}
                             <div class="mt-3 text-sm leading-relaxed text-foreground">
@@ -1716,7 +1801,19 @@
 
             <aside class="space-y-6">
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.rescue']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.rescue']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('rescue')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if hasRescueInitiators}
                         <ul class="mt-3 space-y-2 text-sm text-foreground">
                             {#each proposition.rescueInitiators as user (user.id)}
@@ -1731,7 +1828,19 @@
                 </article>
 
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.associated']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.associated']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('associated')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if hasAssociated}
                         <ul class="mt-3 space-y-2 text-sm">
                             {#each proposition.associatedPropositions as linked (linked.id)}
@@ -1748,7 +1857,19 @@
                 </article>
 
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.attachments']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.attachments']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('attachments')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if hasAttachments}
                         <ul class="mt-3 space-y-3 text-sm">
                             {#each proposition.attachments as attachment (attachment.id)}
@@ -1786,7 +1907,12 @@
                     {#each commentsByScope.clarification as comment (comment.id)}
                         <li class="space-y-3 rounded-xl border border-border/40 bg-card/60 p-4">
                             <div class="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                                <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                <div class="flex items-center gap-2">
+                                    <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                    {#if getSectionLabel(comment.section)}
+                                        <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{getSectionLabel(comment.section)}</span>
+                                    {/if}
+                                </div>
                                 <div class="flex items-center gap-2">
                                     <span>{formatDateTime(comment.createdAt)}</span>
                                     {#if comment.editable}
@@ -1929,7 +2055,12 @@
                         {#each commentsByScope.amendment as comment (comment.id)}
                             <li class="space-y-3 rounded-xl border border-border/40 bg-card/60 p-4">
                                 <div class="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                                    <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                        {#if getSectionLabel(comment.section)}
+                                            <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{getSectionLabel(comment.section)}</span>
+                                        {/if}
+                                    </div>
                                     <div class="flex items-center gap-2">
                                         <span>{formatDateTime(comment.createdAt)}</span>
                                         {#if comment.editable}
@@ -2248,7 +2379,12 @@
                         {#each commentsByScope.evaluation as comment (comment.id)}
                             <li class="rounded-xl border border-border/40 bg-card/60 p-4">
                                 <div class="flex items-center justify-between text-xs text-muted-foreground">
-                                    <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                        {#if getSectionLabel(comment.section)}
+                                            <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{getSectionLabel(comment.section)}</span>
+                                        {/if}
+                                    </div>
                                     <span>{formatDateTime(comment.createdAt)}</span>
                                 </div>
                                 <p class="mt-2 text-sm text-foreground/90 whitespace-pre-wrap">{comment.content}</p>
@@ -2270,6 +2406,25 @@
             <DialogDescription>{m['proposition-detail.comments.dialog.description']()}</DialogDescription>
         </DialogHeader>
         <form class="space-y-4" onsubmit={handleClarificationSubmit}>
+            <label class="flex flex-col gap-2 text-sm text-foreground">
+                Section
+                <select
+                    name="section"
+                    class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    bind:value={clarificationSection}
+                >
+                    <option value="general">Général</option>
+                    <option value="description">Description détaillée</option>
+                    <option value="smart_objectives">Objectifs SMART</option>
+                    <option value="impacts">Impacts</option>
+                    <option value="mandates">Description des mandats</option>
+                    <option value="expertise">Expertises à impliquer</option>
+                    <option value="rescue">Ressource initiatrice</option>
+                    <option value="associated">Propositions liées</option>
+                    <option value="attachments">Pièces jointes</option>
+                </select>
+            </label>
+
             <Textarea name="clarification-content" label={m['proposition-detail.comments.dialog.label']()} rows={10} bind:value={clarificationContent} required />
             {#if clarificationErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
@@ -2750,6 +2905,21 @@
             <DialogDescription>{m['proposition-detail.comments.amendment-dialog.description']()}</DialogDescription>
         </DialogHeader>
         <form class="space-y-4" onsubmit={handleAmendmentSubmit}>
+            <label class="flex flex-col gap-2 text-sm text-foreground">
+                Section
+                <select name="section" class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40" bind:value={amendmentSection}>
+                    <option value="general">Général</option>
+                    <option value="description">Description détaillée</option>
+                    <option value="smart_objectives">Objectifs SMART</option>
+                    <option value="impacts">Impacts</option>
+                    <option value="mandates">Description des mandats</option>
+                    <option value="expertise">Expertises à impliquer</option>
+                    <option value="rescue">Ressource initiatrice</option>
+                    <option value="associated">Propositions liées</option>
+                    <option value="attachments">Pièces jointes</option>
+                </select>
+            </label>
+
             <Textarea name="amendment-content" label={m['proposition-detail.comments.amendment-dialog.label']()} rows={10} bind:value={amendmentContent} required />
             {#if amendmentErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">

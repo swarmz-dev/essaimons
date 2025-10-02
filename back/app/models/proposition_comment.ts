@@ -22,6 +22,9 @@ export default class PropositionComment extends BaseModel {
     declare scope: PropositionCommentScopeEnum;
 
     @column()
+    declare section: string | null;
+
+    @column()
     declare visibility: PropositionCommentVisibilityEnum;
 
     @column()

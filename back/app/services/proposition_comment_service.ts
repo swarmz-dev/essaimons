@@ -7,6 +7,7 @@ import { PropositionCommentScopeEnum, PropositionCommentVisibilityEnum } from '#
 
 interface CreateCommentPayload {
     scope: PropositionCommentScopeEnum;
+    section?: string;
     visibility?: PropositionCommentVisibilityEnum;
     content: string;
     parentId?: string | null;
@@ -44,6 +45,7 @@ export default class PropositionCommentService {
             parentId: payload.parentId ?? null,
             authorId: actor.id,
             scope: payload.scope,
+            section: payload.section || null,
             visibility: payload.visibility ?? PropositionCommentVisibilityEnum.PUBLIC,
             content: normalizedContent,
         });

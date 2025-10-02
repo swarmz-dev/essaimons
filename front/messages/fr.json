@@ -637,7 +637,18 @@
             "delete-confirm-description": "Cette clarification sera définitivement supprimée.",
             "delete-confirm-submit": "Confirmer la suppression",
             "delete-confirm-title-reply": "Supprimer la réponse",
-            "delete-confirm-description-reply": "Cette réponse sera définitivement supprimée."
+            "delete-confirm-description-reply": "Cette réponse sera définitivement supprimée.",
+            "sections": {
+                "general": "Général",
+                "description": "Description détaillée",
+                "smart_objectives": "Objectifs SMART",
+                "impacts": "Impacts",
+                "mandates": "Description des mandats",
+                "expertise": "Expertises à impliquer",
+                "rescue": "Ressource initiatrice",
+                "associated": "Propositions liées",
+                "attachments": "Pièces jointes"
+            }
         },
         "events": {
             "empty": "Aucun temps d'échange n'a encore été planifié.",
