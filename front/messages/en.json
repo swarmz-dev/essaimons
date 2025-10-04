@@ -68,6 +68,25 @@
         "actions": {
             "cancel": "Cancel",
             "loading": "Saving…"
+        },
+        "rich-text-editor": {
+            "paste-hint": "Use Ctrl+Shift+V to paste without formatting",
+            "tooltips": {
+                "bold": "Bold",
+                "italic": "Italic",
+                "underline": "Underline",
+                "header": "Header",
+                "list-ordered": "Numbered list",
+                "list-bullet": "Bulleted list",
+                "blockquote": "Quote",
+                "code-block": "Code block (view code)",
+                "link": "Link",
+                "clean": "Remove formatting"
+            },
+            "active-label": "HTML editor active",
+            "loading-label": "Loading editor...",
+            "toggle-html": "Show HTML source",
+            "toggle-visual": "Return to visual editor"
         }
     },
     "open-graph": {

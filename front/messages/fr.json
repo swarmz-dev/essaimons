@@ -68,6 +68,25 @@
         "actions": {
             "cancel": "Annuler",
             "loading": "Enregistrement en cours…"
+        },
+        "rich-text-editor": {
+            "paste-hint": "Utilisez Ctrl+Shift+V pour coller sans formatage",
+            "tooltips": {
+                "bold": "Gras",
+                "italic": "Italique",
+                "underline": "Souligné",
+                "header": "Titre",
+                "list-ordered": "Liste numérotée",
+                "list-bullet": "Liste à puces",
+                "blockquote": "Citation",
+                "code-block": "Bloc de code (afficher le code)",
+                "link": "Lien",
+                "clean": "Supprimer le formatage"
+            },
+            "active-label": "Éditeur HTML actif",
+            "loading-label": "Chargement de l'éditeur...",
+            "toggle-html": "Afficher le code HTML",
+            "toggle-visual": "Retour à l'éditeur visuel"
         }
     },
     "open-graph": {
