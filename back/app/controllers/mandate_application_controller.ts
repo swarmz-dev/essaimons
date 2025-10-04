@@ -6,7 +6,6 @@ import PropositionMandate from '#models/proposition_mandate';
 import MandateApplication from '#models/mandate_application';
 import type Proposition from '#models/proposition';
 import type User from '#models/user';
-import { DateTime } from 'luxon';
 import { serializeMandate, serializeMandateApplication } from '#serializers/mandate_serializer';
 
 @inject()

@@ -1,5 +1,4 @@
 import { inject } from '@adonisjs/core';
-import { DateTime } from 'luxon';
 import PropositionVote from '#models/proposition_vote';
 import VoteBallot from '#models/vote_ballot';
 import type User from '#models/user';
@@ -60,7 +59,7 @@ export default class VoteBallotService {
         const ballot = await VoteBallot.create({
             voteId: vote.id,
             voterId: actor.id,
-            payload: payload as Record<string, unknown>,
+            payload: payload as unknown as Record<string, unknown>,
         });
 
         return ballot;
@@ -145,7 +144,7 @@ export default class VoteBallotService {
         vote.options.forEach((opt) => (counts[opt.id] = 0));
 
         for (const ballot of ballots) {
-            const payload = ballot.payload as BinaryBallotPayload;
+            const payload = ballot.payload as unknown as BinaryBallotPayload;
             if (payload.optionId && counts[payload.optionId] !== undefined) {
                 counts[payload.optionId]++;
             }
@@ -159,7 +158,7 @@ export default class VoteBallotService {
         vote.options.forEach((opt) => (counts[opt.id] = 0));
 
         for (const ballot of ballots) {
-            const payload = ballot.payload as MultiChoiceBallotPayload;
+            const payload = ballot.payload as unknown as MultiChoiceBallotPayload;
             if (Array.isArray(payload.optionIds)) {
                 for (const optionId of payload.optionIds) {
                     if (counts[optionId] !== undefined) {
@@ -177,7 +176,7 @@ export default class VoteBallotService {
         vote.options.forEach((opt) => (ratings[opt.id] = []));
 
         for (const ballot of ballots) {
-            const payload = ballot.payload as MajorityJudgmentBallotPayload;
+            const payload = ballot.payload as unknown as MajorityJudgmentBallotPayload;
             if (payload.ratings) {
                 for (const [optionId, rating] of Object.entries(payload.ratings)) {
                     if (ratings[optionId]) {

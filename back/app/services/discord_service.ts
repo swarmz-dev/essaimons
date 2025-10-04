@@ -94,7 +94,7 @@ export default class DiscordService {
                 throw new Error(`Discord API error: ${response.status}`);
             }
 
-            const event = await response.json();
+            const event = (await response.json()) as { id: string };
 
             // Generate invite URL for the event
             const inviteUrl = `https://discord.gg/events/${settings.guildId}/${event.id}`;
@@ -122,7 +122,7 @@ export default class DiscordService {
                 throw new Error(`Discord API error: ${response.status} - ${errorData}`);
             }
 
-            const guilds = await response.json();
+            const guilds = (await response.json()) as DiscordGuild[];
             return guilds;
         } catch (error) {
             logger.error('Failed to list Discord guilds:', error);
@@ -142,9 +142,9 @@ export default class DiscordService {
                 throw new Error(`Discord API error: ${response.status}`);
             }
 
-            const channels = await response.json();
+            const channels = (await response.json()) as DiscordChannel[];
             // Filter only voice channels (type 2)
-            return channels.filter((channel: DiscordChannel) => channel.type === 2);
+            return channels.filter((channel) => channel.type === 2);
         } catch (error) {
             logger.error('Failed to list Discord channels:', error);
             throw error;
