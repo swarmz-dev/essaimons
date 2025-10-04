@@ -41,7 +41,7 @@ export default class Proposition extends BaseModel {
     declare impacts: string;
 
     @column()
-    declare mandatesDescription: string; // Description des mandats
+    declare mandatesDescription: string; // Mandates description
 
     @column()
     declare expertise?: string | null;

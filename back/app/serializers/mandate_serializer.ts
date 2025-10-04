@@ -89,7 +89,7 @@ export function serializeMandateRevocationRequest(request: MandateRevocationRequ
 }
 
 export function serializeMandate(mandate: PropositionMandate): SerializedMandate {
-    // Vérifier si les relations sont préchargées avant d'y accéder
+    // Check if relations are preloaded before accessing them
     const holderPreloaded = mandate.$preloaded?.holder !== undefined;
     const deliverablesPreloaded = mandate.$preloaded?.deliverables !== undefined;
     const applicationsPreloaded = mandate.$preloaded?.applications !== undefined;

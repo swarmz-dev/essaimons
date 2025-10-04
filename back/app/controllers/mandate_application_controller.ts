@@ -27,7 +27,7 @@ export default class MandateApplicationController {
                 return response.badRequest({ error: 'Description is required' });
             }
 
-            // Vérifier si l'utilisateur a déjà postulé
+            // Check if the user has already applied
             const existing = await MandateApplication.query()
                 .where('mandate_id', mandate.id)
                 .where('applicant_user_id', (user as User).id)

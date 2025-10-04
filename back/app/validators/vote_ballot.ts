@@ -2,13 +2,13 @@ import vine from '@vinejs/vine';
 
 export const castBallotValidator = vine.compile(
     vine.object({
-        // Pour vote binaire
+        // For binary vote
         optionId: vine.string().trim().optional(),
 
-        // Pour choix multiple
+        // For multiple choice
         optionIds: vine.array(vine.string().trim()).optional(),
 
-        // Pour jugement majoritaire
+        // For majority judgment
         ratings: vine.object({}).allowUnknownProperties().optional(),
     })
 );

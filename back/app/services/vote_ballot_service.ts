@@ -30,7 +30,7 @@ export default class VoteBallotService {
     }
 
     public async cast(proposition: Proposition, vote: PropositionVote, actor: User, payload: CastBallotPayload): Promise<VoteBallot> {
-        // Vérifier la permission de voter (contributors, initiators, and admins can vote)
+        // Check voting permission (contributors, initiators, and admins can vote)
         const allowed = await this.workflowService.canPerform(proposition, actor, 'participate_vote');
         const isInitiator = proposition.creatorId === actor.id;
         const isAdmin = actor.role === 'admin';
@@ -39,24 +39,24 @@ export default class VoteBallotService {
             throw new Error('forbidden:vote');
         }
 
-        // Vérifier que le vote est ouvert
+        // Check that the vote is open
         if (vote.status !== PropositionVoteStatusEnum.OPEN) {
             throw new Error('vote.not_open');
         }
 
-        // Vérifier qu'on n'a pas déjà voté
+        // Check that the user hasn't already voted
         const existing = await this.getUserBallot(vote, actor);
         if (existing) {
             throw new Error('vote.already_voted');
         }
 
-        // Charger les options du vote
+        // Load vote options
         await vote.load('options');
 
-        // Valider le bulletin selon la méthode de vote
+        // Validate the ballot according to the voting method
         this.validateBallot(vote, payload);
 
-        // Créer le bulletin
+        // Create the ballot
         const ballot = await VoteBallot.create({
             voteId: vote.id,
             voterId: actor.id,
@@ -67,7 +67,7 @@ export default class VoteBallotService {
     }
 
     public async revoke(vote: PropositionVote, ballot: VoteBallot, actor: User): Promise<void> {
-        // Seul le votant ou un admin peut révoquer
+        // Only the voter or an admin can revoke
         if (ballot.voterId !== actor.id && actor.role !== 'admin') {
             throw new Error('forbidden:revoke_ballot');
         }
@@ -82,7 +82,7 @@ export default class VoteBallotService {
     }
 
     public async getResults(vote: PropositionVote): Promise<Record<string, unknown>> {
-        // Charger les bulletins non révoqués
+        // Load non-revoked ballots
         const ballots = await VoteBallot.query().where('voteId', vote.id).whereNull('revokedAt');
 
         await vote.load('options');
@@ -130,7 +130,7 @@ export default class VoteBallotService {
             if (!mjPayload.ratings || typeof mjPayload.ratings !== 'object') {
                 throw new Error('ballot.invalid_ratings');
             }
-            // Vérifier que toutes les options ont une note
+            // Check that all options have a rating
             for (const optionId of optionIds) {
                 const rating = mjPayload.ratings[optionId];
                 if (rating === undefined || rating < 0 || rating > 5) {
