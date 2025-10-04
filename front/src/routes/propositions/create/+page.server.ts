@@ -111,7 +111,7 @@ export const actions = {
         }
 
         if (isSuccess) {
-            redirect(303, '/', { type: 'success', message: data?.message }, event);
+            redirect(303, '/propositions', { type: 'success', message: data?.message }, event);
         } else {
             const formDataRecord = extractFormData(formData);
 
