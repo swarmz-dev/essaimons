@@ -275,7 +275,13 @@
         if (!value) {
             return false;
         }
+        // Always return true if there are any HTML tags, including Quill's default <p> tags
         return HTML_TAG_PATTERN.test(value);
+    };
+
+    // Fields that are always created with RichTextEditor should always be rendered as HTML
+    const isRichTextField = (fieldName: string): boolean => {
+        return ['detailedDescription', 'smartObjectives', 'impacts', 'mandatesDescription'].includes(fieldName);
     };
 
     const buildTimeline = (): PropositionTimelinePhase[] => {
@@ -1908,10 +1914,11 @@
     const hasAssociated = $derived((proposition.associatedPropositions ?? []).length > 0);
     const hasAttachments = $derived((proposition.attachments ?? []).length > 0);
 
-    const detailedDescriptionHasHtml = $derived(containsHtml(proposition.detailedDescription));
-    const smartObjectivesHasHtml = $derived(containsHtml(proposition.smartObjectives));
-    const impactsHasHtml = $derived(containsHtml(proposition.impacts));
-    const mandatesHasHtml = $derived(containsHtml(proposition.mandatesDescription));
+    // These fields are always created with RichTextEditor, so always render as HTML
+    const detailedDescriptionHasHtml = $derived(true);
+    const smartObjectivesHasHtml = $derived(true);
+    const impactsHasHtml = $derived(true);
+    const mandatesHasHtml = $derived(true);
     const expertiseHasHtml = $derived(containsHtml(proposition.expertise));
 </script>
 
@@ -3927,6 +3934,113 @@
 
     .status-select option:disabled {
         color: #999;
+    }
+
+    /* Quill HTML content styles */
+    :global(.proposition-detail article div:has(> p)) {
+        font-size: 0.875rem;
+        line-height: 1.25;
+    }
+
+    :global(.proposition-detail article p) {
+        margin-bottom: 0.5rem;
+        line-height: 1.25;
+    }
+
+    :global(.proposition-detail article p:last-child) {
+        margin-bottom: 0;
+    }
+
+    :global(.proposition-detail article h1) {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    :global(.proposition-detail article h2) {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        margin-top: 0.75rem;
+    }
+
+    :global(.proposition-detail article h3) {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        margin-top: 0.75rem;
+    }
+
+    :global(.proposition-detail article ul),
+    :global(.proposition-detail article ol) {
+        margin-left: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    :global(.proposition-detail article ul) {
+        list-style-type: disc;
+    }
+
+    :global(.proposition-detail article ol) {
+        list-style-type: decimal;
+    }
+
+    :global(.proposition-detail article li) {
+        margin-bottom: 0.25rem;
+    }
+
+    :global(.proposition-detail article blockquote) {
+        border-left: 4px solid hsl(var(--primary));
+        padding-left: 1rem;
+        margin-left: 0;
+        margin-bottom: 0.75rem;
+        font-style: italic;
+        color: hsl(var(--muted-foreground));
+    }
+
+    :global(.proposition-detail article pre) {
+        background-color: hsl(var(--muted));
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        overflow-x: auto;
+        font-family: monospace;
+        font-size: 0.875rem;
+    }
+
+    :global(.proposition-detail article code) {
+        background-color: hsl(var(--muted));
+        border-radius: 0.25rem;
+        padding: 0.125rem 0.25rem;
+        font-family: monospace;
+        font-size: 0.875rem;
+    }
+
+    :global(.proposition-detail article pre code) {
+        background-color: transparent;
+        padding: 0;
+    }
+
+    :global(.proposition-detail article a) {
+        color: hsl(var(--primary));
+        text-decoration: underline;
+    }
+
+    :global(.proposition-detail article a:hover) {
+        opacity: 0.8;
+    }
+
+    :global(.proposition-detail article strong) {
+        font-weight: 600;
+    }
+
+    :global(.proposition-detail article em) {
+        font-style: italic;
+    }
+
+    :global(.proposition-detail article u) {
+        text-decoration: underline;
     }
 
     @media print {
