@@ -51,6 +51,18 @@
                     "invalid-url": "Le lien du code source doit être une URL valide pour la langue {locale}"
                 }
             }
+        },
+        "discord": {
+            "update": {
+                "success": "Paramètres Discord mis à jour avec succès",
+                "error": "Erreur lors de la mise à jour des paramètres Discord"
+            },
+            "list-guilds": {
+                "error": "Erreur lors de la récupération des serveurs Discord"
+            },
+            "list-channels": {
+                "error": "Erreur lors de la récupération des canaux Discord"
+            }
         }
     },
     "auth": {
@@ -173,6 +185,15 @@
         "evaluate": {
             "forbidden": "Vous n’êtes pas autorisé à évaluer ce livrable.",
             "failed": "Impossible d’enregistrer l’évaluation."
+        }
+    },
+    "discord": {
+        "create-event": {
+            "success": "Événement Discord créé avec succès",
+            "error": {
+                "not-configured": "L'intégration Discord n'est pas configurée",
+                "default": "Erreur lors de la création de l'événement Discord"
+            }
         }
     }
 }

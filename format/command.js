@@ -24,6 +24,12 @@ const formatAll = () => {
 
             execSync(`npx prettier ${prettierFlag} ${glob} --ignore-unknown`, { stdio: 'inherit', cwd: dir });
         });
+
+        // Run ESLint on backend
+        const backDir = join(root, 'back');
+        console.log(`${isCheck ? 'Checking' : 'Linting'} backend with ESLint -> ${backDir}`);
+        const eslintFlag = isCheck ? '' : '--fix';
+        execSync(`npm run lint ${eslintFlag}`, { stdio: 'inherit', cwd: backDir });
     } catch (err) {
         console.error('Format error :', err);
         process.exit(1);

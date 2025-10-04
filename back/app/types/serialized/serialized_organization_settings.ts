@@ -12,7 +12,7 @@ export type SerializedOrganizationSettings = {
     logo: SerializedFile | null;
     propositionDefaults: {
         clarificationOffsetDays: number;
-        improvementOffsetDays: number;
+        amendmentOffsetDays: number;
         voteOffsetDays: number;
         mandateOffsetDays: number;
         evaluationOffsetDays: number;

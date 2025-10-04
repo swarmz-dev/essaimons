@@ -371,7 +371,7 @@
             },
             "horizontality": {
                 "title": "Informations d'horizontalité",
-                "description": "Précisez le résumé de contexte, les échéances clés et la description des mandatures."
+                "description": "Précisez le résumé de contexte, les échéances clés et la description des mandats."
             },
             "robustness": {
                 "title": "Informations de robustesse",
@@ -412,15 +412,15 @@
                 "info": "Exposez l'origine de la proposition : idée, problématique rencontrée, événement déclencheur, échanges préparatoires ou propositions précédentes."
             },
             "mandates-description": {
-                "label": "Description des mandatures",
+                "label": "Description des mandats",
                 "info": "Précisez pour chaque mandat les actions attendues, les objectifs SMART associés, les moyens estimés, les compétences requises et les modalités d'attribution."
             },
             "clarification-deadline": {
                 "label": "Échéance de clarification",
                 "info": "Date limite pour clarifier le contenu initial de la proposition avec les parties prenantes."
             },
-            "improvement-deadline": {
-                "label": "Échéance d'amélioration",
+            "amendment-deadline": {
+                "label": "Échéance d'amendement",
                 "info": "Date cible pour finaliser les ajustements issus des retours et contributions."
             },
             "vote-deadline": {
@@ -428,7 +428,7 @@
                 "info": "Date prévue pour soumettre la proposition au vote ou à la décision formelle."
             },
             "mandate-deadline": {
-                "label": "Échéance de mise en œuvre des mandatures",
+                "label": "Échéance de mise en œuvre des mandats",
                 "info": "Date à laquelle les mandats doivent être opérationnels si la proposition est retenue."
             },
             "evaluation-deadline": {
@@ -463,9 +463,11 @@
             "previous": "Précédent",
             "next": "Suivant",
             "submit": "Publier la proposition",
-            "submitting": "Envoi en cours…",
+            "submitting": "Publication en cours…",
+            "save-draft": "Enregistrer un brouillon",
+            "saving-draft": "Enregistrement en cours…",
             "concretization-hint": "Renseignez le cadre général avant de passer aux aspects collaboratifs.",
-            "horizontality-hint": "Documentez le contexte partagé, les délais et les mandatures associées.",
+            "horizontality-hint": "Documentez le contexte partagé, les délais et les mandats associés.",
             "robustness-hint": "Analysez les impacts, les expertises nécessaires et les liens avec d'autres propositions."
         },
         "crop": {
@@ -635,7 +637,18 @@
             "delete-confirm-description": "Cette clarification sera définitivement supprimée.",
             "delete-confirm-submit": "Confirmer la suppression",
             "delete-confirm-title-reply": "Supprimer la réponse",
-            "delete-confirm-description-reply": "Cette réponse sera définitivement supprimée."
+            "delete-confirm-description-reply": "Cette réponse sera définitivement supprimée.",
+            "sections": {
+                "general": "Général",
+                "description": "Description détaillée",
+                "smart_objectives": "Objectifs SMART",
+                "impacts": "Impacts",
+                "mandates": "Description des mandats",
+                "expertise": "Expertises à impliquer",
+                "rescue": "Ressource initiatrice",
+                "associated": "Propositions liées",
+                "attachments": "Pièces jointes"
+            }
         },
         "events": {
             "empty": "Aucun temps d'échange n'a encore été planifié.",
@@ -661,8 +674,8 @@
                 "description": "Description"
             },
             "type": {
-                "milestone": "Jalon",
-                "exchange": "Échange",
+                "milestone": "Amendement",
+                "exchange": "Candidature",
                 "evaluation": "Évaluation"
             },
             "delete": {
@@ -690,11 +703,25 @@
                 "openAt": "Ouverture",
                 "closeAt": "Clôture",
                 "maxSelections": "Sélections maximales",
+                "majorityJudgment": "Jugement majoritaire",
                 "description": "Description",
                 "options": "Options (une par ligne)"
             },
             "options-empty": "Veuillez renseigner au moins une option de vote.",
-            "max-invalid": "Le nombre maximal de sélections doit être un nombre positif.",
+            "max-invalid": "Le nombre maximal de sélections doit être au moins 1.",
+            "errors": {
+                "title-required": "Le titre est requis",
+                "title-too-long": "Le titre ne peut pas dépasser 255 caractères",
+                "description-too-long": "La description ne peut pas dépasser 1000 caractères",
+                "max-selections-invalid": "Le nombre maximal de sélections doit être un nombre positif",
+                "option-label-required": "Le libellé de l'option est requis",
+                "option-label-too-long": "Le libellé de l'option ne peut pas dépasser 255 caractères",
+                "option-description-too-long": "La description de l'option ne peut pas dépasser 1000 caractères",
+                "options-required": "Au moins une option est requise",
+                "open-at-required": "La date d'ouverture est requise",
+                "close-at-required": "La date de clôture est requise",
+                "close-before-open": "La date de clôture doit être après la date d'ouverture"
+            },
             "phase": {
                 "vote": "Vote",
                 "mandate": "Mandat",
@@ -712,6 +739,7 @@
         "mandates": {
             "empty": "Aucun mandat n'a encore été créé.",
             "add": "Créer un mandat",
+            "apply": "Proposer une candidature",
             "dialog": {
                 "title": "Créer un mandat",
                 "description": "Attribuez des responsabilités et suivez les livrables associés à cette proposition.",
@@ -720,15 +748,15 @@
             "form": {
                 "title": "Titre",
                 "description": "Description",
-                "holder": "Identifiant du mandataire",
+                "holder": "Mandataire",
+                "holderPlaceholder": "Rechercher un mandataire",
                 "status": "Statut",
                 "targetObjectiveRef": "Objectif associé",
                 "initialDeadline": "Échéance initiale",
                 "currentDeadline": "Échéance actuelle"
             },
             "status": {
-                "draft": "Brouillon",
-                "pending": "En attente",
+                "to_assign": "À mandater",
                 "active": "Actif",
                 "completed": "Terminé",
                 "revoked": "Révoqué"

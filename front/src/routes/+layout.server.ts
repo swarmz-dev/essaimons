@@ -51,7 +51,7 @@ export const load: LayoutServerLoad = loadFlash(
             logo: null,
             propositionDefaults: {
                 clarificationOffsetDays: 7,
-                improvementOffsetDays: 15,
+                amendmentOffsetDays: 15,
                 voteOffsetDays: 7,
                 mandateOffsetDays: 15,
                 evaluationOffsetDays: 30,
@@ -90,6 +90,7 @@ export const load: LayoutServerLoad = loadFlash(
 
         if (!userCookie) {
             cookies.delete('token', { path: '/' });
+            cookies.delete('client_token', { path: '/' });
             if (openedPathNames.some((openedPathName: OpenedPathName): boolean => location.startsWith(openedPathName.pathname))) {
                 if (formError) {
                     cookies.delete('formError', { path: '/' });
@@ -147,6 +148,7 @@ export const load: LayoutServerLoad = loadFlash(
                 } catch (error) {
                     cookies.delete('user', { path: '/' });
                     cookies.delete('token', { path: '/' });
+                    cookies.delete('client_token', { path: '/' });
                     cookies.delete('authValidatedAt', { path: '/' });
                     cookies.set('previousPathName', `${location}${url.search}`, {
                         path: '/',

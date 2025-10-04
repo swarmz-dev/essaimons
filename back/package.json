@@ -7,7 +7,9 @@
         "install:prod": "rm -rf node_modules && npm ci --omit=\"dev\"",
         "build": "node ace build",
         "dev": "node ace serve --hmr",
-        "test": "node ace test"
+        "test": "node ace test",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix"
     },
     "exports": {
         "./types": "./app/types/index.ts"
@@ -45,6 +47,10 @@
         "@types/luxon": "^3.7.1",
         "@types/mime-types": "^3.0.1",
         "@types/node": "^24.3.0",
+        "@types/web-push": "^3.6.4",
+        "@typescript-eslint/eslint-plugin": "^8.45.0",
+        "@typescript-eslint/parser": "^8.45.0",
+        "eslint": "^9.37.0",
         "hot-hook": "^0.4.0",
         "typescript": "~5.9"
     },
@@ -56,17 +62,19 @@
         "@adonisjs/i18n": "^2.2.2",
         "@adonisjs/lucid": "^21.8.0",
         "@adonisjs/transmit": "^2.0.2",
-        "@vinejs/vine": "^3.0.1",
         "@aws-sdk/client-s3": "^3.637.0",
+        "@vinejs/vine": "^3.0.1",
         "axios": "^1.11.0",
         "chokidar": "^4.0.3",
         "file-type": "^21.0.0",
         "luxon": "^3.7.1",
         "mime-types": "^3.0.1",
         "pg": "^8.16.3",
+        "pg-boss": "^10.3.3",
         "pino-pretty": "^13.1.1",
         "reflect-metadata": "^0.2.2",
-        "ts-node-maintained": "^10.9.6"
+        "ts-node-maintained": "^10.9.6",
+        "web-push": "^3.6.7"
     },
     "hotHook": {
         "boundaries": [

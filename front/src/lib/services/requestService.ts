@@ -2,9 +2,22 @@ import { showToast } from '#lib/services/toastService';
 import { navigate } from '#lib/stores/locationStore';
 import type { PageDataError } from '../../app';
 import { m } from '#lib/paraglide/messages';
+import { browser } from '$app/environment';
+import { PUBLIC_API_BASE_URI } from '$env/static/public';
+
+const API_BASE_URL = browser ? `${PUBLIC_API_BASE_URI}/api` : '';
 
 interface WrappedFetchOptions extends Omit<RequestInit, 'body'> {
     body?: Record<string, any> | FormData;
+}
+
+// Helper to get cookie value
+function getCookie(name: string): string | null {
+    if (!browser) return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+    return null;
 }
 
 export const wrappedFetch = async (
@@ -21,6 +34,14 @@ export const wrappedFetch = async (
         credentials: options.credentials ?? 'include',
     };
 
+    // Add Authorization header with token from cookie
+    if (browser) {
+        const token = getCookie('client_token');
+        if (token) {
+            headers.set('Authorization', `Bearer ${token}`);
+        }
+    }
+
     if (options.body instanceof FormData) {
         fetchOptions.body = options.body;
     } else if (options.body && typeof options.body === 'object') {
@@ -30,7 +51,10 @@ export const wrappedFetch = async (
         }
     }
 
-    const response: Response = await fetch(input, fetchOptions);
+    // Prepend API_BASE_URL for client-side requests
+    const url = typeof input === 'string' && browser && !input.startsWith('http') ? `${API_BASE_URL}${input}` : input;
+
+    const response: Response = await fetch(url, fetchOptions);
 
     if (response.status === 401) {
         try {
@@ -43,24 +67,36 @@ export const wrappedFetch = async (
 
     try {
         if (!response.ok) {
-            throw response;
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Request failed:', response.status, errorData);
+            await onError?.(errorData);
+            return { isSuccess: false, ...errorData };
+        }
+
+        // Handle 204 No Content responses
+        if (response.status === 204) {
+            await onSuccess?.({});
+            return { isSuccess: true };
         }
 
         const data: any = await response.json();
 
         if (data.message) {
-            showToast(data.message, data.isSuccess ? 'success' : 'error');
+            showToast(data.message, data.isSuccess !== false ? 'success' : 'error');
         }
 
-        if (data.isSuccess) {
-            await onSuccess?.(data);
-        } else {
+        // If isSuccess is explicitly false, call onError
+        // Otherwise, for successful HTTP responses, call onSuccess
+        if (data.isSuccess === false) {
             await onError?.(data);
+        } else {
+            await onSuccess?.(data);
         }
 
-        return data;
+        return { isSuccess: true, ...data };
     } catch (error: any) {
-        return undefined;
+        console.error('Request error:', error);
+        return { isSuccess: false, error: error?.message || 'Unknown error' };
     }
 };
 

@@ -9,7 +9,13 @@ import type { SerializedDeliverableEvaluation, SerializedMandate, SerializedMand
 
 const toIso = (value?: DateTime | null): string | null => (value ? value.toISO() : null);
 
-const serializeUserSummary = (user?: User | null) => (user ? user.summarySerialize() : undefined);
+const serializeUserSummary = (user?: User | null) => {
+    if (!user) {
+        console.warn('serializeUserSummary called with undefined/null user');
+        return undefined;
+    }
+    return user.summarySerialize();
+};
 
 export function serializeDeliverableEvaluation(evaluation: DeliverableEvaluation): SerializedDeliverableEvaluation {
     return {
@@ -26,6 +32,12 @@ export function serializeDeliverableEvaluation(evaluation: DeliverableEvaluation
 }
 
 export function serializeMandateDeliverable(deliverable: MandateDeliverable): SerializedMandateDeliverable {
+    // Debug logging
+    if (!deliverable.uploadedBy && deliverable.uploadedByUserId) {
+        console.error('ERROR: uploadedBy is undefined but uploadedByUserId exists:', deliverable.uploadedByUserId);
+        console.error('Preloaded relations:', Object.keys(deliverable.$preloaded || {}));
+    }
+
     return {
         id: deliverable.id,
         mandateId: deliverable.mandateId,
@@ -77,6 +89,12 @@ export function serializeMandateRevocationRequest(request: MandateRevocationRequ
 }
 
 export function serializeMandate(mandate: PropositionMandate): SerializedMandate {
+    // Check if relations are preloaded before accessing them
+    const holderPreloaded = mandate.$preloaded?.holder !== undefined;
+    const deliverablesPreloaded = mandate.$preloaded?.deliverables !== undefined;
+    const applicationsPreloaded = mandate.$preloaded?.applications !== undefined;
+    const revocationRequestsPreloaded = mandate.$preloaded?.revocationRequests !== undefined;
+
     return {
         id: mandate.id,
         propositionId: mandate.propositionId,
@@ -92,9 +110,9 @@ export function serializeMandate(mandate: PropositionMandate): SerializedMandate
         metadata: mandate.metadata ?? {},
         createdAt: toIso(mandate.createdAt) ?? undefined,
         updatedAt: toIso(mandate.updatedAt) ?? undefined,
-        holder: serializeUserSummary(mandate.holder as User | undefined),
-        deliverables: (mandate.deliverables ?? []).map(serializeMandateDeliverable),
-        applications: (mandate.applications ?? []).map(serializeMandateApplication),
-        revocationRequests: (mandate.revocationRequests ?? []).map(serializeMandateRevocationRequest),
+        holder: holderPreloaded ? serializeUserSummary(mandate.holder as User | undefined) : undefined,
+        deliverables: deliverablesPreloaded ? (mandate.deliverables ?? []).map(serializeMandateDeliverable) : [],
+        applications: applicationsPreloaded ? (mandate.applications ?? []).map(serializeMandateApplication) : [],
+        revocationRequests: revocationRequestsPreloaded ? (mandate.revocationRequests ?? []).map(serializeMandateRevocationRequest) : [],
     };
 }

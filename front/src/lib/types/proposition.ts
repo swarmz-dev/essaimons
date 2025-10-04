@@ -141,6 +141,7 @@ export type PropositionComment = {
     parentId?: string | null;
     authorId: string;
     scope: PropositionCommentScopeEnum;
+    section?: string | null;
     visibility: PropositionCommentVisibilityEnum;
     content: string;
     createdAt: string;

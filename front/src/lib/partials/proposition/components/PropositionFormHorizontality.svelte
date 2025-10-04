@@ -8,7 +8,7 @@
     export let summary: string;
     export let mandatesDescription: string;
     export let clarificationDeadline: string;
-    export let improvementDeadline: string;
+    export let amendmentDeadline: string;
     export let voteDeadline: string;
     export let mandateDeadline: string;
     export let evaluationDeadline: string;
@@ -34,8 +34,8 @@
         <FieldLabel forId="clarificationDeadline" label={m['proposition-create.fields.clarification-deadline.label']()} required info={m['proposition-create.fields.clarification-deadline.info']()}>
             <Input type="date" name="clarificationDeadline" id="clarificationDeadline" bind:value={clarificationDeadline} required />
         </FieldLabel>
-        <FieldLabel forId="improvementDeadline" label={m['proposition-create.fields.improvement-deadline.label']()} required info={m['proposition-create.fields.improvement-deadline.info']()}>
-            <Input type="date" name="improvementDeadline" id="improvementDeadline" bind:value={improvementDeadline} required />
+        <FieldLabel forId="amendmentDeadline" label={m['proposition-create.fields.amendment-deadline.label']()} required info={m['proposition-create.fields.amendment-deadline.info']()}>
+            <Input type="date" name="amendmentDeadline" id="amendmentDeadline" bind:value={amendmentDeadline} required />
         </FieldLabel>
         <FieldLabel forId="voteDeadline" label={m['proposition-create.fields.vote-deadline.label']()} required info={m['proposition-create.fields.vote-deadline.info']()}>
             <Input type="date" name="voteDeadline" id="voteDeadline" bind:value={voteDeadline} required />

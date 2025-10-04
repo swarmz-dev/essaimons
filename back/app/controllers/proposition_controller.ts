@@ -136,13 +136,14 @@ export default class PropositionController {
                 mandatesDescription: request.input('mandatesDescription'),
                 expertise: request.input('expertise'),
                 clarificationDeadline: request.input('clarificationDeadline'),
-                improvementDeadline: request.input('improvementDeadline'),
+                amendmentDeadline: request.input('amendmentDeadline'),
                 voteDeadline: request.input('voteDeadline'),
                 mandateDeadline: request.input('mandateDeadline'),
                 evaluationDeadline: request.input('evaluationDeadline'),
                 categoryIds,
                 associatedPropositionIds,
                 rescueInitiatorIds,
+                isDraft: request.input('isDraft'),
             });
 
             const proposition: Proposition = await this.propositionService.create(payload, user as User, {
@@ -290,7 +291,7 @@ export default class PropositionController {
                 associatedPropositionIds,
                 rescueInitiatorIds,
                 clarificationDeadline: request.input('clarificationDeadline'),
-                improvementDeadline: request.input('improvementDeadline'),
+                amendmentDeadline: request.input('amendmentDeadline'),
                 voteDeadline: request.input('voteDeadline'),
                 mandateDeadline: request.input('mandateDeadline'),
                 evaluationDeadline: request.input('evaluationDeadline'),
@@ -367,7 +368,14 @@ export default class PropositionController {
         try {
             const updated = await this.propositionService.transition(proposition, actor, payload.status as PropositionStatusEnum, { reason: payload.reason });
 
-            await Promise.all([updated.load('categories'), updated.load('rescueInitiators'), updated.load('associatedPropositions'), updated.load('attachments'), updated.load('creator')]);
+            await Promise.all([
+                updated.load('categories'),
+                updated.load('rescueInitiators'),
+                updated.load('associatedPropositions'),
+                updated.load('attachments'),
+                updated.load('creator'),
+                updated.load('mandates'),
+            ]);
 
             if (updated.visualFileId) {
                 await updated.load('visual');

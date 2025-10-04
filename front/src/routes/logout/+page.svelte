@@ -14,20 +14,19 @@
         AlertDialogAction,
     } from '#lib/components/ui/alert-dialog';
     import Meta from '#components/Meta.svelte';
-    import { wrappedFetch } from '#lib/services/requestService';
 
     const handleConfirm = async (): Promise<void> => {
-        await wrappedFetch(
-            '/logout',
-            {
+        try {
+            await fetch('/logout', {
                 method: 'POST',
-            },
-            () => {
-                clearProfile();
-                navigate('/login');
-            },
-            () => navigate('/login')
-        );
+                credentials: 'include',
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            clearProfile();
+            navigate('/login');
+        }
     };
 
     const handleClose = (): void => {

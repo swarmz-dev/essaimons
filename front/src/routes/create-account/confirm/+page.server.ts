@@ -32,6 +32,14 @@ export const load: PageServerLoad = loadFlash(async (event): Promise<never> => {
             maxAge: 60 * 60 * 24 * 7,
         });
 
+        // Also set a non-httpOnly cookie for client-side access
+        cookies.set('client_token', data.token.token, {
+            path: '/',
+            httpOnly: false,
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24 * 7,
+        });
+
         redirect(
             303,
             `/${cookies.get('PARAGLIDE_LOCALE')}`,

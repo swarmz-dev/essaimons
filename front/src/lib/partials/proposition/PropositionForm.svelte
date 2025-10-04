@@ -89,6 +89,9 @@
     let pageTitleText: string = $state('');
     let submitLabel: string = $state('');
     let submittingLabel: string = $state('');
+    let saveDraftLabel: string = $state('');
+    let savingDraftLabel: string = $state('');
+    let isDraft: boolean = $state(false);
 
     $effect(() => {
         baseUserOptions = (bootstrap.users ?? []).flatMap((user: SerializedUserSummary) => {
@@ -201,7 +204,7 @@
     });
 
     let clarificationDeadline: string = $state('');
-    let improvementDeadline: string = $state('');
+    let amendmentDeadline: string = $state('');
     let voteDeadline: string = $state('');
     let mandateDeadline: string = $state('');
     let evaluationDeadline: string = $state('');
@@ -227,7 +230,7 @@
     const horizontalityValid: boolean = $derived(
         summary.trim().length > 0 &&
             clarificationDeadline.trim().length > 0 &&
-            improvementDeadline.trim().length > 0 &&
+            amendmentDeadline.trim().length > 0 &&
             voteDeadline.trim().length > 0 &&
             mandateDeadline.trim().length > 0 &&
             evaluationDeadline.trim().length > 0 &&
@@ -246,7 +249,7 @@
         associatedPropositionIds: zod.array(zod.string().trim().min(1)).optional(),
         rescueInitiatorIds: zod.array(zod.string().trim().min(1)).min(1),
         clarificationDeadline: zod.string().min(1),
-        improvementDeadline: zod.string().min(1),
+        amendmentDeadline: zod.string().min(1),
         voteDeadline: zod.string().min(1),
         mandateDeadline: zod.string().min(1),
         evaluationDeadline: zod.string().min(1),
@@ -265,7 +268,7 @@
             associatedPropositionIds,
             rescueInitiatorIds,
             clarificationDeadline,
-            improvementDeadline,
+            amendmentDeadline,
             voteDeadline,
             mandateDeadline,
             evaluationDeadline,
@@ -284,30 +287,30 @@
 
         const defaults = $organizationSettings.propositionDefaults ?? {
             clarificationOffsetDays: 0,
-            improvementOffsetDays: 0,
+            amendmentOffsetDays: 0,
             voteOffsetDays: 0,
             mandateOffsetDays: 0,
             evaluationOffsetDays: 0,
         };
 
         const clarificationOffset = normalizeOffset(defaults.clarificationOffsetDays);
-        const improvementOffset = normalizeOffset(defaults.improvementOffsetDays);
+        const amendmentOffset = normalizeOffset(defaults.amendmentOffsetDays);
         const voteOffset = normalizeOffset(defaults.voteOffsetDays);
         const mandateOffset = normalizeOffset(defaults.mandateOffsetDays);
         const evaluationOffset = normalizeOffset(defaults.evaluationOffsetDays);
 
         const today = new Date();
         const clarificationDate = addDays(today, clarificationOffset);
-        const improvementDate = addDays(clarificationDate, improvementOffset);
-        const voteDate = addDays(improvementDate, voteOffset);
+        const amendmentDate = addDays(clarificationDate, amendmentOffset);
+        const voteDate = addDays(amendmentDate, voteOffset);
         const mandateDate = addDays(voteDate, mandateOffset);
         const evaluationDate = addDays(mandateDate, evaluationOffset);
 
         if (!clarificationDeadline.trim()) {
             clarificationDeadline = formatDate(clarificationDate);
         }
-        if (!improvementDeadline.trim()) {
-            improvementDeadline = formatDate(improvementDate);
+        if (!amendmentDeadline.trim()) {
+            amendmentDeadline = formatDate(amendmentDate);
         }
         if (!voteDeadline.trim()) {
             voteDeadline = formatDate(voteDate);
@@ -339,6 +342,8 @@
             pageTitleText = m['proposition-create.title']();
             submitLabel = m['proposition-create.navigation.submit']();
             submittingLabel = m['proposition-create.navigation.submitting']();
+            saveDraftLabel = m['proposition-create.navigation.save-draft']();
+            savingDraftLabel = m['proposition-create.navigation.saving-draft']();
         }
     });
 
@@ -356,7 +361,7 @@
         expertise = initialProposition.expertise ?? '';
 
         clarificationDeadline = initialProposition.clarificationDeadline ?? '';
-        improvementDeadline = initialProposition.improvementDeadline ?? '';
+        amendmentDeadline = initialProposition.amendmentDeadline ?? '';
         voteDeadline = initialProposition.voteDeadline ?? '';
         mandateDeadline = initialProposition.mandateDeadline ?? '';
         evaluationDeadline = initialProposition.evaluationDeadline ?? '';
@@ -385,6 +390,8 @@
             formData.append('visual', croppedVisualFile, croppedVisualFile.name);
         }
 
+        formData.set('isDraft', String(isDraft));
+
         return async ({ result, update }) => {
             isSubmitting = false;
             if (result.type === 'failure') {
@@ -393,6 +400,14 @@
                 await update();
             }
         };
+    };
+
+    const handleSaveDraft = () => {
+        isDraft = true;
+    };
+
+    const handlePublish = () => {
+        isDraft = false;
     };
 
     const validateAttachmentSelection = (files?: FileList | null): boolean => {
@@ -582,7 +597,7 @@
         rescueInitiatorIds = toIdentifierArray(rescueInitiatorStrings);
 
         clarificationDeadline = formData.clarificationDeadline ?? clarificationDeadline;
-        improvementDeadline = formData.improvementDeadline ?? improvementDeadline;
+        amendmentDeadline = formData.amendmentDeadline ?? amendmentDeadline;
         voteDeadline = formData.voteDeadline ?? voteDeadline;
         mandateDeadline = formData.mandateDeadline ?? mandateDeadline;
         evaluationDeadline = formData.evaluationDeadline ?? evaluationDeadline;
@@ -636,7 +651,7 @@
                             bind:summary
                             bind:mandatesDescription
                             bind:clarificationDeadline
-                            bind:improvementDeadline
+                            bind:amendmentDeadline
                             bind:voteDeadline
                             bind:mandateDeadline
                             bind:evaluationDeadline
@@ -670,7 +685,12 @@
                                     {m['proposition-create.navigation.next']()}
                                 </Button>
                             {:else}
-                                <Button type="submit" disabled={!canSubmit} loading={isSubmitting} loadingLabel={submittingLabel}>
+                                {#if !isEditing}
+                                    <Button type="submit" variant="outline" disabled={!canSubmit} loading={isSubmitting && isDraft} loadingLabel={savingDraftLabel} onclick={handleSaveDraft}>
+                                        {saveDraftLabel}
+                                    </Button>
+                                {/if}
+                                <Button type="submit" disabled={!canSubmit} loading={isSubmitting && !isDraft} loadingLabel={submittingLabel} onclick={handlePublish}>
                                     {submitLabel}
                                 </Button>
                             {/if}

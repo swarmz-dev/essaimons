@@ -26,13 +26,14 @@ interface CreatePropositionPayload {
     mandatesDescription: string;
     expertise?: string | null;
     clarificationDeadline: string;
-    improvementDeadline: string;
+    amendmentDeadline: string;
     voteDeadline: string;
     mandateDeadline: string;
     evaluationDeadline: string;
     categoryIds: string[];
     associatedPropositionIds?: string[];
     rescueInitiatorIds: string[];
+    isDraft?: boolean;
 }
 
 interface CreatePropositionFiles {
@@ -75,10 +76,14 @@ export default class PropositionService {
             }
 
             const clarificationDate: DateTime = this.parseIsoDate(payload.clarificationDeadline);
-            const improvementDate: DateTime = this.parseIsoDate(payload.improvementDeadline);
+            const amendmentDate: DateTime = this.parseIsoDate(payload.amendmentDeadline);
             const voteDate: DateTime = this.parseIsoDate(payload.voteDeadline);
             const mandateDate: DateTime = this.parseIsoDate(payload.mandateDeadline);
             const evaluationDate: DateTime = this.parseIsoDate(payload.evaluationDeadline);
+
+            const isDraft = payload.isDraft ?? false;
+            const initialStatus = isDraft ? PropositionStatusEnum.DRAFT : PropositionStatusEnum.CLARIFY;
+            const initialVisibility = isDraft ? PropositionVisibilityEnum.PRIVATE : PropositionVisibilityEnum.PUBLIC;
 
             const proposition: Proposition = await Proposition.create(
                 {
@@ -89,13 +94,13 @@ export default class PropositionService {
                     impacts: payload.impacts,
                     mandatesDescription: payload.mandatesDescription,
                     expertise: payload.expertise ?? null,
-                    status: PropositionStatusEnum.DRAFT,
+                    status: initialStatus,
                     statusStartedAt: DateTime.now(),
-                    visibility: PropositionVisibilityEnum.PRIVATE,
+                    visibility: initialVisibility,
                     archivedAt: null,
                     settingsSnapshot: {},
                     clarificationDeadline: clarificationDate,
-                    improvementDeadline: improvementDate,
+                    amendmentDeadline: amendmentDate,
                     voteDeadline: voteDate,
                     mandateDeadline: mandateDate,
                     evaluationDeadline: evaluationDate,
@@ -242,7 +247,7 @@ export default class PropositionService {
             }
 
             const clarificationDate: DateTime = this.parseIsoDate(payload.clarificationDeadline);
-            const improvementDate: DateTime = this.parseIsoDate(payload.improvementDeadline);
+            const amendmentDate: DateTime = this.parseIsoDate(payload.amendmentDeadline);
             const voteDate: DateTime = this.parseIsoDate(payload.voteDeadline);
             const mandateDate: DateTime = this.parseIsoDate(payload.mandateDeadline);
             const evaluationDate: DateTime = this.parseIsoDate(payload.evaluationDeadline);
@@ -258,7 +263,7 @@ export default class PropositionService {
                 mandatesDescription: payload.mandatesDescription,
                 expertise: payload.expertise ?? null,
                 clarificationDeadline: clarificationDate,
-                improvementDeadline: improvementDate,
+                amendmentDeadline: amendmentDate,
                 voteDeadline: voteDate,
                 mandateDeadline: mandateDate,
                 evaluationDeadline: evaluationDate,

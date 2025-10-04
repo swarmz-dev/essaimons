@@ -126,7 +126,7 @@ Transition : chaque changement de statut trace un historique (`proposition_statu
   - Chaque transition consignée, avec snapshot des permissions effectives et des paramètres utilisés.
 
 ## Points à clarifier
-- Paramétrage fin des seuils (global organisation vs par proposition).
+- Paramétrage fin des seuils : confirmé → gestion au niveau organisation (pas de déclinaison par proposition).
 - Interop CitizenOS : simple inspiration UX ou intégration API nécessaire ?
 - Politique d'archivage et purge (RGPD, durée de conservation des commentaires et votes).
 

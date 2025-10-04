@@ -119,10 +119,11 @@ test.group('Proposition uploads', (group) => {
                     categoryIds: String(category.frontId ?? category.id),
                     rescueInitiatorIds: String(rescueInitiator.frontId ?? rescueInitiator.id),
                     clarificationDeadline: DateTime.now().plus({ days: 1 }).toISODate(),
-                    improvementDeadline: DateTime.now().plus({ days: 2 }).toISODate(),
+                    amendmentDeadline: DateTime.now().plus({ days: 2 }).toISODate(),
                     voteDeadline: DateTime.now().plus({ days: 3 }).toISODate(),
                     mandateDeadline: DateTime.now().plus({ days: 4 }).toISODate(),
                     evaluationDeadline: DateTime.now().plus({ days: 5 }).toISODate(),
+                    isDraft: false,
                 })
                 .file('visual', visualPath)
                 .file('attachments', attachmentPath);

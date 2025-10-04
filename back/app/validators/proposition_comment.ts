@@ -4,6 +4,7 @@ import { PropositionCommentScopeEnum, PropositionCommentVisibilityEnum } from '#
 export const createCommentValidator = vine.compile(
     vine.object({
         scope: vine.enum(Object.values(PropositionCommentScopeEnum)),
+        section: vine.string().trim().optional(),
         visibility: vine.enum(Object.values(PropositionCommentVisibilityEnum)).optional(),
         content: vine.string().trim().minLength(1).maxLength(2000),
         parentId: vine.string().trim().optional(),

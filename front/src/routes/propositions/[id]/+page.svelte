@@ -17,6 +17,7 @@
     import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#lib/components/ui/dialog';
     import { Input } from '#lib/components/ui/input';
     import { Textarea } from '#lib/components/ui/textarea';
+    import { MultiSelect, type MultiSelectOption } from '#lib/components/ui/multi-select';
     import { m } from '#lib/paraglide/messages';
     import { cn } from '#lib/utils';
     import { wrappedFetch, extractFormErrors } from '#lib/services/requestService';
@@ -34,10 +35,11 @@
         PropositionVisibilityEnum,
         PropositionVoteMethodEnum,
         PropositionVotePhaseEnum,
+        PropositionVoteStatusEnum,
         DeliverableVerdictEnum,
     } from 'backend/types';
     import type { PropositionComment, PropositionEvent, PropositionMandate, PropositionTimelinePhase, PropositionVote, WorkflowRole } from '#lib/types/proposition';
-    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload, Loader2, Eye } from '@lucide/svelte';
+    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload, Loader2, Eye, MessageCircle, CheckCircle, UserPlus } from '@lucide/svelte';
     import { z } from 'zod';
 
     const { data } = $props<{
@@ -81,13 +83,85 @@
         [PropositionStatusEnum.ARCHIVED]: 6,
     };
 
+    const allStatuses = [
+        PropositionStatusEnum.DRAFT,
+        PropositionStatusEnum.CLARIFY,
+        PropositionStatusEnum.AMEND,
+        PropositionStatusEnum.VOTE,
+        PropositionStatusEnum.MANDATE,
+        PropositionStatusEnum.EVALUATE,
+        PropositionStatusEnum.ARCHIVED,
+    ];
+
     const currentStatusRank = $derived(statusOrder[currentStatus] ?? 0);
 
     const user = $derived(page.data.user as SerializedUser | undefined);
     const workflowRole: WorkflowRole = $derived(resolveWorkflowRole(proposition, user, mandates));
 
+    // État pour le temps actuel, mis à jour toutes les secondes
+    let currentTime = $state(new Date());
+    let scheduledRefreshTimeouts: number[] = $state([]);
+
+    // Mettre à jour le temps toutes les secondes et vérifier les transitions de statut
+    $effect(() => {
+        const interval = setInterval(() => {
+            const oldTime = currentTime;
+            currentTime = new Date();
+
+            // Vérifier si un vote devrait changer de statut
+            votes?.forEach((vote) => {
+                const now = currentTime.getTime();
+                const openAt = vote.openAt ? new Date(vote.openAt).getTime() : null;
+                const closeAt = vote.closeAt ? new Date(vote.closeAt).getTime() : null;
+
+                // Si le vote scheduled atteint son heure d'ouverture
+                if (vote.status === 'scheduled' && openAt && openAt <= now && openAt > oldTime.getTime()) {
+                    const timeoutId = window.setTimeout(() => refreshVotes(), 1000);
+                    scheduledRefreshTimeouts.push(timeoutId);
+                }
+
+                // Si le vote open atteint son heure de clôture
+                if (vote.status === 'open' && closeAt && closeAt <= now && closeAt > oldTime.getTime()) {
+                    const timeoutId = window.setTimeout(() => refreshVotes(), 1000);
+                    scheduledRefreshTimeouts.push(timeoutId);
+                }
+            });
+        }, 1000);
+
+        return () => {
+            clearInterval(interval);
+            scheduledRefreshTimeouts.forEach((id) => clearTimeout(id));
+        };
+    });
+
+    // Rafraîchir les votes une seule fois au chargement initial
+    let hasInitiallyRefreshed = $state(false);
+    $effect(() => {
+        if (votes && votes.length > 0 && !hasInitiallyRefreshed) {
+            hasInitiallyRefreshed = true;
+            refreshVotes();
+        }
+    });
+
+    // Charger les bulletins et résultats lorsque les votes changent
+    $effect(() => {
+        if (votes && votes.length > 0) {
+            votes.forEach((vote) => {
+                // Charger le bulletin de l'utilisateur si connecté
+                if (user && vote.status === 'open') {
+                    fetchUserBallot(vote.id);
+                }
+                // Charger les résultats si le vote est clôturé
+                if (vote.status === 'closed') {
+                    fetchVoteResults(vote.id);
+                }
+            });
+        }
+    });
+
     const canEditProposition = $derived(workflowRole === 'admin' || isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'edit_proposition'));
     const canDeleteProposition = $derived(user?.role === 'admin');
+    const canParticipateVote = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'participate_vote') || workflowRole === 'initiator' || workflowRole === 'admin');
 
     const canCommentClarification = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'comment_clarification') || workflowRole === 'admin' || workflowRole === 'initiator');
     const canCommentAmendment = $derived(isActionAllowed(perStatusPermissions, currentStatus, workflowRole, 'comment_amendment') || workflowRole === 'admin' || workflowRole === 'initiator');
@@ -118,6 +192,13 @@
         const normalized = value.toString().trim();
         return normalized.length ? normalized : undefined;
     };
+
+    const userOptions: MultiSelectOption[] = $derived(
+        (data.users ?? []).flatMap((user: SerializedUserSummary) => {
+            const value = normalizeId(user.id);
+            return value ? [{ value, label: user.username }] : [];
+        })
+    );
 
     const attachmentUrl = (fileId: string): string => `/assets/propositions/attachments/${fileId}`;
     const deliverableUrl = (deliverableId: string): string => `/assets/propositions/deliverables/${deliverableId}`;
@@ -212,8 +293,8 @@
             },
             {
                 key: PropositionStatusEnum.AMEND,
-                label: m['proposition-detail.dates.improvement'](),
-                deadline: proposition.improvementDeadline,
+                label: m['proposition-detail.dates.amendment'](),
+                deadline: proposition.amendmentDeadline,
             },
             {
                 key: PropositionStatusEnum.VOTE,
@@ -333,6 +414,49 @@
         return parsed.toISOString().slice(0, 16);
     };
 
+    const getVoteTimeRemaining = (vote: PropositionVote, currentTime: Date): { text: string; color: string } | null => {
+        const now = currentTime.getTime();
+        const openAt = vote.openAt ? new Date(vote.openAt).getTime() : null;
+        const closeAt = vote.closeAt ? new Date(vote.closeAt).getTime() : null;
+
+        // Si le vote est scheduled ou draft et a une date d'ouverture future
+        if ((vote.status === 'scheduled' || vote.status === 'draft') && openAt && openAt > now) {
+            const diff = openAt - now;
+            return { text: formatTimeRemaining(diff, 'Ouvre dans'), color: 'text-blue-600 dark:text-blue-400' };
+        }
+
+        // Si le vote est open et a une date de clôture future
+        if (vote.status === 'open' && closeAt && closeAt > now) {
+            const diff = closeAt - now;
+            return { text: formatTimeRemaining(diff, 'Ferme dans'), color: 'text-orange-600 dark:text-orange-400' };
+        }
+
+        // Si le vote est scheduled mais l'heure d'ouverture est dépassée
+        if (vote.status === 'scheduled' && openAt && openAt <= now && closeAt && closeAt > now) {
+            const diff = closeAt - now;
+            return { text: formatTimeRemaining(diff, 'Ferme dans'), color: 'text-orange-600 dark:text-orange-400' };
+        }
+
+        return null;
+    };
+
+    const formatTimeRemaining = (ms: number, prefix: string): string => {
+        const seconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
+        if (days > 0) {
+            return `${prefix} ${days}j ${hours % 24}h`;
+        } else if (hours > 0) {
+            return `${prefix} ${hours}h ${minutes % 60}min`;
+        } else if (minutes > 0) {
+            return `${prefix} ${minutes}min`;
+        } else {
+            return `${prefix} ${seconds}s`;
+        }
+    };
+
     const commentSchema = z.object({
         content: z.string().trim().min(1).max(2000),
     });
@@ -355,6 +479,8 @@
     let clarificationContent: string = $state('');
     let clarificationErrors: string[] = $state([]);
     let isClarificationSubmitting: boolean = $state(false);
+    let clarificationSection: string = $state('general');
+    let amendmentSection: string = $state('general');
     let isClarificationReplyDialogOpen: boolean = $state(false);
     let clarificationReplyParentId: string | null = $state(null);
     let clarificationReplyContent: string = $state('');
@@ -415,6 +541,7 @@
     let eventForm = $state({ ...defaultEventForm });
     let eventErrors: string[] = $state([]);
     let isEventSubmitting: boolean = $state(false);
+    let isCreatingDiscordEvent: boolean = $state(false);
     let eventStartInput: HTMLInputElement | null = $state(null);
     let eventEndInput: HTMLInputElement | null = $state(null);
     let editingEventId: string | null = $state(null);
@@ -425,41 +552,62 @@
     let eventDeleteId: string | null = $state(null);
     let isEventDeleteSubmitting: boolean = $state(false);
 
-    const voteSchema = z.object({
-        title: z.string().trim().min(1).max(255),
-        description: z.string().trim().max(1000).optional(),
-        phase: z.nativeEnum(PropositionVotePhaseEnum),
-        method: z.nativeEnum(PropositionVoteMethodEnum),
-        openAt: z.string().trim().optional(),
-        closeAt: z.string().trim().optional(),
-        maxSelections: z.number().min(0).optional(),
-        options: z
-            .array(
-                z.object({
-                    label: z.string().trim().min(1).max(255),
-                    description: z.string().trim().max(1000).optional(),
-                })
-            )
-            .min(1),
-    });
+    const getVoteSchema = () =>
+        z
+            .object({
+                title: z.string().trim().min(1, m['proposition-detail.votes.errors.title-required']()).max(255, m['proposition-detail.votes.errors.title-too-long']()),
+                description: z.string().trim().max(1000, m['proposition-detail.votes.errors.description-too-long']()).optional(),
+                phase: z.nativeEnum(PropositionVotePhaseEnum),
+                method: z.nativeEnum(PropositionVoteMethodEnum),
+                openAt: z.string().trim().min(1, m['proposition-detail.votes.errors.open-at-required']()),
+                closeAt: z.string().trim().min(1, m['proposition-detail.votes.errors.close-at-required']()),
+                maxSelections: z.number().min(0, m['proposition-detail.votes.errors.max-selections-invalid']()).optional(),
+                options: z
+                    .array(
+                        z.object({
+                            label: z.string().trim().min(1, m['proposition-detail.votes.errors.option-label-required']()).max(255, m['proposition-detail.votes.errors.option-label-too-long']()),
+                            description: z.string().trim().max(1000, m['proposition-detail.votes.errors.option-description-too-long']()).optional(),
+                        })
+                    )
+                    .min(1, m['proposition-detail.votes.errors.options-required']()),
+            })
+            .refine(
+                (data) => {
+                    if (data.openAt && data.closeAt) {
+                        return new Date(data.openAt) < new Date(data.closeAt);
+                    }
+                    return true;
+                },
+                {
+                    message: m['proposition-detail.votes.errors.close-before-open'](),
+                    path: ['closeAt'],
+                }
+            );
 
     const defaultVoteForm = {
         title: '',
         description: '',
         phase: PropositionVotePhaseEnum.VOTE,
-        method: PropositionVoteMethodEnum.BINARY,
         openAt: '',
         closeAt: '',
-        maxSelections: '',
+        maxSelections: 1,
+        isMajorityJudgment: false,
         optionsText: 'For\nAgainst',
     };
 
     let isVoteDialogOpen: boolean = $state(false);
     let voteForm = $state({ ...defaultVoteForm });
     let voteErrors: string[] = $state([]);
+    let voteFieldErrors: Record<string, string | undefined> = $state({});
     let isVoteSubmitting: boolean = $state(false);
     let voteOpenInput: HTMLInputElement | null = $state(null);
     let voteCloseInput: HTMLInputElement | null = $state(null);
+
+    // États pour voter
+    let userBallots = $state<Record<string, any>>({});
+    let isCastingVote = $state<Record<string, boolean>>({});
+    let ballotSelections = $state<Record<string, any>>({});
+    let voteResults = $state<Record<string, any>>({});
 
     const mandateSchema = z.object({
         title: z.string().trim().min(1).max(255),
@@ -475,7 +623,7 @@
         title: '',
         description: '',
         holderUserId: '',
-        status: MandateStatusEnum.DRAFT,
+        status: MandateStatusEnum.TO_ASSIGN,
         targetObjectiveRef: '',
         initialDeadline: '',
         currentDeadline: '',
@@ -485,6 +633,14 @@
     let mandateForm = $state({ ...defaultMandateForm });
     let mandateErrors: string[] = $state([]);
     let isMandateSubmitting: boolean = $state(false);
+    let mandateHolderSelection: string[] = $state([]);
+
+    $effect(() => {
+        const selected = mandateHolderSelection[0] ?? '';
+        if ((mandateForm.holderUserId ?? '') !== selected) {
+            mandateForm.holderUserId = selected;
+        }
+    });
 
     let isDeliverableDialogOpen: boolean = $state(false);
     let deliverableMandateId: string | null = $state(null);
@@ -495,6 +651,12 @@
     let isEvaluationDialogOpen: boolean = $state(false);
     let evaluationMandateId: string | null = $state(null);
     let evaluationDeliverableId: string | null = $state(null);
+
+    let isApplicationDialogOpen: boolean = $state(false);
+    let applicationMandateId: string | null = $state(null);
+    let applicationForm = $state({ description: '', proposedStartDate: '', proposedEndDate: '' });
+    let applicationErrors: string[] = $state([]);
+    let isApplicationSubmitting: boolean = $state(false);
     let evaluationVerdict: DeliverableVerdictEnum = $state(DeliverableVerdictEnum.COMPLIANT);
     let evaluationComment: string = $state('');
     let evaluationErrors: string[] = $state([]);
@@ -583,6 +745,25 @@
     });
 
     const rolePermissionMatrix = $derived(buildRolePermissionMap(perStatusPermissions, currentStatus));
+    const openCommentForSection = (section: string): void => {
+        if (currentStatus === PropositionStatusEnum.CLARIFY) {
+            clarificationSection = section;
+            isClarificationDialogOpen = true;
+        } else if (currentStatus === PropositionStatusEnum.AMEND) {
+            amendmentSection = section;
+            isAmendmentDialogOpen = true;
+        }
+    };
+
+    const getSectionLabel = (section?: string | null): string | null => {
+        if (!section || section === 'general') {
+            return null;
+        }
+        const key = `proposition-detail.comments.sections.${section}`;
+        return m[key as keyof typeof m]?.() ?? null;
+    };
+
+    const canCommentOnSection = $derived(currentStatus === PropositionStatusEnum.CLARIFY || currentStatus === PropositionStatusEnum.AMEND);
 
     const submitClarificationComment = async (): Promise<void> => {
         clarificationErrors = [];
@@ -602,11 +783,13 @@
                         scope: PropositionCommentScopeEnum.CLARIFICATION,
                         visibility: PropositionCommentVisibilityEnum.PUBLIC,
                         content: result.data.content,
+                        section: clarificationSection,
                     },
                 },
-                ({ data: comment }) => {
+                ({ comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     clarificationContent = '';
+                    clarificationSection = 'general';
                     clarificationErrors = [];
                     isClarificationDialogOpen = false;
                 },
@@ -657,7 +840,7 @@
                         parentId: clarificationReplyParentId,
                     },
                 },
-                ({ data: comment }) => {
+                ({ comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     clarificationReplyContent = '';
                     clarificationReplyParentId = null;
@@ -709,7 +892,7 @@
                         content: result.data.content,
                     },
                 },
-                ({ data: comment }) => {
+                ({ comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     clarificationEditContent = '';
                     clarificationEditCommentId = null;
@@ -787,11 +970,13 @@
                         scope: PropositionCommentScopeEnum.AMENDMENT,
                         visibility: PropositionCommentVisibilityEnum.PUBLIC,
                         content: result.data.content,
+                        section: amendmentSection,
                     },
                 },
-                ({ data: comment }) => {
+                ({ comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     amendmentContent = '';
+                    amendmentSection = 'general';
                     isAmendmentDialogOpen = false;
                 },
                 ({ message }) => {
@@ -840,7 +1025,7 @@
                         parentId: amendmentReplyParentId,
                     },
                 },
-                ({ data: comment }) => {
+                ({ comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     amendmentReplyContent = '';
                     amendmentReplyParentId = null;
@@ -891,7 +1076,7 @@
                         content: result.data.content,
                     },
                 },
-                ({ data: comment }) => {
+                ({ comment }) => {
                     propositionDetailStore.upsertComment(comment);
                     amendmentEditContent = '';
                     amendmentEditCommentId = null;
@@ -1020,7 +1205,7 @@
                         videoLink: normalizeOptional(result.data.videoLink),
                     },
                 },
-                ({ data: event }) => {
+                ({ event }) => {
                     propositionDetailStore.upsertEvent(event);
                     const wasEdit = Boolean(targetEventId);
                     resetEventForm();
@@ -1041,6 +1226,44 @@
             }
         } finally {
             isEventSubmitting = false;
+        }
+    };
+
+    const handleCreateDiscordEvent = async (): Promise<void> => {
+        if (!eventForm.title || !eventForm.startAt) {
+            return;
+        }
+
+        isCreatingDiscordEvent = true;
+        eventErrors = [];
+
+        try {
+            const response = await wrappedFetch(
+                '/discord/events',
+                {
+                    method: 'POST',
+                    body: {
+                        name: eventForm.title,
+                        startTime: eventForm.startAt,
+                        endTime: eventForm.endAt || undefined,
+                        description: eventForm.description || undefined,
+                    },
+                },
+                ({ inviteUrl }) => {
+                    if (inviteUrl) {
+                        eventForm.videoLink = inviteUrl;
+                    }
+                },
+                ({ error }) => {
+                    eventErrors = [error ?? "Erreur lors de la création de l'événement Discord"];
+                }
+            );
+
+            if (!response?.isSuccess && eventErrors.length === 0) {
+                eventErrors = ["Erreur lors de la création de l'événement Discord"];
+            }
+        } finally {
+            isCreatingDiscordEvent = false;
         }
     };
 
@@ -1091,31 +1314,42 @@
 
     const submitVote = async (): Promise<void> => {
         voteErrors = [];
+        voteFieldErrors = {};
         const optionLines = voteForm.optionsText
             .split('\n')
             .map((line) => line.trim())
             .filter((line) => line.length);
 
         if (optionLines.length === 0) {
-            voteErrors = [m['proposition-detail.votes.options-empty']()];
+            voteFieldErrors.optionsText = m['proposition-detail.votes.options-empty']();
             return;
         }
 
         let maxSelectionsNumber: number | undefined;
         if (voteForm.maxSelections) {
             const parsed = Number(voteForm.maxSelections);
-            if (!Number.isFinite(parsed) || parsed < 0) {
-                voteErrors = [m['proposition-detail.votes.max-invalid']()];
+            if (!Number.isFinite(parsed) || parsed < 1) {
+                voteFieldErrors.maxSelections = m['proposition-detail.votes.max-invalid']();
                 return;
             }
             maxSelectionsNumber = parsed;
         }
 
-        const parsed = voteSchema.safeParse({
+        // Déterminer automatiquement la méthode basée sur les paramètres
+        let method: PropositionVoteMethodEnum;
+        if (voteForm.isMajorityJudgment) {
+            method = PropositionVoteMethodEnum.MAJORITY_JUDGMENT;
+        } else if (maxSelectionsNumber === 1) {
+            method = PropositionVoteMethodEnum.BINARY;
+        } else {
+            method = PropositionVoteMethodEnum.MULTI_CHOICE;
+        }
+
+        const parsed = getVoteSchema().safeParse({
             title: voteForm.title,
             description: normalizeOptional(voteForm.description),
             phase: voteForm.phase,
-            method: voteForm.method,
+            method: method,
             openAt: voteForm.openAt,
             closeAt: voteForm.closeAt,
             maxSelections: maxSelectionsNumber,
@@ -1123,7 +1357,10 @@
         });
 
         if (!parsed.success) {
-            voteErrors = parsed.error.issues.map((issue) => issue.message);
+            parsed.error.issues.forEach((issue) => {
+                const path = issue.path.join('.');
+                voteFieldErrors[path] = issue.message;
+            });
             return;
         }
 
@@ -1148,7 +1385,7 @@
                         })),
                     },
                 },
-                ({ data: vote }) => {
+                ({ vote }) => {
                     propositionDetailStore.upsertVote(vote);
                     voteForm = { ...defaultVoteForm };
                     isVoteDialogOpen = false;
@@ -1163,6 +1400,185 @@
             }
         } finally {
             isVoteSubmitting = false;
+        }
+    };
+
+    const openEditVote = (vote: PropositionVote): void => {
+        // TODO: Populate form with vote data and open dialog
+    };
+
+    const publishVote = async (voteId: string): Promise<void> => {
+        try {
+            await wrappedFetch(
+                `/propositions/${proposition.id}/votes/${voteId}/status`,
+                {
+                    method: 'POST',
+                    body: {
+                        status: PropositionVoteStatusEnum.SCHEDULED,
+                    },
+                },
+                ({ vote }) => {
+                    propositionDetailStore.upsertVote(vote);
+                },
+                ({ message }) => {
+                    console.error('Failed to publish vote:', message);
+                }
+            );
+        } catch (error) {
+            console.error('Error publishing vote:', error);
+        }
+    };
+
+    const openVote = async (voteId: string): Promise<void> => {
+        try {
+            await wrappedFetch(
+                `/propositions/${proposition.id}/votes/${voteId}/status`,
+                {
+                    method: 'POST',
+                    body: {
+                        status: PropositionVoteStatusEnum.OPEN,
+                    },
+                },
+                ({ vote }) => {
+                    propositionDetailStore.upsertVote(vote);
+                },
+                ({ message }) => {
+                    console.error('Failed to open vote:', message);
+                }
+            );
+        } catch (error) {
+            console.error('Error opening vote:', error);
+        }
+    };
+
+    const closeVote = async (voteId: string): Promise<void> => {
+        try {
+            await wrappedFetch(
+                `/propositions/${proposition.id}/votes/${voteId}/status`,
+                {
+                    method: 'POST',
+                    body: {
+                        status: PropositionVoteStatusEnum.CLOSED,
+                    },
+                },
+                ({ vote }) => {
+                    propositionDetailStore.upsertVote(vote);
+                },
+                ({ message }) => {
+                    console.error('Failed to close vote:', message);
+                }
+            );
+        } catch (error) {
+            console.error('Error closing vote:', error);
+        }
+    };
+
+    const deleteVote = async (voteId: string): Promise<void> => {
+        try {
+            await wrappedFetch(
+                `/propositions/${proposition.id}/votes/${voteId}`,
+                {
+                    method: 'DELETE',
+                },
+                () => {
+                    propositionDetailStore.removeVote(voteId);
+                },
+                ({ message }) => {
+                    console.error('Failed to delete vote:', message);
+                }
+            );
+        } catch (error) {
+            console.error('Error deleting vote:', error);
+        }
+    };
+
+    const fetchUserBallot = async (voteId: string): Promise<void> => {
+        try {
+            await wrappedFetch(`/propositions/${proposition.id}/votes/${voteId}/ballot`, { method: 'GET' }, ({ ballot }) => {
+                userBallots[voteId] = ballot;
+            });
+        } catch (error) {
+            console.error('Error fetching ballot:', error);
+        }
+    };
+
+    const fetchVoteResults = async (voteId: string): Promise<void> => {
+        try {
+            await wrappedFetch(`/propositions/${proposition.id}/votes/${voteId}/results`, { method: 'GET' }, ({ results }) => {
+                voteResults[voteId] = results;
+            });
+        } catch (error) {
+            console.error('Error fetching results:', error);
+        }
+    };
+
+    const refreshVotes = async (): Promise<void> => {
+        try {
+            await wrappedFetch(`/propositions/${proposition.id}/votes`, { method: 'GET' }, ({ votes: updatedVotes }) => {
+                updatedVotes.forEach((vote: any) => {
+                    propositionDetailStore.upsertVote(vote);
+                });
+            });
+        } catch (error) {
+            console.error('Error refreshing votes:', error);
+        }
+    };
+
+    const castBallot = async (vote: PropositionVote): Promise<void> => {
+        isCastingVote[vote.id] = true;
+
+        try {
+            let payload: any = {};
+
+            if (vote.method === PropositionVoteMethodEnum.BINARY) {
+                payload.optionId = ballotSelections[vote.id];
+            } else if (vote.method === PropositionVoteMethodEnum.MULTI_CHOICE) {
+                payload.optionIds = ballotSelections[vote.id] || [];
+            } else if (vote.method === PropositionVoteMethodEnum.MAJORITY_JUDGMENT) {
+                payload.ratings = ballotSelections[vote.id] || {};
+            }
+
+            await wrappedFetch(
+                `/propositions/${proposition.id}/votes/${vote.id}/ballot`,
+                {
+                    method: 'POST',
+                    body: payload,
+                },
+                ({ ballot }) => {
+                    userBallots[vote.id] = ballot;
+                    ballotSelections[vote.id] = null;
+                },
+                ({ error }) => {
+                    console.error('Error casting ballot:', error);
+                    alert(error || 'Erreur lors du vote');
+                }
+            );
+        } catch (error) {
+            console.error('Error casting ballot:', error);
+        } finally {
+            isCastingVote[vote.id] = false;
+        }
+    };
+
+    const revokeBallot = async (voteId: string): Promise<void> => {
+        if (!confirm('Voulez-vous vraiment révoquer votre vote ?')) {
+            return;
+        }
+
+        try {
+            await wrappedFetch(
+                `/propositions/${proposition.id}/votes/${voteId}/ballot`,
+                { method: 'DELETE' },
+                () => {
+                    userBallots[voteId] = null;
+                },
+                ({ error }) => {
+                    console.error('Error revoking ballot:', error);
+                    alert(error || 'Erreur lors de la révocation');
+                }
+            );
+        } catch (error) {
+            console.error('Error revoking ballot:', error);
         }
     };
 
@@ -1190,9 +1606,10 @@
                         currentDeadline: toIsoDateTime(parsed.data.currentDeadline),
                     },
                 },
-                ({ data: mandate }) => {
+                ({ mandate }) => {
                     propositionDetailStore.upsertMandate(mandate);
                     mandateForm = { ...defaultMandateForm };
+                    mandateHolderSelection = [];
                     isMandateDialogOpen = false;
                 },
                 ({ message }) => {
@@ -1205,6 +1622,68 @@
             }
         } finally {
             isMandateSubmitting = false;
+        }
+    };
+
+    const openEditMandate = (mandate: any): void => {
+        // TODO: Populate form with mandate data and open dialog
+    };
+
+    const deleteMandate = async (mandateId: string): Promise<void> => {
+        try {
+            await wrappedFetch(`/propositions/${proposition.id}/mandates/${mandateId}`, { method: 'DELETE' }, () => {
+                propositionDetailStore.removeMandate(mandateId);
+            });
+        } catch (error) {
+            console.error('Error deleting mandate:', error);
+        }
+    };
+
+    const openApplicationDialog = (mandateId: string): void => {
+        applicationMandateId = mandateId;
+        applicationForm = { description: '', proposedStartDate: '', proposedEndDate: '' };
+        applicationErrors = [];
+        isApplicationSubmitting = false;
+        isApplicationDialogOpen = true;
+    };
+
+    const submitApplication = async (): Promise<void> => {
+        if (!applicationMandateId) {
+            return;
+        }
+
+        applicationErrors = [];
+
+        if (!applicationForm.description.trim()) {
+            applicationErrors = ['La description est obligatoire'];
+            return;
+        }
+
+        isApplicationSubmitting = true;
+
+        try {
+            await wrappedFetch(
+                `/propositions/${proposition.id}/mandates/${applicationMandateId}/applications`,
+                {
+                    method: 'POST',
+                    body: {
+                        description: applicationForm.description,
+                    },
+                },
+                ({ application, mandate }) => {
+                    propositionDetailStore.upsertMandate(mandate);
+                    showToast('Candidature soumise avec succès', 'success');
+                    applicationForm = { description: '', proposedStartDate: '', proposedEndDate: '' };
+                    isApplicationDialogOpen = false;
+                },
+                (data) => {
+                    applicationErrors = extractFormErrors(data).map((entry) => entry.message);
+                }
+            );
+        } catch (error) {
+            console.error('Exception in submitApplication:', error);
+        } finally {
+            isApplicationSubmitting = false;
         }
     };
 
@@ -1240,8 +1719,10 @@
             }
             formData.set('file', deliverableForm.file);
 
+            const url = `/propositions/${proposition.id}/mandates/${deliverableMandateId}/deliverables`;
+
             const response = await wrappedFetch(
-                `/propositions/${proposition.id}/mandates/${deliverableMandateId}/deliverables`,
+                url,
                 {
                     method: 'POST',
                     body: formData,
@@ -1261,6 +1742,8 @@
             if (!response?.isSuccess && deliverableErrors.length === 0) {
                 deliverableErrors = [m['common.error.default-message']()];
             }
+        } catch (error) {
+            console.error('Exception in submitDeliverable:', error);
         } finally {
             isDeliverableSubmitting = false;
         }
@@ -1331,7 +1814,7 @@
                         reason: normalizeOptional(transitionReason),
                     },
                 },
-                ({ data: updated }) => {
+                ({ proposition: updated }) => {
                     propositionDetailStore.updateProposition(updated);
                     transitionReason = '';
                     isStatusDialogOpen = false;
@@ -1453,7 +1936,14 @@
                 </Button>
             {/if}
             {#if canManageStatus && availableTransitions.length}
-                <Button variant="outline" class="gap-2" onclick={() => (isStatusDialogOpen = true)}>
+                <Button
+                    variant="outline"
+                    class="gap-2"
+                    onclick={() => {
+                        isStatusDialogOpen = true;
+                        selectedStatus = availableTransitions[0];
+                    }}
+                >
                     <RefreshCcw class="size-4" />
                     {m['proposition-detail.status.change']()}
                 </Button>
@@ -1571,7 +2061,19 @@
         <section class="grid gap-6 lg:grid-cols-[2fr,1fr]">
             <div class="space-y-6">
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.description']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.description']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('description')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if detailedDescriptionHasHtml}
                         <div class="mt-3 text-sm leading-relaxed text-foreground">
                             {@html proposition.detailedDescription}
@@ -1581,7 +2083,19 @@
                     {/if}
                 </article>
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.objectives']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.objectives']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('smart_objectives')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if smartObjectivesHasHtml}
                         <div class="mt-3 text-sm leading-relaxed text-foreground">
                             {@html proposition.smartObjectives}
@@ -1591,7 +2105,19 @@
                     {/if}
                 </article>
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.impacts']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.impacts']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('impacts')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if impactsHasHtml}
                         <div class="mt-3 text-sm leading-relaxed text-foreground">
                             {@html proposition.impacts}
@@ -1601,7 +2127,19 @@
                     {/if}
                 </article>
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.mandates']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.mandates']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('mandates')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if mandatesHasHtml}
                         <div class="mt-3 text-sm leading-relaxed text-foreground">
                             {@html proposition.mandatesDescription}
@@ -1611,7 +2149,19 @@
                     {/if}
                 </article>
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.expertise']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.expertise']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('expertise')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if hasExpertise}
                         {#if expertiseHasHtml}
                             <div class="mt-3 text-sm leading-relaxed text-foreground">
@@ -1628,7 +2178,19 @@
 
             <aside class="space-y-6">
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.rescue']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.rescue']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('rescue')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if hasRescueInitiators}
                         <ul class="mt-3 space-y-2 text-sm text-foreground">
                             {#each proposition.rescueInitiators as user (user.id)}
@@ -1643,7 +2205,19 @@
                 </article>
 
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.associated']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.associated']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('associated')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if hasAssociated}
                         <ul class="mt-3 space-y-2 text-sm">
                             {#each proposition.associatedPropositions as linked (linked.id)}
@@ -1660,7 +2234,19 @@
                 </article>
 
                 <article class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40 print:ring-0 print:shadow-none">
-                    <h2 class="text-lg font-semibold">{m['proposition-detail.sections.attachments']()}</h2>
+                    <div class="flex items-start justify-between">
+                        <h2 class="text-lg font-semibold">{m['proposition-detail.sections.attachments']()}</h2>
+                        {#if canCommentOnSection}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground print:hidden"
+                                onclick={() => openCommentForSection('attachments')}
+                                title="Ajouter un commentaire"
+                            >
+                                <MessageCircle class="size-4" />
+                            </button>
+                        {/if}
+                    </div>
                     {#if hasAttachments}
                         <ul class="mt-3 space-y-3 text-sm">
                             {#each proposition.attachments as attachment (attachment.id)}
@@ -1698,7 +2284,12 @@
                     {#each commentsByScope.clarification as comment (comment.id)}
                         <li class="space-y-3 rounded-xl border border-border/40 bg-card/60 p-4">
                             <div class="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                                <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                <div class="flex items-center gap-2">
+                                    <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                    {#if getSectionLabel(comment.section)}
+                                        <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{getSectionLabel(comment.section)}</span>
+                                    {/if}
+                                </div>
                                 <div class="flex items-center gap-2">
                                     <span>{formatDateTime(comment.createdAt)}</span>
                                     {#if comment.editable}
@@ -1841,7 +2432,12 @@
                         {#each commentsByScope.amendment as comment (comment.id)}
                             <li class="space-y-3 rounded-xl border border-border/40 bg-card/60 p-4">
                                 <div class="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                                    <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                        {#if getSectionLabel(comment.section)}
+                                            <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{getSectionLabel(comment.section)}</span>
+                                        {/if}
+                                    </div>
                                     <div class="flex items-center gap-2">
                                         <span>{formatDateTime(comment.createdAt)}</span>
                                         {#if comment.editable}
@@ -1921,25 +2517,224 @@
                     {#each votes as vote (vote.id)}
                         <li class="rounded-xl border border-border/40 bg-card/60 p-4">
                             <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
-                                <div>
+                                <div class="flex-1">
                                     <p class="font-semibold text-foreground">{vote.title}</p>
                                     <p class="text-xs text-muted-foreground">{m['proposition-detail.vote.method']({ method: translateVoteMethod(vote.method as PropositionVoteMethodEnum) })}</p>
+                                    <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                                        {#if vote.openAt}
+                                            <span>Ouverture : {formatDateTime(vote.openAt)}</span>
+                                        {/if}
+                                        {#if vote.closeAt}
+                                            <span>Clôture : {formatDateTime(vote.closeAt)}</span>
+                                        {/if}
+                                    </div>
+                                    {#if getVoteTimeRemaining(vote, currentTime)}
+                                        {@const timeInfo = getVoteTimeRemaining(vote, currentTime)}
+                                        <p class="mt-1 text-xs font-medium {timeInfo.color}">{timeInfo.text}</p>
+                                    {/if}
                                 </div>
-                                <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{vote.status}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-400">{translateVotePhase(vote.phase)}</span>
+                                    <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{vote.status}</span>
+                                    {#if canConfigureVote}
+                                        <Button size="sm" variant="ghost" class="gap-1" onclick={() => openEditVote(vote)}>
+                                            <Pencil class="size-3.5" />
+                                            {m['common.edit']()}
+                                        </Button>
+                                        {#if vote.status === 'draft'}
+                                            <Button size="sm" variant="default" class="gap-1" onclick={() => publishVote(vote.id)}>
+                                                <CheckCircle class="size-3.5" />
+                                                Publier
+                                            </Button>
+                                        {/if}
+                                        {#if workflowRole === 'admin' && vote.status === 'scheduled'}
+                                            <Button size="sm" variant="default" class="gap-1" onclick={() => openVote(vote.id)}>
+                                                <CheckCircle class="size-3.5" />
+                                                Ouvrir
+                                            </Button>
+                                        {/if}
+                                        {#if workflowRole === 'admin' && vote.status === 'open'}
+                                            <Button size="sm" variant="outline" class="gap-1" onclick={() => closeVote(vote.id)}>Clôturer</Button>
+                                        {/if}
+                                        {#if workflowRole === 'admin'}
+                                            <Button size="sm" variant="ghost" class="gap-1 text-destructive hover:text-destructive" onclick={() => deleteVote(vote.id)}>
+                                                <Trash2 class="size-3.5" />
+                                                {m['common.delete']()}
+                                            </Button>
+                                        {/if}
+                                    {/if}
+                                </div>
                             </div>
                             {#if vote.description}
                                 <p class="mt-2 text-sm text-foreground/80">{vote.description}</p>
                             {/if}
-                            <ul class="mt-3 space-y-2 text-sm text-muted-foreground">
-                                {#each vote.options as option (option.id)}
-                                    <li class="rounded border border-border/30 bg-background/80 px-3 py-2">
-                                        <span class="font-medium text-foreground">{option.label}</span>
-                                        {#if option.description}
-                                            <p class="text-xs text-muted-foreground">{option.description}</p>
+
+                            <!-- Show options list only if user can't vote or has already voted -->
+                            {#if !(vote.status === 'open' && canParticipateVote && !userBallots[vote.id])}
+                                <ul class="mt-3 space-y-2 text-sm text-muted-foreground">
+                                    {#each vote.options as option (option.id)}
+                                        <li class="rounded border border-border/30 bg-background/80 px-3 py-2">
+                                            <span class="font-medium text-foreground">{option.label}</span>
+                                            {#if option.description}
+                                                <p class="text-xs text-muted-foreground">{option.description}</p>
+                                            {/if}
+                                        </li>
+                                    {/each}
+                                </ul>
+                            {/if}
+
+                            <!-- Vote casting UI -->
+                            {#if vote.status === 'open' && canParticipateVote}
+                                {#if userBallots[vote.id]}
+                                    <div class="mt-4 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
+                                        ✓ Vous avez déjà voté
+                                        <Button size="sm" variant="ghost" class="ml-2 text-xs text-destructive hover:text-destructive" onclick={() => revokeBallot(vote.id)}>Révoquer mon vote</Button>
+                                    </div>
+                                {:else}
+                                    <div class="mt-4 rounded-lg border border-border/40 bg-background/50 p-4">
+                                        <h4 class="mb-3 text-sm font-semibold text-foreground">Voter</h4>
+
+                                        {#if vote.method === PropositionVoteMethodEnum.BINARY}
+                                            <!-- Binary vote: radio buttons -->
+                                            <div class="space-y-2">
+                                                {#each vote.options as option (option.id)}
+                                                    <label class="flex cursor-pointer items-center gap-3 rounded-md border border-border/30 bg-background px-3 py-2 hover:border-primary/40">
+                                                        <input type="radio" name="vote-{vote.id}" value={option.id} bind:group={ballotSelections[vote.id]} class="size-4" />
+                                                        <div class="flex-1">
+                                                            <span class="text-sm font-medium text-foreground">{option.label}</span>
+                                                            {#if option.description}
+                                                                <p class="text-xs text-muted-foreground">{option.description}</p>
+                                                            {/if}
+                                                        </div>
+                                                    </label>
+                                                {/each}
+                                            </div>
+                                            <Button class="mt-3 w-full" onclick={() => castBallot(vote)} disabled={!ballotSelections[vote.id] || isCastingVote[vote.id]}>
+                                                {isCastingVote[vote.id] ? 'Envoi...' : 'Confirmer mon vote'}
+                                            </Button>
+                                        {:else if vote.method === PropositionVoteMethodEnum.MULTI_CHOICE}
+                                            <!-- Multi-choice: checkboxes with max selections -->
+                                            <p class="mb-2 text-xs text-muted-foreground">Sélectionnez jusqu'à {vote.maxSelections} option{vote.maxSelections > 1 ? 's' : ''}</p>
+                                            <div class="space-y-2">
+                                                {#each vote.options as option (option.id)}
+                                                    {@const selected = ballotSelections[vote.id] || []}
+                                                    {@const isChecked = selected.includes(option.id)}
+                                                    {@const canCheck = isChecked || selected.length < (vote.maxSelections || 1)}
+                                                    <label
+                                                        class="flex cursor-pointer items-center gap-3 rounded-md border border-border/30 bg-background px-3 py-2 {canCheck
+                                                            ? 'hover:border-primary/40'
+                                                            : 'opacity-50'}"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            value={option.id}
+                                                            checked={isChecked}
+                                                            disabled={!canCheck}
+                                                            onchange={(e) => {
+                                                                const target = e.target as HTMLInputElement;
+                                                                if (!ballotSelections[vote.id]) ballotSelections[vote.id] = [];
+                                                                if (target.checked) {
+                                                                    ballotSelections[vote.id] = [...ballotSelections[vote.id], option.id];
+                                                                } else {
+                                                                    ballotSelections[vote.id] = ballotSelections[vote.id].filter((id: string) => id !== option.id);
+                                                                }
+                                                            }}
+                                                            class="size-4"
+                                                        />
+                                                        <div class="flex-1">
+                                                            <span class="text-sm font-medium text-foreground">{option.label}</span>
+                                                            {#if option.description}
+                                                                <p class="text-xs text-muted-foreground">{option.description}</p>
+                                                            {/if}
+                                                        </div>
+                                                    </label>
+                                                {/each}
+                                            </div>
+                                            <Button class="mt-3 w-full" onclick={() => castBallot(vote)} disabled={!ballotSelections[vote.id]?.length || isCastingVote[vote.id]}>
+                                                {isCastingVote[vote.id] ? 'Envoi...' : 'Confirmer mon vote'}
+                                            </Button>
+                                        {:else if vote.method === PropositionVoteMethodEnum.MAJORITY_JUDGMENT}
+                                            <!-- Majority judgment: rating dropdown for each option -->
+                                            <p class="mb-2 text-xs text-muted-foreground">Évaluez chaque option de 0 (insuffisant) à 5 (excellent)</p>
+                                            <div class="space-y-2">
+                                                {#each vote.options as option (option.id)}
+                                                    <div class="flex items-center gap-3 rounded-md border border-border/30 bg-background px-3 py-2">
+                                                        <div class="flex-1">
+                                                            <span class="text-sm font-medium text-foreground">{option.label}</span>
+                                                            {#if option.description}
+                                                                <p class="text-xs text-muted-foreground">{option.description}</p>
+                                                            {/if}
+                                                        </div>
+                                                        <select
+                                                            class="rounded border border-border/60 bg-background px-2 py-1 text-sm"
+                                                            onchange={(e) => {
+                                                                const target = e.target as HTMLSelectElement;
+                                                                if (!ballotSelections[vote.id]) ballotSelections[vote.id] = {};
+                                                                ballotSelections[vote.id][option.id] = Number(target.value);
+                                                            }}
+                                                        >
+                                                            <option value="">--</option>
+                                                            <option value="0">0</option>
+                                                            <option value="1">1</option>
+                                                            <option value="2">2</option>
+                                                            <option value="3">3</option>
+                                                            <option value="4">4</option>
+                                                            <option value="5">5</option>
+                                                        </select>
+                                                    </div>
+                                                {/each}
+                                            </div>
+                                            {@const ratings = ballotSelections[vote.id] || {}}
+                                            {@const allRated = vote.options.every((opt) => ratings[opt.id] !== undefined)}
+                                            <Button class="mt-3 w-full" onclick={() => castBallot(vote)} disabled={!allRated || isCastingVote[vote.id]}>
+                                                {isCastingVote[vote.id] ? 'Envoi...' : 'Confirmer mon vote'}
+                                            </Button>
                                         {/if}
-                                    </li>
-                                {/each}
-                            </ul>
+                                    </div>
+                                {/if}
+                            {/if}
+
+                            <!-- Vote results -->
+                            {#if vote.status === 'closed' && voteResults[vote.id]}
+                                {@const results = voteResults[vote.id]}
+                                <div class="mt-4 rounded-lg border border-border/40 bg-background/50 p-4">
+                                    <h4 class="mb-3 text-sm font-semibold text-foreground">Résultats ({results.totalVotes} vote{results.totalVotes > 1 ? 's' : ''})</h4>
+
+                                    {#if vote.method === PropositionVoteMethodEnum.BINARY || vote.method === PropositionVoteMethodEnum.MULTI_CHOICE}
+                                        {@const optionCounts = results.optionCounts || {}}
+                                        <div class="space-y-2">
+                                            {#each vote.options as option (option.id)}
+                                                {@const count = optionCounts[option.id] || 0}
+                                                {@const percentage = results.totalVotes > 0 ? Math.round((count / results.totalVotes) * 100) : 0}
+                                                <div class="rounded-md border border-border/30 bg-background px-3 py-2">
+                                                    <div class="flex items-center justify-between text-sm">
+                                                        <span class="font-medium text-foreground">{option.label}</span>
+                                                        <span class="text-xs text-muted-foreground">{count} ({percentage}%)</span>
+                                                    </div>
+                                                    <div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted">
+                                                        <div class="h-full bg-primary transition-all" style="width: {percentage}%"></div>
+                                                    </div>
+                                                </div>
+                                            {/each}
+                                        </div>
+                                    {:else if vote.method === PropositionVoteMethodEnum.MAJORITY_JUDGMENT}
+                                        {@const optionRatings = results.optionRatings || {}}
+                                        <div class="space-y-2">
+                                            {#each vote.options as option (option.id)}
+                                                {@const stats = optionRatings[option.id] || { median: 0, average: 0 }}
+                                                {@const median = stats.median ?? 0}
+                                                {@const average = stats.average ?? 0}
+                                                <div class="rounded-md border border-border/30 bg-background px-3 py-2">
+                                                    <div class="flex items-center justify-between text-sm">
+                                                        <span class="font-medium text-foreground">{option.label}</span>
+                                                        <span class="text-xs text-muted-foreground">Médiane: {median} | Moyenne: {average.toFixed(1)}</span>
+                                                    </div>
+                                                </div>
+                                            {/each}
+                                        </div>
+                                    {/if}
+                                </div>
+                            {/if}
                         </li>
                     {/each}
                 </ul>
@@ -1969,11 +2764,38 @@
                                         <p class="text-sm text-muted-foreground">{mandate.description}</p>
                                     {/if}
                                 </div>
-                                <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{translateMandateStatus(mandate.status as MandateStatusEnum)}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{translateMandateStatus(mandate.status as MandateStatusEnum)}</span>
+                                    {#if canManageMandates && mandate.status === MandateStatusEnum.TO_ASSIGN}
+                                        <Button size="sm" variant="ghost" class="gap-1" onclick={() => openEditMandate(mandate)}>
+                                            <Pencil class="size-3.5" />
+                                            {m['common.edit']()}
+                                        </Button>
+                                        <Button size="sm" variant="ghost" class="gap-1 text-destructive hover:text-destructive" onclick={() => deleteMandate(mandate.id)}>
+                                            <Trash2 class="size-3.5" />
+                                            {m['common.delete']()}
+                                        </Button>
+                                    {/if}
+                                </div>
                             </div>
                             {#if mandate.holderUserId}
                                 <p class="text-xs text-muted-foreground">{m['proposition-detail.mandate.holder']({ holder: mandate.holder?.username ?? mandate.holderUserId })}</p>
                             {/if}
+
+                            {#if mandate.status === MandateStatusEnum.TO_ASSIGN && user}
+                                {@const hasApplied = mandate.applications?.some((app) => app.applicantUserId === user.id)}
+                                <div class="flex justify-end">
+                                    {#if hasApplied}
+                                        <p class="text-sm text-muted-foreground italic">Candidature soumise</p>
+                                    {:else}
+                                        <Button size="sm" variant="outline" class="gap-2" onclick={() => openApplicationDialog(mandate.id)}>
+                                            <UserPlus class="size-4" />
+                                            {m['proposition-detail.mandates.apply']()}
+                                        </Button>
+                                    {/if}
+                                </div>
+                            {/if}
+
                             {#if canUploadDeliverable}
                                 <div class="flex justify-end">
                                     <Button size="sm" variant="outline" class="gap-2" onclick={() => openDeliverableDialog(mandate.id)}>
@@ -2160,7 +2982,12 @@
                         {#each commentsByScope.evaluation as comment (comment.id)}
                             <li class="rounded-xl border border-border/40 bg-card/60 p-4">
                                 <div class="flex items-center justify-between text-xs text-muted-foreground">
-                                    <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
+                                        {#if getSectionLabel(comment.section)}
+                                            <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{getSectionLabel(comment.section)}</span>
+                                        {/if}
+                                    </div>
                                     <span>{formatDateTime(comment.createdAt)}</span>
                                 </div>
                                 <p class="mt-2 text-sm text-foreground/90 whitespace-pre-wrap">{comment.content}</p>
@@ -2176,13 +3003,32 @@
 </div>
 
 <Dialog open={isClarificationDialogOpen} onOpenChange={(value: boolean) => (isClarificationDialogOpen = value)}>
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.comments.dialog.title']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.comments.dialog.description']()}</DialogDescription>
         </DialogHeader>
         <form class="space-y-4" onsubmit={handleClarificationSubmit}>
-            <Textarea name="clarification-content" label={m['proposition-detail.comments.dialog.label']()} rows={6} bind:value={clarificationContent} required />
+            <label class="flex flex-col gap-2 text-sm text-foreground">
+                Section
+                <select
+                    name="section"
+                    class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    bind:value={clarificationSection}
+                >
+                    <option value="general">Général</option>
+                    <option value="description">Description détaillée</option>
+                    <option value="smart_objectives">Objectifs SMART</option>
+                    <option value="impacts">Impacts</option>
+                    <option value="mandates">Description des mandats</option>
+                    <option value="expertise">Expertises à impliquer</option>
+                    <option value="rescue">Ressource initiatrice</option>
+                    <option value="associated">Propositions liées</option>
+                    <option value="attachments">Pièces jointes</option>
+                </select>
+            </label>
+
+            <Textarea name="clarification-content" label={m['proposition-detail.comments.dialog.label']()} rows={10} bind:value={clarificationContent} required />
             {#if clarificationErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each clarificationErrors as error}
@@ -2219,13 +3065,13 @@
         }
     }}
 >
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.comments.reply-dialog.title']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.comments.reply-dialog.description']()}</DialogDescription>
         </DialogHeader>
         <form class="space-y-4" onsubmit={handleClarificationReplySubmit}>
-            <Textarea name="clarification-reply" label={m['proposition-detail.comments.reply-dialog.label']()} rows={5} bind:value={clarificationReplyContent} required />
+            <Textarea name="clarification-reply" label={m['proposition-detail.comments.reply-dialog.label']()} rows={8} bind:value={clarificationReplyContent} required />
             {#if clarificationReplyErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each clarificationReplyErrors as error}
@@ -2263,13 +3109,13 @@
         }
     }}
 >
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.comments.edit']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.comments.edit-label']()}</DialogDescription>
         </DialogHeader>
         <form class="space-y-4" onsubmit={handleClarificationEditSubmit}>
-            <Textarea name="clarification-edit" label={m['proposition-detail.comments.edit-label']()} rows={5} bind:value={clarificationEditContent} required />
+            <Textarea name="clarification-edit" label={m['proposition-detail.comments.edit-label']()} rows={8} bind:value={clarificationEditContent} required />
             {#if clarificationEditErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each clarificationEditErrors as error}
@@ -2306,13 +3152,13 @@
         }
     }}
 >
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.comments.reply-dialog.title']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.comments.reply-dialog.description']()}</DialogDescription>
         </DialogHeader>
         <form class="space-y-4" onsubmit={handleAmendmentReplySubmit}>
-            <Textarea name="amendment-reply" label={m['proposition-detail.comments.reply-dialog.label']()} rows={5} bind:value={amendmentReplyContent} required />
+            <Textarea name="amendment-reply" label={m['proposition-detail.comments.reply-dialog.label']()} rows={8} bind:value={amendmentReplyContent} required />
             {#if amendmentReplyErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each amendmentReplyErrors as error}
@@ -2350,13 +3196,13 @@
         }
     }}
 >
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.comments.edit']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.comments.edit-label']()}</DialogDescription>
         </DialogHeader>
         <form class="space-y-4" onsubmit={handleAmendmentEditSubmit}>
-            <Textarea name="amendment-edit" label={m['proposition-detail.comments.edit-label']()} rows={5} bind:value={amendmentEditContent} required />
+            <Textarea name="amendment-edit" label={m['proposition-detail.comments.edit-label']()} rows={8} bind:value={amendmentEditContent} required />
             {#if amendmentEditErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each amendmentEditErrors as error}
@@ -2569,7 +3415,7 @@
 {/if}
 
 <Dialog open={isDeliverableDialogOpen} onOpenChange={(value: boolean) => (isDeliverableDialogOpen = value)}>
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.mandates.deliverables.dialog.title']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.mandates.deliverables.dialog.description']()}</DialogDescription>
@@ -2612,7 +3458,7 @@
 </Dialog>
 
 <Dialog open={isEvaluationDialogOpen} onOpenChange={(value: boolean) => (isEvaluationDialogOpen = value)}>
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.mandates.deliverables.evaluate.title']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.mandates.deliverables.evaluate.description']()}</DialogDescription>
@@ -2655,14 +3501,88 @@
     </DialogContent>
 </Dialog>
 
+<Dialog open={isApplicationDialogOpen} onOpenChange={(value: boolean) => (isApplicationDialogOpen = value)}>
+    <DialogContent class="sm:max-w-5xl">
+        <DialogHeader>
+            <DialogTitle>Proposer une candidature</DialogTitle>
+            <DialogDescription>Présentez votre candidature pour ce mandat</DialogDescription>
+        </DialogHeader>
+        <div class="grid gap-4">
+            <Textarea
+                id="application-description"
+                name="application-description"
+                label="Description (obligatoire)"
+                placeholder="Présentez-vous et expliquez pourquoi vous êtes le bon candidat pour ce mandat..."
+                rows={6}
+                bind:value={applicationForm.description}
+            />
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-foreground" for="application-start-date">Date de début proposée (optionnel)</label>
+                <input
+                    id="application-start-date"
+                    name="application-start-date"
+                    type="datetime-local"
+                    class="rounded-md border border-border/40 bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary w-full"
+                    bind:value={applicationForm.proposedStartDate}
+                />
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-foreground" for="application-end-date">Date de fin proposée (optionnel)</label>
+                <input
+                    id="application-end-date"
+                    name="application-end-date"
+                    type="datetime-local"
+                    class="rounded-md border border-border/40 bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary w-full"
+                    bind:value={applicationForm.proposedEndDate}
+                />
+            </div>
+            {#if applicationErrors.length}
+                <ul class="space-y-1 text-sm text-destructive">
+                    {#each applicationErrors as error}
+                        <li>{error}</li>
+                    {/each}
+                </ul>
+            {/if}
+        </div>
+        <DialogFooter>
+            <DialogClose asChild>
+                <Button type="button" variant="outline">Annuler</Button>
+            </DialogClose>
+            <Button type="button" onclick={submitApplication} disabled={isApplicationSubmitting} class="gap-2">
+                {#if isApplicationSubmitting}
+                    <Loader2 class="size-4 animate-spin" />
+                    Envoi en cours...
+                {:else}
+                    Soumettre la candidature
+                {/if}
+            </Button>
+        </DialogFooter>
+    </DialogContent>
+</Dialog>
+
 <Dialog open={isAmendmentDialogOpen} onOpenChange={(value: boolean) => (isAmendmentDialogOpen = value)}>
-    <DialogContent class="max-w-lg">
+    <DialogContent class="sm:max-w-5xl">
         <DialogHeader>
             <DialogTitle>{m['proposition-detail.comments.amendment-dialog.title']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.comments.amendment-dialog.description']()}</DialogDescription>
         </DialogHeader>
         <form class="space-y-4" onsubmit={handleAmendmentSubmit}>
-            <Textarea name="amendment-content" label={m['proposition-detail.comments.amendment-dialog.label']()} rows={6} bind:value={amendmentContent} required />
+            <label class="flex flex-col gap-2 text-sm text-foreground">
+                Section
+                <select name="section" class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40" bind:value={amendmentSection}>
+                    <option value="general">Général</option>
+                    <option value="description">Description détaillée</option>
+                    <option value="smart_objectives">Objectifs SMART</option>
+                    <option value="impacts">Impacts</option>
+                    <option value="mandates">Description des mandats</option>
+                    <option value="expertise">Expertises à impliquer</option>
+                    <option value="rescue">Ressource initiatrice</option>
+                    <option value="associated">Propositions liées</option>
+                    <option value="attachments">Pièces jointes</option>
+                </select>
+            </label>
+
+            <Textarea name="amendment-content" label={m['proposition-detail.comments.amendment-dialog.label']()} rows={10} bind:value={amendmentContent} required />
             {#if amendmentErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each amendmentErrors as error}
@@ -2700,7 +3620,7 @@
         }
     }}
 >
-    <DialogContent class="max-w-3xl p-8">
+    <DialogContent class="sm:max-w-4xl p-8">
         <DialogHeader>
             <DialogTitle>
                 {editingEventId ? m['proposition-detail.events.dialog.edit-title']() : m['proposition-detail.events.dialog.title']()}
@@ -2711,39 +3631,35 @@
         </DialogHeader>
         <form class="grid gap-4" onsubmit={handleEventSubmit}>
             <Input name="event-title" label={m['proposition-detail.events.form.title']()} bind:value={eventForm.title} required />
-            <div class="grid gap-4 sm:grid-cols-2">
-                <label class="flex flex-col gap-2 text-sm text-foreground">
-                    {m['proposition-detail.events.form.type']()}
-                    <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={eventForm.type}>
-                        {#each eventTypeOptions as option}
-                            <option value={option}>{translateEventType(option)}</option>
-                        {/each}
-                    </select>
-                </label>
-                <div class="relative">
-                    <Input type="datetime-local" name="event-start" label={m['proposition-detail.events.form.startAt']()} bind:value={eventForm.startAt} bind:ref={eventStartInput} class="pr-12" />
-                    <button
-                        type="button"
-                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                        onclick={() => openNativeDatePicker(eventStartInput)}
-                        aria-label={m['proposition-detail.events.form.startAt']()}
-                    >
-                        <CalendarDays class="size-4" />
-                    </button>
-                </div>
-                <div class="relative">
-                    <Input type="datetime-local" name="event-end" label={m['proposition-detail.events.form.endAt']()} bind:value={eventForm.endAt} bind:ref={eventEndInput} class="pr-12" />
-                    <button
-                        type="button"
-                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                        onclick={() => openNativeDatePicker(eventEndInput)}
-                        aria-label={m['proposition-detail.events.form.endAt']()}
-                    >
-                        <CalendarDays class="size-4" />
-                    </button>
-                </div>
-                <Input name="event-location" label={m['proposition-detail.events.form.location']()} bind:value={eventForm.location} class="sm:col-span-2" />
-            </div>
+            <label class="flex flex-col gap-2 text-sm text-foreground">
+                {m['proposition-detail.events.form.type']()}
+                <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={eventForm.type}>
+                    {#each eventTypeOptions as option}
+                        <option value={option}>{translateEventType(option)}</option>
+                    {/each}
+                </select>
+            </label>
+            <label class="flex flex-col gap-2 text-sm text-foreground">
+                {m['proposition-detail.events.form.startAt']()}
+                <input
+                    type="datetime-local"
+                    name="event-start"
+                    class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    bind:value={eventForm.startAt}
+                    bind:this={eventStartInput}
+                />
+            </label>
+            <label class="flex flex-col gap-2 text-sm text-foreground">
+                {m['proposition-detail.events.form.endAt']()}
+                <input
+                    type="datetime-local"
+                    name="event-end"
+                    class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    bind:value={eventForm.endAt}
+                    bind:this={eventEndInput}
+                />
+            </label>
+            <Input name="event-location" label={m['proposition-detail.events.form.location']()} bind:value={eventForm.location} />
             <Input name="event-video" label={m['proposition-detail.events.form.videoLink']()} bind:value={eventForm.videoLink} />
             <Textarea name="event-description" label={m['proposition-detail.events.form.description']()} rows={4} bind:value={eventForm.description} />
             {#if eventErrors.length}
@@ -2753,18 +3669,35 @@
                     {/each}
                 </ul>
             {/if}
-            <DialogFooter class="flex justify-end gap-2">
-                <DialogClose asChild>
-                    <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
-                </DialogClose>
-                <Button type="submit" disabled={isEventSubmitting} class="gap-2">
-                    {#if isEventSubmitting}
+            <DialogFooter class="flex justify-between gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onclick={handleCreateDiscordEvent}
+                    disabled={isEventSubmitting || isCreatingDiscordEvent || !eventForm.title || !eventForm.startAt}
+                    class="gap-2"
+                >
+                    {#if isCreatingDiscordEvent}
                         <Loader2 class="size-4 animate-spin" />
-                        {m['common.actions.loading']()}
+                        Création Discord...
                     {:else}
-                        {editingEventId ? m['proposition-detail.events.dialog.update']() : m['proposition-detail.events.dialog.submit']()}
+                        <MessageCircle class="size-4" />
+                        Créer événement Discord
                     {/if}
                 </Button>
+                <div class="flex gap-2">
+                    <DialogClose asChild>
+                        <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
+                    </DialogClose>
+                    <Button type="submit" disabled={isEventSubmitting} class="gap-2">
+                        {#if isEventSubmitting}
+                            <Loader2 class="size-4 animate-spin" />
+                            {m['common.actions.loading']()}
+                        {:else}
+                            {editingEventId ? m['proposition-detail.events.dialog.update']() : m['proposition-detail.events.dialog.submit']()}
+                        {/if}
+                    </Button>
+                </div>
             </DialogFooter>
         </form>
     </DialogContent>
@@ -2777,6 +3710,7 @@
         if (!value) {
             voteForm = { ...defaultVoteForm };
             voteErrors = [];
+            voteFieldErrors = {};
             isVoteSubmitting = false;
             voteOpenInput = null;
             voteCloseInput = null;
@@ -2789,7 +3723,12 @@
             <DialogDescription>{m['proposition-detail.votes.dialog.description']()}</DialogDescription>
         </DialogHeader>
         <form class="grid gap-4" onsubmit={handleVoteSubmit}>
-            <Input name="vote-title" label={m['proposition-detail.votes.form.title']()} bind:value={voteForm.title} required />
+            <div>
+                <Input name="vote-title" label={m['proposition-detail.votes.form.title']()} bind:value={voteForm.title} required />
+                {#if voteFieldErrors.title}
+                    <p class="mt-1 text-xs text-destructive">{voteFieldErrors.title}</p>
+                {/if}
+            </div>
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="flex flex-col gap-2 text-sm text-foreground">
                     {m['proposition-detail.votes.form.phase']()}
@@ -2799,40 +3738,61 @@
                         {/each}
                     </select>
                 </label>
-                <label class="flex flex-col gap-2 text-sm text-foreground">
-                    {m['proposition-detail.votes.form.method']()}
-                    <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={voteForm.method}>
-                        {#each voteMethodOptions as option}
-                            <option value={option}>{translateVoteMethod(option)}</option>
-                        {/each}
-                    </select>
-                </label>
-                <div class="relative">
-                    <Input type="datetime-local" name="vote-open" label={m['proposition-detail.votes.form.openAt']()} bind:value={voteForm.openAt} bind:ref={voteOpenInput} class="pr-12" />
-                    <button
-                        type="button"
-                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                        onclick={() => openNativeDatePicker(voteOpenInput)}
-                        aria-label={m['proposition-detail.votes.form.openAt']()}
-                    >
-                        <CalendarDays class="size-4" />
-                    </button>
+                <div>
+                    <Input type="number" name="vote-max-selections" min="1" label={m['proposition-detail.votes.form.maxSelections']()} bind:value={voteForm.maxSelections} required />
+                    {#if voteFieldErrors.maxSelections}
+                        <p class="mt-1 text-xs text-destructive">{voteFieldErrors.maxSelections}</p>
+                    {/if}
                 </div>
-                <div class="relative">
-                    <Input type="datetime-local" name="vote-close" label={m['proposition-detail.votes.form.closeAt']()} bind:value={voteForm.closeAt} bind:ref={voteCloseInput} class="pr-12" />
-                    <button
-                        type="button"
-                        class="absolute inset-y-0 right-3 flex items-center justify-center rounded-md px-2 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                        onclick={() => openNativeDatePicker(voteCloseInput)}
-                        aria-label={m['proposition-detail.votes.form.closeAt']()}
-                    >
-                        <CalendarDays class="size-4" />
-                    </button>
+                <div>
+                    <label class="flex flex-col gap-2 text-sm text-foreground">
+                        {m['proposition-detail.votes.form.openAt']()}
+                        <input
+                            type="datetime-local"
+                            name="vote-open"
+                            class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                            bind:value={voteForm.openAt}
+                            bind:this={voteOpenInput}
+                            required
+                        />
+                    </label>
+                    {#if voteFieldErrors.openAt}
+                        <p class="mt-1 text-xs text-destructive">{voteFieldErrors.openAt}</p>
+                    {/if}
                 </div>
-                <Input type="number" name="vote-max-selections" min="0" label={m['proposition-detail.votes.form.maxSelections']()} bind:value={voteForm.maxSelections} />
+                <div>
+                    <label class="flex flex-col gap-2 text-sm text-foreground">
+                        {m['proposition-detail.votes.form.closeAt']()}
+                        <input
+                            type="datetime-local"
+                            name="vote-close"
+                            class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                            bind:value={voteForm.closeAt}
+                            bind:this={voteCloseInput}
+                            required
+                        />
+                    </label>
+                    {#if voteFieldErrors.closeAt}
+                        <p class="mt-1 text-xs text-destructive">{voteFieldErrors.closeAt}</p>
+                    {/if}
+                </div>
             </div>
-            <Textarea name="vote-description" label={m['proposition-detail.votes.form.description']()} rows={3} bind:value={voteForm.description} />
-            <Textarea name="vote-options" label={m['proposition-detail.votes.form.options']()} rows={4} bind:value={voteForm.optionsText} required />
+            <label class="flex items-center gap-2 text-sm text-foreground">
+                <input type="checkbox" name="vote-majority-judgment" class="size-4 rounded border-border/60" bind:checked={voteForm.isMajorityJudgment} />
+                {m['proposition-detail.votes.form.majorityJudgment']()}
+            </label>
+            <div>
+                <Textarea name="vote-description" label={m['proposition-detail.votes.form.description']()} rows={3} bind:value={voteForm.description} />
+                {#if voteFieldErrors.description}
+                    <p class="mt-1 text-xs text-destructive">{voteFieldErrors.description}</p>
+                {/if}
+            </div>
+            <div>
+                <Textarea name="vote-options" label={m['proposition-detail.votes.form.options']()} rows={4} bind:value={voteForm.optionsText} required />
+                {#if voteFieldErrors.optionsText || voteFieldErrors.options}
+                    <p class="mt-1 text-xs text-destructive">{voteFieldErrors.optionsText || voteFieldErrors.options}</p>
+                {/if}
+            </div>
             {#if voteErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each voteErrors as error}
@@ -2867,7 +3827,16 @@
             <Input name="mandate-title" label={m['proposition-detail.mandates.form.title']()} bind:value={mandateForm.title} required />
             <Textarea name="mandate-description" label={m['proposition-detail.mandates.form.description']()} rows={4} bind:value={mandateForm.description} />
             <div class="grid gap-4 sm:grid-cols-2">
-                <Input name="mandate-holder" label={m['proposition-detail.mandates.form.holder']()} bind:value={mandateForm.holderUserId} />
+                <label class="flex flex-col gap-2 text-sm text-foreground">
+                    {m['proposition-detail.mandates.form.holder']()}
+                    <MultiSelect
+                        class="text-sm"
+                        options={userOptions}
+                        placeholder={m['proposition-detail.mandates.form.holderPlaceholder']()}
+                        bind:selectedValues={mandateHolderSelection}
+                        maxSelections={1}
+                    />
+                </label>
                 <label class="flex flex-col gap-2 text-sm text-foreground">
                     {m['proposition-detail.mandates.form.status']()}
                     <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={mandateForm.status}>
@@ -2877,8 +3846,24 @@
                     </select>
                 </label>
                 <Input name="mandate-target" label={m['proposition-detail.mandates.form.targetObjectiveRef']()} bind:value={mandateForm.targetObjectiveRef} />
-                <Input type="date" name="mandate-initial" label={m['proposition-detail.mandates.form.initialDeadline']()} bind:value={mandateForm.initialDeadline} />
-                <Input type="date" name="mandate-current" label={m['proposition-detail.mandates.form.currentDeadline']()} bind:value={mandateForm.currentDeadline} />
+                <label class="flex flex-col gap-2 text-sm text-foreground">
+                    {m['proposition-detail.mandates.form.initialDeadline']()}
+                    <input
+                        type="date"
+                        name="mandate-initial"
+                        class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        bind:value={mandateForm.initialDeadline}
+                    />
+                </label>
+                <label class="flex flex-col gap-2 text-sm text-foreground">
+                    {m['proposition-detail.mandates.form.currentDeadline']()}
+                    <input
+                        type="date"
+                        name="mandate-current"
+                        class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        bind:value={mandateForm.currentDeadline}
+                    />
+                </label>
             </div>
             {#if mandateErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
@@ -2906,9 +3891,13 @@
         <form class="space-y-4" onsubmit={handleStatusSubmit}>
             <label class="flex flex-col gap-2 text-sm text-foreground">
                 {m['proposition-detail.status.dialog.target']()}
-                <select class="rounded-md border border-border/60 bg-background px-3 py-2 text-sm" bind:value={selectedStatus}>
-                    {#each availableTransitions as status}
-                        <option value={status}>{translateStatus(status)}</option>
+                <select class="status-select rounded-md border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40" bind:value={selectedStatus}>
+                    {#each allStatuses as status}
+                        {@const isCurrentStatus = status === currentStatus}
+                        {@const isAvailable = availableTransitions.includes(status)}
+                        <option value={status} disabled={!isAvailable} class:font-bold={isCurrentStatus}>
+                            {translateStatus(status)}{isCurrentStatus ? ' (actuel)' : ''}
+                        </option>
                     {/each}
                 </select>
             </label>
@@ -2931,6 +3920,15 @@
 </Dialog>
 
 <style>
+    /* Style for status select dropdown */
+    .status-select option.font-bold {
+        font-weight: 700;
+    }
+
+    .status-select option:disabled {
+        color: #999;
+    }
+
     @media print {
         :global(body) {
             background: #fff !important;

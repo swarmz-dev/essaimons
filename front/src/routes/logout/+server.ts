@@ -5,6 +5,7 @@ import { m } from '#lib/paraglide/messages';
 export const POST: RequestHandler = async ({ cookies, locals }): Promise<Response> => {
     cookies.delete('user', { path: '/' });
     cookies.delete('token', { path: '/' });
+    cookies.delete('client_token', { path: '/' });
 
     try {
         const response = await locals.client.delete('/api/logout');

@@ -58,12 +58,13 @@ test.group('Proposition workflow schema', (group) => {
             mandatesDescription: 'Mandates',
             expertise: 'Expertise',
             clarificationDeadline: DateTime.now().plus({ days: 5 }).toISODate()!,
-            improvementDeadline: DateTime.now().plus({ days: 10 }).toISODate()!,
+            amendmentDeadline: DateTime.now().plus({ days: 10 }).toISODate()!,
             voteDeadline: DateTime.now().plus({ days: 15 }).toISODate()!,
             mandateDeadline: DateTime.now().plus({ days: 45 }).toISODate()!,
             evaluationDeadline: DateTime.now().plus({ days: 90 }).toISODate()!,
             categoryIds: [String(category.frontId ?? category.id)],
             rescueInitiatorIds: [String(rescue.frontId ?? rescue.id)],
+            isDraft: true,
         };
 
         const proposition: Proposition = await propositionService.create(payload, creator, {});

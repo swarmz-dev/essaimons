@@ -20,10 +20,12 @@ interface StorageConfig {
     };
 }
 
+const defaultLocalBasePath = env.get('NODE_ENV') === 'test' ? 'tmp/test-storage' : 'static';
+
 const storageConfig: StorageConfig = {
     driver: env.get('STORAGE_DRIVER', 'local' as StorageDriverName),
     local: {
-        basePath: env.get('STORAGE_LOCAL_BASE_PATH', 'static'),
+        basePath: env.get('STORAGE_LOCAL_BASE_PATH', defaultLocalBasePath),
     },
     s3: {
         bucket: env.get('STORAGE_S3_BUCKET', ''),

@@ -7,6 +7,7 @@ import PropositionMandate from '#models/proposition_mandate';
 import type Proposition from '#models/proposition';
 import type User from '#models/user';
 import { createMandateValidator, updateMandateValidator } from '#validators/proposition_mandate';
+import { serializeMandate } from '#serializers/mandate_serializer';
 
 @inject()
 export default class PropositionMandateController {
@@ -31,7 +32,7 @@ export default class PropositionMandateController {
         try {
             const payload = await createMandateValidator.validate(request.all());
             const created = await this.mandateService.create(proposition, user as User, payload);
-            return response.created({ mandate: created.toJSON() });
+            return response.created({ mandate: serializeMandate(created) });
         } catch (error) {
             if (error instanceof Error && error.message.startsWith('forbidden:')) {
                 return response.forbidden({ error: 'You are not allowed to manage mandates for this proposition' });
@@ -52,7 +53,7 @@ export default class PropositionMandateController {
         try {
             const payload = await updateMandateValidator.validate(request.all());
             const updated = await this.mandateService.update(proposition, mandate, user as User, payload);
-            return response.ok({ mandate: updated.toJSON() });
+            return response.ok({ mandate: serializeMandate(updated) });
         } catch (error) {
             if (error instanceof Error && error.message.startsWith('forbidden:')) {
                 return response.forbidden({ error: 'You are not allowed to manage mandates for this proposition' });

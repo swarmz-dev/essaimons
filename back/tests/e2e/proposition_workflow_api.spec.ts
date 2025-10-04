@@ -80,10 +80,11 @@ const createPropositionFixture = async (client: any) => {
             categoryIds: String(category.frontId ?? category.id),
             rescueInitiatorIds: String(rescue.frontId ?? rescue.id),
             clarificationDeadline: DateTime.now().plus({ days: 5 }).toISODate(),
-            improvementDeadline: DateTime.now().plus({ days: 10 }).toISODate(),
+            amendmentDeadline: DateTime.now().plus({ days: 10 }).toISODate(),
             voteDeadline: DateTime.now().plus({ days: 15 }).toISODate(),
             mandateDeadline: DateTime.now().plus({ days: 45 }).toISODate(),
             evaluationDeadline: DateTime.now().plus({ days: 90 }).toISODate(),
+            isDraft: false,
         });
 
     createResponse.assertStatus(201);
@@ -162,10 +163,11 @@ test.group('Proposition workflow API', (group) => {
                 categoryIds: String(category.frontId ?? category.id),
                 rescueInitiatorIds: String(rescue.frontId ?? rescue.id),
                 clarificationDeadline: DateTime.now().plus({ days: 5 }).toISODate(),
-                improvementDeadline: DateTime.now().plus({ days: 10 }).toISODate(),
+                amendmentDeadline: DateTime.now().plus({ days: 10 }).toISODate(),
                 voteDeadline: DateTime.now().plus({ days: 15 }).toISODate(),
                 mandateDeadline: DateTime.now().plus({ days: 45 }).toISODate(),
                 evaluationDeadline: DateTime.now().plus({ days: 90 }).toISODate(),
+                isDraft: true,
             });
 
         createResponse.assertStatus(201);
@@ -220,10 +222,11 @@ test.group('Proposition workflow API', (group) => {
                 categoryIds: String(category.frontId ?? category.id),
                 rescueInitiatorIds: String(rescue.frontId ?? rescue.id),
                 clarificationDeadline: DateTime.now().plus({ days: 5 }).toISODate(),
-                improvementDeadline: DateTime.now().plus({ days: 10 }).toISODate(),
+                amendmentDeadline: DateTime.now().plus({ days: 10 }).toISODate(),
                 voteDeadline: DateTime.now().plus({ days: 15 }).toISODate(),
                 mandateDeadline: DateTime.now().plus({ days: 45 }).toISODate(),
                 evaluationDeadline: DateTime.now().plus({ days: 90 }).toISODate(),
+                isDraft: true,
             });
 
         createResponse.assertStatus(201);

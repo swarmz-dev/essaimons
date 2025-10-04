@@ -310,7 +310,7 @@
             "propositions": {
                 "description": "Configure default offsets applied when creating a proposal. Each value represents days after the previous milestone.",
                 "clarification": "Clarification offset (days)",
-                "improvement": "Improvement offset (days)",
+                "amendment": "Amendment offset (days)",
                 "vote": "Vote offset (days)",
                 "mandate": "Mandate offset (days)",
                 "evaluation": "Evaluation offset (days)",
@@ -419,8 +419,8 @@
                 "label": "Clarification deadline",
                 "info": "Latest date to clarify the initial content with stakeholders."
             },
-            "improvement-deadline": {
-                "label": "Improvement deadline",
+            "amendment-deadline": {
+                "label": "Amendment deadline",
                 "info": "Target date to finalise adjustments based on feedback."
             },
             "vote-deadline": {
@@ -463,7 +463,9 @@
             "previous": "Previous",
             "next": "Next",
             "submit": "Publish proposal",
-            "submitting": "Submitting…",
+            "submitting": "Publishing…",
+            "save-draft": "Save as draft",
+            "saving-draft": "Saving…",
             "concretization-hint": "Complete the general framing before moving to collaborative aspects.",
             "horizontality-hint": "Document the shared context, deadlines, and mandates.",
             "robustness-hint": "Assess impacts, required expertise, and connections to other proposals."
@@ -587,7 +589,7 @@
         },
         "dates": {
             "clarification": "Clarification",
-            "improvement": "Improvement",
+            "amendment": "Amendment",
             "vote": "Vote",
             "mandate": "Mandate",
             "evaluation": "Evaluation",
@@ -635,7 +637,18 @@
             "delete-confirm-description": "This clarification will be permanently removed.",
             "delete-confirm-submit": "Confirm deletion",
             "delete-confirm-title-reply": "Delete reply",
-            "delete-confirm-description-reply": "This reply will be permanently removed."
+            "delete-confirm-description-reply": "This reply will be permanently removed.",
+            "sections": {
+                "general": "General",
+                "description": "Detailed Description",
+                "smart_objectives": "SMART Objectives",
+                "impacts": "Impacts",
+                "mandates": "Mandate Description",
+                "expertise": "Expertise to Involve",
+                "rescue": "Initiator Resource",
+                "associated": "Related Proposals",
+                "attachments": "Attachments"
+            }
         },
         "events": {
             "empty": "No collective session has been scheduled yet.",
@@ -661,8 +674,8 @@
                 "description": "Description"
             },
             "type": {
-                "milestone": "Milestone",
-                "exchange": "Exchange",
+                "milestone": "Amendment",
+                "exchange": "Application",
                 "evaluation": "Evaluation"
             },
             "delete": {
@@ -690,11 +703,25 @@
                 "openAt": "Opens at",
                 "closeAt": "Closes at",
                 "maxSelections": "Maximum selections",
+                "majorityJudgment": "Majority judgment",
                 "description": "Description",
                 "options": "Options (one per line)"
             },
             "options-empty": "Please provide at least one voting option.",
-            "max-invalid": "Maximum selections must be a positive number.",
+            "max-invalid": "Maximum selections must be at least 1.",
+            "errors": {
+                "title-required": "Title is required",
+                "title-too-long": "Title cannot exceed 255 characters",
+                "description-too-long": "Description cannot exceed 1000 characters",
+                "max-selections-invalid": "Maximum selections must be a positive number",
+                "option-label-required": "Option label is required",
+                "option-label-too-long": "Option label cannot exceed 255 characters",
+                "option-description-too-long": "Option description cannot exceed 1000 characters",
+                "options-required": "At least one option is required",
+                "open-at-required": "Opening date is required",
+                "close-at-required": "Closing date is required",
+                "close-before-open": "Closing date must be after opening date"
+            },
             "phase": {
                 "vote": "Voting",
                 "mandate": "Mandate",
@@ -712,6 +739,7 @@
         "mandates": {
             "empty": "No mandates have been created yet.",
             "add": "Create a mandate",
+            "apply": "Apply for this mandate",
             "dialog": {
                 "title": "Create a mandate",
                 "description": "Assign responsibilities and track deliverables for this proposal.",
@@ -720,15 +748,15 @@
             "form": {
                 "title": "Title",
                 "description": "Description",
-                "holder": "Mandated user ID",
+                "holder": "Mandated user",
+                "holderPlaceholder": "Search for a mandated member",
                 "status": "Status",
                 "targetObjectiveRef": "Related objective",
                 "initialDeadline": "Initial deadline",
                 "currentDeadline": "Current deadline"
             },
             "status": {
-                "draft": "Draft",
-                "pending": "Pending",
+                "to_assign": "To assign",
                 "active": "Active",
                 "completed": "Completed",
                 "revoked": "Revoked"

@@ -13,6 +13,7 @@ export { MandateApplicationStatusEnum } from './enum/mandate_application_status_
 export { DeliverableVerdictEnum } from './enum/deliverable_verdict_enum.js';
 export { PropositionCommentScopeEnum } from './enum/proposition_comment_scope_enum.js';
 export { PropositionCommentVisibilityEnum } from './enum/proposition_comment_visibility_enum.js';
+export { PropositionSectionEnum } from './enum/proposition_section_enum.js';
 export { PropositionReactionTypeEnum } from './enum/proposition_reaction_type_enum.js';
 export { MandateRevocationStatusEnum } from './enum/mandate_revocation_status_enum.js';
 

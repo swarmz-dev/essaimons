@@ -10,6 +10,7 @@ const UnsubscribeController = () => import('@adonisjs/transmit/controllers/unsub
 const AdminUserController = () => import('#controllers/admin/user_controller');
 const AdminPropositionCategoryController = () => import('#controllers/admin/proposition_category_controller');
 const AdminOrganizationSettingsController = () => import('#controllers/admin/organization_settings_controller');
+const AdminDiscordController = () => import('#controllers/admin/discord_controller');
 
 // App controllers
 const HealthCheckController = () => import('#controllers/health_checks_controller');
@@ -22,8 +23,10 @@ const PropositionEventController = () => import('#controllers/proposition_event_
 const PropositionVoteController = () => import('#controllers/proposition_vote_controller');
 const PropositionMandateController = () => import('#controllers/proposition_mandate_controller');
 const PropositionMandateDeliverableController = () => import('#controllers/proposition_mandate_deliverable_controller');
+const MandateApplicationController = () => import('#controllers/mandate_application_controller');
 const PropositionCommentController = () => import('#controllers/proposition_comment_controller');
 const SettingsController = () => import('#controllers/settings_controller');
+const DiscordEventController = () => import('#controllers/discord_event_controller');
 
 router.get('healthcheck', [HealthCheckController]);
 
@@ -101,6 +104,15 @@ router
                                 router.post('/', [AdminOrganizationSettingsController, 'update']);
                             })
                             .prefix('organization');
+
+                        router
+                            .group((): void => {
+                                router.get('/', [AdminDiscordController, 'show']);
+                                router.post('/', [AdminDiscordController, 'update']);
+                                router.post('/guilds', [AdminDiscordController, 'listGuilds']);
+                                router.post('/channels', [AdminDiscordController, 'listChannels']);
+                            })
+                            .prefix('discord');
                     })
                     .prefix('admin')
                     .use([middleware.isAdmin()]);
@@ -136,10 +148,18 @@ router
                         router.post('/:id/votes/:voteId/status', [PropositionVoteController, 'changeStatus']);
                         router.delete('/:id/votes/:voteId', [PropositionVoteController, 'destroy']);
 
+                        const VoteBallotController = () => import('#controllers/vote_ballot_controller');
+                        router.get('/:id/votes/:voteId/ballot', [VoteBallotController, 'show']);
+                        router.post('/:id/votes/:voteId/ballot', [VoteBallotController, 'store']);
+                        router.get('/:id/votes/:voteId/results', [VoteBallotController, 'results']);
+                        router.delete('/:id/votes/:voteId/ballot', [VoteBallotController, 'destroy']);
+
                         router.get('/:id/mandates', [PropositionMandateController, 'index']);
                         router.post('/:id/mandates', [PropositionMandateController, 'store']);
                         router.put('/:id/mandates/:mandateId', [PropositionMandateController, 'update']);
                         router.delete('/:id/mandates/:mandateId', [PropositionMandateController, 'destroy']);
+
+                        router.post('/:id/mandates/:mandateId/applications', [MandateApplicationController, 'store']);
 
                         router.get('/:id/mandates/:mandateId/deliverables', [PropositionMandateDeliverableController, 'index']);
                         router.post('/:id/mandates/:mandateId/deliverables', [PropositionMandateDeliverableController, 'store']);
@@ -151,6 +171,8 @@ router
                         router.delete('/:id/comments/:commentId', [PropositionCommentController, 'destroy']);
                     })
                     .prefix('propositions');
+
+                router.post('/discord/events', [DiscordEventController, 'create']);
 
                 router
                     .group((): void => {

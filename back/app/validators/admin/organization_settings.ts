@@ -20,7 +20,7 @@ export const updateOrganizationSettingsValidator = vine.compile(
         propositionDefaults: vine
             .object({
                 clarificationOffsetDays: vine.number().min(0).max(365).optional(),
-                improvementOffsetDays: vine.number().min(0).max(365).optional(),
+                amendmentOffsetDays: vine.number().min(0).max(365).optional(),
                 voteOffsetDays: vine.number().min(0).max(365).optional(),
                 mandateOffsetDays: vine.number().min(0).max(365).optional(),
                 evaluationOffsetDays: vine.number().min(0).max(365).optional(),

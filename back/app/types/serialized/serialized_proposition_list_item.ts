@@ -13,7 +13,7 @@ export type SerializedPropositionListItem = {
     visibility: PropositionVisibilityEnum;
     statusStartedAt: string;
     clarificationDeadline: string;
-    improvementDeadline: string;
+    amendmentDeadline: string;
     voteDeadline: string;
     mandateDeadline: string;
     evaluationDeadline: string;

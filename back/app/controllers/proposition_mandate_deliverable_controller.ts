@@ -63,29 +63,40 @@ export default class PropositionMandateDeliverableController {
     public async store(ctx: HttpContext): Promise<void> {
         const { request, response, i18n, user } = ctx;
 
-        const proposition = await this.findProposition(request.param('id'), response);
-        if (!proposition) return;
-
-        const mandate = await this.findMandate(proposition, request.param('mandateId'), response);
-        if (!mandate) return;
-
-        const file = request.file('file', {
-            size: '50mb',
-            extnames: ['png', 'jpg', 'jpeg', 'webp', 'pdf', 'doc', 'docx', 'odt', 'ods', 'txt', 'csv', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar'],
-        });
-
-        if (!file) {
-            return response.badRequest({ error: i18n.t('messages.deliverable.upload.file-required') });
-        }
-
         try {
+            logger.info('deliverable.upload.start', { propositionId: request.param('id'), mandateId: request.param('mandateId') });
+
+            const proposition = await this.findProposition(request.param('id'), response);
+            if (!proposition) return;
+
+            const mandate = await this.findMandate(proposition, request.param('mandateId'), response);
+            if (!mandate) return;
+
+            const file = request.file('file', {
+                size: '50mb',
+                extnames: ['png', 'jpg', 'jpeg', 'webp', 'pdf', 'doc', 'docx', 'odt', 'ods', 'txt', 'csv', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar'],
+            });
+
+            if (!file) {
+                logger.warn('deliverable.upload.no-file');
+                return response.badRequest({ isSuccess: false, error: i18n.t('messages.deliverable.upload.file-required') });
+            }
+
+            if (!file.isValid) {
+                logger.warn('deliverable.upload.invalid-file', { errors: file.errors });
+                return response.badRequest({ isSuccess: false, error: file.errors[0]?.message || 'Invalid file' });
+            }
+
             const payload = await createMandateDeliverableValidator.validate({
                 label: request.input('label'),
                 objectiveRef: request.input('objectiveRef'),
             });
 
+            logger.info('deliverable.upload.validated', { payload });
+
             const result = await this.deliverableService.upload(proposition, mandate, user as User, payload, file);
 
+            logger.info('deliverable.upload.success');
             return response.created({ isSuccess: true, ...result });
         } catch (error: any) {
             logger.error('deliverable.upload.error', {
@@ -94,14 +105,15 @@ export default class PropositionMandateDeliverableController {
             });
 
             if (error instanceof errors.E_VALIDATION_ERROR) {
-                return response.badRequest({ errors: error.messages });
+                return response.badRequest({ isSuccess: false, errors: error.messages });
             }
 
             if (typeof error.message === 'string' && error.message.startsWith('forbidden:')) {
-                return response.forbidden({ error: i18n.t('messages.deliverable.upload.forbidden') });
+                return response.forbidden({ isSuccess: false, error: i18n.t('messages.deliverable.upload.forbidden') });
             }
 
             return response.badRequest({
+                isSuccess: false,
                 error: i18n.t('messages.deliverable.upload.failed'),
                 details: error?.message,
             });

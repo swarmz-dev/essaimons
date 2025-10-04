@@ -139,7 +139,8 @@ export default class PropositionWorkflowService {
         }
 
         const rescueInitiators = await this.ensureRescueInitiators(proposition);
-        if (proposition.creatorId === actor.id || rescueInitiators.some((user) => user.id === actor.id)) {
+        const actorFrontId = actor.frontId ?? null;
+        if (proposition.creatorId === actor.id || rescueInitiators.some((user) => user.id === actor.id || (actorFrontId !== null && user.frontId === actorFrontId))) {
             return 'initiator';
         }
 

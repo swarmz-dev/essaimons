@@ -35,7 +35,38 @@ export default class PropositionVoteService {
     constructor(private readonly workflowService: PropositionWorkflowService) {}
 
     public async list(proposition: Proposition): Promise<PropositionVote[]> {
-        return proposition.related('votes').query().preload('options').orderBy('created_at', 'asc');
+        const votes = await proposition.related('votes').query().preload('options').orderBy('created_at', 'asc');
+
+        // Automatic update of vote status based on dates
+        const now = DateTime.now();
+        let hasChanges = false;
+
+        for (const vote of votes) {
+            let newStatus: PropositionVoteStatusEnum | null = null;
+
+            // If scheduled and opening date has passed -> switch to open
+            if (vote.status === PropositionVoteStatusEnum.SCHEDULED && vote.openAt && vote.openAt <= now) {
+                newStatus = PropositionVoteStatusEnum.OPEN;
+            }
+
+            // If open and closing date has passed -> switch to closed
+            if (vote.status === PropositionVoteStatusEnum.OPEN && vote.closeAt && vote.closeAt <= now) {
+                newStatus = PropositionVoteStatusEnum.CLOSED;
+            }
+
+            if (newStatus) {
+                vote.status = newStatus;
+                await vote.save();
+                hasChanges = true;
+            }
+        }
+
+        // Reload votes if changes were made
+        if (hasChanges) {
+            return proposition.related('votes').query().preload('options').orderBy('created_at', 'asc');
+        }
+
+        return votes;
     }
 
     public async create(proposition: Proposition, actor: User, payload: CreateVotePayload): Promise<PropositionVote> {
@@ -78,7 +109,9 @@ export default class PropositionVoteService {
 
     public async update(proposition: Proposition, vote: PropositionVote, actor: User, payload: UpdateVotePayload): Promise<PropositionVote> {
         await this.ensureCanManageVotes(proposition, actor);
-        if (vote.status !== PropositionVoteStatusEnum.DRAFT) {
+
+        // Only admins can modify published votes
+        if (vote.status !== PropositionVoteStatusEnum.DRAFT && actor.role !== 'admin') {
             throw new Error('votes.update.locked');
         }
 
@@ -113,7 +146,9 @@ export default class PropositionVoteService {
 
     public async delete(proposition: Proposition, vote: PropositionVote, actor: User): Promise<void> {
         await this.ensureCanManageVotes(proposition, actor);
-        if (vote.status !== PropositionVoteStatusEnum.DRAFT) {
+
+        // Only admins can delete published votes
+        if (vote.status !== PropositionVoteStatusEnum.DRAFT && actor.role !== 'admin') {
             throw new Error('votes.delete.locked');
         }
 

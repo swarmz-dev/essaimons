@@ -41,7 +41,7 @@ export default class Proposition extends BaseModel {
     declare impacts: string;
 
     @column()
-    declare mandatesDescription: string;
+    declare mandatesDescription: string; // Mandates description
 
     @column()
     declare expertise?: string | null;
@@ -59,7 +59,7 @@ export default class Proposition extends BaseModel {
     declare clarificationDeadline: DateTime;
 
     @column.date()
-    declare improvementDeadline: DateTime;
+    declare amendmentDeadline: DateTime;
 
     @column.date()
     declare voteDeadline: DateTime;
@@ -163,7 +163,7 @@ export default class Proposition extends BaseModel {
             visibility: this.visibility,
             statusStartedAt: this.statusStartedAt?.toISO() ?? '',
             clarificationDeadline: this.clarificationDeadline?.toISODate() ?? '',
-            improvementDeadline: this.improvementDeadline?.toISODate() ?? '',
+            amendmentDeadline: this.amendmentDeadline?.toISODate() ?? '',
             voteDeadline: this.voteDeadline?.toISODate() ?? '',
             mandateDeadline: this.mandateDeadline?.toISODate() ?? '',
             evaluationDeadline: this.evaluationDeadline?.toISODate() ?? '',
@@ -190,7 +190,7 @@ export default class Proposition extends BaseModel {
             statusStartedAt: this.statusStartedAt.toISO() ?? '',
             visibility: this.visibility,
             clarificationDeadline: this.clarificationDeadline.toISODate() ?? '',
-            improvementDeadline: this.improvementDeadline.toISODate() ?? '',
+            amendmentDeadline: this.amendmentDeadline.toISODate() ?? '',
             voteDeadline: this.voteDeadline.toISODate() ?? '',
             mandateDeadline: this.mandateDeadline.toISODate() ?? '',
             evaluationDeadline: this.evaluationDeadline.toISODate() ?? '',

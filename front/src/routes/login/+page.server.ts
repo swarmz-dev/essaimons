@@ -63,6 +63,14 @@ export const actions: Actions = {
                 maxAge: 60 * 60 * 24 * 7,
             });
 
+            // Also set a non-httpOnly cookie for client-side access
+            cookies.set('client_token', data.token.token, {
+                path: '/',
+                httpOnly: false,
+                sameSite: 'lax',
+                maxAge: 60 * 60 * 24 * 7,
+            });
+
             const locale: string = cookies.get('PARAGLIDE_LOCALE') ?? 'fr';
             const previousPathName: string | undefined = cookies.get('previousPathName');
             cookies.delete('previousPathName', { path: '/' });
