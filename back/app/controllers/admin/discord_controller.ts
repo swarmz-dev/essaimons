@@ -1,23 +1,8 @@
 import { HttpContext } from '@adonisjs/core/http';
 import { inject } from '@adonisjs/core';
 import DiscordService from '#services/discord_service';
-import vine from '@vinejs/vine';
-
-const updateDiscordSettingsValidator = vine.compile(
-    vine.object({
-        enabled: vine.boolean(),
-        botToken: vine.string().trim().optional(),
-        guildId: vine.string().trim().optional(),
-        defaultChannelId: vine.string().trim().optional(),
-    })
-);
-
-const listChannelsValidator = vine.compile(
-    vine.object({
-        guildId: vine.string().trim(),
-        botToken: vine.string().trim(),
-    })
-);
+import { updateDiscordSettingsValidator } from '#validators/admin/discord/update_discord_settings';
+import { listChannelsValidator } from '#validators/admin/discord/list_channels';
 
 @inject()
 export default class DiscordController {

@@ -7,7 +7,9 @@
         "install:prod": "rm -rf node_modules && npm ci --omit=\"dev\"",
         "build": "node ace build",
         "dev": "node ace serve --hmr",
-        "test": "node ace test"
+        "test": "node ace test",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix"
     },
     "exports": {
         "./types": "./app/types/index.ts"
@@ -46,6 +48,9 @@
         "@types/mime-types": "^3.0.1",
         "@types/node": "^24.3.0",
         "@types/web-push": "^3.6.4",
+        "@typescript-eslint/eslint-plugin": "^8.45.0",
+        "@typescript-eslint/parser": "^8.45.0",
+        "eslint": "^9.37.0",
         "hot-hook": "^0.4.0",
         "typescript": "~5.9"
     },

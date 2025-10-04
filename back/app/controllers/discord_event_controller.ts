@@ -1,17 +1,7 @@
 import { HttpContext } from '@adonisjs/core/http';
 import { inject } from '@adonisjs/core';
 import DiscordService from '#services/discord_service';
-import vine from '@vinejs/vine';
-
-const createDiscordEventValidator = vine.compile(
-    vine.object({
-        name: vine.string().trim().minLength(1).maxLength(100),
-        startTime: vine.string().trim(),
-        endTime: vine.string().trim().optional(),
-        description: vine.string().trim().optional(),
-        channelId: vine.string().trim().optional(),
-    })
-);
+import { createDiscordEventValidator } from '#validators/discord/create_discord_event';
 
 @inject()
 export default class DiscordEventController {
