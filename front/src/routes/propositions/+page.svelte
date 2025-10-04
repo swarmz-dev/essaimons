@@ -360,7 +360,11 @@
                         <TableRow class="cursor-pointer hover:bg-primary/5" onclick={() => openDetail(proposition)}>
                             {@const tableOverdue = getOverduePhase(proposition)}
                             <TableCell class="font-semibold">{proposition.title}</TableCell>
-                            <TableCell class="max-w-xs text-sm text-muted-foreground">{proposition.summary}</TableCell>
+                            <TableCell class="max-w-xs text-sm text-muted-foreground">
+                                <div class="line-clamp-2 overflow-hidden text-ellipsis">
+                                    {proposition.summary}
+                                </div>
+                            </TableCell>
                             <TableCell>
                                 <div class="flex flex-wrap gap-1">
                                     {#each proposition.categories as category (category.id)}
