@@ -22,7 +22,7 @@ export default class extends BaseSchema {
             table.uuid('id').primary().defaultTo(this.raw('uuid_generate_v4()'));
             table.specificType('front_id', 'serial').notNullable();
             table.string('title', 150).notNullable();
-            table.string('summary', 300).notNullable();
+            table.string('summary', 600).notNullable();
             table.text('detailed_description').notNullable();
             table.text('smart_objectives').notNullable();
             table.text('impacts').notNullable();

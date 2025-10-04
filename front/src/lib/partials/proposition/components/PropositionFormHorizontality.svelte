@@ -16,7 +16,7 @@
 
 <div class="space-y-6">
     <FieldLabel forId="summary" label={m['proposition-create.fields.summary.label']()} required info={m['proposition-create.fields.summary.info']()}>
-        <Textarea name="summary" id="summary" bind:value={summary} max={300} rows={6} required />
+        <Textarea name="summary" id="summary" bind:value={summary} max={600} rows={6} required />
     </FieldLabel>
 
     <RichTextEditor

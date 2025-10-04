@@ -239,7 +239,7 @@
 
     const schema = zod.object({
         title: zod.string().min(1).max(150),
-        summary: zod.string().min(1).max(300),
+        summary: zod.string().min(1).max(600),
         detailedDescription: zod.string().min(1).max(1500),
         smartObjectives: zod.string().min(1).max(1500),
         impacts: zod.string().min(1).max(1500),

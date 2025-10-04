@@ -5,7 +5,7 @@ const isoDateRegex: RegExp = /^\d{4}-\d{2}-\d{2}$/;
 
 const propositionPayloadSchema = vine.object({
     title: vine.string().trim().minLength(1).maxLength(150),
-    summary: vine.string().trim().minLength(1).maxLength(300),
+    summary: vine.string().trim().minLength(1).maxLength(600),
     detailedDescription: vine.string().trim().minLength(1).maxLength(1500),
     smartObjectives: vine.string().trim().minLength(1).maxLength(1500),
     impacts: vine.string().trim().minLength(1).maxLength(1500),
