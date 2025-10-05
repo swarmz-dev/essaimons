@@ -1,7 +1,8 @@
 import { inject } from '@adonisjs/core';
 import { DateTime } from 'luxon';
-import Notification, { NotificationTypeEnum } from '#models/notification';
+import Notification from '#models/notification';
 import UserNotification from '#models/user_notification';
+import { NotificationTypeEnum } from '#types';
 import NotificationSetting from '#models/notification_setting';
 import User from '#models/user';
 import WebPushService from '#services/web_push_service';

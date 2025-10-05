@@ -3,7 +3,6 @@ import { inject } from '@adonisjs/core';
 import NotificationService from '#services/notification_service';
 import type User from '#models/user';
 import Notification from '#models/notification';
-import UserNotification from '#models/user_notification';
 
 @inject()
 export default class NotificationsController {

@@ -1,7 +1,7 @@
 import { HttpContext } from '@adonisjs/core/http';
 import type User from '#models/user';
 import NotificationSetting from '#models/notification_setting';
-import { NotificationTypeEnum } from '#models/notification';
+import { NotificationTypeEnum } from '#types';
 import { updateSettingsValidator } from '#validators/notification_settings';
 
 export default class NotificationSettingsController {

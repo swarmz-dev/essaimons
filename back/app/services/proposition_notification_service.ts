@@ -1,6 +1,6 @@
 import { inject } from '@adonisjs/core';
 import NotificationService from '#services/notification_service';
-import { NotificationTypeEnum } from '#models/notification';
+import { NotificationTypeEnum } from '#types';
 import Proposition from '#models/proposition';
 import PropositionMandate from '#models/proposition_mandate';
 import MandateDeliverable from '#models/mandate_deliverable';

@@ -2,7 +2,7 @@ import { DateTime } from 'luxon';
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm';
 import type { BelongsTo } from '@adonisjs/lucid/types/relations';
 import User from '#models/user';
-import { NotificationTypeEnum } from '#models/notification';
+import { NotificationTypeEnum } from '#types';
 
 export default class NotificationSetting extends BaseModel {
     @column({ isPrimary: true })

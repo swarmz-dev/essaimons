@@ -3,7 +3,6 @@ import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm';
 import type { BelongsTo } from '@adonisjs/lucid/types/relations';
 import User from '#models/user';
 import Notification from '#models/notification';
-import { NotificationChannelEnum, DeliveryStatusEnum } from '#types';
 
 export default class UserNotification extends BaseModel {
     @column({ isPrimary: true })
