@@ -22,12 +22,25 @@ export default class extends BaseSchema {
             });
         } else {
             // If table exists, ensure all columns are present
+            const hasParentId = await this.schema.hasColumn(this.tableName, 'parent_id');
+            const hasScope = await this.schema.hasColumn(this.tableName, 'scope');
+            const hasSection = await this.schema.hasColumn(this.tableName, 'section');
+            const hasVisibility = await this.schema.hasColumn(this.tableName, 'visibility');
+
             this.schema.alterTable(this.tableName, (table) => {
                 // Check and add missing columns
-                table.uuid('parent_id').nullable().references('id').inTable('proposition_comments').onDelete('CASCADE');
-                table.string('scope', 50).notNullable().defaultTo('clarification');
-                table.string('section', 100).nullable();
-                table.string('visibility', 50).notNullable().defaultTo('public');
+                if (!hasParentId) {
+                    table.uuid('parent_id').nullable().references('id').inTable('proposition_comments').onDelete('CASCADE');
+                }
+                if (!hasScope) {
+                    table.string('scope', 50).notNullable().defaultTo('clarification');
+                }
+                if (!hasSection) {
+                    table.string('section', 100).nullable();
+                }
+                if (!hasVisibility) {
+                    table.string('visibility', 50).notNullable().defaultTo('public');
+                }
             });
 
             // Rename author_user_id to author_id if it exists
