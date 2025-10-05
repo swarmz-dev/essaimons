@@ -947,6 +947,26 @@
             "to_evaluate": {
                 "title": "Proposal in evaluation",
                 "message": "The proposal \"{propositionTitle}\" is now in evaluation phase"
+            },
+            "to_clarify": {
+                "title": "Clarification Requested",
+                "message": "The proposal \"{propositionTitle}\" requires clarifications"
+            },
+            "to_amend": {
+                "title": "Amendments Needed",
+                "message": "The proposal \"{propositionTitle}\" can be amended"
+            },
+            "to_vote": {
+                "title": "Proposal Under Vote",
+                "message": "The proposal \"{propositionTitle}\" is now submitted for voting"
+            },
+            "to_mandate": {
+                "title": "Proposal Validated",
+                "message": "The proposal \"{propositionTitle}\" has been validated and moves to mandate phase"
+            },
+            "to_archived": {
+                "title": "Proposal Archived",
+                "message": "The proposal \"{propositionTitle}\" has been archived"
             }
         },
         "mandate_assigned": {

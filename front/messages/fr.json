@@ -948,6 +948,26 @@
             "to_evaluate": {
                 "title": "Proposition en évaluation",
                 "message": "La proposition \"{propositionTitle}\" est maintenant en phase d'évaluation"
+            },
+            "to_clarify": {
+                "title": "Demande de clarification",
+                "message": "La proposition \"{propositionTitle}\" nécessite des clarifications"
+            },
+            "to_amend": {
+                "title": "Amendements nécessaires",
+                "message": "La proposition \"{propositionTitle}\" peut être amendée"
+            },
+            "to_vote": {
+                "title": "Proposition au vote",
+                "message": "La proposition \"{propositionTitle}\" est maintenant soumise au vote"
+            },
+            "to_mandate": {
+                "title": "Proposition validée",
+                "message": "La proposition \"{propositionTitle}\" a été validée et passe en phase de mandat"
+            },
+            "to_archived": {
+                "title": "Proposition archivée",
+                "message": "La proposition \"{propositionTitle}\" a été archivée"
             }
         },
         "mandate_assigned": {
