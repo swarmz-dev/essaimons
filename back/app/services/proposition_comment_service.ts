@@ -100,6 +100,7 @@ export default class PropositionCommentService {
                 throw new Error('forbidden:comments');
             }
         }
+
         const repliesCount = (await comment.related('replies').query().count('* as total')) as unknown as { total?: string | number }[];
         const total = Number(repliesCount?.[0]?.total ?? 0);
         if (total > 0) {
@@ -107,7 +108,7 @@ export default class PropositionCommentService {
         }
 
         // Send notification before deleting
-        this.propositionNotificationService.notifyCommentDeleted(proposition, comment).catch((error: Error) => {
+        await this.propositionNotificationService.notifyCommentDeleted(proposition, comment).catch((error: Error) => {
             logger.error({ err: error, commentId: comment.id }, 'Failed to send comment delete notification');
         });
 

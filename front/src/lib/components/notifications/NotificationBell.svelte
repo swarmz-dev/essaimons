@@ -19,7 +19,7 @@
 
         // Close dropdown when clicking outside
         function handleClickOutside(event: MouseEvent) {
-            if (notificationStore.isOpen && !bellButton.contains(event.target as Node)) {
+            if (notificationStore.isOpen && bellButton && !bellButton.contains(event.target as Node)) {
                 const dropdown = document.querySelector('[data-notification-dropdown]');
                 if (dropdown && !dropdown.contains(event.target as Node)) {
                     notificationStore.closeDropdown();

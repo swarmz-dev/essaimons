@@ -14,18 +14,22 @@ export class NotificationSSEService {
      */
     connect(userId: string) {
         if (this.subscription) {
-            console.warn('Already subscribed to notifications');
+            console.warn('[NotificationSSE] Already subscribed to notifications');
             return;
         }
 
+        // Validate that userId is a UUID (not a numeric ID)
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(userId)) {
+            console.error(`[NotificationSSE] ERROR: User ID is not a UUID! Got: ${userId}`);
+            console.error('[NotificationSSE] This means the user cookie is outdated. Please logout and login again.');
+        }
+
         const channelName = `user/${userId}/notifications`;
-        console.log(`Subscribing to notification channel: ${channelName}`);
 
         this.subscription = this.transmit.subscription(channelName);
 
         this.subscription.onMessage((payload: any) => {
-            console.log('Received notification via Transmit:', payload);
-
             if (payload.type === 'notification' && payload.data) {
                 const notification: Notification = {
                     id: payload.data.id,
@@ -43,15 +47,19 @@ export class NotificationSSEService {
                 notificationStore.addNotification(notification);
 
                 // Show toast notification
-                const titleTranslation = m[notification.titleKey as keyof typeof m];
-                const messageTranslation = m[notification.messageKey as keyof typeof m];
+                // Convert dot notation to underscore notation for Paraglide
+                const titleKey = notification.titleKey.replace(/\./g, '_');
+                const messageKey = notification.messageKey.replace(/\./g, '_');
+
+                const titleTranslation = m[titleKey as keyof typeof m];
+                const messageTranslation = m[messageKey as keyof typeof m];
 
                 toastStore.show({
                     type: 'notification',
                     title: typeof titleTranslation === 'function' ? titleTranslation() : notification.titleKey,
                     message: typeof messageTranslation === 'function' ? messageTranslation(notification.data) : notification.messageKey,
                     actionUrl: notification.actionUrl,
-                    actionLabel: m.notifications_view(),
+                    actionLabel: m.notifications_view ? m.notifications_view() : 'Voir',
                     duration: 5000,
                 });
             }
@@ -59,9 +67,8 @@ export class NotificationSSEService {
 
         try {
             this.subscription.create();
-            console.log('Subscribed to notifications successfully');
         } catch (error) {
-            console.error('Failed to subscribe to notifications:', error);
+            console.error('[NotificationSSE] Failed to subscribe to notifications:', error);
         }
     }
 
@@ -70,7 +77,6 @@ export class NotificationSSEService {
      */
     disconnect() {
         if (this.subscription) {
-            console.log('Unsubscribing from notifications');
             this.subscription.delete();
             this.subscription = null;
         }

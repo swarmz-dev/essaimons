@@ -24,6 +24,41 @@ export interface NotificationListResponse {
     };
 }
 
+export interface NotificationRecipient {
+    userId: string;
+    username: string;
+    email: string;
+    read: boolean;
+    readAt: string | null;
+    inAppSent: boolean;
+    emailSent: boolean;
+    pushSent: boolean;
+    emailError: string | null;
+    pushError: string | null;
+}
+
+export interface AdminNotification {
+    id: string;
+    type: string;
+    titleKey: string;
+    bodyKey: string;
+    interpolationData: Record<string, any>;
+    actionUrl: string | null;
+    priority: string;
+    createdAt: string;
+    recipients: NotificationRecipient[];
+}
+
+export interface AdminNotificationListResponse {
+    notifications: AdminNotification[];
+    meta: {
+        total: number;
+        perPage: number;
+        currentPage: number;
+        lastPage: number;
+    };
+}
+
 export interface UnreadCountResponse {
     unreadCount: number;
 }
@@ -103,5 +138,13 @@ export class NotificationService {
         await this.fetchAPI('/api/notifications/mark-all-read', {
             method: 'PATCH',
         });
+    }
+
+    /**
+     * Get all notifications (admin only)
+     */
+    async getAdminNotifications(page: number = 1, limit: number = 50): Promise<AdminNotificationListResponse> {
+        const data = await this.fetchAPI<any>(`/api/admin/notifications?page=${page}&limit=${limit}`);
+        return data || { notifications: [], meta: { total: 0, perPage: limit, currentPage: page, lastPage: 1 } };
     }
 }

@@ -162,15 +162,6 @@ export default class NotificationService {
                 },
             });
 
-            logger.info(
-                {
-                    userId: userNotification.userId,
-                    notificationId: notification.id,
-                    streamName,
-                },
-                'In-app notification broadcast via Transmit'
-            );
-
             userNotification.inAppSent = true;
             userNotification.inAppSentAt = DateTime.now();
             await userNotification.save();

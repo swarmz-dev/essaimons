@@ -124,6 +124,13 @@ router
                                 router.delete('/:id', [AdminEmailTemplateController, 'destroy']);
                             })
                             .prefix('email-templates');
+
+                        const NotificationsController = () => import('#controllers/notifications_controller');
+                        router
+                            .group((): void => {
+                                router.get('/', [NotificationsController, 'adminIndex']);
+                            })
+                            .prefix('notifications');
                     })
                     .prefix('admin')
                     .use([middleware.isAdmin()]);

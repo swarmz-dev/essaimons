@@ -2,6 +2,8 @@ import { HttpContext } from '@adonisjs/core/http';
 import { inject } from '@adonisjs/core';
 import NotificationService from '#services/notification_service';
 import type User from '#models/user';
+import Notification from '#models/notification';
+import UserNotification from '#models/user_notification';
 
 @inject()
 export default class NotificationsController {
@@ -98,6 +100,56 @@ export default class NotificationsController {
 
         return response.ok({
             count,
+        });
+    }
+
+    /**
+     * GET /admin/notifications
+     * Get all notifications with user delivery status (admin only)
+     */
+    public async adminIndex({ request, response }: HttpContext): Promise<void> {
+        const page = request.input('page', 1);
+        const limit = Math.min(request.input('limit', 50), 100);
+
+        const notifications = await Notification.query()
+            .preload('userNotifications', (query) => {
+                query.preload('user', (userQuery) => {
+                    userQuery.select('id', 'username', 'email');
+                });
+            })
+            .orderBy('created_at', 'desc')
+            .paginate(page, limit);
+
+        return response.ok({
+            notifications: notifications.all().map((notification) => ({
+                id: notification.id,
+                type: notification.type,
+                titleKey: notification.titleKey,
+                bodyKey: notification.bodyKey,
+                interpolationData: notification.interpolationData,
+                actionUrl: notification.actionUrl,
+                priority: notification.priority,
+                createdAt: notification.createdAt.toISO(),
+                recipients: notification.userNotifications.map((un) => ({
+                    userId: un.userId,
+                    username: un.user.username,
+                    email: un.user.email,
+                    read: un.read,
+                    readAt: un.readAt?.toISO() || null,
+                    inAppSent: un.inAppSent,
+                    emailSent: un.emailSent,
+                    pushSent: un.pushSent,
+                    emailError: un.emailError,
+                    pushError: un.pushError,
+                })),
+            })),
+            meta: {
+                total: notifications.total,
+                perPage: notifications.perPage,
+                currentPage: notifications.currentPage,
+                lastPage: notifications.lastPage,
+                firstPage: notifications.firstPage,
+            },
         });
     }
 }

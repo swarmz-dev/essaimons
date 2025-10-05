@@ -16,20 +16,20 @@ export default class EmailTemplate extends BaseModel {
     declare description: string | null;
 
     @column({
-        prepare: (value: Record<string, string>) => JSON.stringify(value),
-        consume: (value: string) => JSON.parse(value),
+        prepare: (value: Record<string, string>) => value,
+        consume: (value: Record<string, string>) => value,
     })
     declare subjects: Record<string, string>;
 
     @column({
-        prepare: (value: Record<string, string>) => JSON.stringify(value),
-        consume: (value: string) => JSON.parse(value),
+        prepare: (value: Record<string, string>) => value,
+        consume: (value: Record<string, string>) => value,
     })
     declare htmlContents: Record<string, string>;
 
     @column({
-        prepare: (value: Record<string, string> | null) => (value ? JSON.stringify(value) : null),
-        consume: (value: string | null) => (value ? JSON.parse(value) : {}),
+        prepare: (value: Record<string, string> | null) => value,
+        consume: (value: Record<string, string> | null) => value || {},
     })
     declare textContents: Record<string, string> | null;
 

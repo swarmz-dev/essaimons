@@ -927,32 +927,41 @@
     };
 
     const submitClarificationDelete = async (): Promise<void> => {
-        if (!clarificationDeleteCommentId) {
+        if (!clarificationDeleteCommentId || isClarificationDeleteSubmitting) {
             return;
         }
 
         isClarificationDeleteSubmitting = true;
 
         try {
-            const response = await wrappedFetch(
+            // Add a timeout to prevent infinite waiting
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000);
+            });
+
+            const fetchPromise = wrappedFetch(
                 commentEndpoint(clarificationDeleteCommentId),
                 {
                     method: 'DELETE',
                 },
-                async () => {
+                () => {
                     propositionDetailStore.removeComment(clarificationDeleteCommentId!, clarificationDeleteParentId ?? undefined);
                     clarificationDeleteCommentId = null;
                     clarificationDeleteParentId = null;
                     isClarificationDeleteDialogOpen = false;
                 },
-                async ({ message }) => {
+                ({ message }) => {
                     showToast(message ?? m['common.error.default-message'](), 'error');
                 }
             );
 
+            const response = await Promise.race([fetchPromise, timeoutPromise]);
+
             if (!response?.isSuccess) {
                 showToast(m['common.error.default-message'](), 'error');
             }
+        } catch (error) {
+            showToast(m['common.error.default-message'](), 'error');
         } finally {
             isClarificationDeleteSubmitting = false;
         }

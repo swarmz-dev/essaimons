@@ -46,7 +46,8 @@
         if (typeof window !== 'undefined') {
             (async () => {
                 const { Transmit } = await import('@adonisjs/transmit-client');
-                transmit.set(new Transmit({ baseUrl: PUBLIC_API_REAL_URI }));
+                const transmitInstance = new Transmit({ baseUrl: PUBLIC_API_REAL_URI });
+                transmit.set(transmitInstance);
             })();
         }
 
