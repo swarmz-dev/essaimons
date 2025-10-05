@@ -2,10 +2,21 @@ import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import tailwindcss from '@tailwindcss/vite';
 import { svelteTesting } from '@testing-library/svelte/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+import { defineConfig, type ViteDevServer } from 'vite';
 import dotenv from 'dotenv';
+import bodyParser from 'body-parser';
+import type { Plugin } from 'vite';
 
 dotenv.config({ path: './.env' });
+
+const largeBodyPlugin = (): Plugin => ({
+    name: 'vite:large-body',
+    configureServer(server: ViteDevServer): void {
+        const limit = '50mb';
+        server.middlewares.use(bodyParser.json({ limit }));
+        server.middlewares.use(bodyParser.urlencoded({ limit, extended: true }));
+    },
+});
 
 export default defineConfig({
     server: {
@@ -23,6 +34,7 @@ export default defineConfig({
     plugins: [
         tailwindcss(),
         sveltekit(),
+        largeBodyPlugin(),
         paraglideVitePlugin({
             project: './project.inlang',
             outdir: './src/lib/paraglide',

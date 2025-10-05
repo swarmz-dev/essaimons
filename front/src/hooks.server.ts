@@ -21,7 +21,13 @@ export const handleClientAuth: Handle = async ({ event, resolve }) => {
 };
 
 export const handle: Handle = async ({ event, resolve }) => {
-    // Enchaîne manuellement les middlewares dans l'ordre
+    const MAX_BODY_SIZE = 300_000_000;
+    const contentLength: string | null = event.request.headers.get('content-length');
+
+    if (contentLength && parseInt(contentLength) > MAX_BODY_SIZE) {
+        return new Response('Payload too large', { status: 413 });
+    }
+
     return handleClientAuth({
         event,
         resolve: (e) => handleParaglide({ event: e, resolve }),
