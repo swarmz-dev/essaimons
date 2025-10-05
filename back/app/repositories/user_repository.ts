@@ -92,18 +92,9 @@ export default class UserRepository extends BaseRepository<typeof User> {
         if (!options.includeCurrentUser) {
             query.whereNot('id', currentUser.id);
         }
-        query.where((builder) => {
-            if (numericIds.length) {
-                builder.whereIn('front_id', numericIds);
-            }
-            if (uuidIds.length) {
-                if (numericIds.length) {
-                    builder.orWhereIn('id', uuidIds);
-                } else {
-                    builder.whereIn('id', uuidIds);
-                }
-            }
-        });
+        if (uuidIds.length) {
+            query.whereIn('id', uuidIds);
+        }
 
         return query;
     }

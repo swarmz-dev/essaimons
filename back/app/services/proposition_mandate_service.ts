@@ -37,30 +37,30 @@ export default class PropositionMandateService {
             .related('mandates')
             .query()
             .preload('holder', (query: ModelQueryBuilderContract<typeof User>) => {
-                query.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                query.select(['id', 'username', 'profile_picture_id']);
             })
             .preload('deliverables', (query) => {
                 query
                     .orderBy('uploaded_at', 'asc')
                     .preload('file')
                     .preload('uploadedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                        userQuery.select(['id', 'front_id', 'username']);
+                        userQuery.select(['id', 'username']);
                     })
                     .preload('evaluations', (evaluationQuery) => {
                         evaluationQuery.preload('evaluator', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                            userQuery.select(['id', 'front_id', 'username']);
+                            userQuery.select(['id', 'username']);
                         });
                     });
             })
             .preload('applications', (query) => {
                 query.preload('applicant', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                    userQuery.select(['id', 'front_id', 'username']);
+                    userQuery.select(['id', 'username']);
                 });
             })
             .preload('revocationRequests', (query) => {
                 query
                     .preload('initiatedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                        userQuery.select(['id', 'front_id', 'username']);
+                        userQuery.select(['id', 'username']);
                     })
                     .preload('vote');
             })
@@ -85,7 +85,7 @@ export default class PropositionMandateService {
         });
 
         await mandate.load('holder', (query: ModelQueryBuilderContract<typeof User>) => {
-            query.select(['id', 'front_id', 'username', 'profile_picture_id']);
+            query.select(['id', 'username', 'profile_picture_id']);
         });
 
         // Send notification if mandate was assigned to a holder
@@ -130,7 +130,7 @@ export default class PropositionMandateService {
         await mandate.save();
 
         await mandate.load('holder', (query: ModelQueryBuilderContract<typeof User>) => {
-            query.select(['id', 'front_id', 'username', 'profile_picture_id']);
+            query.select(['id', 'username', 'profile_picture_id']);
         });
 
         // Send notification if holder changed
@@ -195,15 +195,6 @@ export default class PropositionMandateService {
         const trimmed = raw?.toString().trim();
         if (!trimmed) {
             return null;
-        }
-
-        const numeric = Number(trimmed);
-        if (Number.isFinite(numeric)) {
-            const user = await User.query().where('front_id', Math.floor(numeric)).first();
-            if (!user) {
-                throw new Error('invalid-holder');
-            }
-            return user.id;
         }
 
         const user = await User.find(trimmed);

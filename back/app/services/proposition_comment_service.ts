@@ -30,9 +30,9 @@ export default class PropositionCommentService {
         return proposition
             .related('comments')
             .query()
-            .preload('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id']))
+            .preload('author', (query) => query.select(['id', 'username', 'profile_picture_id']))
             .preload('replies', (replyQuery) => {
-                replyQuery.preload('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id'])).orderBy('created_at', 'asc');
+                replyQuery.preload('author', (query) => query.select(['id', 'username', 'profile_picture_id'])).orderBy('created_at', 'asc');
             })
             .orderBy('created_at', 'asc');
     }
@@ -55,7 +55,7 @@ export default class PropositionCommentService {
             content: normalizedContent,
         });
 
-        await comment.load('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id']));
+        await comment.load('author', (query) => query.select(['id', 'username', 'profile_picture_id']));
 
         // Send notification for new comment
         this.propositionNotificationService.notifyCommentAdded(proposition, comment, actor.id).catch((error: Error) => {
@@ -80,9 +80,9 @@ export default class PropositionCommentService {
 
         comment.content = trimmed;
         await comment.save();
-        await comment.load('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id']));
+        await comment.load('author', (query) => query.select(['id', 'username', 'profile_picture_id']));
         await comment.load('replies', (replyQuery) => {
-            replyQuery.preload('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id'])).orderBy('created_at', 'asc');
+            replyQuery.preload('author', (query) => query.select(['id', 'username', 'profile_picture_id'])).orderBy('created_at', 'asc');
         });
 
         // Send notification for comment update

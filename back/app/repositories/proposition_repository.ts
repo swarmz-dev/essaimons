@@ -11,27 +11,11 @@ export default class PropositionRepository extends BaseRepository<typeof Proposi
     }
 
     public async getExistingAssociatedPropositions(associatedIds: string[], trx: TransactionClientContract): Promise<Proposition[]> {
-        const { numericIds, uuidIds } = this.partitionIdentifiers(associatedIds);
-
-        if (!numericIds.length && !uuidIds.length) {
+        if (!associatedIds || !associatedIds.length) {
             return [];
         }
 
-        const query = this.Model.query({ client: trx });
-        query.where((builder) => {
-            if (numericIds.length) {
-                builder.whereIn('front_id', numericIds);
-            }
-            if (uuidIds.length) {
-                if (numericIds.length) {
-                    builder.orWhereIn('id', uuidIds);
-                } else {
-                    builder.whereIn('id', uuidIds);
-                }
-            }
-        });
-
-        return query;
+        return this.Model.query({ client: trx }).whereIn('id', associatedIds);
     }
 
     public async searchWithFilters(
@@ -43,8 +27,6 @@ export default class PropositionRepository extends BaseRepository<typeof Proposi
     ): Promise<PaginatedPropositions> {
         const sanitizedLimit: number = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 50) : 12;
         const sanitizedPage: number = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
-
-        const categoryPartitions = this.partitionIdentifiers(filters.categoryIds ?? []);
 
         // Map camelCase to snake_case for database columns
         const columnMapping: Record<string, string> = {
@@ -69,20 +51,9 @@ export default class PropositionRepository extends BaseRepository<typeof Proposi
                         .orWhereRaw('LOWER(detailed_description) LIKE ?', [`%${search}%`]);
                 });
             })
-            .if(categoryPartitions.numericIds.length + categoryPartitions.uuidIds.length > 0, (queryBuilder: ModelQueryBuilderContract<typeof Proposition>): void => {
+            .if(filters.categoryIds && filters.categoryIds.length > 0, (queryBuilder: ModelQueryBuilderContract<typeof Proposition>): void => {
                 queryBuilder.whereHas('categories', (categoryQuery) => {
-                    categoryQuery.where((builder) => {
-                        if (categoryPartitions.numericIds.length) {
-                            builder.whereIn('proposition_categories.front_id', categoryPartitions.numericIds);
-                        }
-                        if (categoryPartitions.uuidIds.length) {
-                            if (categoryPartitions.numericIds.length) {
-                                builder.orWhereIn('proposition_categories.id', categoryPartitions.uuidIds);
-                            } else {
-                                builder.whereIn('proposition_categories.id', categoryPartitions.uuidIds);
-                            }
-                        }
-                    });
+                    categoryQuery.whereIn('proposition_categories.id', filters.categoryIds!);
                 });
             })
             .if(filters.statuses && filters.statuses.length > 0, (queryBuilder: ModelQueryBuilderContract<typeof Proposition>): void => {
@@ -102,33 +73,9 @@ export default class PropositionRepository extends BaseRepository<typeof Proposi
     }
 
     public async findByPublicId(identifier: string, preload: ExtractModelRelations<InstanceType<typeof Proposition>>[] = []): Promise<Proposition | null> {
-        const query = this.Model.query();
-        const numericValue = Number(identifier);
-        if (Number.isFinite(numericValue)) {
-            query.where('front_id', Math.floor(numericValue));
-        } else {
-            query.where('id', identifier);
-        }
+        const query = this.Model.query().where('id', identifier);
         preload.forEach((relation) => query.preload(relation));
         return query.first();
-    }
-
-    private partitionIdentifiers(rawIds: string[]): { numericIds: number[]; uuidIds: string[] } {
-        const numericIds: number[] = [];
-        const uuidIds: string[] = [];
-
-        for (const rawId of rawIds ?? []) {
-            const trimmed = rawId?.toString().trim();
-            if (!trimmed) continue;
-            const asNumber = Number(trimmed);
-            if (Number.isFinite(asNumber)) {
-                numericIds.push(Math.floor(asNumber));
-            } else {
-                uuidIds.push(trimmed);
-            }
-        }
-
-        return { numericIds, uuidIds };
     }
 
     public async findUserContributions(userId: string, page: number, limit: number): Promise<PaginatedPropositions> {

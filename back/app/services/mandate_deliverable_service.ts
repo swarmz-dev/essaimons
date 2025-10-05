@@ -251,11 +251,11 @@ export default class MandateDeliverableService {
             await deliverable.load((loader) => {
                 loader.preload('file');
                 loader.preload('uploadedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                    userQuery.select(['id', 'front_id', 'username']);
+                    userQuery.select(['id', 'username']);
                 });
                 loader.preload('evaluations', (evaluationQuery) => {
                     evaluationQuery.preload('evaluator', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                        userQuery.select(['id', 'front_id', 'username']);
+                        userQuery.select(['id', 'username']);
                     });
                 });
             });
@@ -263,29 +263,29 @@ export default class MandateDeliverableService {
             await mandate.load((loader) => {
                 loader
                     .preload('holder', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                        userQuery.select(['id', 'front_id', 'username']);
+                        userQuery.select(['id', 'username']);
                     })
                     .preload('deliverables', (deliverableQuery) => {
                         deliverableQuery
                             .orderBy('uploaded_at', 'asc')
                             .preload('file')
                             .preload('uploadedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                                userQuery.select(['id', 'front_id', 'username']);
+                                userQuery.select(['id', 'username']);
                             })
                             .preload('evaluations', (evaluationQuery) => {
                                 evaluationQuery.preload('evaluator', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                                    userQuery.select(['id', 'front_id', 'username']);
+                                    userQuery.select(['id', 'username']);
                                 });
                             });
                     })
                     .preload('applications', (applicationQuery) => {
                         applicationQuery.preload('applicant', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                            userQuery.select(['id', 'front_id', 'username']);
+                            userQuery.select(['id', 'username']);
                         });
                     })
                     .preload('revocationRequests', (requestQuery) => {
                         requestQuery.preload('initiatedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                            userQuery.select(['id', 'front_id', 'username']);
+                            userQuery.select(['id', 'username']);
                         });
                     });
             });

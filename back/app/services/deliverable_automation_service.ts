@@ -110,7 +110,7 @@ export default class DeliverableAutomationService {
         }
 
         await deliverable.load('evaluations', (query) => {
-            query.preload('evaluator', (userQuery) => userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']));
+            query.preload('evaluator', (userQuery) => userQuery.select(['id', 'username', 'profile_picture_id']));
         });
 
         const evaluations = deliverable.evaluations ?? [];

@@ -86,7 +86,7 @@ router
                                 router.post('/delete', [AdminUserController, 'delete']);
                                 router.post('/create', [AdminUserController, 'create']);
                                 router.post('/update', [AdminUserController, 'update']);
-                                router.get('/:frontId', [AdminUserController, 'get']);
+                                router.get('/:id', [AdminUserController, 'get']);
                             })
                             .prefix('user');
 
