@@ -82,7 +82,7 @@ export default class PropositionNotificationService {
                 },
                 entityType: 'proposition',
                 entityId: proposition.id,
-                actionUrl: `/propositions/${proposition.id}`,
+                actionUrl: `/propositions/${proposition.frontId}`,
             },
             [...new Set(userIds)]
         );
@@ -119,7 +119,7 @@ export default class PropositionNotificationService {
                 },
                 entityType: 'proposition',
                 entityId: proposition.id,
-                actionUrl: `/propositions/${proposition.id}`,
+                actionUrl: `/propositions/${proposition.frontId}`,
             },
             mandataires
         );
@@ -145,7 +145,7 @@ export default class PropositionNotificationService {
                 },
                 entityType: 'mandate',
                 entityId: mandate.id,
-                actionUrl: `/propositions/${mandate.propositionId}`,
+                actionUrl: `/propositions/${mandate.proposition.frontId}`,
             },
             [mandate.holderUserId]
         );
@@ -177,7 +177,7 @@ export default class PropositionNotificationService {
                 },
                 entityType: 'mandate',
                 entityId: mandate.id,
-                actionUrl: `/propositions/${mandate.propositionId}`,
+                actionUrl: `/propositions/${mandate.proposition.frontId}`,
             },
             [previousHolderId]
         );
@@ -215,7 +215,7 @@ export default class PropositionNotificationService {
                 },
                 entityType: 'deliverable',
                 entityId: deliverable.id,
-                actionUrl: `/propositions/${proposition.id}`,
+                actionUrl: `/propositions/${proposition.frontId}`,
             },
             [...new Set(evaluators)]
         );
@@ -253,7 +253,7 @@ export default class PropositionNotificationService {
                 },
                 entityType: 'deliverable',
                 entityId: deliverable.id,
-                actionUrl: `/propositions/${mandate.propositionId}`,
+                actionUrl: `/propositions/${mandate.proposition.frontId}`,
             },
             [mandate.holderUserId]
         );
@@ -382,7 +382,7 @@ export default class PropositionNotificationService {
                 },
                 entityType: 'proposition',
                 entityId: proposition.id,
-                actionUrl: `/propositions/${proposition.id}`,
+                actionUrl: `/propositions/${proposition.frontId}`,
             },
             [...new Set(userIds)]
         );

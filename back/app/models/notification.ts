@@ -31,22 +31,45 @@ export default class Notification extends BaseModel {
     declare titleKey: string;
 
     @column()
-    declare messageKey: string;
+    declare bodyKey: string;
 
     @column({
         prepare: (value: Record<string, any>) => JSON.stringify(value),
-        consume: (value: string) => (value ? JSON.parse(value) : {}),
+        consume: (value: string | Record<string, any>) => {
+            if (!value) return {};
+            if (typeof value === 'string') return JSON.parse(value);
+            return value;
+        },
     })
-    declare data: Record<string, any>;
+    declare interpolationData: Record<string, any>;
 
     @column()
-    declare entityType: string | null;
+    declare propositionId: string | null;
 
     @column()
-    declare entityId: string | null;
+    declare mandateId: string | null;
+
+    @column()
+    declare deliverableId: string | null;
+
+    @column()
+    declare voteId: string | null;
 
     @column()
     declare actionUrl: string | null;
+
+    @column()
+    declare priority: string;
+
+    @column({
+        prepare: (value: Record<string, any> | null) => (value ? JSON.stringify(value) : null),
+        consume: (value: string | Record<string, any> | null) => {
+            if (!value) return null;
+            if (typeof value === 'string') return JSON.parse(value);
+            return value;
+        },
+    })
+    declare metadata: Record<string, any> | null;
 
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime;

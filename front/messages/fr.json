@@ -67,7 +67,8 @@
         },
         "actions": {
             "cancel": "Annuler",
-            "loading": "Enregistrement en cours…"
+            "loading": "Enregistrement en cours…",
+            "later": "Plus tard"
         },
         "rich-text-editor": {
             "paste-hint": "Utilisez Ctrl+Shift+V pour coller sans formatage",
@@ -126,6 +127,21 @@
             "loading": "Préparation de l'export…",
             "success": "Votre export de données est en cours de téléchargement.",
             "error": "Impossible d'exporter vos données pour le moment. Veuillez réessayer plus tard."
+        },
+        "notifications": {
+            "title": "Préférences de notifications",
+            "description": "Choisissez comment vous souhaitez recevoir les notifications pour chaque type d'événement",
+            "type": "Type de notification",
+            "in_app": "In-app",
+            "email": "Email",
+            "push": "Push",
+            "save": "Enregistrer les préférences",
+            "channels_explanation": {
+                "title": "Types de notifications",
+                "in_app": "Notifications affichées dans l'application lorsque vous êtes connecté. Apparaissent en temps réel dans la barre de navigation.",
+                "email": "Notifications envoyées à votre adresse email. Vous recevrez un message même si vous n'êtes pas connecté.",
+                "push": "Notifications envoyées directement sur votre appareil (navigateur ou mobile). Nécessite l'activation des notifications push dans votre navigateur."
+            }
         }
     },
     "reset-password": {
@@ -862,6 +878,69 @@
             "rescue": "Aucun initiateur de secours n'a été ajouté.",
             "associated": "Aucune autre proposition liée.",
             "attachments": "Aucune pièce jointe disponible."
+        }
+    },
+    "notifications": {
+        "title": "Notifications",
+        "mark_all_read": "Tout marquer comme lu",
+        "empty": "Aucune notification",
+        "view_all": "Voir toutes les notifications",
+        "view": "Voir",
+        "push": {
+            "prompt": {
+                "title": "Activer les notifications push",
+                "description": "Restez informé en temps réel même lorsque l'application est fermée."
+            },
+            "enable": "Activer",
+            "enabled": "Notifications push activées",
+            "disabled": "Notifications push désactivées",
+            "blocked": "Notifications push bloquées"
+        },
+        "types": {
+            "status_transition": "Changements de statut de proposition",
+            "mandate_assigned": "Affectations de mandat",
+            "mandate_revoked": "Révocations de mandat",
+            "deliverable_uploaded": "Uploads de livrables",
+            "deliverable_evaluated": "Évaluations de livrables",
+            "comment_added": "Commentaires ajoutés",
+            "clarification_added": "Demandes de clarification",
+            "clarification_updated": "Mises à jour de clarification",
+            "clarification_deleted": "Suppressions de clarification",
+            "exchange_scheduled": "Échanges planifiés"
+        },
+        "status_transition": {
+            "to_evaluate": {
+                "title": "Proposition en évaluation",
+                "message": "La proposition \"{propositionTitle}\" est maintenant en phase d'évaluation"
+            }
+        },
+        "mandate_assigned": {
+            "title": "Mandat qui vous est assigné",
+            "message": "Le mandat \"{mandateTitle}\" pour la proposition \"{propositionTitle}\" vous a été assigné"
+        },
+        "mandate_revoked": {
+            "title": "Mandat révoqué",
+            "message": "Votre mandat \"{mandateTitle}\" pour \"{propositionTitle}\" a été révoqué"
+        },
+        "deliverable_uploaded": {
+            "title": "Nouveau livrable à évaluer",
+            "message": "Un livrable a été déposé pour le mandat \"{mandateTitle}\" dans \"{propositionTitle}\""
+        },
+        "deliverable_evaluated": {
+            "title": "Votre livrable a été évalué",
+            "message": "Votre livrable pour \"{mandateTitle}\" dans \"{propositionTitle}\" a été évalué"
+        },
+        "clarification_updated": {
+            "title": "Clarification mise à jour",
+            "message": "Une clarification a été mise à jour dans \"{propositionTitle}\""
+        },
+        "clarification_deleted": {
+            "title": "Clarification supprimée",
+            "message": "Une clarification a été supprimée de \"{propositionTitle}\""
+        },
+        "exchange_scheduled": {
+            "title": "Échange planifié",
+            "message": "Un nouvel échange \"{eventTitle}\" a été planifié pour \"{propositionTitle}\""
         }
     }
 }

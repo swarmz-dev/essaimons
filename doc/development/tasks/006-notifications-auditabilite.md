@@ -74,46 +74,82 @@ Postgres trigger sur `user_notifications` → `pg_notify('user_notification')` �
   - [x] `PUT /notification-settings/bulk` : mise à jour en masse
 - [x] Routes ajoutées dans [start/routes.ts](../../back/start/routes.ts)
 
-### Phase 4 : Hooks métier (À faire)
-Notifications prioritaires (Phase 1 & 2 du cycle) :
-- [ ] **Status transitions** :
-  - `draft → clarification` : notifier initiateur
-  - `clarification → improvement` : notifier initiateur + contributeurs
-  - `improvement → vote` : notifier tous votants
-  - `vote → procedure` : notifier initiateur (si non conforme)
-  - `vote → mandates` : notifier initiateur (si conforme)
-  - `mandates → evaluation` : notifier mandataires
-  - `evaluation → closed` : notifier tous participants
-- [ ] **Mandates** :
-  - Assignment : notifier mandataire assigné
-  - Revocation : notifier mandataire révoqué
-- [ ] **Deliverables** :
-  - Upload : notifier évaluateurs
-  - Evaluation : notifier mandataire
-- [ ] **Approaching deadlines** (48h avant) :
-  - Deadline clarification/improvement/vote/mandate/evaluation
-- [ ] **Non-conformity threshold** (Phase 2) :
-  - >= 1/3 évaluations non conformes → ouverture procédure
-- [ ] **Revocation votes** (Phase 2) :
-  - Ouverture vote révocatoire → notifier tous votants
+### Phase 4 : Hooks métier ✅ (2025-01-30)
+- [x] Service `PropositionNotificationService` : [app/services/proposition_notification_service.ts](../../back/app/services/proposition_notification_service.ts)
+  - [x] Méthode `notifyStatusTransition()` : gère toutes les transitions (CLARIFY, AMEND, VOTE, MANDATE, EVALUATE, ARCHIVED)
+  - [x] Méthode `notifyMandateAssignment()` : affectation/changement de mandataire
+  - [x] Méthode `notifyMandateRevocation()` : révocation de mandat
+  - [x] Méthode `notifyDeliverableUpload()` : livrable soumis → notifie évaluateurs
+  - [x] Méthode `notifyDeliverableEvaluation()` : livrable évalué → notifie mandataire
+  - [x] Méthode `notifyCommentAdded()` : commentaire/clarification ajouté
+  - [x] Méthode `notifyCommentUpdated()` : clarification modifiée
+  - [x] Méthode `notifyCommentDeleted()` : clarification supprimée
+  - [x] Méthode `notifyExchangeScheduled()` : échange planifié
+  - [x] Méthode `broadcastPropositionUpdate()` : broadcast SSE temps réel vers stream `proposition/{id}`
+- [x] Intégration dans les services métier :
+  - [x] [PropositionService.transition()](../../back/app/services/proposition_service.ts) : notifications status transitions
+  - [x] [PropositionMandateService.create/update()](../../back/app/services/proposition_mandate_service.ts) : notifications mandats
+  - [x] [MandateDeliverableService.upload/evaluate()](../../back/app/services/mandate_deliverable_service.ts) : notifications livrables
+  - [x] [PropositionCommentService.create/update/delete()](../../back/app/services/proposition_comment_service.ts) : notifications commentaires
+  - [x] [PropositionEventService.create()](../../back/app/services/proposition_event_service.ts) : notifications échanges
+- [x] Types de notifications ajoutés :
+  - [x] `COMMENT_ADDED` : commentaire général ajouté
+  - [x] `CLARIFICATION_ADDED` : demande de clarification ajoutée
+  - [x] `CLARIFICATION_UPDATED` : clarification mise à jour
+  - [x] `CLARIFICATION_DELETED` : clarification supprimée
+  - [x] `EXCHANGE_SCHEDULED` : échange/événement planifié
+- [x] Real-time updates via Transmit SSE pour utilisateurs consultant une proposition
+- [ ] **Approaching deadlines** (48h avant) : à implémenter via cron job
+- [ ] **Non-conformity threshold** (Phase 2) : >= 1/3 évaluations non conformes → ouverture procédure
+- [ ] **Revocation votes** (Phase 2) : ouverture vote révocatoire → notifier tous votants
 
-### Phase 5 : Frontend (À faire)
-- [ ] Composant Svelte notification bell :
-  - Badge avec unread count
-  - Dropdown avec liste notifications
-  - Mark as read action
-  - Real-time updates via SSE
-- [ ] Service Worker pour Web Push :
-  - `public/service-worker.js`
-  - Enregistrement depuis settings page
-  - Push event handler + notification display
-- [ ] Settings page préférences notifications :
-  - Toggle par type de notification
-  - Toggle par canal (in-app / email / push)
-  - Gestion devices pour push
-- [ ] SSE client pour notifications temps réel :
-  - Connexion à Transmit stream `user/${userId}/notifications`
-  - Update badge + liste en temps réel
+### Phase 5 : Frontend ✅ (2025-01-30)
+- [x] **Composants Svelte notification bell** :
+  - [x] [NotificationBell.svelte](../../front/src/lib/components/notifications/NotificationBell.svelte) : icône cloche avec badge unread count
+  - [x] [NotificationDropdown.svelte](../../front/src/lib/components/notifications/NotificationDropdown.svelte) : dropdown avec liste paginée
+  - [x] [NotificationItem.svelte](../../front/src/lib/components/notifications/NotificationItem.svelte) : item avec icône, titre, message, timestamp
+  - [x] Badge affiche "9+" quand > 9 notifications non lues
+  - [x] Action "Marquer tout comme lu"
+  - [x] Click sur notification → marque comme lue + navigation vers actionUrl
+- [x] **Services frontend** :
+  - [x] [NotificationService](../../front/src/lib/services/notificationService.ts) : API client avec fetch natif
+    - [x] `getNotifications(page, limit)` : liste paginée
+    - [x] `getUnreadCount()` : compteur non lues
+    - [x] `markAsRead(id)` : marquer une notification
+    - [x] `markAllAsRead()` : marquer toutes
+  - [x] [NotificationSSEService](../../front/src/lib/services/notificationSSEService.ts) : client SSE temps réel
+    - [x] Connexion à `${baseUrl}/transmit/subscribe/user/${userId}/notifications`
+    - [x] Auto-reconnection avec backoff exponentiel (max 5 tentatives)
+    - [x] Update du store en temps réel sur réception
+- [x] **Store Svelte 5** :
+  - [x] [notificationStore.svelte.ts](../../front/src/lib/stores/notificationStore.svelte.ts) : gestion état avec runes
+  - [x] Méthodes : `addNotification()`, `markAsRead()`, `markAllAsRead()`, `setUnreadCount()`
+- [x] **Intégration layout** :
+  - [x] NotificationBell ajouté dans [Menu.svelte](../../front/src/lib/partials/menu/Menu.svelte) header (visible si connecté)
+  - [x] Initialisation SSE dans [+layout.svelte](../../front/src/routes/+layout.svelte) au login
+  - [x] Déconnexion SSE au logout
+- [x] **Internationalisation** :
+  - [x] Traductions FR/EN dans [messages/fr.json](../../front/messages/fr.json) et [messages/en.json](../../front/messages/en.json)
+  - [x] 15 types de notifications traduits (titres + messages)
+  - [x] Timestamps relatifs localisés avec date-fns
+  - [x] Icônes spécifiques par type (Bell, UserCheck, Upload, CheckCircle, MessageCircle, Calendar)
+- [x] **Page préférences notifications utilisateur** :
+  - [x] [/profile/notifications](../../front/src/routes/profile/notifications/+page.svelte) : page de paramètres par type
+  - [x] Toggle par type de notification (10 types)
+  - [x] Toggle par canal (in-app / email / push)
+  - [x] Sauvegarde en masse avec API `/notification-settings/bulk`
+  - [x] Interface avec switches interactifs et icônes par canal
+  - [x] Traductions FR/EN complètes
+- [x] **Page admin notifications** :
+  - [x] [/admin/notifications](../../front/src/routes/admin/notifications/+page.svelte) : vue d'ensemble système
+  - [x] Statistiques : total, non lues, aujourd'hui
+  - [x] Liste paginée de toutes les notifications
+  - [x] Filtres par statut lu/non lu
+- [ ] **Service Worker pour Web Push** (à implémenter) :
+  - [ ] `public/service-worker.js`
+  - [ ] Enregistrement depuis settings page
+  - [ ] Push event handler + notification display
+  - [ ] Gestion devices pour push depuis page préférences
 
 ### Phase 6 : Email Templates (À faire)
 - [ ] Intégration avec BrevoMailService existant
@@ -173,13 +209,18 @@ $$ LANGUAGE plpgsql;
 ```
 
 ### Types de notifications
-Liste des types implémentés dans le MVP :
-- `status_transition` : changement de statut proposition
+Liste des types implémentés :
+- `status_transition` : changement de statut proposition (CLARIFY, AMEND, VOTE, MANDATE, EVALUATE, ARCHIVED)
 - `mandate_assigned` : affectation d'un mandat
 - `mandate_revoked` : révocation d'un mandat
 - `deliverable_uploaded` : livrable soumis
 - `deliverable_evaluated` : livrable évalué
-- `deadline_approaching` : échéance imminente (48h)
-- `nonconformity_threshold` : seuil non conforme atteint
-- `procedure_opened` : procédure ouverte (Phase 2)
-- `revocation_vote_opened` : vote révocatoire ouvert (Phase 2)
+- `comment_added` : commentaire général ajouté ✅
+- `clarification_added` : demande de clarification ajoutée ✅
+- `clarification_updated` : clarification mise à jour ✅
+- `clarification_deleted` : clarification supprimée ✅
+- `exchange_scheduled` : échange/événement planifié ✅
+- `deadline_approaching` : échéance imminente (48h) - à implémenter
+- `nonconformity_threshold` : seuil non conforme atteint - à implémenter
+- `procedure_opened` : procédure ouverte (Phase 2) - à implémenter
+- `revocation_vote_opened` : vote révocatoire ouvert (Phase 2) - à implémenter

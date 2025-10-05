@@ -50,8 +50,7 @@ export default class PropositionService {
         private readonly userRepository: UserRepository,
         private readonly slugifyService: SlugifyService,
         private readonly fileService: FileService,
-        private readonly propositionWorkflowService: PropositionWorkflowService,
-        private readonly propositionNotificationService?: any // Lazy loaded to avoid circular dependency
+        private readonly propositionWorkflowService: PropositionWorkflowService
     ) {}
 
     public async create(payload: CreatePropositionPayload, creator: User, files: CreatePropositionFiles): Promise<Proposition> {
@@ -468,10 +467,17 @@ export default class PropositionService {
             await trx.commit();
 
             // Send notifications after successful transition (async, don't wait)
-            if (this.propositionNotificationService && oldStatus !== targetStatus) {
-                this.propositionNotificationService.notifyStatusTransition(updated, oldStatus, targetStatus).catch((error: Error) => {
-                    logger.error({ err: error, propositionId: updated.id }, 'Failed to send status transition notification');
-                });
+            if (oldStatus !== targetStatus) {
+                // Lazy load to avoid circular dependency
+                import('#services/proposition_notification_service')
+                    .then(async (module) => {
+                        const app = await import('@adonisjs/core/services/app');
+                        const service = await app.default.container.make(module.default);
+                        return service.notifyStatusTransition(updated, oldStatus, targetStatus);
+                    })
+                    .catch((error: Error) => {
+                        logger.error({ err: error, propositionId: updated.id }, 'Failed to send status transition notification');
+                    });
             }
 
             return updated;

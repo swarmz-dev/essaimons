@@ -9,5 +9,6 @@
 | 005 | Automatisations livrables & procédures | Mettre en place les règles automatiques (recalcul échéances, non-conformité, votes de révocation). |
 | 006 | Notifications & auditabilité | Assurer notifications, suivi historique et instrumentation transverses du workflow. |
 | 007 | Rôles & actions personnalisés | Gérer des rôles spécifiques par proposition, leurs assignations, et des actions custom déclenchables par statut. |
+| 008 | Suppression frontId | ne pas utiliser de frontId, juste les UUID |
 
 Chaque tâche dispose de sa fiche détaillée dans `doc/development/tasks/`.

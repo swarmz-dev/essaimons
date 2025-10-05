@@ -1,4 +1,5 @@
 import webpush from 'web-push';
+import { DateTime } from 'luxon';
 import env from '#start/env';
 import PushSubscription from '#models/push_subscription';
 import Notification from '#models/notification';
@@ -53,8 +54,8 @@ export default class WebPushService {
         if (existing) {
             existing.p256dhKey = subscription.keys.p256dh;
             existing.authKey = subscription.keys.auth;
-            existing.isActive = true;
-            existing.lastUsedAt = new Date() as any;
+            existing.active = true;
+            existing.lastUsedAt = DateTime.now();
             if (userAgent) {
                 existing.userAgent = userAgent;
             }
@@ -69,8 +70,8 @@ export default class WebPushService {
             p256dhKey: subscription.keys.p256dh,
             authKey: subscription.keys.auth,
             userAgent: userAgent || null,
-            isActive: true,
-            lastUsedAt: new Date() as any,
+            active: true,
+            lastUsedAt: DateTime.now(),
         });
     }
 
@@ -92,7 +93,7 @@ export default class WebPushService {
      * Get all active subscriptions for a user
      */
     public async getUserSubscriptions(userId: string): Promise<PushSubscription[]> {
-        return PushSubscription.query().where('user_id', userId).where('is_active', true);
+        return PushSubscription.query().where('user_id', userId).where('active', true);
     }
 
     /**
@@ -115,7 +116,7 @@ export default class WebPushService {
             // Build notification payload
             const payload = JSON.stringify({
                 title: notification.titleKey, // TODO: Translate using i18n
-                body: notification.messageKey, // TODO: Translate using i18n
+                body: notification.bodyKey, // TODO: Translate using i18n
                 icon: '/icon-192.png',
                 badge: '/badge-72.png',
                 data: {
@@ -162,7 +163,7 @@ export default class WebPushService {
             // Handle expired/invalid subscriptions (410 Gone)
             if (error.statusCode === 410) {
                 logger.info({ subscriptionId: subscription.id }, 'Subscription expired, marking as inactive');
-                subscription.isActive = false;
+                subscription.active = false;
                 await subscription.save();
             }
 

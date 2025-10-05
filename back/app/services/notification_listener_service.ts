@@ -1,11 +1,13 @@
-import db from '@adonisjs/lucid/services/db';
 import transmit from '@adonisjs/transmit/services/main';
 import logger from '@adonisjs/core/services/logger';
 import UserNotification from '#models/user_notification';
+import { Client } from 'pg';
+import env from '#start/env';
 
 export default class NotificationListenerService {
-    private client: any = null;
+    private client: Client | null = null;
     private isListening: boolean = false;
+    private healthCheckInterval: NodeJS.Timeout | null = null;
 
     /**
      * Start listening to Postgres NOTIFY events
@@ -17,33 +19,74 @@ export default class NotificationListenerService {
         }
 
         try {
-            // Get a dedicated client for listening
-            this.client = await db.connection().getReadClient();
+            // Create a native pg client for LISTEN/NOTIFY using env variables
+            this.client = new Client({
+                host: env.get('DB_HOST'),
+                port: env.get('DB_PORT'),
+                database: env.get('DB_DATABASE'),
+                user: env.get('DB_USER'),
+                password: env.get('DB_PASSWORD'),
+                // Keep connection alive for LISTEN/NOTIFY
+                keepAlive: true,
+                keepAliveInitialDelayMillis: 10000,
+            });
+
+            await this.client.connect();
+            logger.info('PostgreSQL client connected successfully');
+
+            // Test the connection
+            const testResult = await this.client.query('SELECT NOW()');
+            logger.info({ serverTime: testResult.rows[0].now }, 'Connection test successful');
 
             // Listen to user_notification channel
             await this.client.query('LISTEN user_notification');
+            logger.info('Successfully executed LISTEN user_notification');
 
-            // Handle notifications
-            this.client.on('notification', async (msg: any) => {
+            // Verify we are listening
+            const channels = await this.client.query(`
+                SELECT * FROM pg_listening_channels()
+                WHERE pg_listening_channels = 'user_notification'
+            `);
+            logger.info({ channelCount: channels.rows.length }, 'Listening channels verified');
+
+            // Handle notifications - register handler BEFORE confirming listener is ready
+            logger.info('Registering notification event handler...');
+
+            // IMPORTANT: The 'notification' event won't fire unless we have something keeping the event loop active
+            // We need to ensure the client connection is actively processing messages
+            const notificationHandler = async (msg: any) => {
+                logger.info({ channel: msg.channel, payload: msg.payload, timestamp: new Date().toISOString() }, 'Received notification event from PostgreSQL');
                 if (msg.channel === 'user_notification') {
                     await this.handleNotification(msg.payload);
+                } else {
+                    logger.warn({ channel: msg.channel }, 'Received notification on unexpected channel');
                 }
-            });
+            };
 
-            // Handle client errors
-            this.client.on('error', (error: Error) => {
-                logger.error({ err: error }, 'Postgres LISTEN client error');
+            this.client.on('notification', notificationHandler);
+
+            // Test that the event emitter works by checking listener count
+            const listenerCount = this.client.listenerCount('notification');
+            logger.info({ listenerCount }, 'Notification event handler registered');
+
+            // Also log all events to debug
+            this.client.on('error', (err) => {
+                logger.error({ err }, 'PG Client error event - attempting reconnect');
                 this.reconnect();
             });
-
-            // Handle client end
             this.client.on('end', () => {
-                logger.warn('Postgres LISTEN client connection ended');
+                logger.warn('PG Client end event - attempting reconnect');
                 this.reconnect();
+            });
+            this.client.on('notice', (notice) => {
+                logger.debug({ notice }, 'PG Client notice event');
             });
 
             this.isListening = true;
             logger.info('NotificationListenerService started listening to Postgres NOTIFY');
+
+            // Start health check to ensure connection stays alive
+            this.startHealthCheck();
         } catch (error) {
             logger.error({ err: error }, 'Failed to start NotificationListenerService');
             throw error;
@@ -59,6 +102,12 @@ export default class NotificationListenerService {
         }
 
         try {
+            // Stop health check
+            if (this.healthCheckInterval) {
+                clearInterval(this.healthCheckInterval);
+                this.healthCheckInterval = null;
+            }
+
             if (this.client) {
                 await this.client.query('UNLISTEN user_notification');
                 this.client.removeAllListeners();
@@ -97,10 +146,11 @@ export default class NotificationListenerService {
      * Handle a notification event from Postgres
      */
     private async handleNotification(payload: string): Promise<void> {
+        logger.info({ rawPayload: payload }, 'handleNotification called with payload');
         try {
             const data = JSON.parse(payload);
 
-            logger.debug({ notificationData: data }, 'Received notification from Postgres NOTIFY');
+            logger.info({ notificationData: data }, 'Received notification from Postgres NOTIFY - successfully parsed JSON');
 
             // Load the full user notification with relations
             const userNotification = await UserNotification.query().where('id', data.id).preload('notification').preload('user').firstOrFail();
@@ -115,10 +165,10 @@ export default class NotificationListenerService {
                     notificationId: userNotification.notificationId,
                     type: userNotification.notification.type,
                     titleKey: userNotification.notification.titleKey,
-                    messageKey: userNotification.notification.messageKey,
-                    data: userNotification.notification.data,
+                    messageKey: userNotification.notification.bodyKey,
+                    data: userNotification.notification.interpolationData,
                     actionUrl: userNotification.notification.actionUrl,
-                    isRead: userNotification.isRead,
+                    isRead: userNotification.read,
                     createdAt: userNotification.createdAt.toISO(),
                 },
             });
@@ -141,5 +191,23 @@ export default class NotificationListenerService {
      */
     public isActive(): boolean {
         return this.isListening;
+    }
+
+    /**
+     * Start periodic health checks to keep connection alive
+     */
+    private startHealthCheck(): void {
+        // Check every 30 seconds
+        this.healthCheckInterval = setInterval(async () => {
+            if (this.client && this.isListening) {
+                try {
+                    await this.client.query('SELECT 1');
+                    logger.debug('NotificationListener health check: Connection alive');
+                } catch (error) {
+                    logger.error({ err: error }, 'NotificationListener health check failed');
+                    this.reconnect();
+                }
+            }
+        }, 30000);
     }
 }

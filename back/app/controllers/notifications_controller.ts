@@ -24,10 +24,10 @@ export default class NotificationsController {
                 notificationId: userNotification.notificationId,
                 type: userNotification.notification.type,
                 titleKey: userNotification.notification.titleKey,
-                messageKey: userNotification.notification.messageKey,
-                data: userNotification.notification.data,
+                messageKey: userNotification.notification.bodyKey,
+                data: userNotification.notification.interpolationData,
                 actionUrl: userNotification.notification.actionUrl,
-                isRead: userNotification.isRead,
+                isRead: userNotification.read,
                 readAt: userNotification.readAt?.toISO() || null,
                 createdAt: userNotification.createdAt.toISO(),
             })),
@@ -65,7 +65,7 @@ export default class NotificationsController {
 
         return response.ok({
             id: userNotification.id,
-            isRead: userNotification.isRead,
+            isRead: userNotification.read,
             readAt: userNotification.readAt?.toISO() || null,
         });
     }
@@ -79,7 +79,7 @@ export default class NotificationsController {
 
         // Get all unread notifications and mark them as read
         const notifications = await this.notificationService.getUserNotifications(user.id, 1, 1000);
-        const unreadNotifications = notifications.all().filter((n) => !n.isRead);
+        const unreadNotifications = notifications.all().filter((n) => !n.read);
 
         await Promise.all(unreadNotifications.map((n) => this.notificationService.markAsRead(n.id, user.id)));
 

@@ -67,7 +67,8 @@
         },
         "actions": {
             "cancel": "Cancel",
-            "loading": "Saving…"
+            "loading": "Saving…",
+            "later": "Later"
         },
         "rich-text-editor": {
             "paste-hint": "Use Ctrl+Shift+V to paste without formatting",
@@ -126,6 +127,21 @@
             "loading": "Preparing export…",
             "success": "Your data export has started downloading.",
             "error": "We could not export your data right now. Please try again later."
+        },
+        "notifications": {
+            "title": "Notification preferences",
+            "description": "Choose how you want to receive notifications for each type of event",
+            "type": "Notification type",
+            "in_app": "In-app",
+            "email": "Email",
+            "push": "Push",
+            "save": "Save preferences",
+            "channels_explanation": {
+                "title": "Notification types",
+                "in_app": "Notifications displayed in the application when you are logged in. Appear in real-time in the navigation bar.",
+                "email": "Notifications sent to your email address. You will receive a message even if you are not logged in.",
+                "push": "Notifications sent directly to your device (browser or mobile). Requires enabling push notifications in your browser."
+            }
         }
     },
     "reset-password": {
@@ -862,6 +878,69 @@
             "rescue": "No rescue initiators were added.",
             "associated": "No related proposals are linked.",
             "attachments": "No attachments available."
+        }
+    },
+    "notifications": {
+        "title": "Notifications",
+        "mark_all_read": "Mark all as read",
+        "empty": "No notifications yet",
+        "view_all": "View all notifications",
+        "view": "View",
+        "push": {
+            "prompt": {
+                "title": "Enable Push Notifications",
+                "description": "Stay updated with real-time notifications even when the app is closed."
+            },
+            "enable": "Enable",
+            "enabled": "Push notifications enabled",
+            "disabled": "Push notifications disabled",
+            "blocked": "Push notifications blocked"
+        },
+        "types": {
+            "status_transition": "Proposal status changes",
+            "mandate_assigned": "Mandate assignments",
+            "mandate_revoked": "Mandate revocations",
+            "deliverable_uploaded": "Deliverable uploads",
+            "deliverable_evaluated": "Deliverable evaluations",
+            "comment_added": "Comments added",
+            "clarification_added": "Clarification requests",
+            "clarification_updated": "Clarification updates",
+            "clarification_deleted": "Clarification deletions",
+            "exchange_scheduled": "Scheduled exchanges"
+        },
+        "status_transition": {
+            "to_evaluate": {
+                "title": "Proposal in evaluation",
+                "message": "The proposal \"{propositionTitle}\" is now in evaluation phase"
+            }
+        },
+        "mandate_assigned": {
+            "title": "Mandate assigned to you",
+            "message": "You have been assigned the mandate \"{mandateTitle}\" for proposal \"{propositionTitle}\""
+        },
+        "mandate_revoked": {
+            "title": "Mandate revoked",
+            "message": "Your mandate \"{mandateTitle}\" for \"{propositionTitle}\" has been revoked"
+        },
+        "deliverable_uploaded": {
+            "title": "New deliverable to evaluate",
+            "message": "A deliverable has been uploaded for mandate \"{mandateTitle}\" in \"{propositionTitle}\""
+        },
+        "deliverable_evaluated": {
+            "title": "Your deliverable was evaluated",
+            "message": "Your deliverable for \"{mandateTitle}\" in \"{propositionTitle}\" has been evaluated"
+        },
+        "clarification_updated": {
+            "title": "Clarification updated",
+            "message": "A clarification was updated in \"{propositionTitle}\""
+        },
+        "clarification_deleted": {
+            "title": "Clarification deleted",
+            "message": "A clarification was removed from \"{propositionTitle}\""
+        },
+        "exchange_scheduled": {
+            "title": "Exchange scheduled",
+            "message": "A new exchange \"{eventTitle}\" has been scheduled for \"{propositionTitle}\""
         }
     }
 }

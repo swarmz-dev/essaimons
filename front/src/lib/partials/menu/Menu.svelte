@@ -5,6 +5,7 @@
     import Theme from '#components/Theme.svelte';
     import FlagMenu from '#lib/partials/menu/FlagMenu.svelte';
     import FloatingSidebarToggle from '#lib/partials/menu/FloatingSidebarToggle.svelte';
+    import NotificationBell from '#lib/components/notifications/NotificationBell.svelte';
     import { Link } from '#lib/components/ui/link';
     import { page } from '$app/state';
     import { cn } from '#lib/utils';
@@ -168,6 +169,9 @@
                         {/if}
                     </div>
                     <div class="flex items-center gap-2">
+                        {#if $profile}
+                            <NotificationBell />
+                        {/if}
                         <FlagMenu />
                         <Theme />
                     </div>

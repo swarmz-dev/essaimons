@@ -33,7 +33,7 @@ export default class NotificationSettingsController {
             return {
                 type,
                 inAppEnabled: setting?.inAppEnabled ?? true,
-                emailEnabled: setting?.emailEnabled ?? true,
+                emailEnabled: setting?.emailEnabled ?? false,
                 pushEnabled: setting?.pushEnabled ?? true,
             };
         });

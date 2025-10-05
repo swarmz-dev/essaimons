@@ -23,7 +23,7 @@ export default class PushSubscription extends BaseModel {
     declare userAgent: string | null;
 
     @column()
-    declare isActive: boolean;
+    declare active: boolean;
 
     @column.dateTime()
     declare lastUsedAt: DateTime | null;

@@ -30,6 +30,41 @@ const DiscordEventController = () => import('#controllers/discord_event_controll
 
 router.get('healthcheck', [HealthCheckController]);
 
+// Debug endpoint to test PostgreSQL NOTIFY
+router.get('test-notify', async ({ response }) => {
+    const { Client } = await import('pg');
+    const env = (await import('#start/env')).default;
+
+    const client = new Client({
+        host: env.get('DB_HOST'),
+        port: env.get('DB_PORT'),
+        database: env.get('DB_DATABASE'),
+        user: env.get('DB_USER'),
+        password: env.get('DB_PASSWORD'),
+    });
+
+    try {
+        await client.connect();
+        const testPayload = {
+            id: 'test-' + Date.now(),
+            user_id: 'user-' + Date.now(),
+            notification_id: 'notif-' + Date.now(),
+            created_at: new Date().toISOString(),
+        };
+
+        await client.query('SELECT pg_notify($1, $2)', ['user_notification', JSON.stringify(testPayload)]);
+        await client.end();
+
+        return response.ok({
+            message: 'Test NOTIFY sent successfully',
+            payload: testPayload,
+            note: 'Check server logs for "Received notification event from PostgreSQL"',
+        });
+    } catch (error) {
+        return response.internalServerError({ error: error.message });
+    }
+});
+
 router
     .group((): void => {
         router.get('/settings/organization', [SettingsController, 'organization']);

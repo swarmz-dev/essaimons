@@ -1,18 +1,21 @@
 import { inject } from '@adonisjs/core';
+import { DateTime } from 'luxon';
 import Notification, { NotificationTypeEnum } from '#models/notification';
-import UserNotification, { DeliveryStatusEnum } from '#models/user_notification';
+import UserNotification from '#models/user_notification';
 import NotificationSetting from '#models/notification_setting';
 import User from '#models/user';
 import BrevoMailService from '#services/brevo_mail_service';
+import WebPushService from '#services/web_push_service';
 import logger from '@adonisjs/core/services/logger';
 import db from '@adonisjs/lucid/services/db';
+import transmit from '@adonisjs/transmit/services/main';
 
 interface NotificationPayload {
     type: NotificationTypeEnum;
     titleKey: string;
     messageKey: string;
     data?: Record<string, any>;
-    entityType?: string;
+    entityType?: 'proposition' | 'mandate' | 'deliverable' | 'vote';
     entityId?: string;
     actionUrl?: string;
 }
@@ -25,37 +28,52 @@ interface ChannelPreferences {
 
 @inject()
 export default class NotificationService {
-    // @ts-ignore - Will be used in Phase 6 for email notifications
-    constructor(private readonly _brevoMailService: BrevoMailService) {}
+    constructor(
+        // @ts-ignore - Will be used for email notifications in Phase 6
+        private readonly _brevoMailService: BrevoMailService,
+        private readonly webPushService: WebPushService
+    ) {}
 
     /**
      * Create a notification and fan-out to multiple users
      */
     public async create(payload: NotificationPayload, userIds: string[]): Promise<Notification> {
+        // Map entityType and entityId to the appropriate columns
+        const entityMapping: Record<string, string | null> = {
+            propositionId: payload.entityType === 'proposition' ? payload.entityId || null : null,
+            mandateId: payload.entityType === 'mandate' ? payload.entityId || null : null,
+            deliverableId: payload.entityType === 'deliverable' ? payload.entityId || null : null,
+            voteId: payload.entityType === 'vote' ? payload.entityId || null : null,
+        };
+
         // Create the notification
         const notification = await Notification.create({
             type: payload.type,
             titleKey: payload.titleKey,
-            messageKey: payload.messageKey,
-            data: payload.data || {},
-            entityType: payload.entityType || null,
-            entityId: payload.entityId || null,
+            bodyKey: payload.messageKey,
+            interpolationData: payload.data || {},
+            propositionId: entityMapping.propositionId || null,
+            mandateId: entityMapping.mandateId || null,
+            deliverableId: entityMapping.deliverableId || null,
+            voteId: entityMapping.voteId || null,
             actionUrl: payload.actionUrl || null,
+            priority: 'normal',
+            metadata: null,
         });
 
         // Fan-out to users
         const userNotifications: UserNotification[] = [];
 
         for (const userId of userIds) {
-            const preferences = await this.getUserPreferences(userId, payload.type);
-
             const userNotification = await UserNotification.create({
                 userId,
                 notificationId: notification.id,
-                isRead: false,
-                inAppStatus: preferences.inApp ? DeliveryStatusEnum.PENDING : DeliveryStatusEnum.SKIPPED,
-                emailStatus: preferences.email ? DeliveryStatusEnum.PENDING : DeliveryStatusEnum.SKIPPED,
-                pushStatus: preferences.push ? DeliveryStatusEnum.PENDING : DeliveryStatusEnum.SKIPPED,
+                read: false,
+                inAppSent: false,
+                emailSent: false,
+                pushSent: false,
+                emailError: null,
+                pushError: null,
             });
 
             userNotifications.push(userNotification);
@@ -98,19 +116,20 @@ export default class NotificationService {
         const promises: Promise<void>[] = [];
 
         for (const userNotification of userNotifications) {
-            // In-app notifications are handled by Postgres NOTIFY trigger + SSE
-            // Just mark as sent immediately since trigger handles delivery
-            if (userNotification.inAppStatus === DeliveryStatusEnum.PENDING) {
-                promises.push(this.markInAppSent(userNotification));
+            const preferences = await this.getUserPreferences(userNotification.userId, notification.type);
+
+            // In-app notifications via SSE (Transmit)
+            if (preferences.inApp && !userNotification.inAppSent) {
+                promises.push(this.sendInApp(notification, userNotification));
             }
 
             // Email notifications
-            if (userNotification.emailStatus === DeliveryStatusEnum.PENDING) {
+            if (preferences.email && !userNotification.emailSent) {
                 promises.push(this.sendEmail(notification, userNotification));
             }
 
             // Push notifications (will be handled by pg-boss queue in WebPushService)
-            if (userNotification.pushStatus === DeliveryStatusEnum.PENDING) {
+            if (preferences.push && !userNotification.pushSent) {
                 promises.push(this.enqueuePush(notification, userNotification));
             }
         }
@@ -119,17 +138,47 @@ export default class NotificationService {
     }
 
     /**
-     * Mark in-app notification as sent
+     * Send in-app notification via Transmit SSE
      */
-    private async markInAppSent(userNotification: UserNotification): Promise<void> {
+    private async sendInApp(notification: Notification, userNotification: UserNotification): Promise<void> {
         try {
-            userNotification.inAppStatus = DeliveryStatusEnum.SENT;
-            userNotification.inAppSentAt = new Date() as any;
+            // Load the user to get their frontId (used by frontend)
+            const user = await User.findOrFail(userNotification.userId);
+            const userFrontId = user.frontId !== undefined && user.frontId !== null ? String(user.frontId) : user.id;
+
+            // Broadcast directly to user's SSE stream using frontId
+            const streamName = `user/${userFrontId}/notifications`;
+
+            await transmit.broadcast(streamName, {
+                type: 'notification',
+                data: {
+                    id: userNotification.id,
+                    notificationId: notification.id,
+                    type: notification.type,
+                    titleKey: notification.titleKey,
+                    messageKey: notification.bodyKey,
+                    data: notification.interpolationData,
+                    actionUrl: notification.actionUrl,
+                    isRead: false,
+                    createdAt: userNotification.createdAt.toISO(),
+                },
+            });
+
+            logger.info(
+                {
+                    userId: userNotification.userId,
+                    userFrontId,
+                    notificationId: notification.id,
+                    streamName,
+                },
+                'In-app notification broadcast via Transmit'
+            );
+
+            userNotification.inAppSent = true;
+            userNotification.inAppSentAt = DateTime.now();
             await userNotification.save();
         } catch (error) {
-            logger.error({ err: error, userNotificationId: userNotification.id }, 'Failed to mark in-app notification as sent');
-            userNotification.inAppStatus = DeliveryStatusEnum.FAILED;
-            await userNotification.save();
+            logger.error({ err: error, userNotificationId: userNotification.id }, 'Failed to send in-app notification');
         }
     }
 
@@ -141,7 +190,7 @@ export default class NotificationService {
             const user = await User.findOrFail(userNotification.userId);
 
             // TODO: Implement email templates for each notification type
-            // For now, we'll skip email sending and mark as sent
+            // For now, we'll skip email sending
             // This will be implemented in Phase 6
 
             logger.info(
@@ -153,38 +202,37 @@ export default class NotificationService {
                 'Email notification queued (not implemented yet)'
             );
 
-            userNotification.emailStatus = DeliveryStatusEnum.SKIPPED;
-            userNotification.emailSentAt = new Date() as any;
+            userNotification.emailSent = false; // Not sent yet
             await userNotification.save();
         } catch (error) {
             logger.error({ err: error, userNotificationId: userNotification.id }, 'Failed to send email notification');
-            userNotification.emailStatus = DeliveryStatusEnum.FAILED;
+            userNotification.emailError = (error as Error).message;
             await userNotification.save();
         }
     }
 
     /**
-     * Enqueue push notification (will be processed by pg-boss worker)
+     * Send push notification via WebPushService
      */
     private async enqueuePush(notification: Notification, userNotification: UserNotification): Promise<void> {
         try {
-            // TODO: Implement pg-boss queue for push notifications
-            // This will be implemented in WebPushService
+            // Send push notification using WebPushService
+            await this.webPushService.sendPushNotification(notification, userNotification);
+
+            userNotification.pushSent = true;
+            userNotification.pushSentAt = DateTime.now();
+            await userNotification.save();
 
             logger.info(
                 {
                     userId: userNotification.userId,
                     notificationType: notification.type,
                 },
-                'Push notification queued (not implemented yet)'
+                'Push notification sent successfully'
             );
-
-            userNotification.pushStatus = DeliveryStatusEnum.SKIPPED;
-            userNotification.pushSentAt = new Date() as any;
-            await userNotification.save();
         } catch (error) {
-            logger.error({ err: error, userNotificationId: userNotification.id }, 'Failed to enqueue push notification');
-            userNotification.pushStatus = DeliveryStatusEnum.FAILED;
+            logger.error({ err: error, userNotificationId: userNotification.id }, 'Failed to send push notification');
+            userNotification.pushError = (error as Error).message;
             await userNotification.save();
         }
     }
@@ -199,9 +247,9 @@ export default class NotificationService {
             return null;
         }
 
-        if (!userNotification.isRead) {
-            userNotification.isRead = true;
-            userNotification.readAt = new Date() as any;
+        if (!userNotification.read) {
+            userNotification.read = true;
+            userNotification.readAt = DateTime.now();
             await userNotification.save();
         }
 
@@ -212,7 +260,7 @@ export default class NotificationService {
      * Get unread count for a user
      */
     public async getUnreadCount(userId: string): Promise<number> {
-        const result = await db.from('user_notifications').where('user_id', userId).where('is_read', false).count('* as total').first();
+        const result = await db.from('user_notifications').where('user_id', userId).where('read', false).count('* as total').first();
 
         return Number(result?.total || 0);
     }

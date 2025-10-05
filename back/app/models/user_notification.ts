@@ -28,28 +28,34 @@ export default class UserNotification extends BaseModel {
     declare notificationId: string;
 
     @column()
-    declare isRead: boolean;
+    declare read: boolean;
 
     @column.dateTime()
     declare readAt: DateTime | null;
 
     @column()
-    declare inAppStatus: DeliveryStatusEnum;
-
-    @column()
-    declare emailStatus: DeliveryStatusEnum;
-
-    @column()
-    declare pushStatus: DeliveryStatusEnum;
+    declare inAppSent: boolean;
 
     @column.dateTime()
     declare inAppSentAt: DateTime | null;
 
+    @column()
+    declare emailSent: boolean;
+
     @column.dateTime()
     declare emailSentAt: DateTime | null;
 
+    @column()
+    declare emailError: string | null;
+
+    @column()
+    declare pushSent: boolean;
+
     @column.dateTime()
     declare pushSentAt: DateTime | null;
+
+    @column()
+    declare pushError: string | null;
 
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime;
