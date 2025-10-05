@@ -127,6 +127,35 @@ router
                     })
                     .prefix('profile');
 
+                const NotificationsController = () => import('#controllers/notifications_controller');
+                router
+                    .group((): void => {
+                        router.get('/', [NotificationsController, 'index']);
+                        router.get('/unread-count', [NotificationsController, 'unreadCount']);
+                        router.patch('/:id/read', [NotificationsController, 'markAsRead']);
+                        router.patch('/mark-all-read', [NotificationsController, 'markAllAsRead']);
+                    })
+                    .prefix('notifications');
+
+                const PushSubscriptionsController = () => import('#controllers/push_subscriptions_controller');
+                router
+                    .group((): void => {
+                        router.get('/vapid-public-key', [PushSubscriptionsController, 'getVapidPublicKey']);
+                        router.get('/', [PushSubscriptionsController, 'index']);
+                        router.post('/', [PushSubscriptionsController, 'subscribe']);
+                        router.delete('/:id', [PushSubscriptionsController, 'destroy']);
+                    })
+                    .prefix('push-subscriptions');
+
+                const NotificationSettingsController = () => import('#controllers/notification_settings_controller');
+                router
+                    .group((): void => {
+                        router.get('/', [NotificationSettingsController, 'index']);
+                        router.put('/:type', [NotificationSettingsController, 'update']);
+                        router.put('/bulk', [NotificationSettingsController, 'bulkUpdate']);
+                    })
+                    .prefix('notification-settings');
+
                 router
                     .group((): void => {
                         router.get('/', [PropositionController, 'search']);
