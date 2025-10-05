@@ -9,8 +9,8 @@ export default class extends BaseSchema {
             table.dropColumn('front_id');
         });
 
-        // Drop front_id from users table (in logs database)
-        this.schema.alterTable('users', (table) => {
+        // Drop front_id from log_users table (in logs database)
+        this.schema.alterTable('log_users', (table) => {
             table.dropColumn('front_id');
         });
     }
@@ -21,8 +21,8 @@ export default class extends BaseSchema {
             table.specificType('front_id', 'serial').notNullable();
         });
 
-        // Re-add front_id to users table (in logs database)
-        this.schema.alterTable('users', (table) => {
+        // Re-add front_id to log_users table (in logs database)
+        this.schema.alterTable('log_users', (table) => {
             table.specificType('front_id', 'serial').notNullable();
         });
     }
