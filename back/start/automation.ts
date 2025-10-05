@@ -2,6 +2,7 @@ import app from '@adonisjs/core/services/app';
 import logger from '@adonisjs/core/services/logger';
 import DeliverableAutomationService from '#services/deliverable_automation_service';
 import SettingsService from '#services/settings_service';
+import NotificationListenerService from '#services/notification_listener_service';
 
 const startAutomation = async () => {
     if (app.inTest || process.env.NODE_ENV === 'test') {
@@ -10,6 +11,10 @@ const startAutomation = async () => {
     try {
         const automationService = await app.container.make(DeliverableAutomationService);
         const settingsService = await app.container.make(SettingsService);
+        const notificationListener = await app.container.make(NotificationListenerService);
+
+        // Start notification listener for real-time SSE
+        await notificationListener.start();
 
         const runSweep = async () => {
             try {
