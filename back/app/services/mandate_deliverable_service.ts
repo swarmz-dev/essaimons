@@ -13,6 +13,7 @@ import FileService from '#services/file_service';
 import SlugifyService from '#services/slugify_service';
 import PropositionWorkflowService from '#services/proposition_workflow_service';
 import DeliverableAutomationService from '#services/deliverable_automation_service';
+import PropositionNotificationService from '#services/proposition_notification_service';
 import SettingsService from '#services/settings_service';
 import { FileTypeEnum, DeliverableVerdictEnum } from '#types';
 import type { SerializedMandate, SerializedMandateDeliverable, SerializedProposition } from '#types';
@@ -49,6 +50,7 @@ export default class MandateDeliverableService {
         private readonly slugifyService: SlugifyService,
         private readonly workflowService: PropositionWorkflowService,
         private readonly automationService: DeliverableAutomationService,
+        private readonly propositionNotificationService: PropositionNotificationService,
         private readonly settingsService: SettingsService
     ) {}
 
@@ -174,6 +176,11 @@ export default class MandateDeliverableService {
             logger.info('deliverable.service.upload.serializing-proposition');
             const serializedProposition = proposition.apiSerialize();
 
+            // Send notification for deliverable upload
+            this.propositionNotificationService.notifyDeliverableUpload(deliverable).catch((error: Error) => {
+                logger.error({ err: error, deliverableId: deliverable.id }, 'Failed to send deliverable upload notification');
+            });
+
             logger.info('deliverable.service.upload.completed-successfully');
             return {
                 deliverable: serializedDeliverable,
@@ -281,6 +288,11 @@ export default class MandateDeliverableService {
                             userQuery.select(['id', 'front_id', 'username']);
                         });
                     });
+            });
+
+            // Send notification for deliverable evaluation
+            this.propositionNotificationService.notifyDeliverableEvaluation(deliverable).catch((error: Error) => {
+                logger.error({ err: error, deliverableId: deliverable.id }, 'Failed to send deliverable evaluation notification');
             });
 
             return {

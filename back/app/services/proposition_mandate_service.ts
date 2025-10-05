@@ -7,9 +7,11 @@ import User from '#models/user';
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database';
 import { MandateStatusEnum } from '#types/enum/mandate_status_enum';
 import PropositionWorkflowService from '#services/proposition_workflow_service';
+import PropositionNotificationService from '#services/proposition_notification_service';
 import type { SerializedMandate } from '#types';
 import { serializeMandate } from '#serializers/mandate_serializer';
 import type { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model';
+import logger from '@adonisjs/core/services/logger';
 
 interface MandatePayload {
     title: string;
@@ -25,7 +27,10 @@ interface UpdateMandatePayload extends Partial<MandatePayload> {}
 
 @inject()
 export default class PropositionMandateService {
-    constructor(private readonly workflowService: PropositionWorkflowService) {}
+    constructor(
+        private readonly workflowService: PropositionWorkflowService,
+        private readonly propositionNotificationService: PropositionNotificationService
+    ) {}
 
     public async list(proposition: Proposition): Promise<SerializedMandate[]> {
         const mandates = await proposition
@@ -83,12 +88,20 @@ export default class PropositionMandateService {
             query.select(['id', 'front_id', 'username', 'profile_picture_id']);
         });
 
+        // Send notification if mandate was assigned to a holder
+        if (mandate.holderUserId) {
+            this.propositionNotificationService.notifyMandateAssignment(mandate).catch((error: Error) => {
+                logger.error({ err: error, mandateId: mandate.id }, 'Failed to send mandate assignment notification');
+            });
+        }
+
         return mandate;
     }
 
     public async update(proposition: Proposition, mandate: PropositionMandate, actor: User, payload: UpdateMandatePayload): Promise<PropositionMandate> {
         await this.ensureCanManageMandates(proposition, actor);
 
+        const previousHolderId = mandate.holderUserId;
         const normalized = await this.normalizePayload(payload);
         const updateData: Partial<PropositionMandate> = {};
         if (normalized.title !== undefined) {
@@ -119,6 +132,13 @@ export default class PropositionMandateService {
         await mandate.load('holder', (query: ModelQueryBuilderContract<typeof User>) => {
             query.select(['id', 'front_id', 'username', 'profile_picture_id']);
         });
+
+        // Send notification if holder changed
+        if (normalized.holderUserId !== undefined && previousHolderId !== mandate.holderUserId) {
+            this.propositionNotificationService.notifyMandateAssignment(mandate, previousHolderId).catch((error: Error) => {
+                logger.error({ err: error, mandateId: mandate.id }, 'Failed to send mandate assignment notification');
+            });
+        }
 
         return mandate;
     }

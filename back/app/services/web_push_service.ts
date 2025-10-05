@@ -39,7 +39,8 @@ export default class WebPushService {
      * Get VAPID public key for client subscription
      */
     public getVapidPublicKey(): string | null {
-        return env.get('VAPID_PUBLIC_KEY', null);
+        const key = env.get('VAPID_PUBLIC_KEY');
+        return typeof key === 'string' ? key : null;
     }
 
     /**

@@ -25,7 +25,8 @@ interface ChannelPreferences {
 
 @inject()
 export default class NotificationService {
-    constructor(private readonly brevoMailService: BrevoMailService) {}
+    // @ts-ignore - Will be used in Phase 6 for email notifications
+    constructor(private readonly _brevoMailService: BrevoMailService) {}
 
     /**
      * Create a notification and fan-out to multiple users

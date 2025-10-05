@@ -14,6 +14,10 @@ export enum NotificationTypeEnum {
     PROCEDURE_OPENED = 'procedure_opened',
     REVOCATION_VOTE_OPENED = 'revocation_vote_opened',
     COMMENT_ADDED = 'comment_added',
+    CLARIFICATION_ADDED = 'clarification_added',
+    CLARIFICATION_UPDATED = 'clarification_updated',
+    CLARIFICATION_DELETED = 'clarification_deleted',
+    EXCHANGE_SCHEDULED = 'exchange_scheduled',
 }
 
 export default class Notification extends BaseModel {

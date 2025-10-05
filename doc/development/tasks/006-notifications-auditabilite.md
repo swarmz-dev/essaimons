@@ -35,36 +35,44 @@ Postgres trigger sur `user_notifications` → `pg_notify('user_notification')` �
 - [x] Génération clés VAPID : [scripts/generate-vapid-keys.ts](../../back/scripts/generate-vapid-keys.ts)
 - [x] Migrations exécutées avec succès
 
-### Phase 2 : Backend Core (À faire)
-- [ ] Créer modèles Lucid :
-  - `app/models/notification.ts`
-  - `app/models/user_notification.ts`
-  - `app/models/push_subscription.ts`
-  - `app/models/notification_setting.ts`
-- [ ] Service `NotificationService` :
-  - Méthode `create()` : créer notification + fan-out vers users
-  - Méthode `sendToChannels()` : dispatch vers in-app/email/push
-  - Intégration avec pg-boss pour retry
-- [ ] Service `WebPushService` :
-  - Configuration web-push avec clés VAPID
-  - Worker pg-boss pour envoyer push notifications
-  - Gestion des subscriptions expirées (410 Gone)
-- [ ] Service `NotificationListenerService` :
-  - Écoute Postgres NOTIFY via pg client
-  - Push vers Transmit SSE streams par user_id
-- [ ] Initialisation dans `start/automation.ts` ou nouveau fichier
+### Phase 2 : Backend Core ✅ (2025-01-30)
+- [x] Créer modèles Lucid :
+  - [x] [app/models/notification.ts](../../back/app/models/notification.ts)
+  - [x] [app/models/user_notification.ts](../../back/app/models/user_notification.ts)
+  - [x] [app/models/push_subscription.ts](../../back/app/models/push_subscription.ts)
+  - [x] [app/models/notification_setting.ts](../../back/app/models/notification_setting.ts)
+- [x] Service `NotificationService` : [app/services/notification_service.ts](../../back/app/services/notification_service.ts)
+  - [x] Méthode `create()` : créer notification + fan-out vers users
+  - [x] Méthode `sendToChannels()` : dispatch vers in-app/email/push
+  - [x] Méthodes `markAsRead()`, `getUnreadCount()`, `getUserNotifications()`
+  - [ ] Intégration avec pg-boss pour retry (à implémenter)
+- [x] Service `WebPushService` : [app/services/web_push_service.ts](../../back/app/services/web_push_service.ts)
+  - [x] Configuration web-push avec clés VAPID
+  - [x] Méthodes `subscribe()`, `unsubscribe()`, `sendPushNotification()`
+  - [x] Gestion des subscriptions expirées (410 Gone)
+  - [ ] Worker pg-boss pour envoyer push notifications (à implémenter)
+- [x] Service `NotificationListenerService` : [app/services/notification_listener_service.ts](../../back/app/services/notification_listener_service.ts)
+  - [x] Écoute Postgres NOTIFY via pg client
+  - [x] Push vers Transmit SSE streams par user_id
+  - [x] Auto-reconnection sur erreur
+- [x] Initialisation dans [start/automation.ts](../../back/start/automation.ts)
 
-### Phase 3 : API REST (À faire)
-- [ ] Controller `NotificationsController` :
-  - `GET /notifications` : liste paginée pour user
-  - `PATCH /notifications/:id/read` : marquer comme lue
-  - `GET /notifications/unread-count` : badge count
-- [ ] Controller `PushSubscriptionsController` :
-  - `POST /push-subscriptions` : enregistrer subscription
-  - `DELETE /push-subscriptions/:id` : désinscrire device
-- [ ] Controller `NotificationSettingsController` :
-  - `GET /notification-settings` : préférences user
-  - `PUT /notification-settings/:type` : modifier préférences
+### Phase 3 : API REST ✅ (2025-01-30)
+- [x] Controller `NotificationsController` : [app/controllers/notifications_controller.ts](../../back/app/controllers/notifications_controller.ts)
+  - [x] `GET /notifications` : liste paginée pour user
+  - [x] `PATCH /notifications/:id/read` : marquer comme lue
+  - [x] `PATCH /notifications/mark-all-read` : marquer toutes comme lues
+  - [x] `GET /notifications/unread-count` : badge count
+- [x] Controller `PushSubscriptionsController` : [app/controllers/push_subscriptions_controller.ts](../../back/app/controllers/push_subscriptions_controller.ts)
+  - [x] `GET /push-subscriptions/vapid-public-key` : récupérer clé publique VAPID
+  - [x] `POST /push-subscriptions` : enregistrer subscription
+  - [x] `GET /push-subscriptions` : lister subscriptions actives
+  - [x] `DELETE /push-subscriptions/:id` : désinscrire device
+- [x] Controller `NotificationSettingsController` : [app/controllers/notification_settings_controller.ts](../../back/app/controllers/notification_settings_controller.ts)
+  - [x] `GET /notification-settings` : préférences user
+  - [x] `PUT /notification-settings/:type` : modifier préférences
+  - [x] `PUT /notification-settings/bulk` : mise à jour en masse
+- [x] Routes ajoutées dans [start/routes.ts](../../back/start/routes.ts)
 
 ### Phase 4 : Hooks métier (À faire)
 Notifications prioritaires (Phase 1 & 2 du cycle) :
