@@ -11,6 +11,7 @@ const AdminUserController = () => import('#controllers/admin/user_controller');
 const AdminPropositionCategoryController = () => import('#controllers/admin/proposition_category_controller');
 const AdminOrganizationSettingsController = () => import('#controllers/admin/organization_settings_controller');
 const AdminDiscordController = () => import('#controllers/admin/discord_controller');
+const AdminEmailTemplateController = () => import('#controllers/admin/email_template_controller');
 
 // App controllers
 const HealthCheckController = () => import('#controllers/health_checks_controller');
@@ -85,7 +86,7 @@ router
                                 router.post('/delete', [AdminUserController, 'delete']);
                                 router.post('/create', [AdminUserController, 'create']);
                                 router.post('/update', [AdminUserController, 'update']);
-                                router.get('/:frontId', [AdminUserController, 'get']);
+                                router.get('/:id', [AdminUserController, 'get']);
                             })
                             .prefix('user');
 
@@ -113,6 +114,23 @@ router
                                 router.post('/channels', [AdminDiscordController, 'listChannels']);
                             })
                             .prefix('discord');
+
+                        router
+                            .group((): void => {
+                                router.get('/', [AdminEmailTemplateController, 'index']);
+                                router.get('/:id', [AdminEmailTemplateController, 'show']);
+                                router.post('/', [AdminEmailTemplateController, 'store']);
+                                router.put('/:id', [AdminEmailTemplateController, 'update']);
+                                router.delete('/:id', [AdminEmailTemplateController, 'destroy']);
+                            })
+                            .prefix('email-templates');
+
+                        const NotificationsController = () => import('#controllers/notifications_controller');
+                        router
+                            .group((): void => {
+                                router.get('/', [NotificationsController, 'adminIndex']);
+                            })
+                            .prefix('notifications');
                     })
                     .prefix('admin')
                     .use([middleware.isAdmin()]);
@@ -127,10 +145,40 @@ router
                     })
                     .prefix('profile');
 
+                const NotificationsController = () => import('#controllers/notifications_controller');
+                router
+                    .group((): void => {
+                        router.get('/', [NotificationsController, 'index']);
+                        router.get('/unread-count', [NotificationsController, 'unreadCount']);
+                        router.patch('/:id/read', [NotificationsController, 'markAsRead']);
+                        router.patch('/mark-all-read', [NotificationsController, 'markAllAsRead']);
+                    })
+                    .prefix('notifications');
+
+                const PushSubscriptionsController = () => import('#controllers/push_subscriptions_controller');
+                router
+                    .group((): void => {
+                        router.get('/vapid-public-key', [PushSubscriptionsController, 'getVapidPublicKey']);
+                        router.get('/', [PushSubscriptionsController, 'index']);
+                        router.post('/', [PushSubscriptionsController, 'subscribe']);
+                        router.delete('/:id', [PushSubscriptionsController, 'destroy']);
+                    })
+                    .prefix('push-subscriptions');
+
+                const NotificationSettingsController = () => import('#controllers/notification_settings_controller');
+                router
+                    .group((): void => {
+                        router.get('/', [NotificationSettingsController, 'index']);
+                        router.put('/:type', [NotificationSettingsController, 'update']);
+                        router.put('/bulk', [NotificationSettingsController, 'bulkUpdate']);
+                    })
+                    .prefix('notification-settings');
+
                 router
                     .group((): void => {
                         router.get('/', [PropositionController, 'search']);
                         router.get('/bootstrap', [PropositionController, 'bootstrap']);
+                        router.get('/home', [PropositionController, 'home']);
                         router.get('/:id', [PropositionController, 'show']);
                         router.post('/', [PropositionController, 'create']);
                         router.put('/:id', [PropositionController, 'update']);

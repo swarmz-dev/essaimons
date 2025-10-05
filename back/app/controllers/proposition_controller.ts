@@ -474,4 +474,46 @@ export default class PropositionController {
                 return item;
             });
     }
+
+    public async home({ response, auth }: HttpContext): Promise<void> {
+        const user = auth.user;
+
+        // Get voting phase proposals sorted by deadline
+        const votingProposals = await this.propositionRepository.searchWithFilters(
+            {
+                statuses: [PropositionStatusEnum.VOTE],
+            },
+            1,
+            10,
+            'voteDeadline',
+            'asc'
+        );
+
+        // Get mandate phase proposals sorted by deadline
+        const mandateProposals = await this.propositionRepository.searchWithFilters(
+            {
+                statuses: [PropositionStatusEnum.MANDATE],
+            },
+            1,
+            10,
+            'mandateDeadline',
+            'asc'
+        );
+
+        // Get recent proposals (recently created or updated)
+        const recentProposals = await this.propositionRepository.searchWithFilters({}, 1, 10, 'updatedAt', 'desc');
+
+        // Get user's contributed proposals if authenticated
+        let userProposals: PaginatedPropositions | null = null;
+        if (user) {
+            userProposals = await this.propositionRepository.findUserContributions(user.id, 1, 10);
+        }
+
+        return response.ok({
+            voting: votingProposals,
+            mandate: mandateProposals,
+            recent: recentProposals,
+            user: userProposals,
+        });
+    }
 }

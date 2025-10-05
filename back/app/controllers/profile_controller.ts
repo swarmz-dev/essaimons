@@ -184,8 +184,7 @@ export default class ProfileController {
                 },
             };
 
-            const identifier = user.frontId !== undefined && user.frontId !== null ? `user-${user.frontId}` : user.id;
-            const fileName = `user-export-${identifier}-${DateTime.now().toFormat('yyyyLLdd-HHmmss')}.json`;
+            const fileName = `user-export-${user.id}-${DateTime.now().toFormat('yyyyLLdd-HHmmss')}.json`;
 
             response.header('Content-Type', 'application/json');
             response.header('Content-Disposition', `attachment; filename="${fileName}"`);

@@ -32,23 +32,21 @@ export default class AdminUserController {
     public async delete({ request, response, i18n, user }: HttpContext) {
         const { users } = await request.validateUsing(deleteUsersValidator);
 
-        const statuses: { isDeleted: boolean; isCurrentUser?: boolean; username?: string; frontId: number; id?: string }[] = await this.userRepository.delete(users, user);
+        const statuses: { isDeleted: boolean; isCurrentUser?: boolean; username?: string; id: string }[] = await this.userRepository.delete(users, user);
 
         return response.ok({
             messages: await Promise.all(
-                statuses.map(
-                    async (status: { isDeleted: boolean; isCurrentUser?: boolean; username?: string; frontId: number; id?: string }): Promise<{ id: number; message: string; isSuccess: boolean }> => {
-                        if (status.isDeleted) {
-                            return { id: status.frontId, message: i18n.t(`messages.admin.user.delete.success`, { username: status.username }), isSuccess: true };
+                statuses.map(async (status: { isDeleted: boolean; isCurrentUser?: boolean; username?: string; id: string }): Promise<{ id: string; message: string; isSuccess: boolean }> => {
+                    if (status.isDeleted) {
+                        return { id: status.id, message: i18n.t(`messages.admin.user.delete.success`, { username: status.username }), isSuccess: true };
+                    } else {
+                        if (status.isCurrentUser) {
+                            return { id: status.id, message: i18n.t(`messages.admin.user.delete.error.current`, { username: status.username }), isSuccess: false };
                         } else {
-                            if (status.isCurrentUser) {
-                                return { id: status.frontId, message: i18n.t(`messages.admin.user.delete.error.current`, { username: status.username }), isSuccess: false };
-                            } else {
-                                return { id: status.frontId, message: i18n.t(`messages.admin.user.delete.error.default`, { frontId: status.frontId }), isSuccess: false };
-                            }
+                            return { id: status.id, message: i18n.t(`messages.admin.user.delete.error.default`, { id: status.id }), isSuccess: false };
                         }
                     }
-                )
+                })
             ),
         });
     }
@@ -109,8 +107,8 @@ export default class AdminUserController {
     }
 
     public async get({ request, response }: HttpContext) {
-        const { frontId } = await getAdminUserValidator.validate(request.params());
-        const user: User = await this.userRepository.firstOrFail({ frontId });
+        const { id } = await getAdminUserValidator.validate(request.params());
+        const user: User = await this.userRepository.firstOrFail({ id });
 
         return response.ok(user.apiSerialize());
     }

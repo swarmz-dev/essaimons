@@ -1,5 +1,6 @@
 import { inject } from '@adonisjs/core';
 import db from '@adonisjs/lucid/services/db';
+import logger from '@adonisjs/core/services/logger';
 import type User from '#models/user';
 import Proposition from '#models/proposition';
 import PropositionCategory from '#models/proposition_category';
@@ -451,6 +452,7 @@ export default class PropositionService {
         options: { reason?: string | null; metadata?: Record<string, unknown> } = {}
     ): Promise<Proposition> {
         const trx: TransactionClientContract = await db.transaction();
+        const oldStatus = proposition.status;
 
         try {
             proposition.useTransaction(trx);
@@ -463,6 +465,20 @@ export default class PropositionService {
             });
 
             await trx.commit();
+
+            // Send notifications after successful transition (async, don't wait)
+            if (oldStatus !== targetStatus) {
+                // Lazy load to avoid circular dependency
+                import('#services/proposition_notification_service')
+                    .then(async (module) => {
+                        const app = await import('@adonisjs/core/services/app');
+                        const service = await app.default.container.make(module.default);
+                        return service.notifyStatusTransition(updated, oldStatus, targetStatus);
+                    })
+                    .catch((error: Error) => {
+                        logger.error({ err: error, propositionId: updated.id }, 'Failed to send status transition notification');
+                    });
+            }
 
             return updated;
         } catch (error) {

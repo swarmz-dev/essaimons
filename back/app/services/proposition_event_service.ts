@@ -6,6 +6,8 @@ import PropositionEvent from '#models/proposition_event';
 import type User from '#models/user';
 import { PropositionEventTypeEnum } from '#types/enum/proposition_event_type_enum';
 import PropositionWorkflowService from '#services/proposition_workflow_service';
+import PropositionNotificationService from '#services/proposition_notification_service';
+import logger from '@adonisjs/core/services/logger';
 
 interface BaseEventPayload {
     type: PropositionEventTypeEnum;
@@ -33,7 +35,10 @@ type NormalizedEventPayload = {
 
 @inject()
 export default class PropositionEventService {
-    constructor(private readonly workflowService: PropositionWorkflowService) {}
+    constructor(
+        private readonly workflowService: PropositionWorkflowService,
+        private readonly propositionNotificationService: PropositionNotificationService
+    ) {}
 
     public async list(proposition: Proposition): Promise<PropositionEvent[]> {
         return proposition.related('events').query().orderBy('start_at', 'asc').orderBy('created_at', 'asc');
@@ -58,6 +63,11 @@ export default class PropositionEventService {
             },
             trx ? { client: trx } : undefined
         );
+
+        // Send notification for exchange scheduled
+        this.propositionNotificationService.notifyExchangeScheduled(proposition, event).catch((error: Error) => {
+            logger.error({ err: error, eventId: event.id }, 'Failed to send exchange scheduled notification');
+        });
 
         return event;
     }

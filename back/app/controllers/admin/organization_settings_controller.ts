@@ -29,7 +29,6 @@ export default class OrganizationSettingsController {
             }
             if (field === 'sourceCodeUrl') {
                 try {
-                    // eslint-disable-next-line no-new
                     new URL(value);
                 } catch (error) {
                     return response.badRequest({

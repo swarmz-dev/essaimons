@@ -62,8 +62,8 @@ test.group('Proposition workflow schema', (group) => {
             voteDeadline: DateTime.now().plus({ days: 15 }).toISODate()!,
             mandateDeadline: DateTime.now().plus({ days: 45 }).toISODate()!,
             evaluationDeadline: DateTime.now().plus({ days: 90 }).toISODate()!,
-            categoryIds: [String(category.frontId ?? category.id)],
-            rescueInitiatorIds: [String(rescue.frontId ?? rescue.id)],
+            categoryIds: [String(category.id)],
+            rescueInitiatorIds: [String(rescue.id)],
             isDraft: true,
         };
 

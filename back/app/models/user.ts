@@ -9,6 +9,7 @@ import type { SerializedUserSummary } from '#types/serialized/serialized_user_su
 import { AccessToken, DbAccessTokensProvider } from '@adonisjs/auth/access_tokens';
 import File from '#models/file';
 import { UserRoleEnum } from '#types/enum/user_role_enum';
+import { EmailFrequencyEnum } from '#types/enum/email_frequency_enum';
 import LogUser from '#models/log_user';
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
@@ -21,9 +22,6 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
     @column({ isPrimary: true })
     declare id: string;
-
-    @column()
-    declare frontId: number;
 
     @column()
     declare username: string;
@@ -45,6 +43,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
     @column()
     declare isOauth: boolean;
+
+    @column()
+    declare emailFrequency: EmailFrequencyEnum;
 
     @column()
     declare profilePictureId: string | null;
@@ -89,14 +90,14 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
     public summarySerialize(): SerializedUserSummary {
         return {
-            id: this.frontId !== undefined && this.frontId !== null ? String(this.frontId) : this.id,
+            id: this.id,
             username: this.username,
         };
     }
 
     public apiSerialize(): SerializedUser {
         return {
-            id: this.frontId !== undefined && this.frontId !== null ? String(this.frontId) : this.id,
+            id: this.id,
             username: this.username,
             email: this.email,
             role: this.role,

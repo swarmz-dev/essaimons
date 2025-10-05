@@ -97,9 +97,17 @@
 <Meta title={m['profile.meta.title']()} description={m['profile.meta.description']()} keywords={m['profile.meta.keywords']().split(', ')} pathname="/profile" />
 
 <Title title={m['profile.title']()} hasBackground />
-<Link href="/reset-password">
-    {m['profile.reset-password']()}
-</Link>
+<div class="flex flex-wrap gap-4">
+    <Link href="/reset-password">
+        {m['profile.reset-password']()}
+    </Link>
+    <Link href="/profile/notifications">
+        {m['profile.notifications.title']()}
+    </Link>
+    <Link href="/profile/devices">
+        {m['profile.devices.title']()}
+    </Link>
+</div>
 
 <Form isValid={canSubmit} onError={handleError}>
     <Input name="username" placeholder={m['common.username.label']()} label={m['common.username.label']()} min={3} max={50} bind:value={formValues.username} required />

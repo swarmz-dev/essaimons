@@ -3,7 +3,9 @@ import Proposition from '#models/proposition';
 import PropositionComment from '#models/proposition_comment';
 import type User from '#models/user';
 import PropositionWorkflowService from '#services/proposition_workflow_service';
+import PropositionNotificationService from '#services/proposition_notification_service';
 import { PropositionCommentScopeEnum, PropositionCommentVisibilityEnum } from '#types';
+import logger from '@adonisjs/core/services/logger';
 
 interface CreateCommentPayload {
     scope: PropositionCommentScopeEnum;
@@ -19,15 +21,18 @@ interface UpdateCommentPayload {
 
 @inject()
 export default class PropositionCommentService {
-    constructor(private readonly workflowService: PropositionWorkflowService) {}
+    constructor(
+        private readonly workflowService: PropositionWorkflowService,
+        private readonly propositionNotificationService: PropositionNotificationService
+    ) {}
 
     public async list(proposition: Proposition): Promise<PropositionComment[]> {
         return proposition
             .related('comments')
             .query()
-            .preload('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id']))
+            .preload('author', (query) => query.select(['id', 'username', 'profile_picture_id']))
             .preload('replies', (replyQuery) => {
-                replyQuery.preload('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id'])).orderBy('created_at', 'asc');
+                replyQuery.preload('author', (query) => query.select(['id', 'username', 'profile_picture_id'])).orderBy('created_at', 'asc');
             })
             .orderBy('created_at', 'asc');
     }
@@ -50,7 +55,13 @@ export default class PropositionCommentService {
             content: normalizedContent,
         });
 
-        await comment.load('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id']));
+        await comment.load('author', (query) => query.select(['id', 'username', 'profile_picture_id']));
+
+        // Send notification for new comment
+        this.propositionNotificationService.notifyCommentAdded(proposition, comment, actor.id).catch((error: Error) => {
+            logger.error({ err: error, commentId: comment.id }, 'Failed to send comment notification');
+        });
+
         return comment;
     }
 
@@ -69,10 +80,16 @@ export default class PropositionCommentService {
 
         comment.content = trimmed;
         await comment.save();
-        await comment.load('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id']));
+        await comment.load('author', (query) => query.select(['id', 'username', 'profile_picture_id']));
         await comment.load('replies', (replyQuery) => {
-            replyQuery.preload('author', (query) => query.select(['id', 'front_id', 'username', 'profile_picture_id'])).orderBy('created_at', 'asc');
+            replyQuery.preload('author', (query) => query.select(['id', 'username', 'profile_picture_id'])).orderBy('created_at', 'asc');
         });
+
+        // Send notification for comment update
+        this.propositionNotificationService.notifyCommentUpdated(proposition, comment, actor.id).catch((error: Error) => {
+            logger.error({ err: error, commentId: comment.id }, 'Failed to send comment update notification');
+        });
+
         return comment;
     }
 
@@ -83,11 +100,18 @@ export default class PropositionCommentService {
                 throw new Error('forbidden:comments');
             }
         }
+
         const repliesCount = (await comment.related('replies').query().count('* as total')) as unknown as { total?: string | number }[];
         const total = Number(repliesCount?.[0]?.total ?? 0);
         if (total > 0) {
             throw new Error('comments.delete.has-children');
         }
+
+        // Send notification before deleting
+        await this.propositionNotificationService.notifyCommentDeleted(proposition, comment).catch((error: Error) => {
+            logger.error({ err: error, commentId: comment.id }, 'Failed to send comment delete notification');
+        });
+
         await comment.delete();
     }
 

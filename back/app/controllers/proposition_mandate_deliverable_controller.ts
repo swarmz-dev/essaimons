@@ -33,25 +33,25 @@ export default class PropositionMandateDeliverableController {
                         .orderBy('uploaded_at', 'asc')
                         .preload('file')
                         .preload('uploadedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                            userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                            userQuery.select(['id', 'username', 'profile_picture_id']);
                         })
                         .preload('evaluations', (evaluationQuery) => {
                             evaluationQuery.preload('evaluator', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                                userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                                userQuery.select(['id', 'username', 'profile_picture_id']);
                             });
                         });
                 })
                 .preload('holder', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                    userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                    userQuery.select(['id', 'username', 'profile_picture_id']);
                 })
                 .preload('applications', (applicationQuery) => {
                     applicationQuery.preload('applicant', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                        userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                        userQuery.select(['id', 'username', 'profile_picture_id']);
                     });
                 })
                 .preload('revocationRequests', (requestQuery) => {
                     requestQuery.preload('initiatedBy', (userQuery: ModelQueryBuilderContract<typeof User>) => {
-                        userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                        userQuery.select(['id', 'username', 'profile_picture_id']);
                     });
                 });
         });

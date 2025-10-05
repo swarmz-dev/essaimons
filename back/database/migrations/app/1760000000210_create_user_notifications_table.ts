@@ -36,7 +36,7 @@ export default class extends BaseSchema {
         });
 
         // Create Postgres NOTIFY trigger for real-time delivery via SSE
-        this.schema.raw(`
+        await this.schema.raw(`
       CREATE OR REPLACE FUNCTION notify_user_notification() RETURNS TRIGGER AS $$
       BEGIN
         PERFORM pg_notify('user_notification', json_build_object(

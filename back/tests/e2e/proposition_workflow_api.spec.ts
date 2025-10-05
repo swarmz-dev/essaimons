@@ -77,8 +77,8 @@ const createPropositionFixture = async (client: any) => {
             impacts: 'Impacts',
             mandatesDescription: 'Mandates',
             expertise: 'Expertise',
-            categoryIds: String(category.frontId ?? category.id),
-            rescueInitiatorIds: String(rescue.frontId ?? rescue.id),
+            categoryIds: String(category.id),
+            rescueInitiatorIds: String(rescue.id),
             clarificationDeadline: DateTime.now().plus({ days: 5 }).toISODate(),
             amendmentDeadline: DateTime.now().plus({ days: 10 }).toISODate(),
             voteDeadline: DateTime.now().plus({ days: 15 }).toISODate(),
@@ -160,8 +160,8 @@ test.group('Proposition workflow API', (group) => {
                 impacts: 'Impacts',
                 mandatesDescription: 'Mandates',
                 expertise: 'Expertise',
-                categoryIds: String(category.frontId ?? category.id),
-                rescueInitiatorIds: String(rescue.frontId ?? rescue.id),
+                categoryIds: String(category.id),
+                rescueInitiatorIds: String(rescue.id),
                 clarificationDeadline: DateTime.now().plus({ days: 5 }).toISODate(),
                 amendmentDeadline: DateTime.now().plus({ days: 10 }).toISODate(),
                 voteDeadline: DateTime.now().plus({ days: 15 }).toISODate(),
@@ -183,8 +183,7 @@ test.group('Proposition workflow API', (group) => {
         transitionResponse.assertStatus(200);
         assert.equal(transitionResponse.body().proposition.status, PropositionStatusEnum.CLARIFY);
 
-        const numericId = Number(propositionId);
-        const persisted = Number.isFinite(numericId) ? await Proposition.query().where('front_id', numericId).firstOrFail() : await Proposition.findOrFail(propositionId);
+        const persisted = await Proposition.findOrFail(propositionId);
 
         const historyEntries = await PropositionStatusHistory.query().where('proposition_id', persisted.id).orderBy('created_at', 'asc');
 
@@ -219,8 +218,8 @@ test.group('Proposition workflow API', (group) => {
                 impacts: 'Impacts',
                 mandatesDescription: 'Mandates',
                 expertise: 'Expertise',
-                categoryIds: String(category.frontId ?? category.id),
-                rescueInitiatorIds: String(rescue.frontId ?? rescue.id),
+                categoryIds: String(category.id),
+                rescueInitiatorIds: String(rescue.id),
                 clarificationDeadline: DateTime.now().plus({ days: 5 }).toISODate(),
                 amendmentDeadline: DateTime.now().plus({ days: 10 }).toISODate(),
                 voteDeadline: DateTime.now().plus({ days: 15 }).toISODate(),
@@ -246,8 +245,7 @@ test.group('Proposition workflow API', (group) => {
 
         transitionResponse.assertStatus(403);
 
-        const numericId = Number(propositionId);
-        const persisted = Number.isFinite(numericId) ? await Proposition.query().where('front_id', numericId).firstOrFail() : await Proposition.findOrFail(propositionId);
+        const persisted = await Proposition.findOrFail(propositionId);
 
         const historyEntries = await PropositionStatusHistory.query().where('proposition_id', persisted.id);
         assert.isTrue(historyEntries.every((entry) => entry.toStatus === PropositionStatusEnum.DRAFT));

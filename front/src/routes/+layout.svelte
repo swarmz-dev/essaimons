@@ -1,7 +1,7 @@
 <script lang="ts">
     import '../app.css';
     import Menu from '#lib/partials/menu/Menu.svelte';
-    import { onMount } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
     import Meta from '#components/Meta.svelte';
     import { m } from '#lib/paraglide/messages';
     import { initFlash } from 'sveltekit-flash-message/client';
@@ -11,6 +11,10 @@
     import { Footer } from '#lib/components/ui/footer';
     import { transmit } from '#lib/stores/transmitStore';
     import { PUBLIC_API_REAL_URI } from '$env/static/public';
+    import { NotificationSSEService } from '#lib/services/notificationSSEService';
+    import { profile } from '#lib/stores/profileStore';
+    import PushNotificationPrompt from '#lib/components/notifications/PushNotificationPrompt.svelte';
+    import ToastContainer from '#lib/components/ToastContainer.svelte';
     import type { Snippet } from 'svelte';
 
     const currentPage = readable(page);
@@ -22,6 +26,7 @@
     let { children }: Props = $props();
 
     const flash = initFlash(currentPage);
+    let notificationSSE: NotificationSSEService | null = null;
 
     onMount((): void => {
         const theme: string | null = localStorage.getItem('theme');
@@ -31,16 +36,32 @@
         }
     });
 
+    onDestroy(() => {
+        if (notificationSSE) {
+            notificationSSE.disconnect();
+        }
+    });
+
     $effect((): void => {
         if (typeof window !== 'undefined') {
             (async () => {
                 const { Transmit } = await import('@adonisjs/transmit-client');
-                transmit.set(new Transmit({ baseUrl: PUBLIC_API_REAL_URI }));
+                const transmitInstance = new Transmit({ baseUrl: PUBLIC_API_REAL_URI });
+                transmit.set(transmitInstance);
             })();
         }
 
         if ($flash) {
             showToast($flash.message, $flash.type);
+        }
+
+        // Initialize notification SSE when user is logged in
+        if ($profile && !notificationSSE && $transmit) {
+            notificationSSE = new NotificationSSEService($transmit);
+            notificationSSE.connect($profile.id);
+        } else if (!$profile && notificationSSE) {
+            notificationSSE.disconnect();
+            notificationSSE = null;
         }
     });
 </script>
@@ -60,4 +81,12 @@
             </div>
         </Menu>
     </main>
+
+    <!-- Push Notification Prompt (only show when logged in) -->
+    {#if $profile}
+        <PushNotificationPrompt />
+    {/if}
+
+    <!-- Toast Notifications -->
+    <ToastContainer />
 </div>

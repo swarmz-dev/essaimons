@@ -9,39 +9,11 @@ export default class PropositionCategoryRepository extends BaseRepository<typeof
     }
 
     public async getMultipleCategories(categoryIds: string[], trx: TransactionClientContract): Promise<PropositionCategory[]> {
-        const numericIds: number[] = [];
-        const uuidIds: string[] = [];
-
-        for (const rawId of categoryIds) {
-            const trimmed = rawId?.toString().trim();
-            if (!trimmed) continue;
-            const asNumber = Number(trimmed);
-            if (Number.isFinite(asNumber)) {
-                numericIds.push(Math.floor(asNumber));
-            } else {
-                uuidIds.push(trimmed);
-            }
-        }
-
-        if (numericIds.length === 0 && uuidIds.length === 0) {
+        if (!categoryIds || categoryIds.length === 0) {
             return [];
         }
 
-        const query = this.Model.query({ client: trx });
-        query.where((builder) => {
-            if (numericIds.length) {
-                builder.whereIn('front_id', numericIds);
-            }
-            if (uuidIds.length) {
-                if (numericIds.length) {
-                    builder.orWhereIn('id', uuidIds);
-                } else {
-                    builder.whereIn('id', uuidIds);
-                }
-            }
-        });
-
-        return query;
+        return this.Model.query({ client: trx }).whereIn('id', categoryIds);
     }
 
     public async listAll(orderBy: keyof PropositionCategory['$attributes'] = 'name', trx?: TransactionClientContract): Promise<PropositionCategory[]> {
@@ -54,12 +26,7 @@ export default class PropositionCategoryRepository extends BaseRepository<typeof
         trx?: TransactionClientContract
     ): Promise<PropositionCategory | null> {
         const query = trx ? this.Model.query({ client: trx }) : this.Model.query();
-        const numericValue = Number(identifier);
-        if (Number.isFinite(numericValue)) {
-            query.where('front_id', Math.floor(numericValue));
-        } else {
-            query.where('id', identifier);
-        }
+        query.where('id', identifier);
         preload.forEach((relation) => query.preload(relation));
         return query.first();
     }

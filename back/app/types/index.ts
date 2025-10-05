@@ -16,6 +16,9 @@ export { PropositionCommentVisibilityEnum } from './enum/proposition_comment_vis
 export { PropositionSectionEnum } from './enum/proposition_section_enum.js';
 export { PropositionReactionTypeEnum } from './enum/proposition_reaction_type_enum.js';
 export { MandateRevocationStatusEnum } from './enum/mandate_revocation_status_enum.js';
+export { NotificationTypeEnum } from './enum/notification_type_enum.js';
+export { NotificationChannelEnum } from './enum/notification_channel_enum.js';
+export { DeliveryStatusEnum } from './enum/delivery_status_enum.js';
 
 export type { PaginatedUsers } from './paginated/paginated_users.js';
 export type { PaginatedPropositions } from './paginated/paginated_propositions.js';

@@ -51,6 +51,7 @@
         "@inlang/paraglide-js": "^2.2.0",
         "axios": "^1.11.0",
         "backend": "file:../back",
+        "date-fns": "^4.1.0",
         "dotenv": "^16.6.1",
         "mode-watcher": "^1.1.0",
         "quill": "^2.0.3",

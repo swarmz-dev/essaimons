@@ -49,7 +49,7 @@ test.group('Deliverable upload', () => {
         });
 
         await proposition.refresh();
-        assert.exists(proposition.frontId, 'Proposition front id should be defined');
+        assert.exists(proposition.id, 'Proposition id should be defined');
 
         const mandate = await PropositionMandate.create({
             propositionId: proposition.id,
@@ -73,7 +73,7 @@ test.group('Deliverable upload', () => {
 
         // Make API request
         const response = await client
-            .post(`/api/propositions/${proposition.frontId}/mandates/${mandate.id}/deliverables`)
+            .post(`/api/propositions/${proposition.id}/mandates/${mandate.id}/deliverables`)
             .bearerToken(token.value!.release())
             .file('file', testFilePath)
             .field('label', 'Test deliverable')

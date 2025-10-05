@@ -41,14 +41,14 @@ export default class UserRepository extends BaseRepository<typeof User> {
         };
     }
 
-    public async delete(frontIds: number[], currentUser: User): Promise<{ isDeleted: boolean; isCurrentUser?: boolean; username?: string; frontId: number; id?: string }[]> {
+    public async delete(ids: string[], currentUser: User): Promise<{ isDeleted: boolean; isCurrentUser?: boolean; username?: string; id: string }[]> {
         // Delete some other things if needed
         return await Promise.all([
-            ...frontIds.map(async (frontId: number): Promise<{ isDeleted: boolean; isCurrentUser?: boolean; username?: string; frontId: number; id?: string }> => {
+            ...ids.map(async (id: string): Promise<{ isDeleted: boolean; isCurrentUser?: boolean; username?: string; id: string }> => {
                 try {
-                    const user: User = await this.Model.query().where('front_id', frontId).firstOrFail();
+                    const user: User = await this.Model.query().where('id', id).firstOrFail();
                     if (user.id === currentUser.id) {
-                        return { isDeleted: false, isCurrentUser: true, username: user.username, frontId };
+                        return { isDeleted: false, isCurrentUser: true, username: user.username, id };
                     }
 
                     await user.delete();
@@ -60,9 +60,9 @@ export default class UserRepository extends BaseRepository<typeof User> {
 
                     await this.logUserRepository.deleteByUser(user);
 
-                    return { isDeleted: true, username: user.username, frontId, id: user.id };
+                    return { isDeleted: true, username: user.username, id: user.id };
                 } catch (error: any) {
-                    return { isDeleted: false, frontId };
+                    return { isDeleted: false, id };
                 }
             }),
         ]);
@@ -92,18 +92,9 @@ export default class UserRepository extends BaseRepository<typeof User> {
         if (!options.includeCurrentUser) {
             query.whereNot('id', currentUser.id);
         }
-        query.where((builder) => {
-            if (numericIds.length) {
-                builder.whereIn('front_id', numericIds);
-            }
-            if (uuidIds.length) {
-                if (numericIds.length) {
-                    builder.orWhereIn('id', uuidIds);
-                } else {
-                    builder.whereIn('id', uuidIds);
-                }
-            }
-        });
+        if (uuidIds.length) {
+            query.whereIn('id', uuidIds);
+        }
 
         return query;
     }

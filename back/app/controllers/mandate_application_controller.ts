@@ -43,11 +43,11 @@ export default class MandateApplicationController {
             });
 
             await application.load('applicant', (query) => {
-                query.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                query.select(['id', 'username', 'profile_picture_id']);
             });
             await mandate.load('applications', (query) => {
                 query.preload('applicant', (userQuery) => {
-                    userQuery.select(['id', 'front_id', 'username', 'profile_picture_id']);
+                    userQuery.select(['id', 'username', 'profile_picture_id']);
                 });
             });
 

@@ -12,7 +12,7 @@ export const searchAdminUsersValidator = vine.compile(
 
 export const deleteUsersValidator = vine.compile(
     vine.object({
-        users: vine.array(vine.number()),
+        users: vine.array(vine.string().uuid()),
     })
 );
 
@@ -31,7 +31,7 @@ export const createUserValidator = vine.compile(
 
 export const getAdminUserValidator = vine.compile(
     vine.object({
-        frontId: vine.number(),
+        id: vine.string().uuid(),
     })
 );
 

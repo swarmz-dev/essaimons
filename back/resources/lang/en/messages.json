@@ -5,7 +5,7 @@
                 "success": "Successfully deleted {username}",
                 "error": {
                     "current": "You cannot delete your own account from back-office ({username})",
-                    "default": "Error while deleting user with identifier {frontId}"
+                    "default": "Error while deleting user with identifier {id}"
                 }
             },
             "create": {

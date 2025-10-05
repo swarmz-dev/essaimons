@@ -23,9 +23,6 @@ export default class Proposition extends BaseModel {
     declare id: string;
 
     @column()
-    declare frontId: number;
-
-    @column()
     declare title: string;
 
     @column()
@@ -145,17 +142,15 @@ export default class Proposition extends BaseModel {
     declare updatedAt: DateTime;
 
     public summarySerialize(): SerializedPropositionSummary {
-        const publicId = this.frontId !== undefined && this.frontId !== null ? String(this.frontId) : this.id;
         return {
-            id: publicId,
+            id: this.id,
             title: this.title,
         };
     }
 
     public listSerialize(): SerializedPropositionListItem {
-        const publicId = this.frontId !== undefined && this.frontId !== null ? String(this.frontId) : this.id;
         return {
-            id: publicId,
+            id: this.id,
             title: this.title,
             summary: this.summary,
             categories: (this.categories ?? []).map((category: PropositionCategory): SerializedPropositionCategory => category.apiSerialize()),
@@ -176,9 +171,8 @@ export default class Proposition extends BaseModel {
     }
 
     public apiSerialize(): SerializedProposition {
-        const publicId = this.frontId !== undefined && this.frontId !== null ? String(this.frontId) : this.id;
         return {
-            id: publicId,
+            id: this.id,
             title: this.title,
             summary: this.summary,
             detailedDescription: this.detailedDescription,

@@ -1,26 +1,185 @@
 <script lang="ts">
-    import SmallCard from '#components/SmallCard.svelte';
     import { m } from '#lib/paraglide/messages';
     import { Title } from '#lib/components/ui/title';
     import Meta from '#components/Meta.svelte';
-    import type { Component } from 'svelte';
+    import { Card, CardContent, CardHeader, CardTitle } from '#lib/components/ui/card';
+    import { Button } from '#lib/components/ui/button';
+    import { ArrowRight, Vote, Briefcase, Clock, User } from '@lucide/svelte';
+    import { goto } from '$app/navigation';
+    import type { PaginatedPropositions, SerializedPropositionListItem } from 'backend/types';
 
-    interface Page {
-        title: string;
-        icon: Component;
-        href: string;
-        description: string;
+    interface PageData {
+        voting: PaginatedPropositions;
+        mandate: PaginatedPropositions;
+        recent: PaginatedPropositions;
+        user: PaginatedPropositions | null;
     }
 
-    const pages: Page[] = [];
+    const { data } = $props<{ data: PageData }>();
+
+    const formatDate = (value?: string): string => {
+        if (!value) return '';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        const locale = typeof navigator !== 'undefined' ? navigator.language : 'fr-FR';
+        return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date);
+    };
+
+    const openProposal = async (id: string) => {
+        await goto(`/propositions/${id}`);
+    };
+
+    const hasUserContributions = $derived(data.user && data.user.propositions.length > 0);
 </script>
 
 <Meta title={m['home.meta.title']()} description={m['home.meta.description']()} keywords={m['home.meta.keywords']().split(', ')} pathname="/" />
 
 <Title title={m['home.title']()} />
 
-<div class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 p-5">
-    {#each pages as page}
-        <SmallCard title={page.title} icon={page.icon} href={page.href} description={page.description} />
-    {/each}
+<div class="space-y-8">
+    <!-- Voting Phase Proposals -->
+    {#if data.voting.propositions.length > 0}
+        <section>
+            <div class="mb-4 flex items-center gap-2">
+                <Vote class="size-6 text-primary" />
+                <h2 class="text-2xl font-semibold">Propositions à voter</h2>
+            </div>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {#each data.voting.propositions as proposition (proposition.id)}
+                    <Card class="cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
+                        <CardHeader>
+                            <CardTitle class="text-lg">{proposition.title}</CardTitle>
+                            <p class="text-sm text-muted-foreground">
+                                Échéance : {formatDate(proposition.voteDeadline)}
+                            </p>
+                        </CardHeader>
+                        <CardContent>
+                            <p class="line-clamp-2 text-sm text-foreground/80">{proposition.summary}</p>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                {#each proposition.categories.slice(0, 2) as category (category.id)}
+                                    <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                                        {category.name}
+                                    </span>
+                                {/each}
+                            </div>
+                        </CardContent>
+                    </Card>
+                {/each}
+            </div>
+            <div class="mt-4 text-center">
+                <Button variant="outline" onclick={() => goto('/propositions?statuses=vote')}>
+                    Voir toutes les propositions à voter
+                    <ArrowRight class="ml-2 size-4" />
+                </Button>
+            </div>
+        </section>
+    {/if}
+
+    <!-- User Contributions -->
+    {#if hasUserContributions}
+        <section>
+            <div class="mb-4 flex items-center gap-2">
+                <User class="size-6 text-primary" />
+                <h2 class="text-2xl font-semibold">Mes propositions</h2>
+            </div>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {#each data.user.propositions as proposition (proposition.id)}
+                    <Card class="cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
+                        <CardHeader>
+                            <CardTitle class="text-lg">{proposition.title}</CardTitle>
+                            <p class="text-sm text-muted-foreground">
+                                Mise à jour : {formatDate(proposition.updatedAt)}
+                            </p>
+                        </CardHeader>
+                        <CardContent>
+                            <p class="line-clamp-2 text-sm text-foreground/80">{proposition.summary}</p>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                {#each proposition.categories.slice(0, 2) as category (category.id)}
+                                    <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                                        {category.name}
+                                    </span>
+                                {/each}
+                            </div>
+                        </CardContent>
+                    </Card>
+                {/each}
+            </div>
+        </section>
+    {/if}
+
+    <!-- Mandate Phase Proposals -->
+    {#if data.mandate.propositions.length > 0}
+        <section>
+            <div class="mb-4 flex items-center gap-2">
+                <Briefcase class="size-6 text-primary" />
+                <h2 class="text-2xl font-semibold">Propositions à mandater</h2>
+            </div>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {#each data.mandate.propositions as proposition (proposition.id)}
+                    <Card class="cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
+                        <CardHeader>
+                            <CardTitle class="text-lg">{proposition.title}</CardTitle>
+                            <p class="text-sm text-muted-foreground">
+                                Échéance : {formatDate(proposition.mandateDeadline)}
+                            </p>
+                        </CardHeader>
+                        <CardContent>
+                            <p class="line-clamp-2 text-sm text-foreground/80">{proposition.summary}</p>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                {#each proposition.categories.slice(0, 2) as category (category.id)}
+                                    <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                                        {category.name}
+                                    </span>
+                                {/each}
+                            </div>
+                        </CardContent>
+                    </Card>
+                {/each}
+            </div>
+            <div class="mt-4 text-center">
+                <Button variant="outline" onclick={() => goto('/propositions?statuses=mandate')}>
+                    Voir toutes les propositions à mandater
+                    <ArrowRight class="ml-2 size-4" />
+                </Button>
+            </div>
+        </section>
+    {/if}
+
+    <!-- Recent Proposals -->
+    {#if data.recent.propositions.length > 0}
+        <section>
+            <div class="mb-4 flex items-center gap-2">
+                <Clock class="size-6 text-primary" />
+                <h2 class="text-2xl font-semibold">Propositions récentes</h2>
+            </div>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {#each data.recent.propositions as proposition (proposition.id)}
+                    <Card class="cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
+                        <CardHeader>
+                            <CardTitle class="text-lg">{proposition.title}</CardTitle>
+                            <p class="text-sm text-muted-foreground">
+                                Mise à jour : {formatDate(proposition.updatedAt)}
+                            </p>
+                        </CardHeader>
+                        <CardContent>
+                            <p class="line-clamp-2 text-sm text-foreground/80">{proposition.summary}</p>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                {#each proposition.categories.slice(0, 2) as category (category.id)}
+                                    <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                                        {category.name}
+                                    </span>
+                                {/each}
+                            </div>
+                        </CardContent>
+                    </Card>
+                {/each}
+            </div>
+            <div class="mt-4 text-center">
+                <Button variant="outline" onclick={() => goto('/propositions')}>
+                    Voir toutes les propositions
+                    <ArrowRight class="ml-2 size-4" />
+                </Button>
+            </div>
+        </section>
+    {/if}
 </div>

@@ -5,7 +5,7 @@
                 "success": "Utilisateur {username} supprimé avec succès",
                 "error": {
                     "current": "Vous ne pouvez pas supprimer votre propre compte depuis le back-office ({username})",
-                    "default": "Erreur lors de la suppression de l'utilisateur avec l'identifiant {frontId}"
+                    "default": "Erreur lors de la suppression de l'utilisateur avec l'identifiant {id}"
                 }
             },
             "create": {
