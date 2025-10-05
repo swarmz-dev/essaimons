@@ -4,7 +4,7 @@ export default class extends BaseSchema {
     protected tableName = 'user_notifications';
 
     async up() {
-        await this.schema.createTable(this.tableName, (table) => {
+        this.schema.createTable(this.tableName, (table) => {
             table.uuid('id').primary().defaultTo(this.raw('uuid_generate_v4()'));
 
             // Fan-out: each notification can target multiple users
