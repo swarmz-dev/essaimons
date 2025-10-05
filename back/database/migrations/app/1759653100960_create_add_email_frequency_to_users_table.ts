@@ -5,7 +5,7 @@ export default class extends BaseSchema {
 
     async up() {
         this.schema.alterTable(this.tableName, (table) => {
-            table.enum('email_frequency', ['instant', 'hourly', 'daily', 'weekly']).defaultTo('daily').notNullable();
+            table.string('email_frequency', 20).defaultTo('daily').notNullable();
         });
     }
 

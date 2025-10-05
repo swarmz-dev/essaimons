@@ -13,9 +13,9 @@ export default class extends BaseSchema {
                 table.uuid('proposition_id').notNullable().references('id').inTable('propositions').onDelete('CASCADE');
                 table.uuid('parent_id').nullable().references('id').inTable('proposition_comments').onDelete('CASCADE');
                 table.uuid('author_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
-                table.enum('scope', ['clarification', 'amendment', 'evaluation', 'mandate']).notNullable();
+                table.string('scope', 50).notNullable();
                 table.string('section', 100).nullable();
-                table.enum('visibility', ['public', 'initiators', 'mandated']).notNullable();
+                table.string('visibility', 50).notNullable();
                 table.text('content').notNullable();
                 table.timestamp('created_at', { useTz: true }).notNullable().defaultTo(this.now());
                 table.timestamp('updated_at', { useTz: true }).notNullable().defaultTo(this.now());
@@ -25,9 +25,9 @@ export default class extends BaseSchema {
             this.schema.alterTable(this.tableName, (table) => {
                 // Check and add missing columns
                 table.uuid('parent_id').nullable().references('id').inTable('proposition_comments').onDelete('CASCADE');
-                table.enum('scope', ['clarification', 'amendment', 'evaluation', 'mandate']).notNullable().defaultTo('clarification');
+                table.string('scope', 50).notNullable().defaultTo('clarification');
                 table.string('section', 100).nullable();
-                table.enum('visibility', ['public', 'initiators', 'mandated']).notNullable().defaultTo('public');
+                table.string('visibility', 50).notNullable().defaultTo('public');
             });
 
             // Rename author_user_id to author_id if it exists
