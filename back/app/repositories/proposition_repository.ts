@@ -34,17 +34,32 @@ export default class PropositionRepository extends BaseRepository<typeof Proposi
         return query;
     }
 
-    public async searchWithFilters(filters: { search?: string; categoryIds?: string[]; statuses?: string[] }, page: number, limit: number): Promise<PaginatedPropositions> {
+    public async searchWithFilters(
+        filters: { search?: string; categoryIds?: string[]; statuses?: string[] },
+        page: number,
+        limit: number,
+        sortBy: string = 'created_at',
+        sortOrder: 'asc' | 'desc' = 'desc'
+    ): Promise<PaginatedPropositions> {
         const sanitizedLimit: number = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 50) : 12;
         const sanitizedPage: number = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
 
         const categoryPartitions = this.partitionIdentifiers(filters.categoryIds ?? []);
 
+        // Map camelCase to snake_case for database columns
+        const columnMapping: Record<string, string> = {
+            createdAt: 'created_at',
+            updatedAt: 'updated_at',
+            voteDeadline: 'vote_deadline',
+            mandateDeadline: 'mandate_deadline',
+        };
+        const dbColumn = columnMapping[sortBy] || sortBy;
+
         const query = this.Model.query()
             .preload('categories')
             .preload('creator')
             .preload('visual')
-            .orderBy('created_at', 'desc')
+            .orderBy(dbColumn, sortOrder)
             .if(filters.search, (queryBuilder: ModelQueryBuilderContract<typeof Proposition>): void => {
                 const search = filters.search!.toLowerCase();
                 queryBuilder.where((builder) => {
@@ -114,5 +129,41 @@ export default class PropositionRepository extends BaseRepository<typeof Proposi
         }
 
         return { numericIds, uuidIds };
+    }
+
+    public async findUserContributions(userId: string, page: number, limit: number): Promise<PaginatedPropositions> {
+        const sanitizedLimit: number = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 50) : 12;
+        const sanitizedPage: number = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+
+        // Find propositions where user is creator, rescue initiator, or has commented
+        const query = this.Model.query()
+            .preload('categories')
+            .preload('creator')
+            .preload('visual')
+            .where((builder) => {
+                builder
+                    // User is creator
+                    .where('creator_id', userId)
+                    // User is rescue initiator
+                    .orWhereHas('rescueInitiators', (rescueQuery) => {
+                        rescueQuery.where('users.id', userId);
+                    })
+                    // User has commented
+                    .orWhereHas('comments', (commentQuery) => {
+                        commentQuery.where('author_id', userId);
+                    });
+            })
+            .orderBy('updated_at', 'desc');
+
+        const propositions: ModelPaginatorContract<Proposition> = await query.paginate(sanitizedPage, sanitizedLimit);
+
+        return {
+            propositions: propositions.all().map((proposition: Proposition) => proposition.listSerialize()),
+            firstPage: propositions.firstPage,
+            lastPage: propositions.lastPage,
+            limit: propositions.perPage,
+            total: propositions.total,
+            currentPage: propositions.currentPage,
+        };
     }
 }

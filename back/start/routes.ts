@@ -131,6 +131,7 @@ router
                     .group((): void => {
                         router.get('/', [PropositionController, 'search']);
                         router.get('/bootstrap', [PropositionController, 'bootstrap']);
+                        router.get('/home', [PropositionController, 'home']);
                         router.get('/:id', [PropositionController, 'show']);
                         router.post('/', [PropositionController, 'create']);
                         router.put('/:id', [PropositionController, 'update']);
