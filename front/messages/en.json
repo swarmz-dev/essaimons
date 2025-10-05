@@ -10,6 +10,7 @@
         "update": "Update",
         "delete": "Delete",
         "create": "Create",
+        "save": "Save",
         "cancel": "Cancel",
         "back-to-home": "Back to homepage",
         "name": "Name",
@@ -141,7 +142,31 @@
                 "in_app": "Notifications displayed in the application when you are logged in. Appear in real-time in the navigation bar.",
                 "email": "Notifications sent to your email address. You will receive a message even if you are not logged in.",
                 "push": "Notifications sent directly to your device (browser or mobile). Requires enabling push notifications in your browser."
+            },
+            "email_frequency": {
+                "title": "Email notification frequency",
+                "description": "Choose how often you want to receive email notifications. Notifications will be batched and sent according to your preference.",
+                "instant": "Instant",
+                "instant_desc": "Receive emails immediately",
+                "hourly": "Hourly",
+                "hourly_desc": "Once per hour",
+                "daily": "Daily",
+                "daily_desc": "Once per day at 9 AM",
+                "weekly": "Weekly",
+                "weekly_desc": "Every Monday at 9 AM"
             }
+        },
+        "devices": {
+            "title": "Push notification devices",
+            "description": "Manage devices registered to receive push notifications",
+            "empty": "No devices registered for push notifications",
+            "last_used": "Last used",
+            "registered": "Registered",
+            "inactive": "Inactive",
+            "remove": "Remove device",
+            "confirm_delete": "Are you sure you want to remove this device?",
+            "info_title": "About push notifications",
+            "info_description": "Push notifications are sent to your registered devices even when the application is closed. Remove inactive or unknown devices for security."
         }
     },
     "reset-password": {
@@ -300,6 +325,16 @@
             "title": "Categories",
             "description": "Review and maintain the list of proposal categories available in the application.",
             "count": "Total categories: {count}"
+        },
+        "email_templates": {
+            "title": "Email Templates",
+            "description": "Customize the HTML email templates used for notifications. Use Handlebar variables for dynamic content.",
+            "editing": "Editing",
+            "subject": "Subject",
+            "html_content": "HTML Content",
+            "text_content": "Text Content (Plain text fallback)",
+            "key": "Template Key",
+            "variables_help": "Available Handlebar variables: title, message, actionUrl, baseUrl, organizationName, count, notifications (for digest)"
         },
         "organization": {
             "title": "Settings",

@@ -9,9 +9,6 @@ export default class PropositionCategory extends BaseModel {
     declare id: string;
 
     @column()
-    declare frontId: number;
-
-    @column()
     declare name: string;
 
     @manyToMany((): typeof Proposition => Proposition, {
@@ -26,9 +23,8 @@ export default class PropositionCategory extends BaseModel {
     declare updatedAt: DateTime;
 
     public apiSerialize(): SerializedPropositionCategory {
-        const publicId = this.frontId !== undefined && this.frontId !== null ? String(this.frontId) : this.id;
         return {
-            id: publicId,
+            id: this.id,
             name: this.name,
         };
     }

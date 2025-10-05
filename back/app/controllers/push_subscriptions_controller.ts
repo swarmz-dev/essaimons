@@ -2,17 +2,7 @@ import { HttpContext } from '@adonisjs/core/http';
 import { inject } from '@adonisjs/core';
 import WebPushService from '#services/web_push_service';
 import type User from '#models/user';
-import vine from '@vinejs/vine';
-
-const subscribeValidator = vine.compile(
-    vine.object({
-        endpoint: vine.string().trim().url(),
-        keys: vine.object({
-            p256dh: vine.string().trim(),
-            auth: vine.string().trim(),
-        }),
-    })
-);
+import { subscribeValidator } from '#validators/push_subscriptions';
 
 @inject()
 export default class PushSubscriptionsController {

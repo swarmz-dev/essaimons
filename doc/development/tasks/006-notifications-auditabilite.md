@@ -8,10 +8,10 @@
 ## Architecture
 
 ### Système multi-canal
-- **In-app** : SSE via @adonisjs/transmit + Postgres LISTEN/NOTIFY
-- **Email** : BrevoMailService (intégration existante)
-- **Web Push** : VAPID + Service Workers
-- **Queue** : pg-boss pour delivery fiable et retry
+- **In-app** : SSE via @adonisjs/transmit (broadcast direct) ✅
+- **Email** : BrevoMailService (intégration existante) - à implémenter
+- **Web Push** : VAPID + Service Workers ✅
+- **Queue** : pg-boss pour delivery fiable et retry - à implémenter
 
 ### Base de données
 - `notifications` : contenu des notifications (i18n keys, entity refs)
@@ -19,8 +19,8 @@
 - `push_subscriptions` : subscriptions Web Push par device
 - `notification_settings` : préférences utilisateur par type/canal
 
-### Trigger temps réel
-Postgres trigger sur `user_notifications` → `pg_notify('user_notification')` → SSE push
+### Temps réel
+Broadcast Transmit direct depuis NotificationService → SSE push vers clients connectés
 
 ## Implémentation
 
@@ -31,7 +31,7 @@ Postgres trigger sur `user_notifications` → `pg_notify('user_notification')` �
   - [database/migrations/app/1760000000210_create_user_notifications_table.ts](../../back/database/migrations/app/1760000000210_create_user_notifications_table.ts)
   - [database/migrations/app/1760000000220_create_push_subscriptions_table.ts](../../back/database/migrations/app/1760000000220_create_push_subscriptions_table.ts)
   - [database/migrations/app/1760000000230_create_notification_settings_table.ts](../../back/database/migrations/app/1760000000230_create_notification_settings_table.ts)
-- [x] Trigger Postgres LISTEN/NOTIFY sur `user_notifications`
+- [x] ~~Trigger Postgres LISTEN/NOTIFY sur `user_notifications`~~ (remplacé par broadcast Transmit direct)
 - [x] Génération clés VAPID : [scripts/generate-vapid-keys.ts](../../back/scripts/generate-vapid-keys.ts)
 - [x] Migrations exécutées avec succès
 
@@ -51,11 +51,8 @@ Postgres trigger sur `user_notifications` → `pg_notify('user_notification')` �
   - [x] Méthodes `subscribe()`, `unsubscribe()`, `sendPushNotification()`
   - [x] Gestion des subscriptions expirées (410 Gone)
   - [ ] Worker pg-boss pour envoyer push notifications (à implémenter)
-- [x] Service `NotificationListenerService` : [app/services/notification_listener_service.ts](../../back/app/services/notification_listener_service.ts)
-  - [x] Écoute Postgres NOTIFY via pg client
-  - [x] Push vers Transmit SSE streams par user_id
-  - [x] Auto-reconnection sur erreur
-- [x] Initialisation dans [start/automation.ts](../../back/start/automation.ts)
+- [x] ~~Service `NotificationListenerService`~~ (supprimé - broadcast Transmit direct utilisé à la place)
+- [x] Broadcast Transmit direct dans NotificationService.sendInApp()
 
 ### Phase 3 : API REST ✅ (2025-01-30)
 - [x] Controller `NotificationsController` : [app/controllers/notifications_controller.ts](../../back/app/controllers/notifications_controller.ts)
@@ -103,7 +100,7 @@ Postgres trigger sur `user_notifications` → `pg_notify('user_notification')` �
 - [ ] **Non-conformity threshold** (Phase 2) : >= 1/3 évaluations non conformes → ouverture procédure
 - [ ] **Revocation votes** (Phase 2) : ouverture vote révocatoire → notifier tous votants
 
-### Phase 5 : Frontend ✅ (2025-01-30)
+### Phase 5 : Frontend ✅ (2025-01-30 - 2025-10-05)
 - [x] **Composants Svelte notification bell** :
   - [x] [NotificationBell.svelte](../../front/src/lib/components/notifications/NotificationBell.svelte) : icône cloche avec badge unread count
   - [x] [NotificationDropdown.svelte](../../front/src/lib/components/notifications/NotificationDropdown.svelte) : dropdown avec liste paginée
@@ -117,10 +114,10 @@ Postgres trigger sur `user_notifications` → `pg_notify('user_notification')` �
     - [x] `getUnreadCount()` : compteur non lues
     - [x] `markAsRead(id)` : marquer une notification
     - [x] `markAllAsRead()` : marquer toutes
-  - [x] [NotificationSSEService](../../front/src/lib/services/notificationSSEService.ts) : client SSE temps réel
-    - [x] Connexion à `${baseUrl}/transmit/subscribe/user/${userId}/notifications`
-    - [x] Auto-reconnection avec backoff exponentiel (max 5 tentatives)
+  - [x] [NotificationSSEService](../../front/src/lib/services/notificationSSEService.ts) : client SSE temps réel via Transmit
+    - [x] Subscription Transmit sur canal `user/${userId}/notifications`
     - [x] Update du store en temps réel sur réception
+    - [x] Toast notifications affichées pendant 5s avec traductions
 - [x] **Store Svelte 5** :
   - [x] [notificationStore.svelte.ts](../../front/src/lib/stores/notificationStore.svelte.ts) : gestion état avec runes
   - [x] Méthodes : `addNotification()`, `markAsRead()`, `markAllAsRead()`, `setUnreadCount()`
@@ -145,17 +142,27 @@ Postgres trigger sur `user_notifications` → `pg_notify('user_notification')` �
   - [x] Statistiques : total, non lues, aujourd'hui
   - [x] Liste paginée de toutes les notifications
   - [x] Filtres par statut lu/non lu
-- [ ] **Service Worker pour Web Push** (à implémenter) :
-  - [ ] `public/service-worker.js`
-  - [ ] Enregistrement depuis settings page
-  - [ ] Push event handler + notification display
-  - [ ] Gestion devices pour push depuis page préférences
+- [x] **Service Worker pour Web Push** :
+  - [x] [static/sw.js](../../front/static/sw.js) : service worker avec push/notificationclick handlers
+  - [x] [PushNotificationPrompt.svelte](../../front/src/lib/components/notifications/PushNotificationPrompt.svelte) : prompt permission
+  - [x] [PushNotificationService](../../front/src/lib/services/pushNotificationService.ts) : gestion subscriptions VAPID
+  - [x] [/profile/devices](../../front/src/routes/profile/devices/+page.svelte) : page gestion devices pour voir/supprimer les appareils enregistrés
+  - [x] [PushSubscriptionService](../../front/src/lib/services/pushSubscriptionService.ts) : service frontend pour gérer les devices
 
-### Phase 6 : Email Templates (À faire)
-- [ ] Intégration avec BrevoMailService existant
-- [ ] Templates Brevo pour chaque type de notification
-- [ ] Traductions FR/EN dans templates
-- [ ] Fallback texte pour clients email basiques
+### Phase 6 : Email Templates et Batching ✅
+- [x] **Email Frequency Preference** :
+  - [x] [EmailFrequencyEnum](../../back/app/types/enum/email_frequency_enum.ts) : enum pour instant, hourly, daily, weekly
+  - [x] Ajout de `emailFrequency` au modèle User avec migration
+  - [x] UI frontend pour choisir la fréquence d'email
+- [x] **Email Batching System** :
+  - [x] [PendingEmailNotification](../../back/app/models/pending_email_notification.ts) : modèle pour emails en attente
+  - [x] [EmailBatchService](../../back/app/services/email_batch_service.ts) : service de batching et envoi
+  - [x] Intégration avec BrevoMailService existant
+  - [x] Cron job dans automation.ts pour traiter les emails en attente
+  - [x] Calcul automatique du prochain envoi selon la fréquence choisie
+- [x] **Frontend** :
+  - [x] Sélecteur de fréquence d'email dans /profile/notifications
+  - [x] Traductions FR/EN pour les options de fréquence
 
 ### Phase 7 : Audit Log (À faire)
 - [ ] Extension du système de logs existant pour événements métier :
@@ -192,21 +199,11 @@ VAPID_PUBLIC_KEY=BF7YpSvCfDgZoFvm30u2Aqr1kYWCcC9O3i_NqXHBsqi5e-qPhd28mMVZ9hGf0e6
 VAPID_PRIVATE_KEY=alBIS-iHmxTJ8W_1uYdKzMKEGMo63-Oge5Oo1L0tzXI
 ```
 
-### Postgres LISTEN/NOTIFY
-Trigger créé sur `user_notifications` table :
-```sql
-CREATE FUNCTION notify_user_notification() RETURNS TRIGGER AS $$
-BEGIN
-  PERFORM pg_notify('user_notification', json_build_object(
-    'id', NEW.id,
-    'user_id', NEW.user_id,
-    'notification_id', NEW.notification_id,
-    'created_at', NEW.created_at
-  )::text);
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-```
+### Architecture temps réel
+~~Postgres LISTEN/NOTIFY~~ **Remplacé par broadcast Transmit direct** :
+- `NotificationService.sendInApp()` broadcast directement vers `user/${frontId}/notifications`
+- Pas de trigger PostgreSQL, pas de NotificationListenerService
+- Plus simple, fonctionne avec HMR, moins de latence
 
 ### Types de notifications
 Liste des types implémentés :

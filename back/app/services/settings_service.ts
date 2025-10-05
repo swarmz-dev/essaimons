@@ -442,7 +442,6 @@ export default class SettingsService {
                 const filtered: Record<string, string> = {};
                 for (const [locale, url] of Object.entries(normalized)) {
                     try {
-                        // eslint-disable-next-line no-new
                         new URL(url);
                         filtered[locale] = url;
                     } catch (error) {

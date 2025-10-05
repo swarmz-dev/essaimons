@@ -11,9 +11,6 @@ export default class LogUser extends BaseModel {
     declare id: string;
 
     @column()
-    declare frontId: number;
-
-    @column()
     declare email: string;
 
     @hasMany((): typeof Log => Log, {
@@ -29,7 +26,7 @@ export default class LogUser extends BaseModel {
 
     public apiSerialize(): SerializedLogUser {
         return {
-            id: this.frontId,
+            id: this.id,
             email: this.email,
             logs: this.logs.map((log) => log.apiSerialize()),
             updatedAt: this.updatedAt.toString(),

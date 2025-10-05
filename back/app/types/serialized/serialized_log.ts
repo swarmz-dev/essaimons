@@ -3,7 +3,7 @@ import type { LogRouteMethodEnum } from '../enum/log_route_method_enum.js';
 import type { SerializedLogUser } from './serialized_log_user.js';
 
 export type SerializedLog = {
-    id: number;
+    id: string;
     route: string;
     routeMethod: LogRouteMethodEnum;
     queryString?: Record<string, unknown>;

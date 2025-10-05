@@ -25,7 +25,7 @@ export default class FileController {
 
     public async serveStaticProfilePictureFile({ request, response, i18n }: HttpContext) {
         const { userId } = await serveStaticProfilePictureFileValidator.validate(request.params());
-        const user: User = await this.userRepository.firstOrFail({ frontId: userId });
+        const user: User = await this.userRepository.firstOrFail({ id: userId });
 
         try {
             if (!user.profilePicture) {

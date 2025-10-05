@@ -4,8 +4,8 @@ import Notification, { NotificationTypeEnum } from '#models/notification';
 import UserNotification from '#models/user_notification';
 import NotificationSetting from '#models/notification_setting';
 import User from '#models/user';
-import BrevoMailService from '#services/brevo_mail_service';
 import WebPushService from '#services/web_push_service';
+import EmailBatchService from '#services/email_batch_service';
 import logger from '@adonisjs/core/services/logger';
 import db from '@adonisjs/lucid/services/db';
 import transmit from '@adonisjs/transmit/services/main';
@@ -29,9 +29,8 @@ interface ChannelPreferences {
 @inject()
 export default class NotificationService {
     constructor(
-        // @ts-ignore - Will be used for email notifications in Phase 6
-        private readonly _brevoMailService: BrevoMailService,
-        private readonly webPushService: WebPushService
+        private readonly webPushService: WebPushService,
+        private readonly emailBatchService: EmailBatchService
     ) {}
 
     /**
@@ -142,12 +141,11 @@ export default class NotificationService {
      */
     private async sendInApp(notification: Notification, userNotification: UserNotification): Promise<void> {
         try {
-            // Load the user to get their frontId (used by frontend)
+            // Load the user to get their UUID
             const user = await User.findOrFail(userNotification.userId);
-            const userFrontId = user.frontId !== undefined && user.frontId !== null ? String(user.frontId) : user.id;
 
-            // Broadcast directly to user's SSE stream using frontId
-            const streamName = `user/${userFrontId}/notifications`;
+            // Broadcast directly to user's SSE stream using UUID
+            const streamName = `user/${user.id}/notifications`;
 
             await transmit.broadcast(streamName, {
                 type: 'notification',
@@ -167,7 +165,6 @@ export default class NotificationService {
             logger.info(
                 {
                     userId: userNotification.userId,
-                    userFrontId,
                     notificationId: notification.id,
                     streamName,
                 },
@@ -189,17 +186,17 @@ export default class NotificationService {
         try {
             const user = await User.findOrFail(userNotification.userId);
 
-            // TODO: Implement email templates for each notification type
-            // For now, we'll skip email sending
-            // This will be implemented in Phase 6
+            // Queue email based on user's email frequency preference
+            await this.emailBatchService.queueEmail(user, notification);
 
             logger.info(
                 {
                     userId: user.id,
                     notificationType: notification.type,
                     titleKey: notification.titleKey,
+                    emailFrequency: user.emailFrequency,
                 },
-                'Email notification queued (not implemented yet)'
+                'Email notification queued'
             );
 
             userNotification.emailSent = false; // Not sent yet

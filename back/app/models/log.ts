@@ -13,9 +13,6 @@ export default class Log extends BaseModel {
     declare id: string;
 
     @column()
-    declare frontId: number;
-
-    @column()
     declare route: string;
 
     @column()
@@ -58,7 +55,7 @@ export default class Log extends BaseModel {
 
     public apiSerialize(): SerializedLog {
         return {
-            id: this.frontId,
+            id: this.id,
             route: this.route,
             routeMethod: this.routeMethod,
             queryString: this.queryString,

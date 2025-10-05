@@ -79,4 +79,17 @@ export default class BrevoMailService {
             },
         });
     }
+
+    /**
+     * Send a generic transactional email
+     */
+    public async sendTransactionalEmail(payload: { to: { email: string; name?: string }[]; subject: string; htmlContent: string; textContent?: string }): Promise<void> {
+        await this.dispatchEmail({
+            sender: this.sender,
+            to: payload.to,
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent,
+        });
+    }
 }

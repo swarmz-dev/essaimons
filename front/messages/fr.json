@@ -10,6 +10,7 @@
         "update": "Mettre à jour",
         "delete": "Supprimer",
         "create": "Créer",
+        "save": "Enregistrer",
         "cancel": "Annuler",
         "back-to-home": "Retour à la page d'accueil",
         "name": "Nom",
@@ -141,7 +142,31 @@
                 "in_app": "Notifications affichées dans l'application lorsque vous êtes connecté. Apparaissent en temps réel dans la barre de navigation.",
                 "email": "Notifications envoyées à votre adresse email. Vous recevrez un message même si vous n'êtes pas connecté.",
                 "push": "Notifications envoyées directement sur votre appareil (navigateur ou mobile). Nécessite l'activation des notifications push dans votre navigateur."
+            },
+            "email_frequency": {
+                "title": "Fréquence des notifications par email",
+                "description": "Choisissez la fréquence à laquelle vous souhaitez recevoir les notifications par email. Les notifications seront regroupées et envoyées selon votre préférence.",
+                "instant": "Instantané",
+                "instant_desc": "Recevoir les emails immédiatement",
+                "hourly": "Toutes les heures",
+                "hourly_desc": "Une fois par heure",
+                "daily": "Quotidien",
+                "daily_desc": "Une fois par jour à 9h",
+                "weekly": "Hebdomadaire",
+                "weekly_desc": "Chaque lundi à 9h"
             }
+        },
+        "devices": {
+            "title": "Appareils push",
+            "description": "Gérez les appareils enregistrés pour recevoir les notifications push",
+            "empty": "Aucun appareil enregistré pour les notifications push",
+            "last_used": "Dernière utilisation",
+            "registered": "Enregistré",
+            "inactive": "Inactif",
+            "remove": "Retirer l'appareil",
+            "confirm_delete": "Êtes-vous sûr de vouloir retirer cet appareil ?",
+            "info_title": "À propos des notifications push",
+            "info_description": "Les notifications push sont envoyées sur vos appareils enregistrés même lorsque l'application est fermée. Retirez les appareils inactifs ou inconnus pour plus de sécurité."
         }
     },
     "reset-password": {
@@ -300,6 +325,16 @@
             "title": "Catégories",
             "description": "Consultez et gérez la liste des catégories de propositions disponibles dans l'application.",
             "count": "Nombre total de catégories : {count}"
+        },
+        "email_templates": {
+            "title": "Templates d'email",
+            "description": "Personnalisez les templates HTML utilisés pour les emails de notification. Utilisez des variables Handlebar pour le contenu dynamique.",
+            "editing": "Édition",
+            "subject": "Sujet",
+            "html_content": "Contenu HTML",
+            "text_content": "Contenu texte (Version texte brut)",
+            "key": "Clé du template",
+            "variables_help": "Variables Handlebar disponibles : title, message, actionUrl, baseUrl, organizationName, count, notifications (pour le digest)"
         },
         "organization": {
             "title": "Paramètres",
@@ -624,6 +659,7 @@
         },
         "dates": {
             "clarification": "Clarification",
+            "amendment": "Amendement",
             "improvement": "Amélioration",
             "vote": "Vote",
             "mandate": "Mandat",

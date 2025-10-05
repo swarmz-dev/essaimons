@@ -104,6 +104,9 @@
     <Link href="/profile/notifications">
         {m['profile.notifications.title']()}
     </Link>
+    <Link href="/profile/devices">
+        {m['profile.devices.title']()}
+    </Link>
 </div>
 
 <Form isValid={canSubmit} onError={handleError}>

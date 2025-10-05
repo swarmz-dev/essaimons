@@ -14,6 +14,7 @@
     let loading = $state(true);
     let saving = $state(false);
     let error = $state<string | null>(null);
+    let emailFrequency = $state<string>('daily');
 
     // Notification type metadata
     const notificationTypes = [
@@ -126,6 +127,53 @@
                     {m['profile.notifications.channels_explanation.push']()}
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Email Frequency Selector -->
+    <div class="rounded-lg border border-border bg-card p-6 space-y-4">
+        <h3 class="text-sm font-semibold text-foreground flex items-center gap-2">
+            <Mail class="size-4" />
+            {m['profile.notifications.email_frequency.title']()}
+        </h3>
+        <p class="text-sm text-muted-foreground">
+            {m['profile.notifications.email_frequency.description']()}
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <label
+                class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 hover:bg-muted/50 transition-colors {emailFrequency === 'instant' ? 'ring-2 ring-primary' : ''}"
+            >
+                <input type="radio" name="emailFrequency" value="instant" bind:group={emailFrequency} class="sr-only" />
+                <div class="flex flex-col gap-1">
+                    <span class="text-sm font-medium">{m['profile.notifications.email_frequency.instant']()}</span>
+                    <span class="text-xs text-muted-foreground">{m['profile.notifications.email_frequency.instant_desc']()}</span>
+                </div>
+            </label>
+            <label
+                class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 hover:bg-muted/50 transition-colors {emailFrequency === 'hourly' ? 'ring-2 ring-primary' : ''}"
+            >
+                <input type="radio" name="emailFrequency" value="hourly" bind:group={emailFrequency} class="sr-only" />
+                <div class="flex flex-col gap-1">
+                    <span class="text-sm font-medium">{m['profile.notifications.email_frequency.hourly']()}</span>
+                    <span class="text-xs text-muted-foreground">{m['profile.notifications.email_frequency.hourly_desc']()}</span>
+                </div>
+            </label>
+            <label class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 hover:bg-muted/50 transition-colors {emailFrequency === 'daily' ? 'ring-2 ring-primary' : ''}">
+                <input type="radio" name="emailFrequency" value="daily" bind:group={emailFrequency} class="sr-only" />
+                <div class="flex flex-col gap-1">
+                    <span class="text-sm font-medium">{m['profile.notifications.email_frequency.daily']()}</span>
+                    <span class="text-xs text-muted-foreground">{m['profile.notifications.email_frequency.daily_desc']()}</span>
+                </div>
+            </label>
+            <label
+                class="relative flex cursor-pointer rounded-lg border border-border bg-background p-4 hover:bg-muted/50 transition-colors {emailFrequency === 'weekly' ? 'ring-2 ring-primary' : ''}"
+            >
+                <input type="radio" name="emailFrequency" value="weekly" bind:group={emailFrequency} class="sr-only" />
+                <div class="flex flex-col gap-1">
+                    <span class="text-sm font-medium">{m['profile.notifications.email_frequency.weekly']()}</span>
+                    <span class="text-xs text-muted-foreground">{m['profile.notifications.email_frequency.weekly_desc']()}</span>
+                </div>
+            </label>
         </div>
     </div>
 
