@@ -21,10 +21,17 @@ interface SeedProposition {
 export default class extends BaseSeeder {
     public async run(): Promise<void> {
         const users: User[] = await User.query().orderBy('created_at', 'asc');
-        if (users.length < 2) {
-            console.warn('[PropositionSeeder] Not enough users to seed propositions with rescue initiators.');
+        if (users.length < 3) {
+            console.warn('[PropositionSeeder] Not enough users to seed propositions. Need at least 3 users: admin, initiator, and rescue.');
             return;
         }
+
+        // On s'attend à avoir : users[0] = admin, users[1] = initiator, users[2] = rescue
+        const admin = users[0]; // superadmin@essaimons.fr
+        const initiator = users[1]; // initiator@essaimons.fr
+        const rescue = users[2]; // rescue@essaimons.fr
+
+        console.log(`[PropositionSeeder] Using users: admin=${admin.email}, initiator=${initiator.email}, rescue=${rescue.email}`);
 
         const categories = await PropositionCategory.all();
         const categoryMap = new Map(categories.map((category) => [category.name, category.id]));
@@ -282,12 +289,9 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
                 continue;
             }
 
-            const creator: User = users[index % users.length];
-            const rescueCandidates: User[] = users.filter((user: User): boolean => user.id !== creator.id);
-            if (!rescueCandidates.length) {
-                console.warn(`[PropositionSeeder] No rescue initiator available for proposition ${proposal.title}`);
-                continue;
-            }
+            // Toutes les propositions sont créées par l'initiateur (users[1])
+            // avec le rescue (users[2]) comme initiateur de secours
+            const creator: User = initiator;
 
             const clarificationDeadline: DateTime<true> = DateTime.now()
                 .plus({ days: 28 + index * 4 })
@@ -333,13 +337,8 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
                 await proposition.related('categories').sync(categoryIds, false);
             }
 
-            const rescueIds: string[] = rescueCandidates.slice(index % rescueCandidates.length, (index % rescueCandidates.length) + 2).map((user: User): string => user.id);
-
-            if (!rescueIds.length) {
-                rescueIds.push(rescueCandidates[0].id);
-            }
-
-            await proposition.related('rescueInitiators').sync(rescueIds, false);
+            // Ajouter le rescue comme initiateur de secours
+            await proposition.related('rescueInitiators').sync([rescue.id], false);
 
             createdPropositions.set(proposal.title, proposition);
 

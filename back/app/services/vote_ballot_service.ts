@@ -30,9 +30,10 @@ export default class VoteBallotService {
 
     public async cast(proposition: Proposition, vote: PropositionVote, actor: User, payload: CastBallotPayload): Promise<VoteBallot> {
         // Check voting permission (contributors, initiators, and admins can vote)
+        const role = await this.workflowService.resolveActorRole(proposition, actor);
         const allowed = await this.workflowService.canPerform(proposition, actor, 'participate_vote');
-        const isInitiator = proposition.creatorId === actor.id;
-        const isAdmin = actor.role === 'admin';
+        const isInitiator = role === 'initiator';
+        const isAdmin = role === 'admin';
 
         if (!allowed && !isInitiator && !isAdmin) {
             throw new Error('forbidden:vote');

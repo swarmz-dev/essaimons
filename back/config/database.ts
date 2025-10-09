@@ -30,6 +30,13 @@ const dbConfig: DatabaseConfig = defineConfig({
                 password: env.get('DB_PASSWORD'),
                 database: resolveAppDatabase(),
             },
+            pool: {
+                min: 2,
+                max: 10,
+                acquireTimeoutMillis: 30000,
+                idleTimeoutMillis: 30000,
+                reapIntervalMillis: 1000,
+            },
             migrations: {
                 naturalSort: true,
                 paths: ['database/migrations/app'],
@@ -43,6 +50,13 @@ const dbConfig: DatabaseConfig = defineConfig({
                 user: env.get('LOGS_DB_USER'),
                 password: env.get('LOGS_DB_PASSWORD'),
                 database: resolveLogsDatabase(),
+            },
+            pool: {
+                min: 2,
+                max: 10,
+                acquireTimeoutMillis: 30000,
+                idleTimeoutMillis: 30000,
+                reapIntervalMillis: 1000,
             },
             migrations: {
                 naturalSort: true,
