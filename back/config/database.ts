@@ -33,8 +33,8 @@ const dbConfig: DatabaseConfig = defineConfig({
             pool: {
                 min: 2,
                 max: 10,
-                acquireTimeoutMillis: 30000,
-                idleTimeoutMillis: 30000,
+                acquireTimeoutMillis: 60000,
+                idleTimeoutMillis: 600000,
                 reapIntervalMillis: 1000,
             },
             migrations: {
@@ -54,8 +54,8 @@ const dbConfig: DatabaseConfig = defineConfig({
             pool: {
                 min: 2,
                 max: 10,
-                acquireTimeoutMillis: 30000,
-                idleTimeoutMillis: 30000,
+                acquireTimeoutMillis: 60000,
+                idleTimeoutMillis: 600000,
                 reapIntervalMillis: 1000,
             },
             migrations: {

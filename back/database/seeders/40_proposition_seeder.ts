@@ -3,7 +3,21 @@ import Proposition from '#models/proposition';
 import PropositionCategory from '#models/proposition_category';
 import User from '#models/user';
 import PropositionStatusHistory from '#models/proposition_status_history';
-import { PropositionStatusEnum, PropositionVisibilityEnum } from '#types';
+import PropositionComment from '#models/proposition_comment';
+import PropositionEvent from '#models/proposition_event';
+import PropositionMandate from '#models/proposition_mandate';
+import MandateApplication from '#models/mandate_application';
+import PropositionVote from '#models/proposition_vote';
+import {
+    PropositionStatusEnum,
+    PropositionVisibilityEnum,
+    PropositionCommentScopeEnum,
+    PropositionCommentVisibilityEnum,
+    PropositionEventTypeEnum,
+    MandateStatusEnum,
+    MandateApplicationStatusEnum,
+    PropositionVoteStatusEnum,
+} from '#types';
 import { DateTime } from 'luxon';
 
 interface SeedProposition {
@@ -16,6 +30,12 @@ interface SeedProposition {
     expertise?: string;
     categories: string[];
     associates?: string[];
+    targetStatus: PropositionStatusEnum;
+    withClarifications?: boolean;
+    withAmendments?: boolean;
+    withEvents?: boolean;
+    withMandates?: boolean;
+    withVote?: boolean;
 }
 
 export default class extends BaseSeeder {
@@ -31,12 +51,16 @@ export default class extends BaseSeeder {
         const initiator = users[1]; // initiator@essaimons.fr
         const rescue = users[2]; // rescue@essaimons.fr
 
+        // Utilisateurs supplémentaires pour les candidatures et commentaires
+        const additionalUsers = users.slice(3);
+
         console.log(`[PropositionSeeder] Using users: admin=${admin.email}, initiator=${initiator.email}, rescue=${rescue.email}`);
 
         const categories = await PropositionCategory.all();
         const categoryMap = new Map(categories.map((category) => [category.name, category.id]));
 
         const seedData: SeedProposition[] = [
+            // 1. DRAFT - Brouillon simple
             {
                 title: 'Déployer une plateforme citoyenne de démocratie liquide pour le budget 2026',
                 summary: 'Lancer un outil municipal permettant aux habitants de déléguer ou reprendre leur vote pour prioriser les projets du budget participatif 2026.',
@@ -61,7 +85,9 @@ Mandat 3 (analyse) : suivre les métriques de participation et organiser les res
         `.trim(),
                 expertise: 'Experts en civic tech, juristes en données personnelles, médiateurs numériques.',
                 categories: ['Démocratie liquide', 'Outils numériques'],
+                targetStatus: PropositionStatusEnum.DRAFT,
             },
+            // 2. CLARIFY - En clarification avec messages
             {
                 title: "Former un réseau d'ambassadeurs de la démocratie liquide dans chaque quartier",
                 summary: "Constituer un réseau de volontaires capables d'expliquer la délégation de vote et d'animer des permanences hebdomadaires.",
@@ -82,10 +108,13 @@ Mandat 1 : concevoir et délivrer la formation initiale.
 Mandat 2 : coacher les ambassadeurs et assurer la logistique des permanences.
 Mandat 3 : compiler les retours et les intégrer au calendrier décisionnel municipal.
         `.trim(),
-                expertise: 'Formatrices, animateurs de réseau, spécialistes de l’éducation populaire.',
+                expertise: "Formatrices, animateurs de réseau, spécialistes de l'éducation populaire.",
                 categories: ['Mobilisation citoyenne', 'Formation & accompagnement'],
                 associates: ['Déployer une plateforme citoyenne de démocratie liquide pour le budget 2026'],
+                targetStatus: PropositionStatusEnum.CLARIFY,
+                withClarifications: true,
             },
+            // 3. AMEND - En amendement avec commentaires
             {
                 title: 'Créer une boîte à outils open source pour les organisations en démocratie liquide',
                 summary: "Mettre à disposition un ensemble de scripts, modèles de chartes et tutoriels vidéo pour faciliter l'adoption de la délégation de vote.",
@@ -109,7 +138,11 @@ Mandat 3 : assurer la qualité éditoriale et la traduction de la documentation.
                 expertise: 'Développeurs full-stack, designers UX, rédacteurs techniques.',
                 categories: ['Outils numériques', 'Démocratie liquide'],
                 associates: ['Déployer une plateforme citoyenne de démocratie liquide pour le budget 2026'],
+                targetStatus: PropositionStatusEnum.AMEND,
+                withClarifications: true,
+                withAmendments: true,
             },
+            // 4. VOTE - En vote avec configuration
             {
                 title: 'Organiser un tour des cafés citoyens sur la délégation de vote',
                 summary: 'Programmer vingt rencontres conviviales pour vulgariser la démocratie liquide et recueillir les freins perçus.',
@@ -133,7 +166,13 @@ Mandat 3 : consolider les retours et proposer un plan d'amélioration continue.
                 expertise: 'Facilitateurs, spécialistes communication de proximité, médiateurs culturels.',
                 categories: ['Mobilisation citoyenne', 'Communication citoyenne'],
                 associates: ["Former un réseau d'ambassadeurs de la démocratie liquide dans chaque quartier"],
+                targetStatus: PropositionStatusEnum.VOTE,
+                withClarifications: true,
+                withAmendments: true,
+                withEvents: true,
+                withVote: true,
             },
+            // 5. MANDATE - Sélection de mandats avec candidatures
             {
                 title: 'Mettre en place un observatoire des délégations et de leur efficacité',
                 summary: "Suivre l'évolution des délégations de vote et mesurer leur impact sur les décisions prises par les élus et délégués.",
@@ -156,7 +195,14 @@ Mandat 3 : animer la restitution publique et recueillir les recommandations.
                 expertise: 'Data analysts, juristes open data, spécialistes évaluation de politiques publiques.',
                 categories: ['Suivi & évaluation', 'Démocratie liquide'],
                 associates: ['Déployer une plateforme citoyenne de démocratie liquide pour le budget 2026'],
+                targetStatus: PropositionStatusEnum.MANDATE,
+                withClarifications: true,
+                withAmendments: true,
+                withEvents: true,
+                withVote: true,
+                withMandates: true,
             },
+            // 6. EVALUATE - En évaluation avec mandats actifs
             {
                 title: "Lancer un programme d'inclusion numérique pour la délégation de vote",
                 summary: "Accompagner les publics éloignés du numérique pour qu'ils puissent déléguer et reprendre leur vote en toute autonomie.",
@@ -179,7 +225,14 @@ Mandat 3 : assurer le suivi post-formation et l'entraide entre pairs.
         `.trim(),
                 expertise: 'Formateurs inclusion numérique, travailleurs sociaux, UX designers accessibles.',
                 categories: ['Formation & accompagnement', 'Mobilisation citoyenne'],
+                targetStatus: PropositionStatusEnum.EVALUATE,
+                withClarifications: true,
+                withAmendments: true,
+                withEvents: true,
+                withVote: true,
+                withMandates: true,
             },
+            // 7. ARCHIVED - Archivée
             {
                 title: "Mettre en place un laboratoire d'expérimentation sur les délégations temporisées",
                 summary: 'Tester différents modèles de délégation à durée limitée et analyser leur effet sur la participation et la confiance.',
@@ -202,7 +255,9 @@ Mandat 3 : analyser les résultats et proposer les évolutions réglementaires.
         `.trim(),
                 expertise: 'Chercheurs en sciences politiques, data scientists, déontologues.',
                 categories: ['Suivi & évaluation', 'Démocratie liquide'],
+                targetStatus: PropositionStatusEnum.ARCHIVED,
             },
+            // 8. DRAFT - Autre brouillon
             {
                 title: 'Lancer un média citoyen dédié à la démocratie liquide',
                 summary: 'Produire une newsletter, un podcast et des formats vidéo courts pour vulgariser les décisions prises via le vote délégué.',
@@ -226,7 +281,9 @@ Mandat 3 : développer les partenariats avec les médias locaux et écoles.
                 expertise: 'Journalistes, storytellers, spécialistes marketing digital.',
                 categories: ['Communication citoyenne', 'Mobilisation citoyenne'],
                 associates: ['Organiser un tour des cafés citoyens sur la délégation de vote'],
+                targetStatus: PropositionStatusEnum.DRAFT,
             },
+            // 9. CLARIFY - Autre en clarification
             {
                 title: "Créer un fonds d'amorçage pour les outils civiques de démocratie liquide",
                 summary: "Financer des prototypes d'applications et de services facilitant la délégation de vote dans les communes rurales.",
@@ -246,10 +303,13 @@ Mandat 1 : définir les critères de sélection et gérer l'instruction des doss
 Mandat 2 : suivre l'exécution des projets et coacher les équipes.
 Mandat 3 : organiser le démonstrateur annuel et capitaliser les retours d'expérience.
         `.trim(),
-                expertise: 'Gestionnaires de fonds d’innovation, coachs entrepreneuriaux, experts civic tech.',
+                expertise: "Gestionnaires de fonds d'innovation, coachs entrepreneuriaux, experts civic tech.",
                 categories: ['Outils numériques', 'Formation & accompagnement'],
                 associates: ['Créer une boîte à outils open source pour les organisations en démocratie liquide'],
+                targetStatus: PropositionStatusEnum.CLARIFY,
+                withClarifications: true,
             },
+            // 10. AMEND - Autre en amendement
             {
                 title: 'Mettre en œuvre une stratégie de communication multilingue sur la démocratie liquide',
                 summary: 'Produire des supports en six langues, mobiliser les radios communautaires et assurer une présence sur les marchés hebdomadaires.',
@@ -270,9 +330,12 @@ Mandat 1 : concevoir la stratégie multilingue et les supports.
 Mandat 2 : coordonner les relais médias et les événements terrain.
 Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
         `.trim(),
-                expertise: 'Traducteurs communautaires, stratèges communication, gestionnaires d’événements.',
+                expertise: "Traducteurs communautaires, stratèges communication, gestionnaires d'événements.",
                 categories: ['Communication citoyenne', 'Mobilisation citoyenne'],
                 associates: ['Lancer un média citoyen dédié à la démocratie liquide'],
+                targetStatus: PropositionStatusEnum.AMEND,
+                withClarifications: true,
+                withAmendments: true,
             },
         ];
 
@@ -301,6 +364,14 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
             const mandateDeadline: DateTime<true> = clarificationDeadline.plus({ days: 90 });
             const evaluationDeadline: DateTime<true> = clarificationDeadline.plus({ days: 200 });
 
+            // Calculer statusStartedAt en fonction du statut cible
+            let statusStartedAt = DateTime.now();
+            if (proposal.targetStatus !== PropositionStatusEnum.DRAFT) {
+                // Pour les propositions avancées, on recule la date de début
+                const daysAgo = index * 5 + 10;
+                statusStartedAt = DateTime.now().minus({ days: daysAgo });
+            }
+
             const proposition: Proposition = await Proposition.create({
                 title: proposal.title,
                 summary: proposal.summary,
@@ -309,10 +380,10 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
                 impacts: proposal.impacts,
                 mandatesDescription: proposal.mandatesDescription,
                 expertise: proposal.expertise ?? null,
-                status: PropositionStatusEnum.DRAFT,
-                statusStartedAt: DateTime.now(),
+                status: proposal.targetStatus,
+                statusStartedAt,
                 visibility: PropositionVisibilityEnum.PUBLIC,
-                archivedAt: null,
+                archivedAt: proposal.targetStatus === PropositionStatusEnum.ARCHIVED ? DateTime.now() : null,
                 settingsSnapshot: {},
                 clarificationDeadline,
                 amendmentDeadline,
@@ -322,14 +393,8 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
                 creatorId: creator.id,
             });
 
-            await PropositionStatusHistory.create({
-                propositionId: proposition.id,
-                fromStatus: PropositionStatusEnum.DRAFT,
-                toStatus: PropositionStatusEnum.DRAFT,
-                triggeredByUserId: creator.id,
-                reason: 'seed initial status',
-                metadata: {},
-            });
+            // Créer l'historique de statut
+            await this.createStatusHistory(proposition, creator, proposal.targetStatus);
 
             const categoryIds: string[] = proposal.categories.map((name: string): string | undefined => categoryMap.get(name)).filter((value: string | undefined): value is string => Boolean(value));
 
@@ -340,13 +405,41 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
             // Ajouter le rescue comme initiateur de secours
             await proposition.related('rescueInitiators').sync([rescue.id], false);
 
+            // Ajouter les clarifications
+            if (proposal.withClarifications) {
+                await this.addClarifications(proposition, admin, additionalUsers);
+            }
+
+            // Ajouter les amendements
+            if (proposal.withAmendments) {
+                await this.addAmendments(proposition, admin, additionalUsers);
+            }
+
+            // Ajouter les événements
+            if (proposal.withEvents) {
+                await this.addEvents(proposition, creator);
+            }
+
+            // Ajouter le vote
+            if (proposal.withVote) {
+                await this.addVote(proposition, creator);
+            }
+
+            // Ajouter les mandats
+            if (proposal.withMandates) {
+                await this.addMandates(proposition, creator, additionalUsers);
+            }
+
             createdPropositions.set(proposal.title, proposition);
 
             if (proposal.associates?.length) {
                 pendingAssociations.push({ title: proposal.title, associates: proposal.associates });
             }
+
+            console.log(`[PropositionSeeder] Created proposition "${proposal.title}" (${proposal.targetStatus})`);
         }
 
+        // Gérer les associations entre propositions
         for (const association of pendingAssociations) {
             const source: Proposition | undefined = createdPropositions.get(association.title);
             if (!source) continue;
@@ -367,5 +460,247 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
                 await source.related('associatedPropositions').attach(idsToAttach);
             }
         }
+
+        console.log('[PropositionSeeder] ✅ Seeding completed with all proposition states and entities');
+    }
+
+    private async createStatusHistory(proposition: Proposition, user: User, targetStatus: PropositionStatusEnum): Promise<void> {
+        const statusFlow = [
+            PropositionStatusEnum.DRAFT,
+            PropositionStatusEnum.CLARIFY,
+            PropositionStatusEnum.AMEND,
+            PropositionStatusEnum.VOTE,
+            PropositionStatusEnum.MANDATE,
+            PropositionStatusEnum.EVALUATE,
+            PropositionStatusEnum.ARCHIVED,
+        ];
+
+        const targetIndex = statusFlow.indexOf(targetStatus);
+
+        for (let i = 0; i <= targetIndex; i++) {
+            const fromStatus = i === 0 ? statusFlow[i] : statusFlow[i - 1];
+            const toStatus = statusFlow[i];
+
+            await PropositionStatusHistory.create({
+                propositionId: proposition.id,
+                fromStatus,
+                toStatus,
+                triggeredByUserId: user.id,
+                reason: i === 0 ? 'seed initial status' : `Transition to ${toStatus}`,
+                metadata: {},
+            });
+        }
+    }
+
+    private async addClarifications(proposition: Proposition, admin: User, additionalUsers: User[]): Promise<void> {
+        // Utiliser admin si pas d'utilisateurs supplémentaires
+        const user1 = additionalUsers[0] ?? admin;
+        const user2 = additionalUsers[1] ?? admin;
+
+        // Question de clarification d'un citoyen
+        const question = await PropositionComment.create({
+            propositionId: proposition.id,
+            authorId: user1.id,
+            scope: PropositionCommentScopeEnum.CLARIFICATION,
+            section: 'budget',
+            visibility: PropositionCommentVisibilityEnum.PUBLIC,
+            content: 'Pouvez-vous préciser le budget estimé pour ce projet ? Y a-t-il des sources de financement déjà identifiées ?',
+        });
+
+        // Réponse de l'initiateur
+        await PropositionComment.create({
+            propositionId: proposition.id,
+            parentId: question.id,
+            authorId: proposition.creatorId,
+            scope: PropositionCommentScopeEnum.CLARIFICATION,
+            section: 'budget',
+            visibility: PropositionCommentVisibilityEnum.PUBLIC,
+            content:
+                "Excellent question ! Le budget estimé est de 45 000€ pour la première année. Nous avons identifié deux sources : 30 000€ de budget municipal participatif et 15 000€ d'une subvention régionale pour l'innovation démocratique.",
+        });
+
+        // Deuxième question
+        const question2 = await PropositionComment.create({
+            propositionId: proposition.id,
+            authorId: user2.id,
+            scope: PropositionCommentScopeEnum.CLARIFICATION,
+            section: 'timeline',
+            visibility: PropositionCommentVisibilityEnum.PUBLIC,
+            content: "Quelle est la timeline prévue ? Comment s'articule ce projet avec les échéances électorales ?",
+        });
+
+        // Réponse
+        await PropositionComment.create({
+            propositionId: proposition.id,
+            parentId: question2.id,
+            authorId: proposition.creatorId,
+            scope: PropositionCommentScopeEnum.CLARIFICATION,
+            section: 'timeline',
+            visibility: PropositionCommentVisibilityEnum.PUBLIC,
+            content: "Le lancement est prévu pour janvier 2026, soit 18 mois avant les prochaines élections municipales. Cela permettra d'évaluer le dispositif avant les échéances électorales.",
+        });
+    }
+
+    private async addAmendments(proposition: Proposition, admin: User, additionalUsers: User[]): Promise<void> {
+        // Utiliser les utilisateurs supplémentaires, ou admin par défaut
+        const user1 = additionalUsers[0] ?? admin;
+        const user2 = additionalUsers[1] ?? admin;
+
+        // Proposition d'amendement 1
+        await PropositionComment.create({
+            propositionId: proposition.id,
+            authorId: user1.id,
+            scope: PropositionCommentScopeEnum.AMENDMENT,
+            section: 'objectives',
+            visibility: PropositionCommentVisibilityEnum.PUBLIC,
+            content: "Je propose d'ajouter un objectif sur l'accessibilité : 'Garantir l'accessibilité de la plateforme aux personnes en situation de handicap (conformité RGAA niveau AA).'",
+        });
+
+        // Proposition d'amendement 2
+        await PropositionComment.create({
+            propositionId: proposition.id,
+            authorId: (additionalUsers[3] ?? user2).id,
+            scope: PropositionCommentScopeEnum.AMENDMENT,
+            section: 'impacts',
+            visibility: PropositionCommentVisibilityEnum.PUBLIC,
+            content: "Il faudrait mentionner l'impact environnemental : privilégier un hébergement éco-responsable et mesurer l'empreinte carbone de la plateforme.",
+        });
+    }
+
+    private async addEvents(proposition: Proposition, creator: User): Promise<void> {
+        // Événement d'échange 1 - Passé
+        await PropositionEvent.create({
+            propositionId: proposition.id,
+            type: PropositionEventTypeEnum.EXCHANGE,
+            title: 'Atelier de co-construction',
+            description: 'Premier atelier ouvert pour co-construire le cahier des charges avec les citoyens intéressés.',
+            startAt: DateTime.now().minus({ days: 10 }),
+            endAt: DateTime.now().minus({ days: 10 }).plus({ hours: 2 }),
+            location: 'Maison de la citoyenneté, salle B',
+            createdByUserId: creator.id,
+        });
+
+        // Événement d'échange 2 - À venir
+        await PropositionEvent.create({
+            propositionId: proposition.id,
+            type: PropositionEventTypeEnum.EXCHANGE,
+            title: 'Webinaire de présentation',
+            description: 'Présentation publique du projet et session de questions-réponses en ligne.',
+            startAt: DateTime.now().plus({ days: 5 }),
+            endAt: DateTime.now().plus({ days: 5 }).plus({ hours: 1, minutes: 30 }),
+            videoLink: 'https://meet.example.com/proposition-demo',
+            createdByUserId: creator.id,
+        });
+
+        // Jalon
+        await PropositionEvent.create({
+            propositionId: proposition.id,
+            type: PropositionEventTypeEnum.MILESTONE,
+            title: 'Date limite de soumission des amendements',
+            description: 'Après cette date, les amendements ne pourront plus être proposés.',
+            startAt: DateTime.now().plus({ days: 15 }),
+            createdByUserId: creator.id,
+        });
+    }
+
+    private async addVote(proposition: Proposition, creator: User): Promise<void> {
+        await PropositionVote.create({
+            propositionId: proposition.id,
+            phase: 'approval' as any, // TODO: utiliser PropositionVotePhaseEnum
+            method: 'simple' as any, // TODO: utiliser PropositionVoteMethodEnum
+            status: PropositionVoteStatusEnum.OPEN,
+            title: "Approuvez-vous cette proposition telle qu'amendée ?",
+            description: "Vote pour valider la proposition après la phase d'amendement.",
+            openAt: DateTime.now().minus({ days: 2 }),
+            closeAt: DateTime.now().plus({ days: 12 }),
+            metadata: {
+                voteType: 'simple_majority',
+                quorum: 100,
+            },
+        });
+    }
+
+    private async addMandates(proposition: Proposition, creator: User, additionalUsers: User[]): Promise<void> {
+        // Mandat 1 : À assigner avec plusieurs candidatures
+        const mandate1 = await PropositionMandate.create({
+            propositionId: proposition.id,
+            title: 'Mandat technique : Développement et sécurité',
+            description: 'Paramétrer la plateforme, assurer la sécurité des données et garantir la conformité RGPD.',
+            status: MandateStatusEnum.TO_ASSIGN,
+            targetObjectiveRef: 'obj-1',
+            initialDeadline: DateTime.now().plus({ days: 90 }),
+            currentDeadline: DateTime.now().plus({ days: 90 }),
+            metadata: {},
+        });
+
+        // Candidature 1 - En attente
+        await MandateApplication.create({
+            mandateId: mandate1.id,
+            applicantUserId: additionalUsers[0]?.id ?? creator.id,
+            statement: "Je suis développeur full-stack avec 5 ans d'expérience en sécurité web et certifié en protection des données. J'ai déjà contribué à plusieurs projets de civic tech.",
+            status: MandateApplicationStatusEnum.PENDING,
+            submittedAt: DateTime.now().minus({ days: 3 }),
+        });
+
+        // Candidature 2 - En attente
+        if (additionalUsers[1]) {
+            await MandateApplication.create({
+                mandateId: mandate1.id,
+                applicantUserId: additionalUsers[1].id,
+                statement: "Ingénieure en cybersécurité, j'ai travaillé sur des systèmes de vote électronique et je connais bien les enjeux de confidentialité.",
+                status: MandateApplicationStatusEnum.PENDING,
+                submittedAt: DateTime.now().minus({ days: 1 }),
+            });
+        }
+
+        // Mandat 2 : Actif avec un titulaire
+        const mandate2 = await PropositionMandate.create({
+            propositionId: proposition.id,
+            title: 'Mandat médiation : Animation et accompagnement',
+            description: "Animer l'accompagnement citoyen, répondre aux questions et organiser des permanences.",
+            holderUserId: additionalUsers[2]?.id ?? creator.id,
+            status: MandateStatusEnum.ACTIVE,
+            targetObjectiveRef: 'obj-2',
+            initialDeadline: DateTime.now().plus({ days: 120 }),
+            currentDeadline: DateTime.now().plus({ days: 120 }),
+            lastStatusUpdateAt: DateTime.now().minus({ days: 5 }),
+            metadata: {},
+        });
+
+        // Candidature acceptée
+        if (additionalUsers[2]) {
+            await MandateApplication.create({
+                mandateId: mandate2.id,
+                applicantUserId: additionalUsers[2].id,
+                statement: 'Animateur socio-culturel depuis 10 ans, spécialisé dans la médiation numérique et la participation citoyenne.',
+                status: MandateApplicationStatusEnum.ACCEPTED,
+                submittedAt: DateTime.now().minus({ days: 15 }),
+            });
+        }
+
+        // Candidature rejetée
+        if (additionalUsers[3]) {
+            await MandateApplication.create({
+                mandateId: mandate2.id,
+                applicantUserId: additionalUsers[3].id,
+                statement: 'Intéressé par la médiation citoyenne.',
+                status: MandateApplicationStatusEnum.REJECTED,
+                submittedAt: DateTime.now().minus({ days: 20 }),
+            });
+        }
+
+        // Mandat 3 : Complété
+        await PropositionMandate.create({
+            propositionId: proposition.id,
+            title: 'Mandat analyse : Suivi des métriques',
+            description: 'Suivre les métriques de participation et organiser les restitutions publiques.',
+            holderUserId: additionalUsers[4]?.id ?? creator.id,
+            status: MandateStatusEnum.COMPLETED,
+            targetObjectiveRef: 'obj-3',
+            initialDeadline: DateTime.now().minus({ days: 10 }),
+            currentDeadline: DateTime.now().minus({ days: 10 }),
+            lastStatusUpdateAt: DateTime.now().minus({ days: 2 }),
+            metadata: {},
+        });
     }
 }
