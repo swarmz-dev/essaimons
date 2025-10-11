@@ -6,6 +6,8 @@ The workspace roots `back/` and `front/` are independent npm projects managed fr
 ## Build, Test, and Development Commands
 Run `npm install` once at the root to hydrate all workspaces. Start services with `npm run dev --workspace back` and `npm run dev --workspace front` (or use `docker-compose.yml` via `make up` when full stack infrastructure is needed). Build bundles with `npm run build --workspace back` and `npm run build --workspace front`. Execute backend tests through `npm test --workspace back` and frontend checks with `npm run test --workspace front`; `npm run check --workspace front` performs Svelte type checks, while `npm run test:e2e --workspace front` runs Playwright suites.
 
+**Important:** Do not execute `node ace` commands directly (e.g., `node ace migration:run`, `node ace test`) as they may hang indefinitely. Instead, ask the user to run these commands manually when needed.
+
 ## Coding Style & Naming Conventions
 TypeScript is the default language, formatted by Prettier (`make format` or `make format-check`). Keep two-space indentation, semicolons suppressed, and imports alphabetized when possible. Backend modules should use the Adonis import aliases (e.g., `import User from '#models/user'`). Frontend components follow Svelte’s PascalCase file names in `src/lib` and route-level `+page.svelte` conventions. Environment templates live in `back/.env.example` and `front/.env.example`; update them whenever a new variable is introduced.
 
