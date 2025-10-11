@@ -4,7 +4,7 @@
     import Meta from '#components/Meta.svelte';
     import { Card, CardContent, CardHeader, CardTitle } from '#lib/components/ui/card';
     import { Button } from '#lib/components/ui/button';
-    import { ArrowRight, Vote, Briefcase, Clock, User } from '@lucide/svelte';
+    import { ArrowRight, Vote, Briefcase, Clock, User, Loader2 } from '@lucide/svelte';
     import { goto } from '$app/navigation';
     import type { PaginatedPropositions, SerializedPropositionListItem } from 'backend/types';
 
@@ -28,11 +28,15 @@
     const translateStatus = (status: string): string => {
         const key = `proposition-detail.status.label.${status}` as keyof typeof m;
         const translator = m[key];
-        return typeof translator === 'function' ? translator() : status;
+        return typeof translator === 'function' ? (translator as () => string)() : status;
     };
 
+    let loadingPropositionId = $state<string | null>(null);
+
     const openProposal = async (id: string) => {
+        loadingPropositionId = id;
         await goto(`/propositions/${id}`);
+        // Note: loadingPropositionId will be reset when the component unmounts on navigation
     };
 
     const hasUserContributions = $derived(data.user && data.user.propositions.length > 0);
@@ -52,7 +56,7 @@
             </div>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {#each data.voting.propositions as proposition (proposition.id)}
-                    <Card class="cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
+                    <Card class="relative cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
                         <CardHeader>
                             <div class="mb-2">
                                 <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold capitalize text-primary">
@@ -74,6 +78,11 @@
                                 {/each}
                             </div>
                         </CardContent>
+                        {#if loadingPropositionId === proposition.id}
+                            <div class="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                                <Loader2 class="size-8 animate-spin text-primary" />
+                            </div>
+                        {/if}
                     </Card>
                 {/each}
             </div>
@@ -95,7 +104,7 @@
             </div>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {#each data.user.propositions as proposition (proposition.id)}
-                    <Card class="cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
+                    <Card class="relative cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
                         <CardHeader>
                             <div class="mb-2">
                                 <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold capitalize text-primary">
@@ -117,6 +126,11 @@
                                 {/each}
                             </div>
                         </CardContent>
+                        {#if loadingPropositionId === proposition.id}
+                            <div class="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                                <Loader2 class="size-8 animate-spin text-primary" />
+                            </div>
+                        {/if}
                     </Card>
                 {/each}
             </div>
@@ -132,7 +146,7 @@
             </div>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {#each data.mandate.propositions as proposition (proposition.id)}
-                    <Card class="cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
+                    <Card class="relative cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
                         <CardHeader>
                             <div class="mb-2">
                                 <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold capitalize text-primary">
@@ -154,6 +168,11 @@
                                 {/each}
                             </div>
                         </CardContent>
+                        {#if loadingPropositionId === proposition.id}
+                            <div class="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                                <Loader2 class="size-8 animate-spin text-primary" />
+                            </div>
+                        {/if}
                     </Card>
                 {/each}
             </div>
@@ -175,7 +194,7 @@
             </div>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {#each data.recent.propositions as proposition (proposition.id)}
-                    <Card class="cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
+                    <Card class="relative cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
                         <CardHeader>
                             <div class="mb-2">
                                 <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold capitalize text-primary">
@@ -197,6 +216,11 @@
                                 {/each}
                             </div>
                         </CardContent>
+                        {#if loadingPropositionId === proposition.id}
+                            <div class="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                                <Loader2 class="size-8 animate-spin text-primary" />
+                            </div>
+                        {/if}
                     </Card>
                 {/each}
             </div>
