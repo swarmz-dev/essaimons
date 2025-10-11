@@ -9,7 +9,7 @@ export default class extends BaseSchema {
         const hasTable = await this.schema.hasTable(this.tableName);
 
         if (hasNotificationsTable && !hasTable) {
-            this.schema.createTable(this.tableName, (table) => {
+            await this.schema.createTable(this.tableName, (table) => {
                 table.uuid('id').primary().defaultTo(this.raw('gen_random_uuid()'));
 
                 table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
@@ -32,7 +32,7 @@ export default class extends BaseSchema {
         const hasTable = await this.schema.hasTable(this.tableName);
 
         if (hasTable) {
-            this.schema.dropTable(this.tableName);
+            await this.schema.dropTable(this.tableName);
         }
     }
 }
