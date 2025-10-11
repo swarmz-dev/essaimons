@@ -25,6 +25,12 @@
         return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date);
     };
 
+    const translateStatus = (status: string): string => {
+        const key = `proposition-detail.status.label.${status}` as keyof typeof m;
+        const translator = m[key];
+        return typeof translator === 'function' ? translator() : status;
+    };
+
     const openProposal = async (id: string) => {
         await goto(`/propositions/${id}`);
     };
@@ -48,6 +54,11 @@
                 {#each data.voting.propositions as proposition (proposition.id)}
                     <Card class="cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
                         <CardHeader>
+                            <div class="mb-2">
+                                <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold capitalize text-primary">
+                                    {translateStatus(proposition.status)}
+                                </span>
+                            </div>
                             <CardTitle class="text-lg">{proposition.title}</CardTitle>
                             <p class="text-sm text-muted-foreground">
                                 Échéance : {formatDate(proposition.voteDeadline)}
@@ -86,6 +97,11 @@
                 {#each data.user.propositions as proposition (proposition.id)}
                     <Card class="cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
                         <CardHeader>
+                            <div class="mb-2">
+                                <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold capitalize text-primary">
+                                    {translateStatus(proposition.status)}
+                                </span>
+                            </div>
                             <CardTitle class="text-lg">{proposition.title}</CardTitle>
                             <p class="text-sm text-muted-foreground">
                                 Mise à jour : {formatDate(proposition.updatedAt)}
@@ -118,6 +134,11 @@
                 {#each data.mandate.propositions as proposition (proposition.id)}
                     <Card class="cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
                         <CardHeader>
+                            <div class="mb-2">
+                                <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold capitalize text-primary">
+                                    {translateStatus(proposition.status)}
+                                </span>
+                            </div>
                             <CardTitle class="text-lg">{proposition.title}</CardTitle>
                             <p class="text-sm text-muted-foreground">
                                 Échéance : {formatDate(proposition.mandateDeadline)}
@@ -156,6 +177,11 @@
                 {#each data.recent.propositions as proposition (proposition.id)}
                     <Card class="cursor-pointer transition hover:shadow-lg" onclick={() => openProposal(proposition.id)}>
                         <CardHeader>
+                            <div class="mb-2">
+                                <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold capitalize text-primary">
+                                    {translateStatus(proposition.status)}
+                                </span>
+                            </div>
                             <CardTitle class="text-lg">{proposition.title}</CardTitle>
                             <p class="text-sm text-muted-foreground">
                                 Mise à jour : {formatDate(proposition.updatedAt)}
