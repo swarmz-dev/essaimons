@@ -52,12 +52,20 @@
         };
     }>();
 
-    propositionDetailStore.setPayload({
-        proposition: data.proposition,
-        events: data.events,
-        votes: data.votes,
-        mandates: data.mandates,
-        comments: data.comments,
+    // Only set payload when proposition ID changes (navigating to different proposition)
+    // This preserves client-side updates like newly created votes when data refreshes
+    let lastPropositionId = $state<string | null>(null);
+    $effect(() => {
+        if (data.proposition.id !== lastPropositionId) {
+            propositionDetailStore.setPayload({
+                proposition: data.proposition,
+                events: data.events,
+                votes: data.votes,
+                mandates: data.mandates,
+                comments: data.comments,
+            });
+            lastPropositionId = data.proposition.id;
+        }
     });
 
     const detailState = $derived($propositionDetailStore);
