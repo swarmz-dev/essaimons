@@ -213,13 +213,28 @@
         await updateQuery({ view: nextView });
     };
 
+    // Synchronize local state from server on data changes (navigation, etc.)
     $effect(() => {
-        query = data.activeFilters.search ?? '';
-        selectedCategories = [...data.activeFilters.categories];
-        selectedStatuses = [...(data.activeFilters.statuses ?? [])];
-        view = data.activeFilters.view ?? 'card';
+        const serverQuery = data.activeFilters.search ?? '';
+        if (serverQuery !== query) {
+            query = serverQuery;
+        }
+
+        if (!isSameSelection(selectedCategories, data.activeFilters.categories)) {
+            selectedCategories = [...data.activeFilters.categories];
+        }
+
+        if (!isSameSelection(selectedStatuses, data.activeFilters.statuses ?? [])) {
+            selectedStatuses = [...(data.activeFilters.statuses ?? [])];
+        }
+
+        const serverView = data.activeFilters.view ?? 'card';
+        if (view !== serverView) {
+            view = serverView;
+        }
     });
 
+    // Update URL when categories change (user interaction)
     $effect(() => {
         if (isSameSelection(selectedCategories, data.activeFilters.categories)) {
             return;
@@ -227,6 +242,7 @@
         void updateQuery({ categories: selectedCategories });
     });
 
+    // Update URL when statuses change (user interaction)
     $effect(() => {
         if (isSameSelection(selectedStatuses, data.activeFilters.statuses ?? [])) {
             return;
