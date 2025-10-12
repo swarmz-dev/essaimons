@@ -208,6 +208,8 @@ router
                         router.delete('/:id/mandates/:mandateId', [PropositionMandateController, 'destroy']);
 
                         router.post('/:id/mandates/:mandateId/applications', [MandateApplicationController, 'store']);
+                        router.post('/:id/mandates/:mandateId/applications/:applicationId/accept', [MandateApplicationController, 'accept']);
+                        router.post('/:id/mandates/:mandateId/applications/:applicationId/reject', [MandateApplicationController, 'reject']);
 
                         router.get('/:id/mandates/:mandateId/deliverables', [PropositionMandateDeliverableController, 'index']);
                         router.post('/:id/mandates/:mandateId/deliverables', [PropositionMandateDeliverableController, 'store']);

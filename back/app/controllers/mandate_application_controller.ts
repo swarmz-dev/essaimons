@@ -7,10 +7,16 @@ import MandateApplication from '#models/mandate_application';
 import type Proposition from '#models/proposition';
 import type User from '#models/user';
 import { serializeMandate, serializeMandateApplication } from '#serializers/mandate_serializer';
+import { MandateApplicationStatusEnum, MandateStatusEnum } from '#types';
+import PropositionWorkflowService from '#services/proposition_workflow_service';
+import type { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model';
 
 @inject()
 export default class MandateApplicationController {
-    constructor(private readonly propositionRepository: PropositionRepository) {}
+    constructor(
+        private readonly propositionRepository: PropositionRepository,
+        private readonly workflowService: PropositionWorkflowService
+    ) {}
 
     public async store(ctx: HttpContext): Promise<void> {
         const { request, response, user } = ctx;
@@ -58,6 +64,132 @@ export default class MandateApplicationController {
         } catch (error) {
             logger.error('mandate.application.create.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: error?.message ?? 'Unable to create application' });
+        }
+    }
+
+    public async accept(ctx: HttpContext): Promise<void> {
+        const { request, response, user } = ctx;
+        const proposition = await this.findProposition(request.param('id'), response);
+        if (!proposition) return;
+
+        const mandate = await this.findMandate(proposition, request.param('mandateId'), response);
+        if (!mandate) return;
+
+        try {
+            // Check permissions
+            const canManage = await this.workflowService.canPerform(proposition, user as User, 'manage_mandates');
+            if (!canManage) {
+                return response.forbidden({ error: 'You are not allowed to manage mandate applications' });
+            }
+
+            // Validate mandate status
+            if (mandate.status !== MandateStatusEnum.TO_ASSIGN) {
+                return response.badRequest({ error: 'This mandate is not open for applications' });
+            }
+
+            // Find the application
+            const applicationId = request.param('applicationId');
+            const application = await MandateApplication.query().where('id', applicationId).where('mandate_id', mandate.id).first();
+
+            if (!application) {
+                return response.notFound({ error: 'Application not found' });
+            }
+
+            if (application.status !== MandateApplicationStatusEnum.PENDING) {
+                return response.badRequest({ error: 'This application has already been processed' });
+            }
+
+            // Accept the application and assign the mandate
+            application.status = MandateApplicationStatusEnum.ACCEPTED;
+            await application.save();
+
+            mandate.holderUserId = application.applicantUserId;
+            mandate.status = MandateStatusEnum.ACTIVE;
+            await mandate.save();
+
+            // Reject all other pending applications for this mandate
+            await MandateApplication.query()
+                .where('mandate_id', mandate.id)
+                .where('id', '!=', application.id)
+                .where('status', MandateApplicationStatusEnum.PENDING)
+                .update({ status: MandateApplicationStatusEnum.REJECTED });
+
+            // Reload relations
+            await application.load('applicant', (query) => {
+                query.select(['id', 'username', 'profile_picture_id']);
+            });
+            await mandate.load('holder', (query: ModelQueryBuilderContract<typeof User>) => {
+                query.select(['id', 'username', 'profile_picture_id']);
+            });
+            await mandate.load('applications', (query) => {
+                query.preload('applicant', (userQuery) => {
+                    userQuery.select(['id', 'username', 'profile_picture_id']);
+                });
+            });
+
+            return response.ok({
+                application: serializeMandateApplication(application),
+                mandate: serializeMandate(mandate),
+            });
+        } catch (error) {
+            logger.error('mandate.application.accept.error', { message: error?.message, stack: error?.stack });
+            return response.badRequest({ error: error?.message ?? 'Unable to accept application' });
+        }
+    }
+
+    public async reject(ctx: HttpContext): Promise<void> {
+        const { request, response, user } = ctx;
+        const proposition = await this.findProposition(request.param('id'), response);
+        if (!proposition) return;
+
+        const mandate = await this.findMandate(proposition, request.param('mandateId'), response);
+        if (!mandate) return;
+
+        try {
+            // Check permissions
+            const canManage = await this.workflowService.canPerform(proposition, user as User, 'manage_mandates');
+            if (!canManage) {
+                return response.forbidden({ error: 'You are not allowed to manage mandate applications' });
+            }
+
+            // Validate mandate status
+            if (mandate.status !== MandateStatusEnum.TO_ASSIGN) {
+                return response.badRequest({ error: 'This mandate is not open for applications' });
+            }
+
+            // Find the application
+            const applicationId = request.param('applicationId');
+            const application = await MandateApplication.query().where('id', applicationId).where('mandate_id', mandate.id).first();
+
+            if (!application) {
+                return response.notFound({ error: 'Application not found' });
+            }
+
+            if (application.status !== MandateApplicationStatusEnum.PENDING) {
+                return response.badRequest({ error: 'This application has already been processed' });
+            }
+
+            // Reject the application
+            application.status = MandateApplicationStatusEnum.REJECTED;
+            await application.save();
+
+            // Reload relations
+            await application.load('applicant', (query) => {
+                query.select(['id', 'username', 'profile_picture_id']);
+            });
+            await mandate.load('applications', (query) => {
+                query.preload('applicant', (userQuery) => {
+                    userQuery.select(['id', 'username', 'profile_picture_id']);
+                });
+            });
+
+            return response.ok({
+                application: serializeMandateApplication(application),
+                mandate: serializeMandate(mandate),
+            });
+        } catch (error) {
+            logger.error('mandate.application.reject.error', { message: error?.message, stack: error?.stack });
+            return response.badRequest({ error: error?.message ?? 'Unable to reject application' });
         }
     }
 

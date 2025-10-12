@@ -28,6 +28,7 @@
     import type { SerializedProposition, SerializedPropositionSummary, SerializedStatusPermissions, SerializedUser, SerializedUserSummary } from 'backend/types';
     import {
         MandateStatusEnum,
+        MandateApplicationStatusEnum,
         PropositionCommentScopeEnum,
         PropositionCommentVisibilityEnum,
         PropositionEventTypeEnum,
@@ -39,7 +40,7 @@
         DeliverableVerdictEnum,
     } from 'backend/types';
     import type { PropositionComment, PropositionEvent, PropositionMandate, PropositionTimelinePhase, PropositionVote, WorkflowRole } from '#lib/types/proposition';
-    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload, Loader2, Eye, MessageCircle, CheckCircle, UserPlus } from '@lucide/svelte';
+    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload, Loader2, Eye, MessageCircle, CheckCircle, UserPlus, Check, X } from '@lucide/svelte';
     import { z } from 'zod';
 
     const { data } = $props<{
@@ -1710,6 +1711,46 @@
         }
     };
 
+    const acceptApplication = async (mandateId: string, applicationId: string): Promise<void> => {
+        try {
+            await wrappedFetch(
+                `/propositions/${proposition.id}/mandates/${mandateId}/applications/${applicationId}/accept`,
+                {
+                    method: 'POST',
+                },
+                ({ application, mandate }) => {
+                    propositionDetailStore.upsertMandate(mandate);
+                    showToast('Candidature acceptée avec succès', 'success');
+                },
+                (data) => {
+                    showToast(data?.error ?? "Erreur lors de l'acceptation de la candidature", 'error');
+                }
+            );
+        } catch (error) {
+            console.error('Exception in acceptApplication:', error);
+        }
+    };
+
+    const rejectApplication = async (mandateId: string, applicationId: string): Promise<void> => {
+        try {
+            await wrappedFetch(
+                `/propositions/${proposition.id}/mandates/${mandateId}/applications/${applicationId}/reject`,
+                {
+                    method: 'POST',
+                },
+                ({ application, mandate }) => {
+                    propositionDetailStore.upsertMandate(mandate);
+                    showToast('Candidature refusée', 'success');
+                },
+                (data) => {
+                    showToast(data?.error ?? 'Erreur lors du refus de la candidature', 'error');
+                }
+            );
+        } catch (error) {
+            console.error('Exception in rejectApplication:', error);
+        }
+    };
+
     const openDeliverableDialog = (mandateId: string): void => {
         deliverableMandateId = mandateId;
         deliverableForm = { label: '', objectiveRef: '', file: null };
@@ -2818,6 +2859,56 @@
                                         </Button>
                                     {/if}
                                 </div>
+                            {/if}
+
+                            {#if mandate.status === MandateStatusEnum.TO_ASSIGN && mandate.applications && mandate.applications.length > 0 && canManageMandates}
+                                {@const pendingApplications = mandate.applications.filter((app) => app.status === MandateApplicationStatusEnum.PENDING)}
+                                {#if pendingApplications.length > 0}
+                                    <div class="mt-4 space-y-3">
+                                        <h4 class="text-sm font-semibold">Candidatures ({pendingApplications.length})</h4>
+                                        <ul class="space-y-2">
+                                            {#each pendingApplications as application (application.id)}
+                                                <li class="rounded-lg border border-border/30 bg-background/80 p-3">
+                                                    <div class="space-y-2">
+                                                        <div class="flex items-start justify-between gap-2">
+                                                            <div class="flex-1">
+                                                                <p class="text-sm font-medium">
+                                                                    {application.applicant?.username ?? 'Utilisateur inconnu'}
+                                                                </p>
+                                                                <p class="text-xs text-muted-foreground">
+                                                                    Soumise le {formatDateTime(application.submittedAt)}
+                                                                </p>
+                                                            </div>
+                                                            <div class="flex gap-1">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    class="h-8 w-8 p-0 text-green-600 hover:bg-green-50 hover:text-green-700"
+                                                                    onclick={() => acceptApplication(mandate.id, application.id)}
+                                                                    title="Accepter la candidature"
+                                                                >
+                                                                    <Check class="size-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    class="h-8 w-8 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                                    onclick={() => rejectApplication(mandate.id, application.id)}
+                                                                    title="Refuser la candidature"
+                                                                >
+                                                                    <X class="size-4" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                        {#if application.statement}
+                                                            <p class="text-sm text-foreground/80 whitespace-pre-wrap">{application.statement}</p>
+                                                        {/if}
+                                                    </div>
+                                                </li>
+                                            {/each}
+                                        </ul>
+                                    </div>
+                                {/if}
                             {/if}
 
                             {#if canUploadDeliverable}
