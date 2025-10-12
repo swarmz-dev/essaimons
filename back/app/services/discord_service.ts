@@ -97,7 +97,7 @@ export default class DiscordService {
             const event = (await response.json()) as { id: string };
 
             // Generate invite URL for the event
-            const inviteUrl = `https://discord.gg/events/${settings.guildId}/${event.id}`;
+            const inviteUrl = `https://discord.com/events/${settings.guildId}/${event.id}`;
 
             return { inviteUrl };
         } catch (error) {
