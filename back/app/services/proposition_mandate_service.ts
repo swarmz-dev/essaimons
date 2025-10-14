@@ -101,6 +101,19 @@ export default class PropositionMandateService {
     public async update(proposition: Proposition, mandate: PropositionMandate, actor: User, payload: UpdateMandatePayload): Promise<PropositionMandate> {
         await this.ensureCanManageMandates(proposition, actor);
 
+        // Only admins can modify mandates that have a holder or applications
+        if ((mandate.holderUserId || mandate.status !== MandateStatusEnum.TO_ASSIGN) && actor.role !== 'admin') {
+            throw new Error('mandates.update.locked');
+        }
+
+        // Check if mandate has applications (if not already loaded)
+        const applicationCount = await mandate.related('applications').query().count('* as total');
+        const hasApplications = applicationCount[0]?.$extras?.total > 0;
+
+        if (hasApplications && actor.role !== 'admin') {
+            throw new Error('mandates.update.locked');
+        }
+
         const previousHolderId = mandate.holderUserId;
         const normalized = await this.normalizePayload(payload);
         const updateData: Partial<PropositionMandate> = {};
@@ -145,6 +158,20 @@ export default class PropositionMandateService {
 
     public async delete(proposition: Proposition, mandate: PropositionMandate, actor: User): Promise<void> {
         await this.ensureCanManageMandates(proposition, actor);
+
+        // Only admins can delete mandates that have a holder or applications
+        if ((mandate.holderUserId || mandate.status !== MandateStatusEnum.TO_ASSIGN) && actor.role !== 'admin') {
+            throw new Error('mandates.delete.locked');
+        }
+
+        // Check if mandate has applications (if not already loaded)
+        const applicationCount = await mandate.related('applications').query().count('* as total');
+        const hasApplications = applicationCount[0]?.$extras?.total > 0;
+
+        if (hasApplications && actor.role !== 'admin') {
+            throw new Error('mandates.delete.locked');
+        }
+
         const trx: TransactionClientContract = await db.transaction();
 
         try {

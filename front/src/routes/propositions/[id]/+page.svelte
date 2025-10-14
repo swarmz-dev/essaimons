@@ -2831,7 +2831,7 @@
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{translateMandateStatus(mandate.status as MandateStatusEnum)}</span>
-                                    {#if canManageMandates && mandate.status === MandateStatusEnum.TO_ASSIGN}
+                                    {#if canManageMandates && mandate.status === MandateStatusEnum.TO_ASSIGN && !mandate.holderUserId && (!mandate.applications || mandate.applications.length === 0)}
                                         <Button size="sm" variant="ghost" class="gap-1" onclick={() => openEditMandate(mandate)}>
                                             <Pencil class="size-3.5" />
                                             {m['common.edit']()}

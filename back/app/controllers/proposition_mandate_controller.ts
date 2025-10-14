@@ -58,6 +58,9 @@ export default class PropositionMandateController {
             if (error instanceof Error && error.message.startsWith('forbidden:')) {
                 return response.forbidden({ error: 'You are not allowed to manage mandates for this proposition' });
             }
+            if (error instanceof Error && error.message === 'mandates.update.locked') {
+                return response.forbidden({ error: 'Cannot modify a mandate that has applications or a holder assigned' });
+            }
             logger.error('proposition.mandates.update.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: error?.message ?? 'Unable to update mandate' });
         }
@@ -77,6 +80,9 @@ export default class PropositionMandateController {
         } catch (error) {
             if (error instanceof Error && error.message.startsWith('forbidden:')) {
                 return response.forbidden({ error: 'You are not allowed to manage mandates for this proposition' });
+            }
+            if (error instanceof Error && error.message === 'mandates.delete.locked') {
+                return response.forbidden({ error: 'Cannot delete a mandate that has applications or a holder assigned' });
             }
             logger.error('proposition.mandates.delete.error', { message: error?.message, stack: error?.stack });
             return response.badRequest({ error: error?.message ?? 'Unable to delete mandate' });
