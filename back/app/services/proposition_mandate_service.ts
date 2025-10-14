@@ -84,9 +84,12 @@ export default class PropositionMandateService {
             currentDeadline: normalized.currentDeadline,
         });
 
-        await mandate.load('holder', (query: ModelQueryBuilderContract<typeof User>) => {
-            query.select(['id', 'username', 'profile_picture_id']);
-        });
+        // Only load holder if one is assigned
+        if (mandate.holderUserId) {
+            await mandate.load('holder', (query: ModelQueryBuilderContract<typeof User>) => {
+                query.select(['id', 'username', 'profile_picture_id']);
+            });
+        }
 
         // Send notification if mandate was assigned to a holder
         if (mandate.holderUserId) {
@@ -142,9 +145,12 @@ export default class PropositionMandateService {
         mandate.merge(updateData);
         await mandate.save();
 
-        await mandate.load('holder', (query: ModelQueryBuilderContract<typeof User>) => {
-            query.select(['id', 'username', 'profile_picture_id']);
-        });
+        // Only load holder if one is assigned
+        if (mandate.holderUserId) {
+            await mandate.load('holder', (query: ModelQueryBuilderContract<typeof User>) => {
+                query.select(['id', 'username', 'profile_picture_id']);
+            });
+        }
 
         // Send notification if holder changed
         if (normalized.holderUserId !== undefined && previousHolderId !== mandate.holderUserId) {

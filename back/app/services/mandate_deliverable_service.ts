@@ -57,8 +57,13 @@ export default class MandateDeliverableService {
     public async upload(proposition: Proposition, mandate: PropositionMandate, actor: User, payload: UploadDeliverablePayload, file: MultipartFile): Promise<UploadDeliverableResult> {
         logger.info('deliverable.service.upload.start');
 
-        const canUpload = await this.workflowService.canPerform(proposition, actor, 'upload_deliverable');
-        if (!canUpload) {
+        // Only the mandate holder can upload deliverables, unless the user is an admin
+        if (actor.role !== 'admin' && mandate.holderUserId !== actor.id) {
+            throw new Error('forbidden:deliverables.upload');
+        }
+
+        // Additionally check that the mandate is active
+        if (mandate.status !== 'active') {
             throw new Error('forbidden:deliverables.upload');
         }
 

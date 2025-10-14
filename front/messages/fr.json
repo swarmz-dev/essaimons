@@ -813,8 +813,25 @@
             "apply": "Proposer une candidature",
             "dialog": {
                 "title": "Créer un mandat",
+                "edit-title": "Modifier le mandat",
                 "description": "Attribuez des responsabilités et suivez les livrables associés à cette proposition.",
-                "submit": "Créer le mandat"
+                "submit": "Créer le mandat",
+                "update": "Modifier"
+            },
+            "success": {
+                "created": "Mandat créé avec succès",
+                "updated": "Mandat modifié avec succès",
+                "deleted": "Mandat supprimé avec succès"
+            },
+            "delete": {
+                "title": "Supprimer le mandat",
+                "description": "Êtes-vous sûr de vouloir supprimer ce mandat ? Cette action est irréversible.",
+                "confirm": "Supprimer"
+            },
+            "accept": {
+                "title": "Accepter cette candidature",
+                "description": "En acceptant cette candidature, le mandataire sera assigné et toutes les autres candidatures en attente seront automatiquement refusées. Cette action est irréversible.",
+                "confirm": "Accepter la candidature"
             },
             "form": {
                 "title": "Titre",

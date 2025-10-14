@@ -649,6 +649,10 @@
     let mandateErrors: string[] = $state([]);
     let isMandateSubmitting: boolean = $state(false);
     let mandateHolderSelection: string[] = $state([]);
+    let editingMandateId: string | null = $state(null);
+    let isMandateDeleteDialogOpen: boolean = $state(false);
+    let mandateDeleteId: string | null = $state(null);
+    let isMandateDeleteSubmitting: boolean = $state(false);
 
     $effect(() => {
         const selected = mandateHolderSelection[0] ?? '';
@@ -669,9 +673,13 @@
 
     let isApplicationDialogOpen: boolean = $state(false);
     let applicationMandateId: string | null = $state(null);
-    let applicationForm = $state({ description: '', proposedStartDate: '', proposedEndDate: '' });
+    let applicationForm = $state({ description: '' });
     let applicationErrors: string[] = $state([]);
     let isApplicationSubmitting: boolean = $state(false);
+    let isApplicationAcceptDialogOpen: boolean = $state(false);
+    let applicationAcceptMandateId: string | null = $state(null);
+    let applicationAcceptId: string | null = $state(null);
+    let isApplicationAcceptSubmitting: boolean = $state(false);
     let evaluationVerdict: DeliverableVerdictEnum = $state(DeliverableVerdictEnum.COMPLIANT);
     let evaluationComment: string = $state('');
     let evaluationErrors: string[] = $state([]);
@@ -1616,10 +1624,11 @@
 
         isMandateSubmitting = true;
         try {
+            const targetMandateId = editingMandateId;
             const response = await wrappedFetch(
-                `/propositions/${proposition.id}/mandates`,
+                `/propositions/${proposition.id}/mandates${targetMandateId ? `/${targetMandateId}` : ''}`,
                 {
-                    method: 'POST',
+                    method: targetMandateId ? 'PUT' : 'POST',
                     body: {
                         title: parsed.data.title,
                         description: normalizeOptional(parsed.data.description),
@@ -1632,12 +1641,14 @@
                 },
                 ({ mandate }) => {
                     propositionDetailStore.upsertMandate(mandate);
+                    showToast(targetMandateId ? m['proposition-detail.mandates.success.updated']() : m['proposition-detail.mandates.success.created'](), 'success');
                     mandateForm = { ...defaultMandateForm };
                     mandateHolderSelection = [];
+                    editingMandateId = null;
                     isMandateDialogOpen = false;
                 },
-                ({ message }) => {
-                    mandateErrors = [message ?? m['common.error.default-message']()];
+                ({ error, message }) => {
+                    mandateErrors = [error ?? message ?? m['common.error.default-message']()];
                 }
             );
 
@@ -1649,23 +1660,67 @@
         }
     };
 
-    const openEditMandate = (mandate: any): void => {
-        // TODO: Populate form with mandate data and open dialog
+    const openMandateCreate = (): void => {
+        editingMandateId = null;
+        mandateForm = { ...defaultMandateForm };
+        mandateHolderSelection = [];
+        mandateErrors = [];
+        isMandateSubmitting = false;
+        isMandateDialogOpen = true;
     };
 
-    const deleteMandate = async (mandateId: string): Promise<void> => {
+    const openEditMandate = (mandate: PropositionMandate): void => {
+        editingMandateId = mandate.id;
+        mandateForm = {
+            title: mandate.title,
+            description: mandate.description ?? '',
+            holderUserId: mandate.holderUserId ?? '',
+            status: mandate.status,
+            targetObjectiveRef: mandate.targetObjectiveRef ?? '',
+            initialDeadline: mandate.initialDeadline ? mandate.initialDeadline.split('T')[0] : '',
+            currentDeadline: mandate.currentDeadline ? mandate.currentDeadline.split('T')[0] : '',
+        };
+        mandateHolderSelection = mandate.holderUserId ? [mandate.holderUserId] : [];
+        mandateErrors = [];
+        isMandateSubmitting = false;
+        isMandateDialogOpen = true;
+    };
+
+    const confirmMandateDelete = (mandateId: string): void => {
+        mandateDeleteId = mandateId;
+        isMandateDeleteSubmitting = false;
+        isMandateDeleteDialogOpen = true;
+    };
+
+    const submitMandateDelete = async (): Promise<void> => {
+        if (!mandateDeleteId) return;
+
+        isMandateDeleteSubmitting = true;
         try {
-            await wrappedFetch(`/propositions/${proposition.id}/mandates/${mandateId}`, { method: 'DELETE' }, () => {
-                propositionDetailStore.removeMandate(mandateId);
-            });
+            await wrappedFetch(
+                `/propositions/${proposition.id}/mandates/${mandateDeleteId}`,
+                { method: 'DELETE' },
+                () => {
+                    propositionDetailStore.removeMandate(mandateDeleteId!);
+                    showToast(m['proposition-detail.mandates.success.deleted'](), 'success');
+                    mandateDeleteId = null;
+                    isMandateDeleteDialogOpen = false;
+                },
+                ({ error }) => {
+                    showToast(error ?? 'Erreur lors de la suppression du mandat', 'error');
+                }
+            );
         } catch (error) {
             console.error('Error deleting mandate:', error);
+            showToast('Erreur lors de la suppression du mandat', 'error');
+        } finally {
+            isMandateDeleteSubmitting = false;
         }
     };
 
     const openApplicationDialog = (mandateId: string): void => {
         applicationMandateId = mandateId;
-        applicationForm = { description: '', proposedStartDate: '', proposedEndDate: '' };
+        applicationForm = { description: '' };
         applicationErrors = [];
         isApplicationSubmitting = false;
         isApplicationDialogOpen = true;
@@ -1697,7 +1752,7 @@
                 ({ application, mandate }) => {
                     propositionDetailStore.upsertMandate(mandate);
                     showToast('Candidature soumise avec succès', 'success');
-                    applicationForm = { description: '', proposedStartDate: '', proposedEndDate: '' };
+                    applicationForm = { description: '' };
                     isApplicationDialogOpen = false;
                 },
                 (data) => {
@@ -1711,23 +1766,39 @@
         }
     };
 
-    const acceptApplication = async (mandateId: string, applicationId: string): Promise<void> => {
+    const confirmAcceptApplication = (mandateId: string, applicationId: string): void => {
+        applicationAcceptMandateId = mandateId;
+        applicationAcceptId = applicationId;
+        isApplicationAcceptSubmitting = false;
+        isApplicationAcceptDialogOpen = true;
+    };
+
+    const submitAcceptApplication = async (): Promise<void> => {
+        if (!applicationAcceptMandateId || !applicationAcceptId) return;
+
+        isApplicationAcceptSubmitting = true;
         try {
             await wrappedFetch(
-                `/propositions/${proposition.id}/mandates/${mandateId}/applications/${applicationId}/accept`,
+                `/propositions/${proposition.id}/mandates/${applicationAcceptMandateId}/applications/${applicationAcceptId}/accept`,
                 {
                     method: 'POST',
                 },
                 ({ application, mandate }) => {
                     propositionDetailStore.upsertMandate(mandate);
                     showToast('Candidature acceptée avec succès', 'success');
+                    applicationAcceptMandateId = null;
+                    applicationAcceptId = null;
+                    isApplicationAcceptDialogOpen = false;
                 },
                 (data) => {
                     showToast(data?.error ?? "Erreur lors de l'acceptation de la candidature", 'error');
                 }
             );
         } catch (error) {
-            console.error('Exception in acceptApplication:', error);
+            console.error('Exception in submitAcceptApplication:', error);
+            showToast("Erreur lors de l'acceptation de la candidature", 'error');
+        } finally {
+            isApplicationAcceptSubmitting = false;
         }
     };
 
@@ -2812,7 +2883,7 @@
             <h2 class="text-lg font-semibold text-foreground">{m['proposition-detail.tabs.mandates']()}</h2>
             {#if canManageMandates}
                 <div class="mt-4 flex justify-end">
-                    <Button variant="outline" class="gap-2" onclick={() => (isMandateDialogOpen = true)}>
+                    <Button variant="outline" class="gap-2" onclick={openMandateCreate}>
                         <Plus class="size-4" />
                         {m['proposition-detail.mandates.add']()}
                     </Button>
@@ -2836,7 +2907,7 @@
                                             <Pencil class="size-3.5" />
                                             {m['common.edit']()}
                                         </Button>
-                                        <Button size="sm" variant="ghost" class="gap-1 text-destructive hover:text-destructive" onclick={() => deleteMandate(mandate.id)}>
+                                        <Button size="sm" variant="ghost" class="gap-1 text-destructive hover:text-destructive" onclick={() => confirmMandateDelete(mandate.id)}>
                                             <Trash2 class="size-3.5" />
                                             {m['common.delete']()}
                                         </Button>
@@ -2849,19 +2920,17 @@
 
                             {#if mandate.status === MandateStatusEnum.TO_ASSIGN && user}
                                 {@const hasApplied = mandate.applications?.some((app) => app.applicantUserId === user.id)}
-                                <div class="flex justify-end">
-                                    {#if hasApplied}
-                                        <p class="text-sm text-muted-foreground italic">Candidature soumise</p>
-                                    {:else}
+                                {#if !hasApplied}
+                                    <div class="flex justify-end">
                                         <Button size="sm" variant="outline" class="gap-2" onclick={() => openApplicationDialog(mandate.id)}>
                                             <UserPlus class="size-4" />
                                             {m['proposition-detail.mandates.apply']()}
                                         </Button>
-                                    {/if}
-                                </div>
+                                    </div>
+                                {/if}
                             {/if}
 
-                            {#if mandate.status === MandateStatusEnum.TO_ASSIGN && mandate.applications && mandate.applications.length > 0 && canManageMandates}
+                            {#if mandate.status === MandateStatusEnum.TO_ASSIGN && mandate.applications && mandate.applications.length > 0}
                                 {@const pendingApplications = mandate.applications.filter((app) => app.status === MandateApplicationStatusEnum.PENDING)}
                                 {#if pendingApplications.length > 0}
                                     <div class="mt-4 space-y-3">
@@ -2879,26 +2948,28 @@
                                                                     Soumise le {formatDateTime(application.submittedAt)}
                                                                 </p>
                                                             </div>
-                                                            <div class="flex gap-1">
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    class="h-8 w-8 p-0 text-green-600 hover:bg-green-50 hover:text-green-700"
-                                                                    onclick={() => acceptApplication(mandate.id, application.id)}
-                                                                    title="Accepter la candidature"
-                                                                >
-                                                                    <Check class="size-4" />
-                                                                </Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    class="h-8 w-8 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
-                                                                    onclick={() => rejectApplication(mandate.id, application.id)}
-                                                                    title="Refuser la candidature"
-                                                                >
-                                                                    <X class="size-4" />
-                                                                </Button>
-                                                            </div>
+                                                            {#if canManageMandates}
+                                                                <div class="flex gap-1">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        class="h-8 w-8 p-0 text-green-600 hover:bg-green-50 hover:text-green-700"
+                                                                        onclick={() => confirmAcceptApplication(mandate.id, application.id)}
+                                                                        title="Accepter la candidature"
+                                                                    >
+                                                                        <Check class="size-4" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        class="h-8 w-8 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                                        onclick={() => rejectApplication(mandate.id, application.id)}
+                                                                        title="Refuser la candidature"
+                                                                    >
+                                                                        <X class="size-4" />
+                                                                    </Button>
+                                                                </div>
+                                                            {/if}
                                                         </div>
                                                         {#if application.statement}
                                                             <p class="text-sm text-foreground/80 whitespace-pre-wrap">{application.statement}</p>
@@ -2911,7 +2982,7 @@
                                 {/if}
                             {/if}
 
-                            {#if canUploadDeliverable}
+                            {#if user && mandate.holderUserId === user.id && mandate.status === MandateStatusEnum.ACTIVE}
                                 <div class="flex justify-end">
                                     <Button size="sm" variant="outline" class="gap-2" onclick={() => openDeliverableDialog(mandate.id)}>
                                         <Upload class="size-4" />
@@ -3631,26 +3702,6 @@
                 rows={6}
                 bind:value={applicationForm.description}
             />
-            <div class="space-y-2">
-                <label class="text-sm font-medium text-foreground" for="application-start-date">Date de début proposée (optionnel)</label>
-                <input
-                    id="application-start-date"
-                    name="application-start-date"
-                    type="datetime-local"
-                    class="rounded-md border border-border/40 bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary w-full"
-                    bind:value={applicationForm.proposedStartDate}
-                />
-            </div>
-            <div class="space-y-2">
-                <label class="text-sm font-medium text-foreground" for="application-end-date">Date de fin proposée (optionnel)</label>
-                <input
-                    id="application-end-date"
-                    name="application-end-date"
-                    type="datetime-local"
-                    class="rounded-md border border-border/40 bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary w-full"
-                    bind:value={applicationForm.proposedEndDate}
-                />
-            </div>
             {#if applicationErrors.length}
                 <ul class="space-y-1 text-sm text-destructive">
                     {#each applicationErrors as error}
@@ -3935,7 +3986,7 @@
 <Dialog open={isMandateDialogOpen} onOpenChange={(value: boolean) => (isMandateDialogOpen = value)}>
     <DialogContent class="max-w-2xl">
         <DialogHeader>
-            <DialogTitle>{m['proposition-detail.mandates.dialog.title']()}</DialogTitle>
+            <DialogTitle>{editingMandateId ? m['proposition-detail.mandates.dialog.edit-title']() : m['proposition-detail.mandates.dialog.title']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.mandates.dialog.description']()}</DialogDescription>
         </DialogHeader>
         <form class="grid gap-4" onsubmit={handleMandateSubmit}>
@@ -3991,7 +4042,13 @@
                 <DialogClose asChild>
                     <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                 </DialogClose>
-                <Button type="submit" disabled={isMandateSubmitting}>{m['proposition-detail.mandates.dialog.submit']()}</Button>
+                <Button type="submit" disabled={isMandateSubmitting}>
+                    {#if isMandateSubmitting}
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {editingMandateId ? m['proposition-detail.mandates.dialog.update']() : m['proposition-detail.mandates.dialog.submit']()}
+                    {/if}
+                </Button>
             </DialogFooter>
         </form>
     </DialogContent>
@@ -4033,6 +4090,71 @@
         </form>
     </DialogContent>
 </Dialog>
+
+{#if isMandateDeleteDialogOpen}
+    <AlertDialog
+        open={isMandateDeleteDialogOpen}
+        onOpenChange={(value: boolean) => {
+            isMandateDeleteDialogOpen = value;
+            if (!value) {
+                mandateDeleteId = null;
+                isMandateDeleteSubmitting = false;
+            }
+        }}
+    >
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>{m['proposition-detail.mandates.delete.title']()}</AlertDialogTitle>
+                <AlertDialogDescription>{m['proposition-detail.mandates.delete.description']()}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isMandateDeleteSubmitting}>{m['common.cancel']()}</AlertDialogCancel>
+                <AlertDialogAction onclick={submitMandateDelete} disabled={isMandateDeleteSubmitting} class="gap-2">
+                    {#if isMandateDeleteSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.mandates.delete.confirm']()}
+                    {/if}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+{/if}
+
+{#if isApplicationAcceptDialogOpen}
+    <AlertDialog
+        open={isApplicationAcceptDialogOpen}
+        onOpenChange={(value: boolean) => {
+            isApplicationAcceptDialogOpen = value;
+            if (!value) {
+                applicationAcceptMandateId = null;
+                applicationAcceptId = null;
+                isApplicationAcceptSubmitting = false;
+            }
+        }}
+    >
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>{m['proposition-detail.mandates.accept.title']()}</AlertDialogTitle>
+                <AlertDialogDescription>
+                    {m['proposition-detail.mandates.accept.description']()}
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isApplicationAcceptSubmitting}>{m['common.cancel']()}</AlertDialogCancel>
+                <AlertDialogAction onclick={submitAcceptApplication} disabled={isApplicationAcceptSubmitting} class="gap-2">
+                    {#if isApplicationAcceptSubmitting}
+                        <Loader2 class="size-4 animate-spin" />
+                        {m['common.actions.loading']()}
+                    {:else}
+                        {m['proposition-detail.mandates.accept.confirm']()}
+                    {/if}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+{/if}
 
 <style>
     /* Style for status select dropdown */

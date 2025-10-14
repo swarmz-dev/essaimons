@@ -812,8 +812,25 @@
             "apply": "Apply for this mandate",
             "dialog": {
                 "title": "Create a mandate",
+                "edit-title": "Edit mandate",
                 "description": "Assign responsibilities and track deliverables for this proposal.",
-                "submit": "Create mandate"
+                "submit": "Create mandate",
+                "update": "Update"
+            },
+            "success": {
+                "created": "Mandate created successfully",
+                "updated": "Mandate updated successfully",
+                "deleted": "Mandate deleted successfully"
+            },
+            "delete": {
+                "title": "Delete mandate",
+                "description": "Are you sure you want to delete this mandate? This action cannot be undone.",
+                "confirm": "Delete"
+            },
+            "accept": {
+                "title": "Accept this application",
+                "description": "By accepting this application, the mandated user will be assigned and all other pending applications will be automatically rejected. This action is irreversible.",
+                "confirm": "Accept application"
             },
             "form": {
                 "title": "Title",
