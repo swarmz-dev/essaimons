@@ -38,6 +38,13 @@
         return (template.content.textContent ?? '').trim().length;
     };
 
+    const getHtmlLength = (html: string): number => {
+        if (!html) {
+            return 0;
+        }
+        return html.trim().length;
+    };
+
     const initializeQuill = async () => {
         const QuillModule = await import('quill');
         const Quill = QuillModule.default;
@@ -87,7 +94,8 @@
 
         quillInstance.on('text-change', () => {
             const html = quillInstance.root.innerHTML;
-            if (max && getPlainTextLength(html) > max) {
+            // Validate based on HTML length (matching backend validation)
+            if (max && getHtmlLength(html) > max) {
                 quillInstance.clipboard.dangerouslyPasteHTML(lastValue, 'silent');
                 return;
             }
@@ -125,6 +133,9 @@
     });
 
     const plainTextLength: number = $derived(getPlainTextLength(value));
+    const htmlLength: number = $derived(getHtmlLength(value));
+    const isNearLimit: boolean = $derived(max ? htmlLength / max > 0.9 : false);
+    const isOverLimit: boolean = $derived(max ? htmlLength > max : false);
 
     const toggleHtmlSource = () => {
         if (!showHtmlSource) {
@@ -137,14 +148,20 @@
             }, 0);
         } else {
             // Switching back to visual editor
-            value = htmlSource;
-            lastValue = htmlSource;
+            // Check if HTML exceeds limit before applying
+            if (max && getHtmlLength(htmlSource) > max) {
+                // Revert to last valid value
+                htmlSource = value;
+            } else {
+                value = htmlSource;
+                lastValue = htmlSource;
+            }
             showHtmlSource = false;
 
             // Update the Quill editor content
             if (quillInstance) {
                 setTimeout(() => {
-                    quillInstance.clipboard.dangerouslyPasteHTML(htmlSource, 'silent');
+                    quillInstance.clipboard.dangerouslyPasteHTML(value, 'silent');
                 }, 0);
             }
         }
@@ -173,9 +190,12 @@
                     💡 {m['common.rich-text-editor.paste-hint']()}
                 </span>
             </div>
-            <span>
-                {plainTextLength}{#if max}
+            <span class:text-amber-600={isNearLimit && !isOverLimit} class:text-red-600={isOverLimit} class="font-medium transition-colors">
+                {htmlLength}{#if max}
                     / {max}{/if}
+                {#if plainTextLength !== htmlLength}
+                    <span class="ml-1 text-muted-foreground">({plainTextLength} texte)</span>
+                {/if}
             </span>
         </div>
         <div class="min-h-[220px] rounded-xl border border-white/45 bg-white text-sm text-foreground dark:border-slate-800/70 dark:bg-slate-900/90" class:hidden={showHtmlSource}>
