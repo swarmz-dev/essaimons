@@ -39,24 +39,21 @@ export class NotificationSSEService {
                     titleKey: payload.data.titleKey,
                     messageKey: payload.data.messageKey,
                     data: payload.data.data,
-                    actionUrl: payload.data.actionUrl ?? undefined,
+                    entityType: payload.data.entityType ?? null,
+                    entityId: payload.data.entityId ?? null,
+                    actionUrl: payload.data.actionUrl ?? null,
                     isRead: payload.data.isRead,
                     createdAt: payload.data.createdAt,
-                    readAt: payload.data.readAt ?? undefined,
+                    readAt: payload.data.readAt ?? null,
                 };
 
                 notificationStore.addNotification(notification);
 
                 // Show toast notification
-                // Convert dot notation keys to nested object access for Paraglide
+                // Paraglide exports messages with the full dotted key as a string property
+                // e.g., m["notifications.status_transition.to_amend.title"]
                 const getTranslation = (key: string) => {
-                    const parts = key.split('.');
-                    let value: any = m;
-                    for (const part of parts) {
-                        value = value?.[part];
-                        if (!value) break;
-                    }
-                    return value;
+                    return (m as any)[key];
                 };
 
                 const titleTranslation = getTranslation(notification.titleKey);
@@ -66,8 +63,8 @@ export class NotificationSSEService {
                     type: 'notification',
                     title: typeof titleTranslation === 'function' ? titleTranslation(notification.data || {}) : notification.titleKey,
                     message: typeof messageTranslation === 'function' ? messageTranslation(notification.data || {}) : notification.messageKey,
-                    actionUrl: notification.actionUrl,
-                    actionLabel: m.notifications?.view?.() ?? 'Voir',
+                    actionUrl: notification.actionUrl ?? undefined,
+                    actionLabel: (m as any)['notifications.view']?.() ?? 'Voir',
                     duration: 5000,
                 });
             }

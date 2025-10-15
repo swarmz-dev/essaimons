@@ -50,13 +50,9 @@
     }
 
     function getTranslation(key: string): any {
-        const parts = key.split('.');
-        let value: any = m;
-        for (const part of parts) {
-            value = value?.[part];
-            if (!value) break;
-        }
-        return value;
+        // Paraglide exports messages with the full dotted key as a string property
+        // e.g., m["notifications.status_transition.to_amend.title"]
+        return (m as any)[key];
     }
 
     function getNotificationTitle(): string {
