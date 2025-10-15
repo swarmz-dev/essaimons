@@ -349,7 +349,10 @@
                     "placeholder": "Téléversez un logo carré (PNG, JPG, SVG, WEBP)",
                     "remove": "Supprimer le logo"
                 },
+                "default-locale": "Langue par défaut de l'application",
+                "default-locale-tooltip": "La langue par défaut est affichée aux visiteurs non connectés et lorsque la langue du navigateur n'est pas disponible. Laissez vide pour utiliser la langue de repli.",
                 "fallback-locale": "Langue de repli",
+                "fallback-locale-tooltip": "La langue de repli est utilisée lorsqu'une traduction n'est pas disponible dans la langue préférée de l'utilisateur. Elle garantit qu'il y a toujours du contenu à afficher.",
                 "fallback-badge": "Référence"
             },
             "actions": {

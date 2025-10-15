@@ -6,6 +6,7 @@ const permissionMatrixSchema = vine.record(vine.record(vine.record(vine.boolean(
 
 export const updateOrganizationSettingsValidator = vine.compile(
     vine.object({
+        defaultLocale: vine.string().trim().maxLength(10).optional(),
         fallbackLocale: vine.string().trim().maxLength(10),
         name: translationSchema.optional(),
         description: translationSchema.optional(),

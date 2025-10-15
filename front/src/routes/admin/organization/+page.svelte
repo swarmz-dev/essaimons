@@ -5,12 +5,14 @@
     import { Input } from '#lib/components/ui/input';
     import { Textarea } from '#lib/components/ui/textarea';
     import { Button } from '#lib/components/ui/button';
+    import { Tooltip, TooltipContent, TooltipTrigger } from '#lib/components/ui/tooltip';
     import { enhance } from '$app/forms';
     import type { SubmitFunction } from '@sveltejs/kit';
     import { m } from '#lib/paraglide/messages';
     import LogoCropper from '#lib/components/ui/image/LogoCropper.svelte';
     import EnglishFlag from '#icons/EnglishFlag.svelte';
     import FrenchFlag from '#icons/FrenchFlag.svelte';
+    import { HelpCircle } from '@lucide/svelte';
     import type { SerializedOrganizationSettings } from 'backend/types';
     import { onDestroy } from 'svelte';
     import * as zod from 'zod';
@@ -108,6 +110,7 @@
 
     const initialLogoUrl: string | null = settings.logo ? `/assets/organization/logo/${settings.logo.id}?no-cache=true` : null;
 
+    let defaultLocale: string = $state(settings.defaultLocale ?? '');
     let fallbackLocale: string = $state(settings.fallbackLocale ?? locales[0]?.code ?? 'en');
     let nameByLocale: Record<string, string> = $state(ensureMap(settings.name));
     let descriptionByLocale: Record<string, string> = $state(ensureMap(settings.description));
@@ -576,6 +579,9 @@
         if (!ensureFallbackValue(descriptionByLocale, m['admin.organization.fields.description']())) return;
         if (!ensureFallbackValue(copyrightByLocale, m['admin.organization.fields.copyright']())) return;
 
+        if (defaultLocale.trim()) {
+            formData.set('defaultLocale', defaultLocale.trim());
+        }
         formData.set('fallbackLocale', fallbackLocale);
 
         for (const locale of locales) {
@@ -666,7 +672,43 @@
         <form method="POST" action="?/update" enctype="multipart/form-data" class="grid gap-6 lg:grid-cols-[2fr,1fr]" use:enhance={submitHandler}>
             <div class="space-y-8">
                 <div class:hidden={activeTab !== 'general'} class="space-y-8">
-                    <FieldLabel forId="fallbackLocale" label={m['admin.organization.fields.fallback-locale']()}>
+                    <div class="space-y-2">
+                        <label for="defaultLocale" class="flex items-center gap-2 text-sm font-medium text-foreground">
+                            <span>{m['admin.organization.fields.default-locale']()}</span>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <HelpCircle class="size-4 text-muted-foreground transition-colors hover:text-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent side="right" sideOffset={5}>
+                                    <p class="max-w-xs">{m['admin.organization.fields.default-locale-tooltip']()}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </label>
+                        <select
+                            id="defaultLocale"
+                            name="defaultLocale"
+                            bind:value={defaultLocale}
+                            class="h-11 w-full rounded-2xl border border-border/60 bg-white/80 px-4 text-sm font-medium text-foreground shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-slate-800/70 dark:bg-slate-900/70"
+                        >
+                            <option value="">{m['admin.organization.fields.fallback-locale']()} (auto)</option>
+                            {#each locales as locale}
+                                <option value={locale.code}>{locale.label}</option>
+                            {/each}
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="fallbackLocale" class="flex items-center gap-2 text-sm font-medium text-foreground">
+                            <span>{m['admin.organization.fields.fallback-locale']()}</span>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <HelpCircle class="size-4 text-muted-foreground transition-colors hover:text-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent side="right" sideOffset={5}>
+                                    <p class="max-w-xs">{m['admin.organization.fields.fallback-locale-tooltip']()}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </label>
                         <select
                             id="fallbackLocale"
                             name="fallbackLocale"
@@ -678,7 +720,7 @@
                                 <option value={locale.code}>{locale.label}</option>
                             {/each}
                         </select>
-                    </FieldLabel>
+                    </div>
 
                     <section class="space-y-6">
                         <h3 class="text-sm font-semibold text-muted-foreground">{m['admin.organization.fields.name']()}</h3>
