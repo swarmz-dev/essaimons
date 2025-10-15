@@ -41,7 +41,9 @@
                         </div>
                     </div>
                 </div>
-                <p class="max-w-2xl text-base text-muted-foreground/90">{description}</p>
+                <div class="max-w-2xl text-base text-muted-foreground/90 prose prose-sm dark:prose-invert prose-a:text-primary hover:prose-a:text-primary/80">
+                    {@html description}
+                </div>
             </div>
 
             <div class="space-y-3">

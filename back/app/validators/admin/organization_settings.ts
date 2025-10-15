@@ -1,6 +1,7 @@
 import vine from '@vinejs/vine';
 
 const translationSchema = vine.record(vine.string().trim().maxLength(2000));
+const descriptionSchema = vine.record(vine.string().trim().maxLength(10000)); // Higher limit for HTML content
 const sourceCodeUrlSchema = vine.record(vine.string().trim().maxLength(2000).url());
 const permissionMatrixSchema = vine.record(vine.record(vine.record(vine.boolean())));
 
@@ -9,7 +10,7 @@ export const updateOrganizationSettingsValidator = vine.compile(
         defaultLocale: vine.string().trim().maxLength(10).optional(),
         fallbackLocale: vine.string().trim().maxLength(10),
         name: translationSchema.optional(),
-        description: translationSchema.optional(),
+        description: descriptionSchema.optional(),
         sourceCodeUrl: sourceCodeUrlSchema.optional(),
         copyright: translationSchema.optional(),
         logo: vine
