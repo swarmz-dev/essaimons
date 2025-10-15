@@ -365,12 +365,12 @@ export default class PropositionController {
 
         const actor: User = user as User;
 
-        const payload = await updatePropositionStatusValidator.validate({
-            status: request.input('status'),
-            reason: request.input('reason'),
-        });
-
         try {
+            const payload = await updatePropositionStatusValidator.validate({
+                status: request.input('status'),
+                reason: request.input('reason'),
+            });
+
             const updated = await this.propositionService.transition(proposition, actor, payload.status as PropositionStatusEnum, { reason: payload.reason });
 
             await Promise.all([
@@ -388,6 +388,10 @@ export default class PropositionController {
 
             return response.ok({ proposition: updated.apiSerialize() });
         } catch (error) {
+            if (error instanceof errors.E_VALIDATION_ERROR) {
+                return response.badRequest({ errors: error.messages });
+            }
+
             if (error instanceof PropositionWorkflowException) {
                 const message = error.code === 'invalid_transition' ? 'Invalid proposition transition' : 'You are not allowed to change the proposition status';
                 if (error.code === 'forbidden') {
