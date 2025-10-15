@@ -4,7 +4,6 @@
     import { ChevronDown } from '@lucide/svelte';
 
     type $$Props = SelectPrimitive.TriggerProps;
-    type $$Events = SelectPrimitive.TriggerEvents;
 
     let className: $$Props['class'] = undefined;
     export { className as class };
@@ -16,8 +15,6 @@
         className
     )}
     {...$$restProps}
-    on:click
-    on:keydown
 >
     <slot />
     <div>

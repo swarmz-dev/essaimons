@@ -1,12 +1,14 @@
-<script lang="ts">
-    import { createEventDispatcher } from 'svelte';
-
+<script context="module" lang="ts">
     export type TabItem = {
         id: string;
         label: string;
         disabled?: boolean;
         badge?: string;
     };
+</script>
+
+<script lang="ts">
+    import { createEventDispatcher } from 'svelte';
 
     export let items: TabItem[] = [];
     export let value: string;
