@@ -603,7 +603,7 @@ Mandat 3 : mesurer la portée de la campagne et ajuster les messages.
         });
     }
 
-    private async addVote(proposition: Proposition, creator: User): Promise<void> {
+    private async addVote(proposition: Proposition, _creator: User): Promise<void> {
         await PropositionVote.create({
             propositionId: proposition.id,
             phase: 'approval' as any, // TODO: utiliser PropositionVotePhaseEnum

@@ -111,7 +111,12 @@ export const actions = {
         }
 
         if (isSuccess) {
-            redirect(303, '/propositions', { type: 'success', message: data?.message }, event);
+            const propositionId = data?.proposition?.id;
+            const isDraftCreated = normalizedPayload.isDraft;
+
+            // If draft, redirect to home; otherwise to propositions list
+            const redirectUrl = isDraftCreated ? '/' : '/propositions';
+            redirect(303, redirectUrl, { type: 'success', message: data?.message }, event);
         } else {
             const formDataRecord = extractFormData(formData);
 

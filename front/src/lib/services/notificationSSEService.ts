@@ -1,8 +1,10 @@
 import { notificationStore } from '$lib/stores/notificationStore.svelte';
 import { toastStore } from '$lib/stores/toastStore.svelte';
 import type { Notification } from '$lib/services/notificationService';
-import type { Transmit, TransmitSubscription } from '@adonisjs/transmit-client';
+import type { Transmit } from '@adonisjs/transmit-client';
 import * as m from '$lib/paraglide/messages';
+
+type TransmitSubscription = ReturnType<Transmit['subscription']>;
 
 export class NotificationSSEService {
     private subscription: TransmitSubscription | null = null;
@@ -33,33 +35,36 @@ export class NotificationSSEService {
             if (payload.type === 'notification' && payload.data) {
                 const notification: Notification = {
                     id: payload.data.id,
-                    notificationId: payload.data.notificationId,
                     type: payload.data.type,
                     titleKey: payload.data.titleKey,
                     messageKey: payload.data.messageKey,
                     data: payload.data.data,
-                    actionUrl: payload.data.actionUrl,
+                    entityType: payload.data.entityType ?? null,
+                    entityId: payload.data.entityId ?? null,
+                    actionUrl: payload.data.actionUrl ?? null,
                     isRead: payload.data.isRead,
                     createdAt: payload.data.createdAt,
-                    readAt: null,
+                    readAt: payload.data.readAt ?? null,
                 };
 
                 notificationStore.addNotification(notification);
 
                 // Show toast notification
-                // Convert dot notation to underscore notation for Paraglide
-                const titleKey = notification.titleKey.replace(/\./g, '_');
-                const messageKey = notification.messageKey.replace(/\./g, '_');
+                // Paraglide exports messages with the full dotted key as a string property
+                // e.g., m["notifications.status_transition.to_amend.title"]
+                const getTranslation = (key: string) => {
+                    return (m as any)[key];
+                };
 
-                const titleTranslation = m[titleKey as keyof typeof m];
-                const messageTranslation = m[messageKey as keyof typeof m];
+                const titleTranslation = getTranslation(notification.titleKey);
+                const messageTranslation = getTranslation(notification.messageKey);
 
                 toastStore.show({
                     type: 'notification',
-                    title: typeof titleTranslation === 'function' ? titleTranslation() : notification.titleKey,
-                    message: typeof messageTranslation === 'function' ? messageTranslation(notification.data) : notification.messageKey,
-                    actionUrl: notification.actionUrl,
-                    actionLabel: m.notifications_view ? m.notifications_view() : 'Voir',
+                    title: typeof titleTranslation === 'function' ? titleTranslation(notification.data || {}) : notification.titleKey,
+                    message: typeof messageTranslation === 'function' ? messageTranslation(notification.data || {}) : notification.messageKey,
+                    actionUrl: notification.actionUrl ?? undefined,
+                    actionLabel: (m as any)['notifications.view']?.() ?? 'Voir',
                     duration: 5000,
                 });
             }

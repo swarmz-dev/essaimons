@@ -275,6 +275,8 @@
         }).success
     );
 
+    const canSaveDraft: boolean = $derived(title.trim().length > 0 && categoryIds.length > 0);
+
     $effect(() => {
         if (isEditing || hasAppliedPropositionDefaults) {
             return;
@@ -686,7 +688,7 @@
                                 </Button>
                             {:else}
                                 {#if !isEditing}
-                                    <Button type="submit" variant="outline" disabled={!canSubmit} loading={isSubmitting && isDraft} loadingLabel={savingDraftLabel} onclick={handleSaveDraft}>
+                                    <Button type="submit" variant="outline" disabled={!canSaveDraft} loading={isSubmitting && isDraft} loadingLabel={savingDraftLabel} onclick={handleSaveDraft}>
                                         {saveDraftLabel}
                                     </Button>
                                 {/if}

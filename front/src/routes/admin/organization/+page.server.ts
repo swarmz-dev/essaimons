@@ -7,6 +7,7 @@ export const load: PageServerLoad<{ settings: SerializedOrganizationSettings }> 
         const { data } = await locals.client.get<{ settings: SerializedOrganizationSettings }>('api/admin/organization');
 
         const fallbackSettings: SerializedOrganizationSettings = {
+            defaultLocale: 'fr',
             fallbackLocale: 'en',
             locales: [],
             name: {},
@@ -47,6 +48,7 @@ export const load: PageServerLoad<{ settings: SerializedOrganizationSettings }> 
         console.error('admin.organization.load.error', error?.response?.data ?? error);
         return {
             settings: {
+                defaultLocale: 'fr',
                 fallbackLocale: 'en',
                 locales: [],
                 name: {},

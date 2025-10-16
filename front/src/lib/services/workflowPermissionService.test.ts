@@ -53,7 +53,7 @@ describe('workflowPermissionService', () => {
             ...baseProposition,
             rescueInitiators: [{ id: 'user-2' }],
         };
-        const initiator: any = { id: 'user-2', role: UserRoleEnum.MEMBER };
+        const initiator: any = { id: 'user-2', role: UserRoleEnum.USER };
         const permissions = {
             [PropositionStatusEnum.CLARIFY]: {
                 initiator: {
@@ -75,7 +75,7 @@ describe('workflowPermissionService', () => {
                 status: MandateStatusEnum.ACTIVE,
             },
         ];
-        const mandatedUser: any = { id: 'user-3', role: UserRoleEnum.MEMBER };
+        const mandatedUser: any = { id: 'user-3', role: UserRoleEnum.USER };
         const role = resolveWorkflowRole(baseProposition, mandatedUser, mandates);
         expect(role).toBe('mandated');
     });

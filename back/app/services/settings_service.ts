@@ -34,6 +34,7 @@ interface WorkflowAutomationSettingsValue {
 }
 
 interface OrganizationSettingsValue {
+    defaultLocale?: string;
     fallbackLocale: string;
     name: Record<string, string>;
     description: Record<string, string>;
@@ -53,6 +54,7 @@ interface OrganizationSettingsValue {
 }
 
 interface UpdateOrganizationSettingsPayload {
+    defaultLocale?: string;
     fallbackLocale: string;
     translations: {
         name: Record<string, string>;
@@ -296,6 +298,9 @@ export default class SettingsService {
         const fallbackLocale =
             storedFallback && locales.some((locale) => locale.code === storedFallback) ? storedFallback : (locales.find((locale) => locale.isDefault)?.code ?? locales[0]?.code ?? 'en');
 
+        const storedDefault = value?.defaultLocale?.toLowerCase();
+        const defaultLocale = storedDefault && locales.some((locale) => locale.code === storedDefault) ? storedDefault : fallbackLocale;
+
         let logo: SerializedOrganizationSettings['logo'] = null;
 
         const normalizeOffsets = (input?: Partial<OrganizationSettingsValue['propositionDefaults']>): SerializedOrganizationSettings['propositionDefaults'] => {
@@ -335,6 +340,7 @@ export default class SettingsService {
         const workflowAutomation = this.normalizeWorkflowAutomationValue(value?.workflowAutomation);
 
         return {
+            defaultLocale,
             fallbackLocale,
             locales,
             name: value?.name ?? {},
@@ -379,8 +385,17 @@ export default class SettingsService {
                 fallbackLocale = languages.find((language) => language.isFallback)?.code.toLowerCase() ?? localeCodes[0] ?? fallbackLocale;
             }
 
+            let defaultLocale: string | undefined = undefined;
+            if (payload.defaultLocale) {
+                const normalizedDefault = payload.defaultLocale.toLowerCase();
+                if (localeCodes.includes(normalizedDefault)) {
+                    defaultLocale = normalizedDefault;
+                }
+            }
+
             let record = await this.settingRepository.findByKey(ORGANIZATION_SETTINGS_KEY, trx);
             let value: OrganizationSettingsValue = {
+                defaultLocale,
                 fallbackLocale,
                 name: {},
                 description: {},
@@ -401,6 +416,7 @@ export default class SettingsService {
                     const storedPermissions = this.normalizePermissionMatrix(currentValue.permissions);
                     const existingPermissions = this.mergePermissions(catalogMatrix, storedPermissions ?? {});
                     value = {
+                        defaultLocale: currentValue.defaultLocale,
                         fallbackLocale: (currentValue.fallbackLocale ?? fallbackLocale).toLowerCase(),
                         name: currentValue.name ?? {},
                         description: currentValue.description ?? {},
@@ -451,6 +467,7 @@ export default class SettingsService {
                 return filtered;
             };
 
+            value.defaultLocale = defaultLocale;
             value.fallbackLocale = fallbackLocale;
             value.name = filterMap(payload.translations.name);
             value.description = filterMap(payload.translations.description);
