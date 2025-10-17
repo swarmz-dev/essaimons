@@ -426,7 +426,13 @@
         if (Number.isNaN(parsed.getTime())) {
             return '';
         }
-        return parsed.toISOString().slice(0, 16);
+        // Format as YYYY-MM-DDTHH:MM in local timezone for datetime-local input
+        const year = parsed.getFullYear();
+        const month = String(parsed.getMonth() + 1).padStart(2, '0');
+        const day = String(parsed.getDate()).padStart(2, '0');
+        const hours = String(parsed.getHours()).padStart(2, '0');
+        const minutes = String(parsed.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
     const getVoteTimeRemaining = (vote: PropositionVote, currentTime: Date): { text: string; color: string } | null => {
@@ -1270,14 +1276,20 @@
         eventErrors = [];
 
         try {
+            // Convert datetime-local format to ISO 8601 with UTC timezone
+            // datetime-local gives us "2024-01-15T15:30" which is local time
+            // We need to convert it to ISO format like "2024-01-15T13:30:00.000Z" (UTC)
+            const startDate = new Date(eventForm.startAt);
+            const endDate = eventForm.endAt ? new Date(eventForm.endAt) : undefined;
+
             const response = await wrappedFetch(
                 '/discord/events',
                 {
                     method: 'POST',
                     body: {
                         name: eventForm.title,
-                        startTime: eventForm.startAt,
-                        endTime: eventForm.endAt || undefined,
+                        startTime: startDate.toISOString(),
+                        endTime: endDate ? endDate.toISOString() : undefined,
                         description: eventForm.description || undefined,
                     },
                 },
