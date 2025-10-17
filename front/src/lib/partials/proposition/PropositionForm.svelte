@@ -220,6 +220,7 @@
 
     let attachmentFiles: FileList | undefined = $state();
     let attachmentsInputRef: HTMLInputElement | undefined = $state();
+    let deletedAttachmentIds: string[] = $state([]);
 
     let isSubmitting: boolean = $state(false);
     let hasAppliedPropositionDefaults: boolean = $state(false);
@@ -392,6 +393,11 @@
 
         formData.set('isDraft', String(isDraft));
 
+        // Add deleted attachment IDs to the form data
+        if (deletedAttachmentIds.length > 0) {
+            formData.set('deletedAttachmentIds', deletedAttachmentIds.join(','));
+        }
+
         return async ({ result, update }) => {
             isSubmitting = false;
             if (result.type === 'failure') {
@@ -497,6 +503,12 @@
         }
         if (attachmentsInputRef) {
             attachmentsInputRef.value = '';
+        }
+    };
+
+    const handleDeleteAttachment = (attachmentId: string): void => {
+        if (!deletedAttachmentIds.includes(attachmentId)) {
+            deletedAttachmentIds = [...deletedAttachmentIds, attachmentId];
         }
     };
 
@@ -643,6 +655,10 @@
                             bind:attachmentsInputRef
                             attachmentAccept={ATTACHMENT_ACCEPT}
                             onAttachmentsChange={handleAttachmentsChange}
+                            existingAttachments={initialProposition?.attachments ?? []}
+                            propositionId={initialProposition?.id ?? null}
+                            bind:deletedAttachmentIds
+                            onDeleteAttachment={handleDeleteAttachment}
                         />
                     </div>
 

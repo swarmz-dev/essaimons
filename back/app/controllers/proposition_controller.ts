@@ -239,6 +239,7 @@ export default class PropositionController {
         const categoryIds: string[] = this.parseCsv(request.input('categoryIds'));
         const associatedPropositionIds: string[] = this.parseCsv(request.input('associatedPropositionIds'));
         const rescueInitiatorIds: string[] = this.parseCsv(request.input('rescueInitiatorIds'));
+        const deletedAttachmentIds: string[] = this.parseCsv(request.input('deletedAttachmentIds'));
 
         const visual: MultipartFile | null = request.file('visual', {
             size: '5mb',
@@ -300,6 +301,7 @@ export default class PropositionController {
             const updatedProposition: Proposition = await this.propositionService.update(proposition, payload, actor, {
                 visual,
                 attachments,
+                deletedAttachmentIds,
             });
 
             logger.info('proposition.update.success', {

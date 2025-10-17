@@ -96,6 +96,11 @@ export const actions: Actions = {
                 apiFormData.append('attachments', file, file.name);
             });
 
+        const deletedAttachmentIds = toString(formData.get('deletedAttachmentIds'));
+        if (deletedAttachmentIds) {
+            apiFormData.set('deletedAttachmentIds', deletedAttachmentIds);
+        }
+
         let data: any;
         let isSuccess = true;
 

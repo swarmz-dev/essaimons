@@ -77,7 +77,6 @@
             )}
             {name}
             bind:files
-            bind:value
             {readonly}
             {...restProps}
         />
