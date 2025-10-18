@@ -187,6 +187,21 @@
     },
     "home": {
         "title": "Home",
+        "sections": {
+            "voting": "Proposals to vote on",
+            "my-propositions": "My proposals",
+            "mandate": "Proposals to mandate",
+            "recent": "Recent proposals"
+        },
+        "labels": {
+            "deadline": "Deadline",
+            "updated": "Updated"
+        },
+        "actions": {
+            "view-all-voting": "View all proposals to vote on",
+            "view-all-mandate": "View all proposals to mandate",
+            "view-all": "View all proposals"
+        },
         "meta": {
             "title": "Welcome to Essaimons-V1 - Your Full-Stack Starter Solution",
             "description": "Get started quickly with Essaimons-V1, a powerful full-stack starter template combining Adonis backend and Svelte frontend. Build your projects faster and smarter.",
