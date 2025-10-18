@@ -20,6 +20,8 @@
     let channels = $state<Array<{ id: string; name: string }>>([]);
     let isLoadingGuilds = $state(false);
     let isLoadingChannels = $state(false);
+    let successMessage = $state<string | null>(null);
+    let errorMessage = $state<string | null>(null);
 
     const loadGuilds = async () => {
         if (!botToken) return;
@@ -66,6 +68,30 @@
             loadChannels();
         }
     });
+
+    const handleSubmit = async () => {
+        isSubmitting = true;
+        successMessage = null;
+        errorMessage = null;
+
+        try {
+            const response = await wrappedFetch('/admin/discord', {
+                method: 'POST',
+                body: {
+                    enabled,
+                    botToken,
+                    guildId,
+                    defaultChannelId,
+                },
+            });
+
+            successMessage = response?.message || 'Paramètres enregistrés avec succès';
+        } catch (error: any) {
+            errorMessage = error?.message || "Erreur lors de l'enregistrement";
+        } finally {
+            isSubmitting = false;
+        }
+    };
 </script>
 
 <Meta title="Discord Settings - Admin" description="Configure Discord integration settings" keywords={['discord', 'settings', 'admin']} />
@@ -74,104 +100,99 @@
     <Title title="Paramètres Discord" />
 
     <div class="mt-8 rounded-lg border bg-card p-6">
-        <form
-            method="POST"
-            use:enhance={() => {
-                isSubmitting = true;
-                return async ({ update }) => {
-                    await update();
-                    isSubmitting = false;
-                };
-            }}
-        >
-            <div class="space-y-6">
-                <!-- Enable/Disable Toggle -->
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-lg font-medium">Activer l'intégration Discord</h3>
-                        <p class="text-sm text-muted-foreground">Permet de créer des événements Discord directement depuis l'application</p>
-                    </div>
-                    <Switch bind:checked={enabled} name="enabled" value={enabled ? 'true' : 'false'} label="" />
+        <div class="space-y-6">
+            <!-- Enable/Disable Toggle -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-medium">Activer l'intégration Discord</h3>
+                    <p class="text-sm text-muted-foreground">Permet de créer des événements Discord directement depuis l'application</p>
                 </div>
-
-                {#if enabled}
-                    <!-- Bot Token -->
-                    <div class="space-y-2">
-                        <label class="text-sm font-medium">
-                            Bot Token
-                            <span class="text-red-600">*</span>
-                        </label>
-                        <div class="flex gap-2">
-                            <Input type="password" name="botToken" bind:value={botToken} placeholder="MTQyMzE0Njg1MjgxMDg4NzE4OA..." required class="flex-1" />
-                            <Button type="button" variant="outline" onclick={loadGuilds} disabled={!botToken || isLoadingGuilds}>
-                                {#if isLoadingGuilds}
-                                    <Loader2 class="size-4 animate-spin" />
-                                {:else}
-                                    Charger les serveurs
-                                {/if}
-                            </Button>
-                        </div>
-                        <p class="text-xs text-muted-foreground">
-                            Token du bot Discord (trouvable dans Discord Developer Portal > Bot > Token)
-                            {#if data.settings?.hasBotToken}
-                                <span class="text-green-600">✓ Token configuré</span>
-                            {/if}
-                        </p>
-                    </div>
-
-                    <!-- Guild ID -->
-                    <div class="space-y-2">
-                        <label class="text-sm font-medium">
-                            Serveur Discord
-                            <span class="text-red-600">*</span>
-                        </label>
-                        {#if guilds.length > 0}
-                            <select name="guildId" bind:value={guildId} class="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm" required>
-                                <option value="">Sélectionnez un serveur</option>
-                                {#each guilds as guild}
-                                    <option value={guild.id}>{guild.name}</option>
-                                {/each}
-                            </select>
-                        {:else}
-                            <Input type="text" name="guildId" bind:value={guildId} placeholder="1234567890123456789" required />
-                        {/if}
-                        <p class="text-xs text-muted-foreground">ID du serveur Discord où créer les événements</p>
-                    </div>
-
-                    <!-- Default Channel ID -->
-                    <div class="space-y-2">
-                        <label class="text-sm font-medium">Canal vocal par défaut</label>
-                        {#if channels.length > 0}
-                            <select name="defaultChannelId" bind:value={defaultChannelId} class="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm">
-                                <option value="">Aucun canal par défaut</option>
-                                {#each channels as channel}
-                                    <option value={channel.id}>{channel.name}</option>
-                                {/each}
-                            </select>
-                        {:else}
-                            <Input type="text" name="defaultChannelId" bind:value={defaultChannelId} placeholder="1234567890123456789 (optionnel)" />
-                        {/if}
-                        <p class="text-xs text-muted-foreground">Canal vocal utilisé par défaut pour les événements</p>
-                    </div>
-                {/if}
-
-                {#if form?.error}
-                    <div class="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-                        {form.error}
-                    </div>
-                {/if}
-
-                <!-- Submit -->
-                <div class="flex justify-end gap-3 border-t pt-4">
-                    <Button type="submit" disabled={isSubmitting || (enabled && !botToken)}>
-                        {#if isSubmitting}
-                            <Loader2 class="mr-2 size-4 animate-spin" />
-                        {/if}
-                        Enregistrer
-                    </Button>
-                </div>
+                <Switch bind:checked={enabled} name="enabled" value={enabled ? 'true' : 'false'} label="" />
             </div>
-        </form>
+
+            {#if enabled}
+                <!-- Bot Token -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">
+                        Bot Token
+                        <span class="text-red-600">*</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <Input type="password" name="botToken" bind:value={botToken} placeholder="MTQyMzE0Njg1MjgxMDg4NzE4OA..." required class="flex-1" />
+                        <Button type="button" variant="outline" onclick={loadGuilds} disabled={!botToken || isLoadingGuilds}>
+                            {#if isLoadingGuilds}
+                                <Loader2 class="size-4 animate-spin" />
+                            {:else}
+                                Charger les serveurs
+                            {/if}
+                        </Button>
+                    </div>
+                    <p class="text-xs text-muted-foreground">
+                        Token du bot Discord (trouvable dans Discord Developer Portal > Bot > Token)
+                        {#if data.settings?.hasBotToken}
+                            <span class="text-green-600">✓ Token configuré</span>
+                        {/if}
+                    </p>
+                </div>
+
+                <!-- Guild ID -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">
+                        Serveur Discord
+                        <span class="text-red-600">*</span>
+                    </label>
+                    {#if guilds.length > 0}
+                        <select name="guildId" bind:value={guildId} class="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm" required>
+                            <option value="">Sélectionnez un serveur</option>
+                            {#each guilds as guild}
+                                <option value={guild.id}>{guild.name}</option>
+                            {/each}
+                        </select>
+                    {:else}
+                        <Input type="text" name="guildId" bind:value={guildId} placeholder="1234567890123456789" required />
+                    {/if}
+                    <p class="text-xs text-muted-foreground">ID du serveur Discord où créer les événements</p>
+                </div>
+
+                <!-- Default Channel ID -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Canal vocal par défaut</label>
+                    {#if channels.length > 0}
+                        <select name="defaultChannelId" bind:value={defaultChannelId} class="w-full rounded-md border border-border/60 bg-background px-3 py-2 text-sm">
+                            <option value="">Aucun canal par défaut</option>
+                            {#each channels as channel}
+                                <option value={channel.id}>{channel.name}</option>
+                            {/each}
+                        </select>
+                    {:else}
+                        <Input type="text" name="defaultChannelId" bind:value={defaultChannelId} placeholder="1234567890123456789 (optionnel)" />
+                    {/if}
+                    <p class="text-xs text-muted-foreground">Canal vocal utilisé par défaut pour les événements</p>
+                </div>
+            {/if}
+
+            {#if successMessage}
+                <div class="rounded-md border border-green-500/50 bg-green-500/10 p-4 text-sm text-green-700 dark:text-green-400">
+                    {successMessage}
+                </div>
+            {/if}
+
+            {#if errorMessage}
+                <div class="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+                    {errorMessage}
+                </div>
+            {/if}
+
+            <!-- Submit -->
+            <div class="flex justify-end gap-3 border-t pt-4">
+                <Button onclick={handleSubmit} disabled={isSubmitting || (enabled && !botToken)}>
+                    {#if isSubmitting}
+                        <Loader2 class="mr-2 size-4 animate-spin" />
+                    {/if}
+                    Enregistrer
+                </Button>
+            </div>
+        </div>
     </div>
 
     <!-- Instructions -->
