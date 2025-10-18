@@ -266,7 +266,7 @@
         revocationVoteId?: string;
     };
 
-    const getDeliverableProcedure = (deliverable: PropositionMandate['deliverables'][number]): DeliverableProcedureMeta | null => {
+    const getDeliverableProcedure = (deliverable: NonNullable<PropositionMandate['deliverables']>[number]): DeliverableProcedureMeta | null => {
         const metadata = deliverable.metadata as Record<string, unknown> | undefined;
         const raw = metadata && typeof metadata === 'object' ? (metadata as any).procedure : null;
         if (!raw || typeof raw !== 'object') {
@@ -275,8 +275,8 @@
         return raw as DeliverableProcedureMeta;
     };
 
-    const countNonConformEvaluations = (deliverable: PropositionMandate['deliverables'][number]): number => {
-        return (deliverable.evaluations ?? []).filter((evaluation) => evaluation.verdict === DeliverableVerdictEnum.NON_COMPLIANT).length;
+    const countNonConformEvaluations = (deliverable: NonNullable<PropositionMandate['deliverables']>[number]): number => {
+        return (deliverable.evaluations ?? []).filter((evaluation: any) => evaluation.verdict === DeliverableVerdictEnum.NON_COMPLIANT).length;
     };
 
     const HTML_TAG_PATTERN = /<\s*\/?\s*[a-zA-Z][^>]*>/;
@@ -371,31 +371,31 @@
     const translateEventType = (type: PropositionEventTypeEnum): string => {
         const key = `proposition-detail.events.type.${type}` as keyof typeof m;
         const translator = m[key];
-        return typeof translator === 'function' ? translator() : type;
+        return typeof translator === 'function' ? (translator as () => string)() : type;
     };
 
     const translateVotePhase = (phase: PropositionVotePhaseEnum): string => {
         const key = `proposition-detail.votes.phase.${phase}` as keyof typeof m;
         const translator = m[key];
-        return typeof translator === 'function' ? translator() : phase;
+        return typeof translator === 'function' ? (translator as () => string)() : phase;
     };
 
     const translateVoteMethod = (method: PropositionVoteMethodEnum): string => {
         const key = `proposition-detail.votes.method-label.${method}` as keyof typeof m;
         const translator = m[key];
-        return typeof translator === 'function' ? translator() : method;
+        return typeof translator === 'function' ? (translator as () => string)() : method;
     };
 
     const translateMandateStatus = (status: MandateStatusEnum): string => {
         const key = `proposition-detail.mandates.status.${status}` as keyof typeof m;
         const translator = m[key];
-        return typeof translator === 'function' ? translator() : status;
+        return typeof translator === 'function' ? (translator as () => string)() : status;
     };
 
     const translateStatus = (status: PropositionStatusEnum): string => {
         const key = `proposition-detail.status.label.${status}` as keyof typeof m;
         const translator = m[key];
-        return typeof translator === 'function' ? translator() : status;
+        return typeof translator === 'function' ? (translator as () => string)() : status;
     };
 
     const normalizeOptional = (value?: string | null): string | undefined => {
@@ -788,8 +788,9 @@
         if (!section || section === 'general') {
             return null;
         }
-        const key = `proposition-detail.comments.sections.${section}`;
-        return m[key as keyof typeof m]?.() ?? null;
+        const key = `proposition_detail_comments_sections_${section}` as keyof typeof m;
+        const translator = m[key];
+        return typeof translator === 'function' ? (translator as () => string)() : null;
     };
 
     const canCommentOnSection = $derived(currentStatus === PropositionStatusEnum.CLARIFY || currentStatus === PropositionStatusEnum.AMEND);
@@ -2185,7 +2186,9 @@
                         <p class="font-semibold text-foreground">{phase.label}</p>
                         <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{getPhaseStatusLabel(phase)}</span>
                     </div>
-                    <p class="mt-2 text-muted-foreground">{formatDate(phase.deadline)}</p>
+                    {#if phase.deadline}
+                        <p class="mt-2 text-muted-foreground">{formatDate(phase.deadline)}</p>
+                    {/if}
                     {#if phase.extra?.deliverableCount}
                         <p class="mt-2 text-xs text-muted-foreground">
                             {m['proposition-detail.timeline.deliverables']({ count: phase.extra.deliverableCount })}
@@ -2678,7 +2681,9 @@
                                     </div>
                                     {#if getVoteTimeRemaining(vote, currentTime)}
                                         {@const timeInfo = getVoteTimeRemaining(vote, currentTime)}
-                                        <p class="mt-1 text-xs font-medium {timeInfo.color}">{timeInfo.text}</p>
+                                        {#if timeInfo}
+                                            <p class="mt-1 text-xs font-medium {timeInfo.color}">{timeInfo.text}</p>
+                                        {/if}
                                     {/if}
                                 </div>
                                 <div class="flex items-center gap-2">
@@ -2762,7 +2767,7 @@
                                             </Button>
                                         {:else if vote.method === PropositionVoteMethodEnum.MULTI_CHOICE}
                                             <!-- Multi-choice: checkboxes with max selections -->
-                                            <p class="mb-2 text-xs text-muted-foreground">Sélectionnez jusqu'à {vote.maxSelections} option{vote.maxSelections > 1 ? 's' : ''}</p>
+                                            <p class="mb-2 text-xs text-muted-foreground">Sélectionnez jusqu'à {vote.maxSelections ?? 1} option{(vote.maxSelections ?? 1) > 1 ? 's' : ''}</p>
                                             <div class="space-y-2">
                                                 {#each vote.options as option (option.id)}
                                                     {@const selected = ballotSelections[vote.id] || []}
@@ -3034,7 +3039,11 @@
                                                                           : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200'
                                                                 )}
                                                             >
-                                                                {m[`proposition-detail.mandates.deliverables.status.${deliverable.status}` as keyof typeof m]()}
+                                                                {(() => {
+                                                                    const key = `proposition_detail_mandates_deliverables_status_${deliverable.status}` as keyof typeof m;
+                                                                    const translator = m[key];
+                                                                    return typeof translator === 'function' ? (translator as () => string)() : deliverable.status;
+                                                                })()}
                                                             </span>
                                                             <a
                                                                 class={cn(buttonVariants({ variant: 'outline', size: 'icon' }), 'size-8')}
@@ -3054,7 +3063,11 @@
                                                     {#if getDeliverableProcedure(deliverable)}
                                                         {@const procedure = getDeliverableProcedure(deliverable)}
                                                         <p class="mt-2 text-xs text-muted-foreground">
-                                                            {m[`proposition-detail.mandates.deliverables.procedure.${procedure?.status ?? 'pending'}` as keyof typeof m]()}
+                                                            {(() => {
+                                                                const key = `proposition_detail_mandates_deliverables_procedure_${procedure?.status ?? 'pending'}` as keyof typeof m;
+                                                                const translator = m[key];
+                                                                return typeof translator === 'function' ? (translator as () => string)() : (procedure?.status ?? 'pending');
+                                                            })()}
                                                         </p>
                                                     {/if}
                                                     <p class="mt-2 text-xs text-muted-foreground">
@@ -3235,7 +3248,7 @@
                 </ul>
             {/if}
             <DialogFooter class="flex justify-end gap-2">
-                <DialogClose asChild>
+                <DialogClose>
                     <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                 </DialogClose>
                 <Button type="submit" disabled={isClarificationSubmitting} class="gap-2">
@@ -3278,7 +3291,7 @@
                 </ul>
             {/if}
             <DialogFooter class="flex justify-end gap-2">
-                <DialogClose asChild>
+                <DialogClose>
                     <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                 </DialogClose>
                 <Button type="submit" disabled={isClarificationReplySubmitting} class="gap-2">
@@ -3322,7 +3335,7 @@
                 </ul>
             {/if}
             <DialogFooter class="flex justify-end gap-2">
-                <DialogClose asChild>
+                <DialogClose>
                     <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                 </DialogClose>
                 <Button type="submit" disabled={isClarificationEditSubmitting} class="gap-2">
@@ -3365,7 +3378,7 @@
                 </ul>
             {/if}
             <DialogFooter class="flex justify-end gap-2">
-                <DialogClose asChild>
+                <DialogClose>
                     <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                 </DialogClose>
                 <Button type="submit" disabled={isAmendmentReplySubmitting} class="gap-2">
@@ -3409,7 +3422,7 @@
                 </ul>
             {/if}
             <DialogFooter class="flex justify-end gap-2">
-                <DialogClose asChild>
+                <DialogClose>
                     <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                 </DialogClose>
                 <Button type="submit" disabled={isAmendmentEditSubmitting} class="gap-2">
@@ -3521,7 +3534,7 @@
                 {/if}
             </div>
             <DialogFooter class="flex flex-wrap items-center justify-between gap-2">
-                <DialogClose asChild>
+                <DialogClose>
                     <Button type="button" variant="ghost">{m['common.close']()}</Button>
                 </DialogClose>
                 {#if isEventEditableByCurrentUser(selectedEvent)}
@@ -3594,7 +3607,7 @@
                 </DialogDescription>
             </DialogHeader>
             <DialogFooter class="flex justify-end gap-2">
-                <DialogClose asChild>
+                <DialogClose>
                     <Button type="button" variant="outline" disabled={isClarificationDeleteSubmitting}>
                         {m['common.actions.cancel']()}
                     </Button>
@@ -3640,7 +3653,7 @@
             {/if}
         </div>
         <DialogFooter>
-            <DialogClose asChild>
+            <DialogClose>
                 <Button type="button" variant="outline">{m['common.actions.cancel']()}</Button>
             </DialogClose>
             <Button type="button" onclick={submitDeliverable} disabled={isDeliverableSubmitting} class="gap-2">
@@ -3684,7 +3697,7 @@
             {/if}
         </div>
         <DialogFooter>
-            <DialogClose asChild>
+            <DialogClose>
                 <Button type="button" variant="outline">{m['common.actions.cancel']()}</Button>
             </DialogClose>
             <Button type="button" onclick={submitEvaluation} disabled={isEvaluationSubmitting} class="gap-2">
@@ -3723,7 +3736,7 @@
             {/if}
         </div>
         <DialogFooter>
-            <DialogClose asChild>
+            <DialogClose>
                 <Button type="button" variant="outline">Annuler</Button>
             </DialogClose>
             <Button type="button" onclick={submitApplication} disabled={isApplicationSubmitting} class="gap-2">
@@ -3769,7 +3782,7 @@
                 </ul>
             {/if}
             <DialogFooter class="flex justify-end gap-2">
-                <DialogClose asChild>
+                <DialogClose>
                     <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                 </DialogClose>
                 <Button type="submit" disabled={isAmendmentSubmitting} class="gap-2">
@@ -3864,7 +3877,7 @@
                     {/if}
                 </Button>
                 <div class="flex gap-2">
-                    <DialogClose asChild>
+                    <DialogClose>
                         <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                     </DialogClose>
                     <Button type="submit" disabled={isEventSubmitting} class="gap-2">
@@ -3979,7 +3992,7 @@
                 </ul>
             {/if}
             <DialogFooter class="flex justify-end gap-2">
-                <DialogClose asChild>
+                <DialogClose>
                     <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                 </DialogClose>
                 <Button type="submit" disabled={isVoteSubmitting} class="gap-2">
@@ -4051,7 +4064,7 @@
                 </ul>
             {/if}
             <DialogFooter class="flex justify-end gap-2">
-                <DialogClose asChild>
+                <DialogClose>
                     <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                 </DialogClose>
                 <Button type="submit" disabled={isMandateSubmitting}>
@@ -4094,7 +4107,7 @@
                 </ul>
             {/if}
             <DialogFooter class="flex justify-end gap-2">
-                <DialogClose asChild>
+                <DialogClose>
                     <Button type="button" variant="ghost">{m['common.cancel']()}</Button>
                 </DialogClose>
                 <Button type="submit" disabled={isStatusSubmitting}>{m['proposition-detail.status.dialog.submit']()}</Button>

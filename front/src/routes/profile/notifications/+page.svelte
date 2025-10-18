@@ -73,12 +73,14 @@
 
         saving = true;
         try {
-            const bulkPayload = settings.map((setting) => ({
-                type: setting.type || setting.notificationType,
-                inAppEnabled: setting.inAppEnabled,
-                emailEnabled: setting.emailEnabled,
-                pushEnabled: setting.pushEnabled,
-            }));
+            const bulkPayload = settings
+                .map((setting) => ({
+                    type: setting.type || setting.notificationType,
+                    inAppEnabled: setting.inAppEnabled,
+                    emailEnabled: setting.emailEnabled,
+                    pushEnabled: setting.pushEnabled,
+                }))
+                .filter((payload): payload is { type: string; inAppEnabled: boolean; emailEnabled: boolean; pushEnabled: boolean } => payload.type !== undefined);
 
             await settingsService.bulkUpdate(bulkPayload);
             showToast('Paramètres enregistrés avec succès', 'success');
@@ -95,7 +97,7 @@
 
 <div class="space-y-6">
     <div class="flex items-center justify-between">
-        <Title>{m['profile.notifications.title']()}</Title>
+        <Title title={m['profile.notifications.title']()} />
     </div>
 
     <p class="text-sm text-muted-foreground">
@@ -221,7 +223,11 @@
                             {#if setting}
                                 <tr class="border-t border-border hover:bg-muted/30 transition-colors">
                                     <td class="px-6 py-4 text-sm text-foreground">
-                                        {m[`notifications.types.${notifType.key}`]?.() || notifType.key}
+                                        {(() => {
+                                            const key = `notifications_types_${notifType.key}` as keyof typeof m;
+                                            const translator = m[key];
+                                            return typeof translator === 'function' ? (translator as () => string)() : notifType.key;
+                                        })()}
                                     </td>
                                     <td class="px-4 py-4 text-center">
                                         <button

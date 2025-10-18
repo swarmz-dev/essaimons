@@ -41,7 +41,7 @@
     const translateStatus = (status: PropositionStatusEnum | string): string => {
         const key = `proposition-detail.status.label.${status}` as keyof typeof m;
         const translator = m[key];
-        return typeof translator === 'function' ? translator() : status;
+        return typeof translator === 'function' ? (translator as () => string)() : status;
     };
 
     const statusOptions: MultiSelectOption[] = $derived((data.filters.statuses ?? []).map((status: PropositionStatusEnum) => ({ value: status, label: translateStatus(status) })));
@@ -121,7 +121,7 @@
     const getPhaseLabel = (phase: string): string => {
         const key = `proposition-detail.dates.${phase}` as keyof typeof m;
         const translator = m[key];
-        return typeof translator === 'function' ? translator() : phase;
+        return typeof translator === 'function' ? (translator as () => string)() : phase;
     };
 
     const updateQuery = async (updates: { search?: string; categories?: string[]; statuses?: string[]; page?: number; limit?: number; view?: 'card' | 'table' }): Promise<void> => {

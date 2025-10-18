@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
-
     export type TabItem = {
         id: string;
         label: string;
@@ -8,11 +6,14 @@
         badge?: string;
     };
 
-    export let items: TabItem[] = [];
-    export let value: string;
-    export let ariaLabel: string | null = null;
+    type Props = {
+        items: TabItem[];
+        value: string;
+        ariaLabel?: string | null;
+        onchange?: (value: string) => void;
+    };
 
-    const dispatch = createEventDispatcher<{ change: string }>();
+    let { items = [], value = $bindable(), ariaLabel = null, onchange }: Props = $props();
 
     let tabButtons: Array<HTMLButtonElement | null> = [];
 
@@ -70,7 +71,7 @@
             return;
         }
         value = item.id;
-        dispatch('change', item.id);
+        onchange?.(item.id);
     };
 
     const handleKeydown = (event: KeyboardEvent, index: number, item: TabItem): void => {
@@ -118,8 +119,8 @@
             aria-controls={`panel-${item.id}`}
             aria-disabled={item.disabled ? 'true' : 'false'}
             disabled={item.disabled}
-            on:click={() => selectTab(item)}
-            on:keydown={(event) => handleKeydown(event, index, item)}
+            onclick={() => selectTab(item)}
+            onkeydown={(event) => handleKeydown(event, index, item)}
         >
             <span>{item.label}</span>
             {#if item.badge}

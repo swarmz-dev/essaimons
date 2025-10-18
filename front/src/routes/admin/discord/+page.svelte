@@ -68,7 +68,7 @@
     });
 </script>
 
-<Meta title="Discord Settings - Admin" />
+<Meta title="Discord Settings - Admin" description="Configure Discord integration settings" keywords={['discord', 'settings', 'admin']} />
 
 <div class="container mx-auto max-w-4xl py-8">
     <Title title="Paramètres Discord" />
@@ -91,7 +91,7 @@
                         <h3 class="text-lg font-medium">Activer l'intégration Discord</h3>
                         <p class="text-sm text-muted-foreground">Permet de créer des événements Discord directement depuis l'application</p>
                     </div>
-                    <Switch bind:checked={enabled} name="enabled" value={enabled ? 'true' : 'false'} />
+                    <Switch bind:checked={enabled} name="enabled" value={enabled ? 'true' : 'false'} label="" />
                 </div>
 
                 {#if enabled}
@@ -183,7 +183,7 @@
             </li>
             <li>
                 2. Copiez le <strong>Bot Token</strong>
-                 depuis l'onglet "Bot"
+                depuis l'onglet "Bot"
             </li>
             <li>
                 3. Invitez le bot sur votre serveur avec les permissions : <code class="rounded bg-muted px-1">Manage Events</code>

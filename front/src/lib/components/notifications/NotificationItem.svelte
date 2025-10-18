@@ -50,49 +50,26 @@
     }
 
     function getNotificationTitle(): string {
-        // Map title keys to i18n functions
-        const titleMap: Record<string, () => string> = {
-            'notifications.status_transition_to_clarify_title': m.notifications_status_transition_to_clarify_title,
-            'notifications.status_transition_to_amend_title': m.notifications_status_transition_to_amend_title,
-            'notifications.status_transition_to_vote_title': m.notifications_status_transition_to_vote_title,
-            'notifications.status_transition_to_mandate_title': m.notifications_status_transition_to_mandate_title,
-            'notifications.status_transition_to_evaluate_title': m.notifications_status_transition_to_evaluate_title,
-            'notifications.status_transition_to_archived_title': m.notifications_status_transition_to_archived_title,
-            'notifications.mandate_assigned_title': m.notifications_mandate_assigned_title,
-            'notifications.mandate_revoked_title': m.notifications_mandate_revoked_title,
-            'notifications.deliverable_uploaded_title': m.notifications_deliverable_uploaded_title,
-            'notifications.deliverable_evaluated_title': m.notifications_deliverable_evaluated_title,
-            'notifications.comment_added_title': m.notifications_comment_added_title,
-            'notifications.clarification_added_title': m.notifications_clarification_added_title,
-            'notifications.clarification_updated_title': m.notifications_clarification_updated_title,
-            'notifications.clarification_deleted_title': m.notifications_clarification_deleted_title,
-            'notifications.exchange_scheduled_title': m.notifications_exchange_scheduled_title,
-        };
-
-        return titleMap[notification.titleKey]?.() || notification.titleKey;
+        // Use dynamic key access since paraglide exports flat keys with dots
+        const key = notification.titleKey as keyof typeof m;
+        const translator = m[key];
+        if (typeof translator === 'function') {
+            return (translator as () => string)();
+        }
+        return notification.titleKey;
     }
 
     function getNotificationMessage(): string {
-        // Map message keys to i18n functions
-        const messageMap: Record<string, () => string> = {
-            'notifications.status_transition_to_clarify_message': m.notifications_status_transition_to_clarify_message,
-            'notifications.status_transition_to_amend_message': m.notifications_status_transition_to_amend_message,
-            'notifications.status_transition_to_vote_message': m.notifications_status_transition_to_vote_message,
-            'notifications.status_transition_to_mandate_message': m.notifications_status_transition_to_mandate_message,
-            'notifications.status_transition_to_evaluate_message': m.notifications_status_transition_to_evaluate_message,
-            'notifications.status_transition_to_archived_message': m.notifications_status_transition_to_archived_message,
-            'notifications.mandate_assigned_message': m.notifications_mandate_assigned_message,
-            'notifications.mandate_revoked_message': m.notifications_mandate_revoked_message,
-            'notifications.deliverable_uploaded_message': m.notifications_deliverable_uploaded_message,
-            'notifications.deliverable_evaluated_message': m.notifications_deliverable_evaluated_message,
-            'notifications.comment_added_message': m.notifications_comment_added_message,
-            'notifications.clarification_added_message': m.notifications_clarification_added_message,
-            'notifications.clarification_updated_message': m.notifications_clarification_updated_message,
-            'notifications.clarification_deleted_message': m.notifications_clarification_deleted_message,
-            'notifications.exchange_scheduled_message': m.notifications_exchange_scheduled_message,
-        };
+        // Use dynamic key access since paraglide exports flat keys with dots
+        const key = notification.messageKey as keyof typeof m;
+        const translator = m[key];
+        let template: string;
 
-        const template = messageMap[notification.messageKey]?.() || notification.messageKey;
+        if (typeof translator === 'function') {
+            template = (translator as () => string)();
+        } else {
+            template = notification.messageKey;
+        }
 
         // Simple template replacement
         return template.replace(/\{(\w+)\}/g, (match: string, key: string) => {

@@ -27,7 +27,7 @@
     let lastValue = '';
     let showHtmlSource = $state(false);
     let htmlSource = $state('');
-    let htmlTextarea: HTMLTextAreaElement | null = null;
+    let htmlTextarea: HTMLTextAreaElement | null = $state(null);
 
     const getPlainTextLength = (html: string): number => {
         if (!html) {
@@ -104,10 +104,11 @@
         });
 
         // Handle paste without formatting (Ctrl+Shift+V or Cmd+Shift+V)
-        quillInstance.root.addEventListener('paste', (e: ClipboardEvent) => {
-            if (e.shiftKey) {
+        quillInstance.root.addEventListener('paste', (e: Event) => {
+            const clipboardEvent = e as ClipboardEvent & { shiftKey?: boolean };
+            if (clipboardEvent.shiftKey) {
                 e.preventDefault();
-                const text = e.clipboardData?.getData('text/plain');
+                const text = clipboardEvent.clipboardData?.getData('text/plain');
                 if (text) {
                     const selection = quillInstance.getSelection();
                     if (selection) {

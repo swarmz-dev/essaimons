@@ -69,6 +69,10 @@
     function startEdit(template: EmailTemplate) {
         editingId = template.id;
         editForm = JSON.parse(JSON.stringify(template)); // Deep copy
+        // Ensure objects exist
+        editForm.subjects = editForm.subjects || {};
+        editForm.htmlContents = editForm.htmlContents || {};
+        editForm.textContents = editForm.textContents || {};
         activeLanguage = 'en';
     }
 
@@ -143,14 +147,14 @@
                             </div>
 
                             <!-- Language Tabs -->
-                            <Tabs items={languageTabs} value={activeLanguage} on:change={(e) => handleLanguageChange(e.detail)} ariaLabel="Select language for template editing" />
+                            <Tabs items={languageTabs} bind:value={activeLanguage} ariaLabel="Select language for template editing" onchange={handleLanguageChange} />
 
                             <div class="space-y-4">
                                 <div>
                                     <label class="text-sm font-medium">
                                         {m['admin.email_templates.subject']()} ({activeLanguage.toUpperCase()})
                                     </label>
-                                    <input type="text" bind:value={editForm.subjects[activeLanguage]} class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                                    <input type="text" bind:value={editForm.subjects![activeLanguage]} class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
                                 </div>
 
                                 <div>
@@ -158,7 +162,7 @@
                                         {m['admin.email_templates.html_content']()} ({activeLanguage.toUpperCase()})
                                     </label>
                                     <textarea
-                                        bind:value={editForm.htmlContents[activeLanguage]}
+                                        bind:value={editForm.htmlContents![activeLanguage]}
                                         rows="15"
                                         class="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-xs"
                                     ></textarea>
@@ -172,7 +176,7 @@
                                         {m['admin.email_templates.text_content']()} ({activeLanguage.toUpperCase()})
                                     </label>
                                     <textarea
-                                        bind:value={editForm.textContents[activeLanguage]}
+                                        bind:value={editForm.textContents![activeLanguage]}
                                         rows="8"
                                         class="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-xs"
                                     ></textarea>

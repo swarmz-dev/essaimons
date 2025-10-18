@@ -1,11 +1,11 @@
 import { notificationStore } from '$lib/stores/notificationStore.svelte';
 import { toastStore } from '$lib/stores/toastStore.svelte';
 import type { Notification } from '$lib/services/notificationService';
-import type { Transmit, TransmitSubscription } from '@adonisjs/transmit-client';
+import type { Transmit, Subscription } from '@adonisjs/transmit-client';
 import * as m from '$lib/paraglide/messages';
 
 export class NotificationSSEService {
-    private subscription: TransmitSubscription | null = null;
+    private subscription: Subscription | null = null;
 
     constructor(private transmit: Transmit) {}
 
@@ -33,11 +33,12 @@ export class NotificationSSEService {
             if (payload.type === 'notification' && payload.data) {
                 const notification: Notification = {
                     id: payload.data.id,
-                    notificationId: payload.data.notificationId,
                     type: payload.data.type,
                     titleKey: payload.data.titleKey,
                     messageKey: payload.data.messageKey,
                     data: payload.data.data,
+                    entityType: payload.data.entityType || null,
+                    entityId: payload.data.entityId || null,
                     actionUrl: payload.data.actionUrl,
                     isRead: payload.data.isRead,
                     createdAt: payload.data.createdAt,
@@ -54,12 +55,13 @@ export class NotificationSSEService {
                 const titleTranslation = m[titleKey as keyof typeof m];
                 const messageTranslation = m[messageKey as keyof typeof m];
 
+                const viewLabel = m['notifications.view' as keyof typeof m];
                 toastStore.show({
                     type: 'notification',
-                    title: typeof titleTranslation === 'function' ? titleTranslation() : notification.titleKey,
-                    message: typeof messageTranslation === 'function' ? messageTranslation(notification.data) : notification.messageKey,
-                    actionUrl: notification.actionUrl,
-                    actionLabel: m.notifications_view ? m.notifications_view() : 'Voir',
+                    title: typeof titleTranslation === 'function' ? (titleTranslation as () => string)() : notification.titleKey,
+                    message: typeof messageTranslation === 'function' ? (messageTranslation as (data: any) => string)(notification.data) : notification.messageKey,
+                    actionUrl: notification.actionUrl || undefined,
+                    actionLabel: typeof viewLabel === 'function' ? (viewLabel as () => string)() : 'Voir',
                     duration: 5000,
                 });
             }
