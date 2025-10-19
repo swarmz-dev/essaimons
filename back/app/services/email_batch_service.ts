@@ -5,10 +5,15 @@ import Notification from '#models/notification';
 import PendingEmailNotification from '#models/pending_email_notification';
 import { EmailFrequencyEnum } from '#types/enum/email_frequency_enum';
 import BrevoMailService from '#services/brevo_mail_service';
+import EmailTemplateService from '#services/email_template_service';
+import i18nManager from '@adonisjs/i18n/services/main';
 
 @inject()
 export default class EmailBatchService {
-    constructor(private readonly brevoMailService: BrevoMailService) {}
+    constructor(
+        private readonly brevoMailService: BrevoMailService,
+        private readonly emailTemplateService: EmailTemplateService
+    ) {}
 
     /**
      * Queue an email notification based on user's email frequency preference
@@ -112,16 +117,19 @@ export default class EmailBatchService {
      * Send a single notification email
      */
     private async sendSingleNotificationEmail(user: User, notification: Notification): Promise<void> {
-        // TODO: Implement Brevo template for single notification
-        // For now, send a simple email
+        // Default to French locale for emails
+        const locale = 'fr';
+        const i18n = i18nManager.locale(locale);
+
+        // Render the email using the template service
+        const { subject, htmlContent, textContent } = await this.emailTemplateService.renderSingleNotification(notification, i18n, locale);
+
+        // Send the email with both HTML and text versions
         await this.brevoMailService.sendTransactionalEmail({
             to: [{ email: user.email, name: user.username }],
-            subject: `Notification: ${notification.titleKey}`,
-            htmlContent: `
-                <h1>${notification.titleKey}</h1>
-                <p>${notification.bodyKey}</p>
-                ${notification.actionUrl ? `<p><a href="${process.env.PUBLIC_APP_URI}${notification.actionUrl}">View</a></p>` : ''}
-            `,
+            subject,
+            htmlContent,
+            textContent,
         });
     }
 
@@ -129,27 +137,19 @@ export default class EmailBatchService {
      * Send a digest email with multiple notifications
      */
     private async sendDigestEmail(user: User, notifications: Notification[]): Promise<void> {
-        const notificationList = notifications
-            .map(
-                (n) => `
-            <li>
-                <strong>${n.titleKey}</strong>: ${n.bodyKey}
-                ${n.actionUrl ? `<a href="${process.env.PUBLIC_APP_URI}${n.actionUrl}">View</a>` : ''}
-            </li>
-        `
-            )
-            .join('');
+        // Default to French locale for emails
+        const locale = 'fr';
+        const i18n = i18nManager.locale(locale);
 
+        // Render the email using the template service
+        const { subject, htmlContent, textContent } = await this.emailTemplateService.renderDigestNotifications(notifications, i18n, locale);
+
+        // Send the email with both HTML and text versions
         await this.brevoMailService.sendTransactionalEmail({
             to: [{ email: user.email, name: user.username }],
-            subject: `You have ${notifications.length} new notifications`,
-            htmlContent: `
-                <h1>Notification Digest</h1>
-                <p>You have ${notifications.length} new notifications:</p>
-                <ul>
-                    ${notificationList}
-                </ul>
-            `,
+            subject,
+            htmlContent,
+            textContent,
         });
     }
 

@@ -195,5 +195,71 @@
                 "default": "Error creating Discord event"
             }
         }
+    },
+    "notification": {
+        "status-transition": {
+            "title": "Proposal status changed",
+            "body": "The proposal \"{propositionTitle}\" has been changed to {newStatus}"
+        },
+        "mandate-assigned": {
+            "title": "New mandate assigned",
+            "body": "You have been assigned to the mandate for proposal \"{propositionTitle}\""
+        },
+        "mandate-revoked": {
+            "title": "Mandate revoked",
+            "body": "Your mandate for proposal \"{propositionTitle}\" has been revoked"
+        },
+        "deliverable-uploaded": {
+            "title": "New deliverable uploaded",
+            "body": "{username} uploaded a deliverable for \"{propositionTitle}\""
+        },
+        "deliverable-evaluated": {
+            "title": "Deliverable evaluated",
+            "body": "Your deliverable for \"{propositionTitle}\" has been evaluated"
+        },
+        "deadline-approaching": {
+            "title": "Deadline approaching",
+            "body": "The deadline for \"{propositionTitle}\" is in {days} days"
+        },
+        "nonconformity-threshold": {
+            "title": "Non-conformity threshold reached",
+            "body": "The proposal \"{propositionTitle}\" has reached the non-conformity threshold"
+        },
+        "procedure-opened": {
+            "title": "Procedure opened",
+            "body": "A procedure has been opened for proposal \"{propositionTitle}\""
+        },
+        "revocation-vote-opened": {
+            "title": "Revocation vote opened",
+            "body": "A revocation vote has been opened for \"{propositionTitle}\""
+        },
+        "comment-added": {
+            "title": "New comment",
+            "body": "{username} commented on proposal \"{propositionTitle}\""
+        },
+        "clarification-added": {
+            "title": "New clarification",
+            "body": "{username} added a clarification to \"{propositionTitle}\""
+        },
+        "clarification-updated": {
+            "title": "Clarification updated",
+            "body": "{username} updated a clarification for \"{propositionTitle}\""
+        },
+        "clarification-deleted": {
+            "title": "Clarification deleted",
+            "body": "{username} deleted a clarification from \"{propositionTitle}\""
+        },
+        "exchange-scheduled": {
+            "title": "Exchange scheduled",
+            "body": "An exchange has been scheduled for \"{propositionTitle}\" on {date}"
+        },
+        "proposition-new-comment": {
+            "title": "New comment",
+            "body": "{username} commented on your proposal \"{propositionTitle}\""
+        },
+        "proposition-validated": {
+            "title": "Proposal validated",
+            "body": "Your proposal \"{propositionTitle}\" has been validated"
+        }
     }
 }

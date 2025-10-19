@@ -195,5 +195,71 @@
                 "default": "Erreur lors de la création de l'événement Discord"
             }
         }
+    },
+    "notification": {
+        "status-transition": {
+            "title": "Changement de statut de proposition",
+            "body": "La proposition \"{propositionTitle}\" est passée au statut {newStatus}"
+        },
+        "mandate-assigned": {
+            "title": "Nouveau mandat assigné",
+            "body": "Vous avez été assigné au mandat pour la proposition \"{propositionTitle}\""
+        },
+        "mandate-revoked": {
+            "title": "Mandat révoqué",
+            "body": "Votre mandat pour la proposition \"{propositionTitle}\" a été révoqué"
+        },
+        "deliverable-uploaded": {
+            "title": "Nouveau livrable déposé",
+            "body": "{username} a déposé un livrable pour \"{propositionTitle}\""
+        },
+        "deliverable-evaluated": {
+            "title": "Livrable évalué",
+            "body": "Votre livrable pour \"{propositionTitle}\" a été évalué"
+        },
+        "deadline-approaching": {
+            "title": "Échéance approchant",
+            "body": "L'échéance pour \"{propositionTitle}\" arrive dans {days} jours"
+        },
+        "nonconformity-threshold": {
+            "title": "Seuil de non-conformité atteint",
+            "body": "La proposition \"{propositionTitle}\" a atteint le seuil de non-conformité"
+        },
+        "procedure-opened": {
+            "title": "Procédure ouverte",
+            "body": "Une procédure a été ouverte pour la proposition \"{propositionTitle}\""
+        },
+        "revocation-vote-opened": {
+            "title": "Vote de révocation ouvert",
+            "body": "Un vote de révocation a été ouvert pour \"{propositionTitle}\""
+        },
+        "comment-added": {
+            "title": "Nouveau commentaire",
+            "body": "{username} a commenté la proposition \"{propositionTitle}\""
+        },
+        "clarification-added": {
+            "title": "Nouvelle clarification",
+            "body": "{username} a ajouté une clarification à \"{propositionTitle}\""
+        },
+        "clarification-updated": {
+            "title": "Clarification mise à jour",
+            "body": "{username} a mis à jour une clarification de \"{propositionTitle}\""
+        },
+        "clarification-deleted": {
+            "title": "Clarification supprimée",
+            "body": "{username} a supprimé une clarification de \"{propositionTitle}\""
+        },
+        "exchange-scheduled": {
+            "title": "Échange planifié",
+            "body": "Un échange a été planifié pour \"{propositionTitle}\" le {date}"
+        },
+        "proposition-new-comment": {
+            "title": "Nouveau commentaire",
+            "body": "{username} a commenté votre proposition \"{propositionTitle}\""
+        },
+        "proposition-validated": {
+            "title": "Proposition validée",
+            "body": "Votre proposition \"{propositionTitle}\" a été validée"
+        }
     }
 }
