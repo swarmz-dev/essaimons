@@ -187,6 +187,21 @@
     },
     "home": {
         "title": "Accueil",
+        "sections": {
+            "voting": "Propositions à voter",
+            "my-propositions": "Mes propositions",
+            "mandate": "Propositions à mandater",
+            "recent": "Propositions récentes"
+        },
+        "labels": {
+            "deadline": "Échéance",
+            "updated": "Mise à jour"
+        },
+        "actions": {
+            "view-all-voting": "Voir toutes les propositions à voter",
+            "view-all-mandate": "Voir toutes les propositions à mandater",
+            "view-all": "Voir toutes les propositions"
+        },
         "meta": {
             "title": "Bienvenue sur Essaimons-V1 - Votre solution starter full-stack",
             "description": "Démarrez rapidement avec Essaimons-V1, un template full-stack puissant combinant backend Adonis et frontend Svelte. Construisez vos projets plus vite et mieux.",

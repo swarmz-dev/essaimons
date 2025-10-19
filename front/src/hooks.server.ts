@@ -5,7 +5,10 @@ import type { LanguageCode } from '#lib/stores/languageStore';
 
 const handleParaglide: Handle = ({ event, resolve }): Promise<Response> =>
     paraglideMiddleware(event.request, ({ request, locale }) => {
-        event.request = request;
+        // Don't replace request for POST/PUT/PATCH to avoid body consumption issues
+        if (event.request.method === 'GET' || event.request.method === 'HEAD') {
+            event.request = request;
+        }
 
         return resolve(event, {
             transformPageChunk: ({ html }): string => html.replace('%paraglide.lang%', locale),

@@ -5,11 +5,7 @@
 
     type $$Props = SelectPrimitive.ItemProps;
 
-    let className: $$Props['class'] = undefined;
-    export let value: $$Props['value'];
-    export let label: $$Props['label'] = undefined;
-    export let disabled: $$Props['disabled'] = undefined;
-    export { className as class };
+    let { value, label, disabled, class: className, ...restProps }: Props = $props();
 </script>
 
 <SelectPrimitive.Item

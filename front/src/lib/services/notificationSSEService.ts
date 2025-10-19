@@ -7,7 +7,7 @@ import * as m from '$lib/paraglide/messages';
 type TransmitSubscription = ReturnType<Transmit['subscription']>;
 
 export class NotificationSSEService {
-    private subscription: TransmitSubscription | null = null;
+    private subscription: Subscription | null = null;
 
     constructor(private transmit: Transmit) {}
 
@@ -59,6 +59,7 @@ export class NotificationSSEService {
                 const titleTranslation = getTranslation(notification.titleKey);
                 const messageTranslation = getTranslation(notification.messageKey);
 
+                const viewLabel = m['notifications.view' as keyof typeof m];
                 toastStore.show({
                     type: 'notification',
                     title: typeof titleTranslation === 'function' ? titleTranslation(notification.data || {}) : notification.titleKey,

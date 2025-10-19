@@ -5,8 +5,7 @@
 
     type $$Props = SelectPrimitive.TriggerProps;
 
-    let className: $$Props['class'] = undefined;
-    export { className as class };
+    let { class: className, ...restProps }: Props = $props();
 </script>
 
 <SelectPrimitive.Trigger

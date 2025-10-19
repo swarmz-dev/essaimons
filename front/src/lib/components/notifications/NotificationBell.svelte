@@ -8,14 +8,16 @@
     const notificationService = new NotificationService();
     let bellButton: HTMLButtonElement;
 
-    onMount(async () => {
+    onMount(() => {
         // Load initial unread count
-        try {
-            const count = await notificationService.getUnreadCount();
-            notificationStore.setUnreadCount(count);
-        } catch (error) {
-            console.error('Failed to load unread count:', error);
-        }
+        (async () => {
+            try {
+                const count = await notificationService.getUnreadCount();
+                notificationStore.setUnreadCount(count);
+            } catch (error) {
+                console.error('Failed to load unread count:', error);
+            }
+        })();
 
         // Close dropdown when clicking outside
         function handleClickOutside(event: MouseEvent) {

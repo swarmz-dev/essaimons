@@ -52,7 +52,7 @@
         <section>
             <div class="mb-4 flex items-center gap-2">
                 <Vote class="size-6 text-primary" />
-                <h2 class="text-2xl font-semibold">Propositions à voter</h2>
+                <h2 class="text-2xl font-semibold">{m['home.sections.voting']()}</h2>
             </div>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {#each data.voting.propositions as proposition (proposition.id)}
@@ -65,7 +65,7 @@
                             </div>
                             <CardTitle class="text-lg">{proposition.title}</CardTitle>
                             <p class="text-sm text-muted-foreground">
-                                Échéance : {formatDate(proposition.voteDeadline)}
+                                {m['home.labels.deadline']()} : {formatDate(proposition.voteDeadline)}
                             </p>
                         </CardHeader>
                         <CardContent>
@@ -88,7 +88,7 @@
             </div>
             <div class="mt-4 text-center">
                 <Button variant="outline" onclick={() => goto('/propositions?statuses=vote')}>
-                    Voir toutes les propositions à voter
+                    {m['home.actions.view-all-voting']()}
                     <ArrowRight class="ml-2 size-4" />
                 </Button>
             </div>
@@ -100,7 +100,7 @@
         <section>
             <div class="mb-4 flex items-center gap-2">
                 <User class="size-6 text-primary" />
-                <h2 class="text-2xl font-semibold">Mes propositions</h2>
+                <h2 class="text-2xl font-semibold">{m['home.sections.my-propositions']()}</h2>
             </div>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {#each data.user.propositions as proposition (proposition.id)}
@@ -113,7 +113,7 @@
                             </div>
                             <CardTitle class="text-lg">{proposition.title}</CardTitle>
                             <p class="text-sm text-muted-foreground">
-                                Mise à jour : {formatDate(proposition.updatedAt)}
+                                {m['home.labels.updated']()} : {formatDate(proposition.updatedAt)}
                             </p>
                         </CardHeader>
                         <CardContent>
@@ -142,7 +142,7 @@
         <section>
             <div class="mb-4 flex items-center gap-2">
                 <Briefcase class="size-6 text-primary" />
-                <h2 class="text-2xl font-semibold">Propositions à mandater</h2>
+                <h2 class="text-2xl font-semibold">{m['home.sections.mandate']()}</h2>
             </div>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {#each data.mandate.propositions as proposition (proposition.id)}
@@ -155,7 +155,7 @@
                             </div>
                             <CardTitle class="text-lg">{proposition.title}</CardTitle>
                             <p class="text-sm text-muted-foreground">
-                                Échéance : {formatDate(proposition.mandateDeadline)}
+                                {m['home.labels.deadline']()} : {formatDate(proposition.mandateDeadline)}
                             </p>
                         </CardHeader>
                         <CardContent>
@@ -178,7 +178,7 @@
             </div>
             <div class="mt-4 text-center">
                 <Button variant="outline" onclick={() => goto('/propositions?statuses=mandate')}>
-                    Voir toutes les propositions à mandater
+                    {m['home.actions.view-all-mandate']()}
                     <ArrowRight class="ml-2 size-4" />
                 </Button>
             </div>
@@ -190,7 +190,7 @@
         <section>
             <div class="mb-4 flex items-center gap-2">
                 <Clock class="size-6 text-primary" />
-                <h2 class="text-2xl font-semibold">Propositions récentes</h2>
+                <h2 class="text-2xl font-semibold">{m['home.sections.recent']()}</h2>
             </div>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {#each data.recent.propositions as proposition (proposition.id)}
@@ -203,7 +203,7 @@
                             </div>
                             <CardTitle class="text-lg">{proposition.title}</CardTitle>
                             <p class="text-sm text-muted-foreground">
-                                Mise à jour : {formatDate(proposition.updatedAt)}
+                                {m['home.labels.updated']()} : {formatDate(proposition.updatedAt)}
                             </p>
                         </CardHeader>
                         <CardContent>
@@ -226,7 +226,7 @@
             </div>
             <div class="mt-4 text-center">
                 <Button variant="outline" onclick={() => goto('/propositions')}>
-                    Voir toutes les propositions
+                    {m['home.actions.view-all']()}
                     <ArrowRight class="ml-2 size-4" />
                 </Button>
             </div>

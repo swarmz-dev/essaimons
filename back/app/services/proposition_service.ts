@@ -40,6 +40,7 @@ interface CreatePropositionPayload {
 interface CreatePropositionFiles {
     visual?: any | null;
     attachments?: any[];
+    deletedAttachmentIds?: string[];
 }
 
 @inject()
@@ -346,6 +347,19 @@ export default class PropositionService {
                     previousVisual.useTransaction(trx);
                     await previousVisual.delete();
                     filesToDeleteAfterCommit.push(previousVisual);
+                }
+            }
+
+            // Handle deleted attachments
+            const deletedAttachmentIds: string[] = files.deletedAttachmentIds ?? [];
+            if (deletedAttachmentIds.length) {
+                const attachmentsToDelete: File[] = await File.query({ client: trx }).whereIn('id', deletedAttachmentIds).where('type', FileTypeEnum.PROPOSITION_ATTACHMENT);
+
+                for (const file of attachmentsToDelete) {
+                    file.useTransaction(trx);
+                    await proposition.related('attachments').detach([file.id]);
+                    await file.delete();
+                    filesToDeleteAfterCommit.push(file);
                 }
             }
 

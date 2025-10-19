@@ -5,22 +5,56 @@
     import { MultiSelect, type MultiSelectOption } from '#lib/components/ui/multi-select';
     import { RichTextEditor } from '#lib/components/ui/rich-text';
     import { m } from '#lib/paraglide/messages';
+    import type { SerializedFile } from 'backend/types';
+    import { Download, X } from '@lucide/svelte';
 
-    export let title: string;
-    export let smartObjectives: string;
-    export let detailedDescription: string;
-    export let categoryIdsStrings: string[];
-    export let categoryOptions: MultiSelectOption[] = [];
-    export let visualInputRef: HTMLInputElement | undefined;
-    export let visualFileName: string | null = null;
-    export let visualPreviewUrl: string | null = null;
-    export let onVisualChange: (event: Event) => void = () => {};
-    export let onVisualRemove: () => void = () => {};
-    export let showVisualRemove = false;
-    export let attachmentFiles: FileList | undefined;
-    export let attachmentsInputRef: HTMLInputElement | undefined;
-    export let attachmentAccept: string;
-    export let onAttachmentsChange: (event: Event) => void = () => {};
+    type Props = {
+        title: string;
+        smartObjectives: string;
+        detailedDescription: string;
+        categoryIdsStrings: string[];
+        categoryOptions?: MultiSelectOption[];
+        visualInputRef?: HTMLInputElement | undefined;
+        visualFileName?: string | null;
+        visualPreviewUrl?: string | null;
+        onVisualChange?: (event: Event) => void;
+        onVisualRemove?: () => void;
+        showVisualRemove?: boolean;
+        attachmentFiles?: FileList | undefined;
+        attachmentsInputRef?: HTMLInputElement | undefined;
+        attachmentAccept: string;
+        onAttachmentsChange?: (event: Event) => void;
+        existingAttachments?: SerializedFile[];
+        propositionId?: string | null;
+        deletedAttachmentIds?: string[];
+        onDeleteAttachment?: (attachmentId: string) => void;
+    };
+
+    let {
+        title = $bindable(),
+        smartObjectives = $bindable(),
+        detailedDescription = $bindable(),
+        categoryIdsStrings = $bindable(),
+        categoryOptions = [],
+        visualInputRef = $bindable(),
+        visualFileName = null,
+        visualPreviewUrl = null,
+        onVisualChange = () => {},
+        onVisualRemove = () => {},
+        showVisualRemove = false,
+        attachmentFiles = $bindable(),
+        attachmentsInputRef = $bindable(),
+        attachmentAccept,
+        onAttachmentsChange = () => {},
+        existingAttachments = [],
+        propositionId = null,
+        deletedAttachmentIds = $bindable([]),
+        onDeleteAttachment = () => {},
+    }: Props = $props();
+
+    const attachmentUrl = (fileId: string): string => `/assets/propositions/attachments/${fileId}`;
+
+    const visibleAttachments = $derived(existingAttachments.filter((att) => !deletedAttachmentIds.includes(att.id)));
 </script>
 
 <div class="space-y-6">
@@ -62,13 +96,57 @@
     />
 
     <FieldLabel forId="attachments" label={m['proposition-create.fields.attachments.label']()} info={m['proposition-create.fields.attachments.info']()}>
+        {#if visibleAttachments.length > 0}
+            <div class="mb-3">
+                <p class="mb-2 text-sm font-medium text-foreground">Pièces jointes actuelles :</p>
+                <ul class="space-y-2">
+                    {#each visibleAttachments as attachment (attachment.id)}
+                        <li class="flex items-center justify-between rounded-lg border border-border/40 bg-muted/30 p-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-medium text-foreground">{attachment.name}</span>
+                                <span class="text-xs text-muted-foreground">({(attachment.size / 1024).toFixed(1)} KB)</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <a
+                                    href={attachmentUrl(attachment.id)}
+                                    download
+                                    class="inline-flex items-center gap-1 rounded-md p-1.5 text-primary transition-colors hover:bg-primary/10"
+                                    title="Télécharger"
+                                >
+                                    <Download class="size-4" />
+                                </a>
+                                <button
+                                    type="button"
+                                    onclick={() => onDeleteAttachment(attachment.id)}
+                                    class="inline-flex items-center gap-1 rounded-md p-1.5 text-destructive transition-colors hover:bg-destructive/10"
+                                    title="Supprimer"
+                                >
+                                    <X class="size-4" />
+                                </button>
+                            </div>
+                        </li>
+                    {/each}
+                </ul>
+                {#if deletedAttachmentIds.length > 0}
+                    <p class="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                        {deletedAttachmentIds.length} pièce{deletedAttachmentIds.length > 1 ? 's' : ''} jointe{deletedAttachmentIds.length > 1 ? 's' : ''} sera{deletedAttachmentIds.length > 1
+                            ? 'ont'
+                            : ''} supprimée{deletedAttachmentIds.length > 1 ? 's' : ''} lors de l'enregistrement.
+                    </p>
+                {/if}
+                <p class="mt-2 text-xs text-muted-foreground">Pour ajouter d'autres pièces jointes, sélectionnez des fichiers ci-dessous :</p>
+            </div>
+        {/if}
         <Input type="file" name="attachments" id="attachments" multiple bind:files={attachmentFiles} bind:ref={attachmentsInputRef} accept={attachmentAccept} onchange={onAttachmentsChange} />
         {#if attachmentFiles?.length}
-            <ul class="mt-2 list-disc pl-5 text-sm text-muted-foreground">
-                {#each Array.from(attachmentFiles) as file (file.name)}
-                    <li>{file.name}</li>
-                {/each}
-            </ul>
+            <div class="mt-2">
+                <p class="mb-1 text-sm font-medium text-foreground">Nouvelles pièces jointes à ajouter :</p>
+                <ul class="list-disc pl-5 text-sm text-muted-foreground">
+                    {#each Array.from(attachmentFiles) as file (file.name)}
+                        <li>{file.name} ({(file.size / 1024).toFixed(1)} KB)</li>
+                    {/each}
+                </ul>
+            </div>
         {/if}
     </FieldLabel>
 </div>

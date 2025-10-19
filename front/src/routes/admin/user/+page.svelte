@@ -38,8 +38,8 @@
         });
     };
 
-    const getUsers = async (page: number = 1, limit: number = 10): Promise<void> => {
-        await wrappedFetch(`/admin/user?page=${page}&limit=${limit}&query=${query}&sortBy=${sortBy}`, { method: 'GET' }, ({ data }): void => {
+    const getUsers = async (pageNumber: number = 1, pageLimit: number = 10): Promise<void> => {
+        await wrappedFetch(`/admin/user?page=${pageNumber}&limit=${pageLimit}&query=${query}&sortBy=${sortBy}`, { method: 'GET' }, ({ data }): void => {
             paginatedUsers = data;
         });
     };
@@ -61,7 +61,7 @@
             onBatchDelete={handleDelete}
             batchDeleteTitle={m['admin.user.delete.title']({ users: selectedUsers })}
             batchDeleteText={m['admin.user.delete.text']({ users: selectedUsers, count: selectedUsers.length })}
-            onPaginationChange={async (page: number, limit: number) => await getUsers(page, limit)}
+            onPaginationChange={async (pageNumber: number, pageLimit: number) => await getUsers(pageNumber, pageLimit)}
         />
     </div>
 {/if}

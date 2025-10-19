@@ -113,7 +113,7 @@
 
 <div class="space-y-6">
     <div class="flex items-center justify-between">
-        <Title>Notifications système</Title>
+        <Title title="Notifications système" />
     </div>
 
     <p class="text-sm text-muted-foreground">Vue d'ensemble de toutes les notifications envoyées aux utilisateurs</p>

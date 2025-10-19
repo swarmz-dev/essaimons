@@ -1,14 +1,18 @@
 <script lang="ts">
     import Tabs, { type TabItem } from './Tabs.svelte';
 
-    export let items: TabItem[] = [];
-    export let value: string;
+    type Props = {
+        items: TabItem[];
+        value: string;
+    };
 
-    let selected = value;
+    let { items, value }: Props = $props();
 
-    const handleChange = (event: CustomEvent<string>) => {
-        selected = event.detail;
+    let selected = $state(value);
+
+    const handleChange = (newValue: string) => {
+        selected = newValue;
     };
 </script>
 
-<Tabs {items} value={selected} ariaLabel="Test tabs" on:change={handleChange} />
+<Tabs {items} bind:value={selected} ariaLabel="Test tabs" onchange={handleChange} />

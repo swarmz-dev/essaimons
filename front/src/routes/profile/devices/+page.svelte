@@ -85,9 +85,7 @@
 <div class="mx-auto max-w-4xl space-y-6">
     <!-- Header -->
     <div>
-        <button onclick={() => goto('/profile')} class="mb-4 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200">
-            ← {m['common.back']()}
-        </button>
+        <button onclick={() => goto('/profile')} class="mb-4 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200">← Retour</button>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
             {m['profile.devices.title']()}
         </h1>
