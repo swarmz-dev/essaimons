@@ -5,6 +5,7 @@
     import { propositionImportExportStore } from '#lib/stores/propositionImportExportStore.svelte';
     import { showToast } from '#lib/services/toastService';
     import type { ImportResult } from 'backend/types';
+    import { PUBLIC_API_BASE_URI } from '$env/static/public';
 
     const store = propositionImportExportStore;
 
@@ -20,17 +21,28 @@
         store.setError(null);
 
         try {
-            const response = await fetch('/api/admin/propositions/import/execute', {
+            const token = document.cookie
+                .split('; ')
+                .find((row) => row.startsWith('client_token='))
+                ?.split('=')[1];
+
+            console.log('Executing import with configuration:', configuration);
+            console.log('URL:', `${PUBLIC_API_BASE_URI}/api/admin/propositions/import/execute`);
+
+            const response = await fetch(`${PUBLIC_API_BASE_URI}/api/admin/propositions/import/execute`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${document.cookie.split('=')[1]}`,
+                    Authorization: `Bearer ${token}`,
                 },
+                credentials: 'include',
                 body: JSON.stringify(configuration),
             });
 
             if (!response.ok) {
-                throw new Error('Import execution failed');
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Import execution failed:', response.status, errorData);
+                throw new Error(errorData.error || 'Import execution failed');
             }
 
             const data = await response.json();
@@ -76,16 +88,14 @@
                     <span>{m['admin.propositions.import.execute.conflicts_resolved']()}</span>
                     <span class="font-medium">{store.getResolvedConflictsCount()}</span>
                 </div>
-                {#if store.conflictReport}
-                    <div class="flex justify-between text-green-600 dark:text-green-400">
-                        <span>{m['admin.propositions.import.execute.will_create']()}</span>
-                        <span class="font-medium">{store.conflictReport.summary.newPropositions}</span>
-                    </div>
-                    <div class="flex justify-between text-yellow-600 dark:text-yellow-400">
-                        <span>{m['admin.propositions.import.execute.will_merge']()}</span>
-                        <span class="font-medium">{store.conflictReport.summary.existingPropositions}</span>
-                    </div>
-                {/if}
+                <div class="flex justify-between text-green-600 dark:text-green-400">
+                    <span>{m['admin.propositions.import.execute.will_create']()}</span>
+                    <span class="font-medium">{store.getWillCreateCount()}</span>
+                </div>
+                <div class="flex justify-between text-yellow-600 dark:text-yellow-400">
+                    <span>{m['admin.propositions.import.execute.will_merge']()}</span>
+                    <span class="font-medium">{store.getWillMergeCount()}</span>
+                </div>
             </div>
         </div>
 

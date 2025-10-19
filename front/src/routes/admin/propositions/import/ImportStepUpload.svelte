@@ -6,6 +6,7 @@
     import { showToast } from '#lib/services/toastService';
     import { wrappedFetch } from '#lib/services/requestService';
     import type { ConflictReport } from 'backend/types';
+    import { PUBLIC_API_BASE_URI } from '$env/static/public';
 
     const store = propositionImportExportStore;
 
@@ -55,11 +56,17 @@
         formData.append('file', selectedFile);
 
         try {
-            const response = await fetch('/api/admin/propositions/import/analyze', {
+            const token = document.cookie
+                .split('; ')
+                .find((row) => row.startsWith('client_token='))
+                ?.split('=')[1];
+
+            const response = await fetch(`${PUBLIC_API_BASE_URI}/api/admin/propositions/import/analyze`, {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${document.cookie.split('=')[1]}`,
+                    Authorization: `Bearer ${token}`,
                 },
+                credentials: 'include',
                 body: formData,
             });
 

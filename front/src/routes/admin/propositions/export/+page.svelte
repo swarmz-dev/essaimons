@@ -8,8 +8,11 @@
     import { wrappedFetch } from '#lib/services/requestService';
     import { showToast } from '#lib/services/toastService';
     import type { PaginatedPropositions, SerializedProposition } from 'backend/types';
+    import { PUBLIC_API_BASE_URI } from '$env/static/public';
 
     let isExporting = $state(false);
+    let isLoadingPropositions = $state(false);
+    let loadError = $state<string | null>(null);
     let selectedPropositions = $state<Set<string>>(new Set());
     let propositions = $state<SerializedProposition[]>([]);
     let query = $state('');
@@ -27,15 +30,53 @@
     let includeReactions = $state(false);
 
     const loadPropositions = async (page: number = 1) => {
-        await wrappedFetch(`/propositions?page=${page}&limit=${limit}&search=${query}`, { method: 'GET' }, ({ data }: { data: PaginatedPropositions }) => {
-            propositions = data.data ?? [];
-            currentPage = data.meta.currentPage;
-            totalPages = data.meta.lastPage;
-        });
+        isLoadingPropositions = true;
+        loadError = null;
+
+        const result = await wrappedFetch(
+            `/propositions?page=${page}&limit=${limit}&query=${query}`,
+            { method: 'GET' },
+            (response: any) => {
+                if (!response || !response.propositions) {
+                    console.error('Invalid response structure:', response);
+                    loadError = 'La structure de la réponse est invalide';
+                    return;
+                }
+                propositions = response.propositions;
+                currentPage = response.currentPage ?? 1;
+                totalPages = response.lastPage ?? 1;
+            },
+            (error: any) => {
+                console.error('Error loading propositions:', error);
+                loadError = error?.message || 'Impossible de charger les propositions';
+                propositions = [];
+            }
+        );
+
+        // Handle error from wrappedFetch
+        if (result?.isSuccess === false) {
+            loadError = result?.error || 'Une erreur est survenue lors du chargement';
+            propositions = [];
+        }
+
+        isLoadingPropositions = false;
     };
 
+    // Load propositions on mount
     $effect(() => {
-        loadPropositions(currentPage);
+        loadPropositions(1);
+    });
+
+    // Debounce search query
+    let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+    $effect(() => {
+        // React to query changes
+        query;
+
+        if (searchTimeout) clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            loadPropositions(1);
+        }, 300);
     });
 
     const toggleProposition = (id: string) => {
@@ -65,12 +106,18 @@
         isExporting = true;
 
         try {
-            const response = await fetch('/api/admin/propositions/export', {
+            const token = document.cookie
+                .split('; ')
+                .find((row) => row.startsWith('client_token='))
+                ?.split('=')[1];
+
+            const response = await fetch(`${PUBLIC_API_BASE_URI}/api/admin/propositions/export`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${document.cookie.split('=')[1]}`,
+                    Authorization: `Bearer ${token}`,
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     propositionIds: Array.from(selectedPropositions),
                     options: {
@@ -86,7 +133,10 @@
             });
 
             if (!response.ok) {
-                throw new Error('Export failed');
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Export failed:', response.status, errorData);
+                showToast(errorData.error || m['admin.propositions.export.error.default'](), 'error');
+                return;
             }
 
             // Télécharger le fichier
@@ -103,8 +153,9 @@
             showToast(m['admin.propositions.export.success'](), 'success');
             selectedPropositions.clear();
             selectedPropositions = new Set(selectedPropositions);
-        } catch (error) {
-            showToast(m['admin.propositions.export.error.default'](), 'error');
+        } catch (error: any) {
+            console.error('Export error:', error);
+            showToast(error?.message || m['admin.propositions.export.error.default'](), 'error');
         } finally {
             isExporting = false;
         }
@@ -172,12 +223,27 @@
         <CardContent class="space-y-4">
             <Input type="text" bind:value={query} placeholder={m['common.search.placeholder']()} />
 
+            {#if loadError}
+                <div class="rounded-md border border-destructive bg-destructive/10 p-4">
+                    <div class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-destructive" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                        <div>
+                            <p class="font-medium text-destructive">Erreur de chargement</p>
+                            <p class="text-sm text-destructive/80">{loadError}</p>
+                        </div>
+                    </div>
+                    <Button variant="outline" size="sm" class="mt-3" onclick={() => loadPropositions(currentPage)}>Réessayer</Button>
+                </div>
+            {/if}
+
             <div class="rounded-md border">
                 <table class="w-full">
                     <thead>
                         <tr class="border-b bg-muted/50">
                             <th class="p-2 text-left">
-                                <Checkbox checked={selectedPropositions.size === propositions.length && propositions.length > 0} onCheckedChange={toggleAll} />
+                                <Checkbox checked={selectedPropositions.size === propositions.length && propositions.length > 0} onCheckedChange={toggleAll} disabled={isLoadingPropositions} />
                             </th>
                             <th class="p-2 text-left">{m['common.title']()}</th>
                             <th class="p-2 text-left">{m['common.status']()}</th>
@@ -186,7 +252,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {#if propositions.length === 0}
+                        {#if isLoadingPropositions}
+                            <tr>
+                                <td colspan="5" class="p-8 text-center text-muted-foreground">
+                                    <div class="flex flex-col items-center gap-2">
+                                        <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                                        <p>Chargement des propositions...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {:else if propositions.length === 0}
                             <tr>
                                 <td colspan="5" class="p-4 text-center text-muted-foreground">
                                     {m['admin.datatable.no-result']()}
@@ -211,9 +286,9 @@
 
             {#if totalPages > 1}
                 <div class="flex items-center justify-between">
-                    <Button variant="outline" onclick={() => loadPropositions(currentPage - 1)} disabled={currentPage === 1}>Précédent</Button>
+                    <Button variant="outline" onclick={() => loadPropositions(currentPage - 1)} disabled={currentPage === 1 || isLoadingPropositions}>Précédent</Button>
                     <span class="text-sm">Page {currentPage} / {totalPages}</span>
-                    <Button variant="outline" onclick={() => loadPropositions(currentPage + 1)} disabled={currentPage === totalPages}>Suivant</Button>
+                    <Button variant="outline" onclick={() => loadPropositions(currentPage + 1)} disabled={currentPage === totalPages || isLoadingPropositions}>Suivant</Button>
                 </div>
             {/if}
         </CardContent>

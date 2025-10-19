@@ -1,6 +1,6 @@
 import { m } from '#lib/paraglide/messages';
 import type { Component } from 'svelte';
-import { House, UserPen, LogOut, Lock, User, UsersRound, ChartColumn, ArrowLeftFromLine, FilePlus2, Files, Tags, Building2, MessageCircle, Bell, Mail } from '@lucide/svelte';
+import { House, UserPen, LogOut, Lock, User, UsersRound, ChartColumn, ArrowLeftFromLine, FilePlus2, Files, Tags, Building2, MessageCircle, Bell, Mail, Download, Upload } from '@lucide/svelte';
 
 export type MenuItemsListItem = {
     href: string;
@@ -100,5 +100,15 @@ export const adminMenu: MenuItemsListItem[] = [
         href: '/admin/templates',
         icon: Mail,
         title: m['admin.email_templates.title'](),
+    },
+    {
+        href: '/admin/propositions/export',
+        icon: Download,
+        title: m['admin.propositions.export.title'](),
+    },
+    {
+        href: '/admin/propositions/import',
+        icon: Upload,
+        title: m['admin.propositions.import.title'](),
     },
 ];

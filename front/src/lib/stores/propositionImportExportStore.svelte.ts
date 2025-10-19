@@ -152,6 +152,34 @@ class PropositionImportExportStore {
 
         return this.state.conflictReport.conflicts.length;
     }
+
+    /**
+     * Calcule combien de propositions seront créées
+     */
+    getWillCreateCount(): number {
+        if (!this.state.configuration || !this.state.conflictReport) {
+            return this.state.conflictReport?.summary.newPropositions ?? 0;
+        }
+
+        // Compte les résolutions qui créent quelque chose de nouveau
+        const createResolutions = this.state.configuration.resolutions.filter((r) => r.strategy === 'CREATE_NEW');
+
+        return (this.state.conflictReport.summary.newPropositions ?? 0) + createResolutions.length;
+    }
+
+    /**
+     * Calcule combien de propositions seront fusionnées
+     */
+    getWillMergeCount(): number {
+        if (!this.state.configuration || !this.state.conflictReport) {
+            return this.state.conflictReport?.summary.existingPropositions ?? 0;
+        }
+
+        // Compte les résolutions qui fusionnent
+        const mergeResolutions = this.state.configuration.resolutions.filter((r) => r.strategy === 'MERGE' || r.strategy === 'MAP_EXISTING');
+
+        return (this.state.conflictReport.summary.existingPropositions ?? 0) + mergeResolutions.length;
+    }
 }
 
 export const propositionImportExportStore = new PropositionImportExportStore();
