@@ -1,10 +1,14 @@
-<script lang="ts">
+<script context="module" lang="ts">
     export type TabItem = {
         id: string;
         label: string;
         disabled?: boolean;
         badge?: string;
     };
+</script>
+
+<script lang="ts">
+    import { createEventDispatcher } from 'svelte';
 
     type Props = {
         items: TabItem[];

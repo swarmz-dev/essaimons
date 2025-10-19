@@ -20,18 +20,41 @@ export default class NotificationsController {
         const notifications = await this.notificationService.getUserNotifications(user.id, page, limit);
 
         return response.ok({
-            notifications: notifications.all().map((userNotification) => ({
-                id: userNotification.id,
-                notificationId: userNotification.notificationId,
-                type: userNotification.notification.type,
-                titleKey: userNotification.notification.titleKey,
-                messageKey: userNotification.notification.bodyKey,
-                data: userNotification.notification.interpolationData,
-                actionUrl: userNotification.notification.actionUrl,
-                isRead: userNotification.read,
-                readAt: userNotification.readAt?.toISO() || null,
-                createdAt: userNotification.createdAt.toISO(),
-            })),
+            notifications: notifications.all().map((userNotification) => {
+                const notification = userNotification.notification;
+                // Determine entity type and ID based on what's set
+                let entityType: string | null = null;
+                let entityId: string | null = null;
+
+                if (notification.propositionId) {
+                    entityType = 'proposition';
+                    entityId = notification.propositionId;
+                } else if (notification.mandateId) {
+                    entityType = 'mandate';
+                    entityId = notification.mandateId;
+                } else if (notification.voteId) {
+                    entityType = 'vote';
+                    entityId = notification.voteId;
+                } else if (notification.deliverableId) {
+                    entityType = 'deliverable';
+                    entityId = notification.deliverableId;
+                }
+
+                return {
+                    id: userNotification.id,
+                    notificationId: userNotification.notificationId,
+                    type: notification.type,
+                    titleKey: notification.titleKey,
+                    messageKey: notification.bodyKey,
+                    data: notification.interpolationData,
+                    entityType,
+                    entityId,
+                    actionUrl: notification.actionUrl,
+                    isRead: userNotification.read,
+                    readAt: userNotification.readAt?.toISO() || null,
+                    createdAt: userNotification.createdAt.toISO(),
+                };
+            }),
             meta: {
                 total: notifications.total,
                 perPage: notifications.perPage,

@@ -66,10 +66,10 @@ export class PushNotificationService {
 
         // Subscribe to push
         try {
-            const vapidKey = await this.getVapidPublicKey();
+            const applicationServerKey = await this.getVapidPublicKey();
             const subscription = await this.registration.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: vapidKey as BufferSource,
+                applicationServerKey: applicationServerKey as BufferSource,
             });
 
             // Send subscription to backend

@@ -6,7 +6,7 @@ import PropositionService from '#services/proposition_service';
 import PropositionRepository from '#repositories/proposition_repository';
 import PropositionCategoryRepository from '#repositories/proposition_category_repository';
 import UserRepository from '#repositories/user_repository';
-import { createPropositionValidator, searchPropositionsValidator, updatePropositionValidator } from '#validators/proposition';
+import { createPropositionValidator, createDraftPropositionValidator, searchPropositionsValidator, updatePropositionValidator } from '#validators/proposition';
 import { updatePropositionStatusValidator } from '#validators/proposition_status';
 import type Proposition from '#models/proposition';
 import type User from '#models/user';
@@ -127,7 +127,12 @@ export default class PropositionController {
         }
 
         try {
-            const payload = await createPropositionValidator.validate({
+            const isDraftInput = request.input('isDraft');
+            const isDraft = isDraftInput === 'true' || isDraftInput === true;
+
+            const validator = isDraft ? createDraftPropositionValidator : createPropositionValidator;
+
+            const payload = await validator.validate({
                 title: request.input('title'),
                 summary: request.input('summary'),
                 detailedDescription: request.input('detailedDescription'),
@@ -143,7 +148,7 @@ export default class PropositionController {
                 categoryIds,
                 associatedPropositionIds,
                 rescueInitiatorIds,
-                isDraft: request.input('isDraft'),
+                isDraft,
             });
 
             const proposition: Proposition = await this.propositionService.create(payload, user as User, {
@@ -362,12 +367,12 @@ export default class PropositionController {
 
         const actor: User = user as User;
 
-        const payload = await updatePropositionStatusValidator.validate({
-            status: request.input('status'),
-            reason: request.input('reason'),
-        });
-
         try {
+            const payload = await updatePropositionStatusValidator.validate({
+                status: request.input('status'),
+                reason: request.input('reason'),
+            });
+
             const updated = await this.propositionService.transition(proposition, actor, payload.status as PropositionStatusEnum, { reason: payload.reason });
 
             await Promise.all([
@@ -385,6 +390,10 @@ export default class PropositionController {
 
             return response.ok({ proposition: updated.apiSerialize() });
         } catch (error) {
+            if (error instanceof errors.E_VALIDATION_ERROR) {
+                return response.badRequest({ errors: error.messages });
+            }
+
             if (error instanceof PropositionWorkflowException) {
                 const message = error.code === 'invalid_transition' ? 'Invalid proposition transition' : 'You are not allowed to change the proposition status';
                 if (error.code === 'forbidden') {

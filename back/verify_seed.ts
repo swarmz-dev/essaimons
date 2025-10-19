@@ -1,14 +1,8 @@
 import app from '@adonisjs/core/services/app';
-import { DbQueryEventNode } from '@adonisjs/lucid/types/database';
 
-await app.booted();
+await app.booted(async () => {});
 
 const db = await app.container.make('lucid.db');
-
-// Désactiver les logs de requête pour une sortie plus propre
-db.connection().on('query', (query: DbQueryEventNode) => {
-    // Ne rien faire
-});
 
 console.log('📊 Vérification des données du seeder\n');
 

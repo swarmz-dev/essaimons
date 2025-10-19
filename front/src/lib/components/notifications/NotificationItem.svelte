@@ -49,32 +49,29 @@
         return formatDistanceToNow(new Date(date), { addSuffix: true, locale });
     }
 
+    function getTranslation(key: string): any {
+        // Paraglide exports messages with the full dotted key as a string property
+        // e.g., m["notifications.status_transition.to_amend.title"]
+        return (m as any)[key];
+    }
+
     function getNotificationTitle(): string {
-        // Use dynamic key access since paraglide exports flat keys with dots
-        const key = notification.titleKey as keyof typeof m;
-        const translator = m[key];
-        if (typeof translator === 'function') {
-            return (translator as () => string)();
-        }
-        return notification.titleKey;
+        const titleTranslation = getTranslation(notification.titleKey);
+        return typeof titleTranslation === 'function' ? titleTranslation() : notification.titleKey;
     }
 
     function getNotificationMessage(): string {
-        // Use dynamic key access since paraglide exports flat keys with dots
-        const key = notification.messageKey as keyof typeof m;
-        const translator = m[key];
-        let template: string;
+        const messageTranslation = getTranslation(notification.messageKey);
+        const template = typeof messageTranslation === 'function' ? messageTranslation(notification.data || {}) : notification.messageKey;
 
-        if (typeof translator === 'function') {
-            template = (translator as () => string)();
-        } else {
-            template = notification.messageKey;
+        // Simple template replacement for any remaining placeholders
+        if (typeof template === 'string') {
+            return template.replace(/\{(\w+)\}/g, (match: string, key: string) => {
+                return notification.data?.[key] || match;
+            });
         }
 
-        // Simple template replacement
-        return template.replace(/\{(\w+)\}/g, (match: string, key: string) => {
-            return notification.data[key] || match;
-        });
+        return String(template);
     }
 </script>
 

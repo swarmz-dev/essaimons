@@ -27,7 +27,7 @@
     let lastValue = '';
     let showHtmlSource = $state(false);
     let htmlSource = $state('');
-    let htmlTextarea: HTMLTextAreaElement | null = $state(null);
+    let htmlTextarea = $state<HTMLTextAreaElement | null>(null);
 
     const getPlainTextLength = (html: string): number => {
         if (!html) {
@@ -103,10 +103,22 @@
             value = html;
         });
 
+        // Track Shift key state for paste handler
+        let shiftPressed = false;
+        quillInstance.root.addEventListener('keydown', (e: KeyboardEvent) => {
+            if (e.key === 'Shift') {
+                shiftPressed = true;
+            }
+        });
+        quillInstance.root.addEventListener('keyup', (e: KeyboardEvent) => {
+            if (e.key === 'Shift') {
+                shiftPressed = false;
+            }
+        });
+
         // Handle paste without formatting (Ctrl+Shift+V or Cmd+Shift+V)
-        quillInstance.root.addEventListener('paste', (e: Event) => {
-            const clipboardEvent = e as ClipboardEvent & { shiftKey?: boolean };
-            if (clipboardEvent.shiftKey) {
+        quillInstance.root.addEventListener('paste', (e: ClipboardEvent) => {
+            if (shiftPressed) {
                 e.preventDefault();
                 const text = clipboardEvent.clipboardData?.getData('text/plain');
                 if (text) {

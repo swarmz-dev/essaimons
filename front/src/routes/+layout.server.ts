@@ -22,11 +22,65 @@ export const load: LayoutServerLoad = loadFlash(
             { pathname: '/reset-password', hybrid: true },
         ];
 
+        // Load organization settings early to get defaultLocale
+        let defaultLocale = 'fr'; // Fallback if API call fails
+        let fallbackLocale = 'en';
+
+        try {
+            const { data } = await locals.client.get<{ settings: SerializedOrganizationSettings }>('api/settings/organization');
+            if (data?.settings) {
+                defaultLocale = data.settings.defaultLocale || data.settings.fallbackLocale || 'fr';
+                fallbackLocale = data.settings.fallbackLocale || 'en';
+            }
+        } catch (error: any) {
+            // Silently fail, use defaults
+            console.error('load.organization.early-fetch.error', error?.response?.data ?? error);
+        }
+
         const match: RegExpMatchArray | null = url.pathname.match(/^\/([a-z]{2})(\/|$)/);
         const language: LanguageCode | undefined = match ? (match[1] as LanguageCode) : undefined;
 
         if (!language || !locales.includes(language)) {
-            return redirect(307, `/${cookies.get('PARAGLIDE_LOCALE') ?? 'fr'}${url.pathname}${url.search}`);
+            // Try to detect browser language if no cookie is set
+            let detectedLanguage = cookies.get('PARAGLIDE_LOCALE');
+
+            if (!detectedLanguage) {
+                // Try to get browser's preferred language from Accept-Language header
+                const acceptLanguage = event.request.headers.get('accept-language');
+                if (acceptLanguage) {
+                    // Parse language preferences
+                    const languages = acceptLanguage
+                        .split(',')
+                        .map((lang) => {
+                            const [tag, q = '1'] = lang.trim().split(';q=');
+                            const baseTag = tag?.split('-')[0]?.toLowerCase();
+                            return {
+                                fullTag: tag?.toLowerCase(),
+                                baseTag,
+                                q: Number(q),
+                            };
+                        })
+                        .sort((a, b) => b.q - a.q);
+
+                    // Find first matching locale
+                    for (const lang of languages) {
+                        if (locales.includes(lang.fullTag as LanguageCode)) {
+                            detectedLanguage = lang.fullTag;
+                            break;
+                        } else if (locales.includes(lang.baseTag as LanguageCode)) {
+                            detectedLanguage = lang.baseTag;
+                            break;
+                        }
+                    }
+                }
+
+                // If no browser language detected, use defaultLocale from organization settings
+                if (!detectedLanguage) {
+                    detectedLanguage = defaultLocale;
+                }
+            }
+
+            return redirect(307, `/${detectedLanguage}${url.pathname}${url.search}`);
         }
 
         if (language !== cookies.get('PARAGLIDE_LOCALE')) {
@@ -42,6 +96,7 @@ export const load: LayoutServerLoad = loadFlash(
         const user: SerializedUser | undefined = userCookie ? <SerializedUser>JSON.parse(userCookie) : undefined;
 
         let organization: SerializedOrganizationSettings = {
+            defaultLocale: 'fr',
             fallbackLocale: 'en',
             locales: [],
             name: {},

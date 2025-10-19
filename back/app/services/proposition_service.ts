@@ -20,20 +20,20 @@ import PropositionWorkflowService, { PropositionWorkflowException } from '#servi
 
 interface CreatePropositionPayload {
     title: string;
-    summary: string;
-    detailedDescription: string;
-    smartObjectives: string;
-    impacts: string;
-    mandatesDescription: string;
+    summary?: string;
+    detailedDescription?: string;
+    smartObjectives?: string;
+    impacts?: string;
+    mandatesDescription?: string;
     expertise?: string | null;
-    clarificationDeadline: string;
-    amendmentDeadline: string;
-    voteDeadline: string;
-    mandateDeadline: string;
-    evaluationDeadline: string;
+    clarificationDeadline?: string;
+    amendmentDeadline?: string;
+    voteDeadline?: string;
+    mandateDeadline?: string;
+    evaluationDeadline?: string;
     categoryIds: string[];
     associatedPropositionIds?: string[];
-    rescueInitiatorIds: string[];
+    rescueInitiatorIds?: string[];
     isDraft?: boolean;
 }
 
@@ -58,14 +58,20 @@ export default class PropositionService {
         const trx: TransactionClientContract = await db.transaction();
 
         try {
+            const isDraft = payload.isDraft ?? false;
+
             const categories: PropositionCategory[] = await this.propositionCategoryRepository.getMultipleCategories(payload.categoryIds, trx);
             if (categories.length !== payload.categoryIds.length) {
                 throw new Error('messages.proposition.create.invalid-category');
             }
 
-            const rescueUsers: User[] = await this.userRepository.getRescueUsers(payload.rescueInitiatorIds, creator, trx);
-            if (rescueUsers.length !== payload.rescueInitiatorIds.length) {
-                throw new Error('messages.proposition.create.invalid-rescue');
+            const rescueInitiatorIds = payload.rescueInitiatorIds ?? [];
+            let rescueUsers: User[] = [];
+            if (rescueInitiatorIds.length > 0) {
+                rescueUsers = await this.userRepository.getRescueUsers(rescueInitiatorIds, creator, trx);
+                if (rescueUsers.length !== rescueInitiatorIds.length) {
+                    throw new Error('messages.proposition.create.invalid-rescue');
+                }
             }
 
             const associatedIds: string[] = payload.associatedPropositionIds ?? [];
@@ -77,24 +83,25 @@ export default class PropositionService {
                 }
             }
 
-            const clarificationDate: DateTime = this.parseIsoDate(payload.clarificationDeadline);
-            const amendmentDate: DateTime = this.parseIsoDate(payload.amendmentDeadline);
-            const voteDate: DateTime = this.parseIsoDate(payload.voteDeadline);
-            const mandateDate: DateTime = this.parseIsoDate(payload.mandateDeadline);
-            const evaluationDate: DateTime = this.parseIsoDate(payload.evaluationDeadline);
+            // For drafts, use default dates if not provided
+            const now = DateTime.now();
+            const clarificationDate: DateTime = payload.clarificationDeadline ? this.parseIsoDate(payload.clarificationDeadline) : now.plus({ days: 7 });
+            const amendmentDate: DateTime = payload.amendmentDeadline ? this.parseIsoDate(payload.amendmentDeadline) : clarificationDate.plus({ days: 7 });
+            const voteDate: DateTime = payload.voteDeadline ? this.parseIsoDate(payload.voteDeadline) : amendmentDate.plus({ days: 7 });
+            const mandateDate: DateTime = payload.mandateDeadline ? this.parseIsoDate(payload.mandateDeadline) : voteDate.plus({ days: 30 });
+            const evaluationDate: DateTime = payload.evaluationDeadline ? this.parseIsoDate(payload.evaluationDeadline) : mandateDate.plus({ days: 7 });
 
-            const isDraft = payload.isDraft ?? false;
             const initialStatus = isDraft ? PropositionStatusEnum.DRAFT : PropositionStatusEnum.CLARIFY;
             const initialVisibility = isDraft ? PropositionVisibilityEnum.PRIVATE : PropositionVisibilityEnum.PUBLIC;
 
             const proposition: Proposition = await Proposition.create(
                 {
                     title: payload.title,
-                    summary: payload.summary,
-                    detailedDescription: payload.detailedDescription,
-                    smartObjectives: payload.smartObjectives,
-                    impacts: payload.impacts,
-                    mandatesDescription: payload.mandatesDescription,
+                    summary: payload.summary ?? '',
+                    detailedDescription: payload.detailedDescription ?? '',
+                    smartObjectives: payload.smartObjectives ?? '',
+                    impacts: payload.impacts ?? '',
+                    mandatesDescription: payload.mandatesDescription ?? '',
                     expertise: payload.expertise ?? null,
                     status: initialStatus,
                     statusStartedAt: DateTime.now(),
@@ -115,7 +122,9 @@ export default class PropositionService {
             proposition.useTransaction(trx);
 
             await proposition.related('categories').attach(categories.map((category: PropositionCategory): string => category.id));
-            await proposition.related('rescueInitiators').attach(rescueUsers.map((user: User): string => user.id));
+            if (rescueUsers.length > 0) {
+                await proposition.related('rescueInitiators').attach(rescueUsers.map((user: User): string => user.id));
+            }
 
             await this.propositionWorkflowService.recordInitialHistory(proposition, creator, trx);
 
@@ -234,9 +243,13 @@ export default class PropositionService {
                 throw new Error('messages.proposition.create.invalid-category');
             }
 
-            const rescueUsers: User[] = await this.userRepository.getRescueUsers(payload.rescueInitiatorIds, actor, trx, { includeCurrentUser: true });
-            if (rescueUsers.length !== payload.rescueInitiatorIds.length) {
-                throw new Error('messages.proposition.create.invalid-rescue');
+            const rescueInitiatorIds = payload.rescueInitiatorIds ?? [];
+            let rescueUsers: User[] = [];
+            if (rescueInitiatorIds.length > 0) {
+                rescueUsers = await this.userRepository.getRescueUsers(rescueInitiatorIds, actor, trx, { includeCurrentUser: true });
+                if (rescueUsers.length !== rescueInitiatorIds.length) {
+                    throw new Error('messages.proposition.create.invalid-rescue');
+                }
             }
 
             const associatedIds: string[] = payload.associatedPropositionIds ?? [];
@@ -248,21 +261,22 @@ export default class PropositionService {
                 }
             }
 
-            const clarificationDate: DateTime = this.parseIsoDate(payload.clarificationDeadline);
-            const amendmentDate: DateTime = this.parseIsoDate(payload.amendmentDeadline);
-            const voteDate: DateTime = this.parseIsoDate(payload.voteDeadline);
-            const mandateDate: DateTime = this.parseIsoDate(payload.mandateDeadline);
-            const evaluationDate: DateTime = this.parseIsoDate(payload.evaluationDeadline);
+            const now = DateTime.now();
+            const clarificationDate: DateTime = payload.clarificationDeadline ? this.parseIsoDate(payload.clarificationDeadline) : now.plus({ days: 7 });
+            const amendmentDate: DateTime = payload.amendmentDeadline ? this.parseIsoDate(payload.amendmentDeadline) : clarificationDate.plus({ days: 7 });
+            const voteDate: DateTime = payload.voteDeadline ? this.parseIsoDate(payload.voteDeadline) : amendmentDate.plus({ days: 7 });
+            const mandateDate: DateTime = payload.mandateDeadline ? this.parseIsoDate(payload.mandateDeadline) : voteDate.plus({ days: 30 });
+            const evaluationDate: DateTime = payload.evaluationDeadline ? this.parseIsoDate(payload.evaluationDeadline) : mandateDate.plus({ days: 7 });
 
             proposition.useTransaction(trx);
 
             proposition.merge({
                 title: payload.title,
-                summary: payload.summary,
-                detailedDescription: payload.detailedDescription,
-                smartObjectives: payload.smartObjectives,
-                impacts: payload.impacts,
-                mandatesDescription: payload.mandatesDescription,
+                summary: payload.summary ?? '',
+                detailedDescription: payload.detailedDescription ?? '',
+                smartObjectives: payload.smartObjectives ?? '',
+                impacts: payload.impacts ?? '',
+                mandatesDescription: payload.mandatesDescription ?? '',
                 expertise: payload.expertise ?? null,
                 clarificationDeadline: clarificationDate,
                 amendmentDeadline: amendmentDate,
@@ -274,7 +288,9 @@ export default class PropositionService {
             await proposition.save();
 
             await proposition.related('categories').sync(categories.map((category: PropositionCategory): string => category.id));
-            await proposition.related('rescueInitiators').sync(rescueUsers.map((user: User): string => user.id));
+            if (rescueUsers.length > 0) {
+                await proposition.related('rescueInitiators').sync(rescueUsers.map((user: User): string => user.id));
+            }
 
             await trx.from(this.associationsTableName()).where('proposition_id', proposition.id).orWhere('related_proposition_id', proposition.id).delete();
 

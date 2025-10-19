@@ -3,14 +3,16 @@
     import { Card, CardContent } from '#lib/components/ui/card';
     import { FieldLabel } from '#lib/components/forms';
     import { Input } from '#lib/components/ui/input';
-    import { Textarea } from '#lib/components/ui/textarea';
+    import { RichTextEditor } from '#lib/components/ui/rich-text';
     import { Button } from '#lib/components/ui/button';
+    import { Tooltip, TooltipContent, TooltipTrigger } from '#lib/components/ui/tooltip';
     import { enhance } from '$app/forms';
     import type { SubmitFunction } from '@sveltejs/kit';
     import { m } from '#lib/paraglide/messages';
     import LogoCropper from '#lib/components/ui/image/LogoCropper.svelte';
     import EnglishFlag from '#icons/EnglishFlag.svelte';
     import FrenchFlag from '#icons/FrenchFlag.svelte';
+    import { HelpCircle } from '@lucide/svelte';
     import type { SerializedOrganizationSettings } from 'backend/types';
     import { onDestroy } from 'svelte';
     import * as zod from 'zod';
@@ -108,6 +110,7 @@
 
     const initialLogoUrl: string | null = settings.logo ? `/assets/organization/logo/${settings.logo.id}?no-cache=true` : null;
 
+    let defaultLocale: string = $state(settings.defaultLocale ?? '');
     let fallbackLocale: string = $state(settings.fallbackLocale ?? locales[0]?.code ?? 'en');
     let nameByLocale: Record<string, string> = $state(ensureMap(settings.name));
     let descriptionByLocale: Record<string, string> = $state(ensureMap(settings.description));
@@ -562,8 +565,20 @@
         isSubmitting = true;
 
         const fallbackLabel = getLocaleLabel(fallbackLocale);
-        const ensureFallbackValue = (map: Record<string, string>, fieldLabel: string): boolean => {
-            if ((map[fallbackLocale] ?? '').trim().length === 0) {
+
+        // Helper function to clean HTML content from RichTextEditor
+        const cleanHtml = (html: string | undefined): string => {
+            if (!html) return '';
+            const trimmed = html.trim();
+            // Empty Quill editor produces '<p><br></p>' which should be treated as empty
+            if (trimmed === '<p><br></p>' || trimmed === '<p></p>') return '';
+            return trimmed;
+        };
+
+        const ensureFallbackValue = (map: Record<string, string>, fieldLabel: string, isHtml: boolean = false): boolean => {
+            const value = map[fallbackLocale] ?? '';
+            const cleanedValue = isHtml ? cleanHtml(value) : value.trim();
+            if (cleanedValue.length === 0) {
                 isSubmitting = false;
                 cancel();
                 window.alert(m['admin.organization.validation.fallback-required']({ field: fieldLabel, locale: fallbackLabel }));
@@ -573,22 +588,49 @@
         };
 
         if (!ensureFallbackValue(nameByLocale, m['admin.organization.fields.name']())) return;
-        if (!ensureFallbackValue(descriptionByLocale, m['admin.organization.fields.description']())) return;
+        if (!ensureFallbackValue(descriptionByLocale, m['admin.organization.fields.description'](), true)) return;
         if (!ensureFallbackValue(copyrightByLocale, m['admin.organization.fields.copyright']())) return;
 
+        if (defaultLocale.trim()) {
+            formData.set('defaultLocale', defaultLocale.trim());
+        }
         formData.set('fallbackLocale', fallbackLocale);
 
+        // Clean up FormData - remove all locale fields first, then add only non-empty ones
+        const allFieldsToClean: string[] = [];
         for (const locale of locales) {
-            formData.set(`name[${locale.code}]`, nameByLocale[locale.code]?.trim() ?? '');
-            formData.set(`description[${locale.code}]`, descriptionByLocale[locale.code]?.trim() ?? '');
-            const sourceUrlField = `sourceCodeUrl[${locale.code}]`;
-            const sourceUrlValue = sourceCodeUrlByLocale[locale.code]?.trim() ?? '';
-            if (sourceUrlValue || fallbackLocale === locale.code) {
-                formData.set(sourceUrlField, sourceUrlValue);
-            } else {
-                formData.delete(sourceUrlField);
+            allFieldsToClean.push(`name[${locale.code}]`);
+            allFieldsToClean.push(`description[${locale.code}]`);
+            allFieldsToClean.push(`description[${locale.code}]-source`); // RichTextEditor creates hidden source fields
+            allFieldsToClean.push(`sourceCodeUrl[${locale.code}]`);
+            allFieldsToClean.push(`copyright[${locale.code}]`);
+        }
+
+        for (const fieldName of allFieldsToClean) {
+            formData.delete(fieldName);
+        }
+
+        // Now add back only non-empty values
+        for (const locale of locales) {
+            const nameValue = nameByLocale[locale.code]?.trim() ?? '';
+            if (nameValue) {
+                formData.set(`name[${locale.code}]`, nameValue);
             }
-            formData.set(`copyright[${locale.code}]`, copyrightByLocale[locale.code]?.trim() ?? '');
+
+            const descriptionValue = cleanHtml(descriptionByLocale[locale.code]);
+            if (descriptionValue) {
+                formData.set(`description[${locale.code}]`, descriptionValue);
+            }
+
+            const sourceUrlValue = sourceCodeUrlByLocale[locale.code]?.trim() ?? '';
+            if (sourceUrlValue) {
+                formData.set(`sourceCodeUrl[${locale.code}]`, sourceUrlValue);
+            }
+
+            const copyrightValue = copyrightByLocale[locale.code]?.trim() ?? '';
+            if (copyrightValue) {
+                formData.set(`copyright[${locale.code}]`, copyrightValue);
+            }
         }
 
         formData.set('propositionDefaults[clarificationOffsetDays]', clarificationOffsetDays.trim() || '0');
@@ -666,7 +708,43 @@
         <form method="POST" action="?/update" enctype="multipart/form-data" class="grid gap-6 lg:grid-cols-[2fr,1fr]" use:enhance={submitHandler}>
             <div class="space-y-8">
                 <div class:hidden={activeTab !== 'general'} class="space-y-8">
-                    <FieldLabel forId="fallbackLocale" label={m['admin.organization.fields.fallback-locale']()}>
+                    <div class="space-y-2">
+                        <label for="defaultLocale" class="flex items-center gap-2 text-sm font-medium text-foreground">
+                            <span>{m['admin.organization.fields.default-locale']()}</span>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <HelpCircle class="size-4 text-muted-foreground transition-colors hover:text-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent side="right" sideOffset={5}>
+                                    <p class="max-w-xs">{m['admin.organization.fields.default-locale-tooltip']()}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </label>
+                        <select
+                            id="defaultLocale"
+                            name="defaultLocale"
+                            bind:value={defaultLocale}
+                            class="h-11 w-full rounded-2xl border border-border/60 bg-white/80 px-4 text-sm font-medium text-foreground shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40 dark:border-slate-800/70 dark:bg-slate-900/70"
+                        >
+                            <option value="">{m['admin.organization.fields.fallback-locale']()} (auto)</option>
+                            {#each locales as locale}
+                                <option value={locale.code}>{locale.label}</option>
+                            {/each}
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="fallbackLocale" class="flex items-center gap-2 text-sm font-medium text-foreground">
+                            <span>{m['admin.organization.fields.fallback-locale']()}</span>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <HelpCircle class="size-4 text-muted-foreground transition-colors hover:text-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent side="right" sideOffset={5}>
+                                    <p class="max-w-xs">{m['admin.organization.fields.fallback-locale-tooltip']()}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </label>
                         <select
                             id="fallbackLocale"
                             name="fallbackLocale"
@@ -678,7 +756,7 @@
                                 <option value={locale.code}>{locale.label}</option>
                             {/each}
                         </select>
-                    </FieldLabel>
+                    </div>
 
                     <section class="space-y-6">
                         <h3 class="text-sm font-semibold text-muted-foreground">{m['admin.organization.fields.name']()}</h3>
@@ -719,7 +797,7 @@
                         {#each locales as locale}
                             {@const IconComponent = localeIcon(locale.code)}
                             <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
-                                <div class="flex items-center gap-2 sm:w-44">
+                                <div class="flex items-center gap-2 sm:w-44 sm:pt-6">
                                     {#if IconComponent}
                                         <span class="grid size-7 place-items-center overflow-hidden rounded-full bg-muted">
                                             <IconComponent />
@@ -735,14 +813,13 @@
                                     </div>
                                 </div>
                                 <div class="flex-1">
-                                    <Textarea
-                                        id={`description-${locale.code}`}
+                                    <RichTextEditor
                                         name={`description[${locale.code}]`}
-                                        rows={4}
+                                        label=""
+                                        bind:value={descriptionByLocale[locale.code]}
+                                        placeholder={m['admin.organization.fields.description']()}
                                         required={fallbackLocale === locale.code}
-                                        value={descriptionByLocale[locale.code]}
-                                        oninput={(event) =>
-                                            updateMapValue(descriptionByLocale, locale.code, (event.currentTarget as HTMLTextAreaElement).value, (next) => (descriptionByLocale = next))}
+                                        max={5000}
                                     />
                                 </div>
                             </div>
