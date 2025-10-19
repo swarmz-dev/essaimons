@@ -63,6 +63,34 @@
             "list-channels": {
                 "error": "Erreur lors de la récupération des canaux Discord"
             }
+        },
+        "propositions": {
+            "export": {
+                "error": {
+                    "not-found": "Aucune proposition trouvée pour l'export",
+                    "some-not-found": "Certaines propositions n'ont pas été trouvées",
+                    "default": "Impossible d'exporter les propositions pour le moment"
+                }
+            },
+            "import": {
+                "error": {
+                    "invalid-json": "Le fichier n'est pas un JSON valide",
+                    "analyze-failed": "Impossible d'analyser le fichier d'import",
+                    "session-not-found": "Session d'import introuvable ou expirée",
+                    "configure-failed": "Impossible de sauvegarder la configuration",
+                    "execute-failed": "Impossible d'exécuter l'import",
+                    "session-failed": "Impossible de récupérer la session d'import"
+                },
+                "configure": {
+                    "success": "Configuration de l'import sauvegardée avec succès"
+                },
+                "execute": {
+                    "success": "Import exécuté avec succès",
+                    "error": {
+                        "failed": "L'import a échoué, veuillez vérifier les erreurs"
+                    }
+                }
+            }
         }
     },
     "auth": {

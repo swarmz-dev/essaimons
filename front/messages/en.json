@@ -25,10 +25,7 @@
             "label": "Search",
             "placeholder": "Search..."
         },
-        "title": {
-            "label": "Title",
-            "placeholder": "Jesus' photo"
-        },
+        "title": "Title",
         "username": {
             "label": "Username",
             "placeholder": "John123"
@@ -89,7 +86,12 @@
             "loading-label": "Loading editor...",
             "toggle-html": "Show HTML source",
             "toggle-visual": "Return to visual editor"
-        }
+        },
+        "back": "Back",
+        "remove": "Remove",
+        "status": "Status",
+        "creator": "Creator",
+        "created_at": "Created at"
     },
     "open-graph": {
         "profile-picture": {
@@ -439,6 +441,149 @@
                         "action-invalid": "The action name must contain alphanumeric characters.",
                         "role-needs-action": "A custom role must include at least one action."
                     }
+                }
+            }
+        },
+        "propositions": {
+            "export": {
+                "title": "Export Propositions",
+                "button": "Export Selection",
+                "success": "Propositions exported successfully",
+                "error": {
+                    "no_selection": "Please select at least one proposition to export",
+                    "not_found": "No propositions found for export",
+                    "some_not_found": "Some propositions were not found",
+                    "default": "Unable to export propositions at the moment"
+                },
+                "options": {
+                    "title": "Export Options",
+                    "description": "Select the data to include in the export",
+                    "status_history": "Status History",
+                    "votes": "Votes",
+                    "ballots": "Ballots",
+                    "mandates": "Mandates",
+                    "comments": "Comments",
+                    "events": "Events",
+                    "reactions": "Reactions"
+                },
+                "select": {
+                    "title": "Select Propositions",
+                    "description": [
+                        {
+                            "declarations": ["input count"],
+                            "match": {
+                                "count=0": "No propositions selected",
+                                "count=1": "{count} proposition selected",
+                                "count=*": "{count} propositions selected"
+                            }
+                        }
+                    ]
+                }
+            },
+            "import": {
+                "title": "Import Propositions",
+                "step": {
+                    "upload": "Upload",
+                    "resolve": "Resolution",
+                    "execute": "Execution",
+                    "complete": "Complete"
+                },
+                "error": {
+                    "invalid_file": "Please select a valid JSON file",
+                    "validation": "The file contains validation errors",
+                    "analyze": "Unable to analyze the file",
+                    "execute": "Error during import execution"
+                },
+                "analyze": {
+                    "success": "File analyzed successfully"
+                },
+                "upload": {
+                    "title": "Upload Export File",
+                    "description": "Select the JSON file exported from another environment",
+                    "drag": "Drag and drop your JSON file here",
+                    "or": "or",
+                    "browse": "Browse Files",
+                    "analyze": "Analyze File"
+                },
+                "resolve": {
+                    "title": "Conflict Resolution",
+                    "description": "Resolve detected conflicts before proceeding with the import",
+                    "total": "Total",
+                    "new": "New",
+                    "existing": "Existing",
+                    "conflicts": "Conflicts",
+                    "no_conflicts": "No conflicts detected! You can proceed with the import.",
+                    "errors": "Critical Errors",
+                    "errors_desc": "These conflicts must be resolved to continue",
+                    "warnings": "Warnings",
+                    "warnings_desc": "These conflicts are optional but recommended",
+                    "error": {
+                        "unresolved": "Please resolve all critical conflicts before continuing"
+                    },
+                    "progress": [
+                        {
+                            "declarations": ["input resolved", "input total"],
+                            "match": {
+                                "*": "{resolved}/{total} conflicts resolved"
+                            }
+                        }
+                    ],
+                    "proceed": "Proceed with Import"
+                },
+                "conflict": {
+                    "type": {
+                        "missing_user": "Missing User",
+                        "missing_category": "Missing Category",
+                        "duplicate_proposition": "Existing Proposition",
+                        "missing_associated_proposition": "Missing Associated Proposition",
+                        "invalid_data": "Invalid Data"
+                    },
+                    "resolution": "Choose a resolution",
+                    "select_option": "Select an option",
+                    "apply": "Apply Resolution",
+                    "merge_fields": "Fields to Merge",
+                    "current": "Current",
+                    "incoming": "Incoming",
+                    "keep_incoming": "Keep Incoming",
+                    "keep_current": "Keep Current",
+                    "merge_both": "Merge Both"
+                },
+                "execute": {
+                    "title": "Import Execution",
+                    "description": "Review the summary before launching the final import",
+                    "summary": "Summary",
+                    "propositions": "Propositions to Import",
+                    "conflicts_resolved": "Conflicts Resolved",
+                    "will_create": "Propositions to Create",
+                    "will_merge": "Propositions to Merge",
+                    "button": "Launch Import",
+                    "warning": {
+                        "title": "Warning",
+                        "message": "This action will modify the database. Make sure you have reviewed all resolutions."
+                    },
+                    "success": "Import executed successfully",
+                    "error": "Import failed"
+                },
+                "complete": {
+                    "title": "Import Complete",
+                    "description": "The import was executed successfully",
+                    "created": "Created",
+                    "merged": "Merged",
+                    "skipped": "Skipped",
+                    "additional": "Additional Statistics",
+                    "users_created": "Users Created",
+                    "categories_created": "Categories Created",
+                    "files_uploaded": "Files Imported",
+                    "details": "Import Details",
+                    "action": {
+                        "created": "Created",
+                        "merged": "Merged",
+                        "skipped": "Skipped",
+                        "failed": "Failed"
+                    },
+                    "errors": "Errors",
+                    "new_import": "New Import",
+                    "view_propositions": "View Propositions"
                 }
             }
         }

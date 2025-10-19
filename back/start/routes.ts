@@ -12,6 +12,7 @@ const AdminPropositionCategoryController = () => import('#controllers/admin/prop
 const AdminOrganizationSettingsController = () => import('#controllers/admin/organization_settings_controller');
 const AdminDiscordController = () => import('#controllers/admin/discord_controller');
 const AdminEmailTemplateController = () => import('#controllers/admin/email_template_controller');
+const AdminPropositionImportExportController = () => import('#controllers/admin/proposition_import_export_controller');
 
 // App controllers
 const HealthCheckController = () => import('#controllers/health_checks_controller');
@@ -131,6 +132,16 @@ router
                                 router.get('/', [NotificationsController, 'adminIndex']);
                             })
                             .prefix('notifications');
+
+                        router
+                            .group((): void => {
+                                router.post('/export', [AdminPropositionImportExportController, 'export']);
+                                router.post('/import/analyze', [AdminPropositionImportExportController, 'analyzeImport']);
+                                router.post('/import/configure', [AdminPropositionImportExportController, 'configureImport']);
+                                router.post('/import/execute', [AdminPropositionImportExportController, 'executeImport']);
+                                router.get('/import/:importId/session', [AdminPropositionImportExportController, 'getSession']);
+                            })
+                            .prefix('propositions');
                     })
                     .prefix('admin')
                     .use([middleware.isAdmin()]);
