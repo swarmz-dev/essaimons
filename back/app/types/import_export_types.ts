@@ -2,8 +2,8 @@
  * Types pour l'import/export de propositions
  */
 
-import { PropositionStatusEnum } from '#types/enum/proposition_status_enum';
-import { PropositionVisibilityEnum } from '#types/enum/proposition_visibility_enum';
+import { PropositionStatusEnum } from './enum/proposition_status_enum.js';
+import { PropositionVisibilityEnum } from './enum/proposition_visibility_enum.js';
 
 /**
  * Format d'export d'une proposition

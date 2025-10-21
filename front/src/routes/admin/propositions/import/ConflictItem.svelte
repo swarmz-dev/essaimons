@@ -3,6 +3,7 @@
     import { Input } from '#lib/components/ui/input';
     import { m } from '#lib/paraglide/messages';
     import type { ImportConflict, ConflictResolution, ResolutionOption } from 'backend/types';
+    import { MergeAction } from 'backend/types';
 
     interface Props {
         conflict: ImportConflict;
@@ -15,7 +16,7 @@
     let selectedStrategy = $state<string | null>(null);
     let selectedOption = $state<string | null>(null);
     let createData = $state<Record<string, any>>({});
-    let fieldResolutions = $state<Array<{ field: string; action: string }>>([]);
+    let fieldResolutions = $state<Array<{ field: string; action: MergeAction }>>([]);
     let isResolved = $state(false);
 
     const handleResolve = () => {
@@ -47,7 +48,7 @@
     };
 
     const getConflictTypeLabel = (type: string) => {
-        return m[`admin.propositions.import.conflict.type.${type.toLowerCase()}`]?.() ?? type;
+        return (m as any)[`admin.propositions.import.conflict.type.${type.toLowerCase()}`]?.() ?? type;
     };
 
     const findResolutionOption = (strategy: string): ResolutionOption | undefined => {
@@ -61,7 +62,7 @@
             if (option?.preview?.changes) {
                 fieldResolutions = option.preview.changes.map((change) => ({
                     field: change.field,
-                    action: 'KEEP_INCOMING',
+                    action: MergeAction.KEEP_INCOMING,
                 }));
             }
         }
@@ -128,7 +129,7 @@
                                             {#each resolutionOption.fields as field}
                                                 <Input
                                                     type={field === 'password' ? 'password' : field === 'email' ? 'email' : 'text'}
-                                                    placeholder={m[`common.${field}`]?.() ?? field}
+                                                    placeholder={(m as any)[`common.${field}`]?.() ?? field}
                                                     bind:value={createData[field]}
                                                 />
                                             {/each}

@@ -276,7 +276,7 @@
                                     <td class="p-2">{proposition.title}</td>
                                     <td class="p-2">{proposition.status}</td>
                                     <td class="p-2">{proposition.creator?.username ?? ''}</td>
-                                    <td class="p-2">{new Date(proposition.createdAt).toLocaleDateString()}</td>
+                                    <td class="p-2">{proposition.createdAt ? new Date(proposition.createdAt).toLocaleDateString() : ''}</td>
                                 </tr>
                             {/each}
                         {/if}

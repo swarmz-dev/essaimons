@@ -21,9 +21,9 @@ export default class TestEmailTemplate extends BaseCommand {
         // Create a sample notification (not saved to DB)
         const sampleNotification = new Notification();
         sampleNotification.id = 'test-id';
-        sampleNotification.type = NotificationTypeEnum.PROPOSITION_NEW_COMMENT;
-        sampleNotification.titleKey = 'messages.notification.proposition-new-comment.title';
-        sampleNotification.bodyKey = 'messages.notification.proposition-new-comment.body';
+        sampleNotification.type = NotificationTypeEnum.COMMENT_ADDED;
+        sampleNotification.titleKey = 'messages.notification.comment-added.title';
+        sampleNotification.bodyKey = 'messages.notification.comment-added.body';
         sampleNotification.interpolationData = {
             username: 'Jean Dupont',
             propositionTitle: 'Ma super proposition',
@@ -58,9 +58,9 @@ export default class TestEmailTemplate extends BaseCommand {
             sampleNotification,
             Object.assign(new Notification(), {
                 id: 'test-id-2',
-                type: NotificationTypeEnum.PROPOSITION_VALIDATED,
-                titleKey: 'messages.notification.proposition-validated.title',
-                bodyKey: 'messages.notification.proposition-validated.body',
+                type: NotificationTypeEnum.STATUS_TRANSITION,
+                titleKey: 'messages.notification.status-transition.title',
+                bodyKey: 'messages.notification.status-transition.body',
                 interpolationData: {
                     propositionTitle: 'Proposition validée',
                 },
