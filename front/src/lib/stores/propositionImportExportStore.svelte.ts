@@ -1,5 +1,5 @@
 /**
- * Store pour gérer l'état de l'import/export de propositions
+ * Store to manage proposition import/export state
  */
 
 import type { ConflictReport, ImportConfiguration, ImportResult, ConflictResolution } from 'backend/types';
@@ -68,7 +68,7 @@ class PropositionImportExportStore {
             return;
         }
 
-        // Remplacer la résolution existante pour le même conflit
+        // Replace existing resolution for the same conflict
         const existingIndex = this.state.configuration.resolutions.findIndex((r) => r.conflictIndex === resolution.conflictIndex);
 
         if (existingIndex >= 0) {
@@ -110,7 +110,7 @@ class PropositionImportExportStore {
     }
 
     /**
-     * Vérifie si tous les conflits critiques sont résolus
+     * Check if all critical conflicts are resolved
      */
     areAllCriticalConflictsResolved(): boolean {
         if (!this.state.conflictReport || !this.state.configuration) {
@@ -132,7 +132,7 @@ class PropositionImportExportStore {
     }
 
     /**
-     * Compte le nombre de conflits résolus
+     * Count the number of resolved conflicts
      */
     getResolvedConflictsCount(): number {
         if (!this.state.configuration) {
@@ -143,7 +143,7 @@ class PropositionImportExportStore {
     }
 
     /**
-     * Compte le nombre total de conflits
+     * Count the total number of conflicts
      */
     getTotalConflictsCount(): number {
         if (!this.state.conflictReport) {
@@ -154,28 +154,28 @@ class PropositionImportExportStore {
     }
 
     /**
-     * Calcule combien de propositions seront créées
+     * Calculate how many propositions will be created
      */
     getWillCreateCount(): number {
         if (!this.state.configuration || !this.state.conflictReport) {
             return this.state.conflictReport?.summary.newPropositions ?? 0;
         }
 
-        // Compte les résolutions qui créent quelque chose de nouveau
+        // Count resolutions that create something new
         const createResolutions = this.state.configuration.resolutions.filter((r) => r.strategy === 'CREATE_NEW');
 
         return (this.state.conflictReport.summary.newPropositions ?? 0) + createResolutions.length;
     }
 
     /**
-     * Calcule combien de propositions seront fusionnées
+     * Calculate how many propositions will be merged
      */
     getWillMergeCount(): number {
         if (!this.state.configuration || !this.state.conflictReport) {
             return this.state.conflictReport?.summary.existingPropositions ?? 0;
         }
 
-        // Compte les résolutions qui fusionnent
+        // Count resolutions that merge
         const mergeResolutions = this.state.configuration.resolutions.filter((r) => r.strategy === 'MERGE' || r.strategy === 'MAP_EXISTING');
 
         return (this.state.conflictReport.summary.existingPropositions ?? 0) + mergeResolutions.length;

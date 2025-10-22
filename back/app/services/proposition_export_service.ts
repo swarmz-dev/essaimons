@@ -26,13 +26,13 @@ export default class PropositionExportService {
     constructor(private readonly fileService: FileService) {}
 
     /**
-     * Exporte une ou plusieurs propositions au format JSON
+     * Export one or more propositions as JSON
      */
     public async exportPropositions(propositions: Proposition[], exporter: User, options: ExportOptions = {}): Promise<ExportData> {
         const exportedPropositions: ExportedProposition[] = [];
 
         for (const proposition of propositions) {
-            // Charger toutes les relations nécessaires
+            // Load all necessary relations
             await this.loadPropositionRelations(proposition, options);
 
             const exportedProposition = await this.serializeProposition(proposition, options);
@@ -56,7 +56,7 @@ export default class PropositionExportService {
     }
 
     /**
-     * Charge toutes les relations nécessaires pour l'export
+     * Load all necessary relations for export
      */
     private async loadPropositionRelations(proposition: Proposition, options: ExportOptions): Promise<void> {
         const relations: string[] = ['creator', 'categories', 'rescueInitiators', 'associatedPropositions', 'attachments'];
@@ -113,7 +113,7 @@ export default class PropositionExportService {
     }
 
     /**
-     * Sérialise une proposition complète
+     * Serialize a complete proposition
      */
     private async serializeProposition(proposition: Proposition, options: ExportOptions): Promise<ExportedProposition> {
         const exported: ExportedProposition = {
@@ -147,7 +147,7 @@ export default class PropositionExportService {
             },
         };
 
-        // Ajouter les données enrichies selon les options
+        // Add enriched data according to options
         if (options.includeStatusHistory && proposition.statusHistory) {
             exported.statusHistory = proposition.statusHistory.map((history) => this.serializeStatusHistory(history));
         }
@@ -176,7 +176,7 @@ export default class PropositionExportService {
     }
 
     /**
-     * Sérialise une référence utilisateur
+     * Serialize a user reference
      */
     private serializeUserReference(user: User): ExportedUserReference {
         return {
@@ -189,7 +189,7 @@ export default class PropositionExportService {
     }
 
     /**
-     * Sérialise une référence catégorie
+     * Serialize a category reference
      */
     private serializeCategoryReference(category: any): ExportedCategoryReference {
         return {
@@ -199,10 +199,10 @@ export default class PropositionExportService {
     }
 
     /**
-     * Sérialise une référence fichier avec son contenu
+     * Serialize a file reference with its content
      */
     private async serializeFileReference(file: File): Promise<ExportedFileReference> {
-        // Lire le fichier depuis le storage et l'encoder en base64
+        // Read the file from storage and encode it in base64
         const fileBuffer = await this.fileService.getFileBuffer(file);
 
         return {
@@ -216,7 +216,7 @@ export default class PropositionExportService {
     }
 
     /**
-     * Sérialise une référence proposition associée
+     * Serialize an associated proposition reference
      */
     private serializePropositionReference(proposition: Proposition): ExportedPropositionReference {
         return {
@@ -226,7 +226,7 @@ export default class PropositionExportService {
     }
 
     /**
-     * Sérialise l'historique de statut
+     * Serialize status history
      */
     private serializeStatusHistory(history: any): ExportedStatusHistory {
         return {
@@ -240,7 +240,7 @@ export default class PropositionExportService {
     }
 
     /**
-     * Sérialise un vote
+     * Serialize a vote
      */
     private serializeVote(vote: any, includeBallots: boolean): ExportedVote {
         const exported: ExportedVote = {
@@ -265,7 +265,7 @@ export default class PropositionExportService {
     }
 
     /**
-     * Sérialise une option de vote
+     * Serialize a vote option
      */
     private serializeVoteOption(option: any): ExportedVoteOption {
         return {
@@ -278,7 +278,7 @@ export default class PropositionExportService {
     }
 
     /**
-     * Sérialise un bulletin de vote
+     * Serialize a vote ballot
      */
     private serializeVoteBallot(ballot: any): ExportedVoteBallot {
         return {
@@ -290,7 +290,7 @@ export default class PropositionExportService {
     }
 
     /**
-     * Sérialise un mandat
+     * Serialize a mandate
      */
     private serializeMandate(mandate: any): ExportedMandate {
         return {
@@ -307,7 +307,7 @@ export default class PropositionExportService {
     }
 
     /**
-     * Sérialise un commentaire
+     * Serialize a comment
      */
     private serializeComment(comment: any): ExportedComment {
         return {
@@ -323,7 +323,7 @@ export default class PropositionExportService {
     }
 
     /**
-     * Sérialise un événement
+     * Serialize an event
      */
     private serializeEvent(event: any): ExportedEvent {
         return {
@@ -341,7 +341,7 @@ export default class PropositionExportService {
     }
 
     /**
-     * Sérialise une réaction
+     * Serialize a reaction
      */
     private serializeReaction(reaction: any): ExportedReaction {
         return {

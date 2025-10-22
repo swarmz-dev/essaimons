@@ -34,10 +34,10 @@ export default class PropositionImportExecutorService {
     ) {}
 
     /**
-     * Exécute l'import avec la configuration fournie
+     * Execute import with the provided configuration
      */
     public async executeImport(configuration: ImportConfiguration, executor: User): Promise<ImportResult> {
-        // Récupérer la session d'import
+        // Get the import session
         const session: ImportSession | null = this.analyzerService.getImportSession(configuration.importId);
 
         if (!session) {
@@ -58,23 +58,23 @@ export default class PropositionImportExecutorService {
             errors: [],
         };
 
-        // Maps pour garder trace des IDs source -> IDs cible
+        // Maps to keep track of source IDs -> target IDs
         const userIdMap = new Map<string, string>();
         const categoryIdMap = new Map<string, string>();
         const propositionIdMap = new Map<string, string>();
         const fileIdMap = new Map<string, string>();
 
-        // Créer une transaction globale
+        // Create a global transaction
         const trx: TransactionClientContract = await db.transaction();
 
         try {
-            // Phase 1: Résoudre tous les utilisateurs
+            // Phase 1: Resolve all users
             await this.resolveUsers(session.exportData.propositions, configuration, userIdMap, result, trx);
 
-            // Phase 2: Résoudre toutes les catégories
+            // Phase 2: Resolve all categories
             await this.resolveCategories(session.exportData.propositions, configuration, categoryIdMap, result, trx);
 
-            // Phase 3: Importer les propositions
+            // Phase 3: Import propositions
             for (let i = 0; i < session.exportData.propositions.length; i++) {
                 const exportedProposition = session.exportData.propositions[i];
 
@@ -94,7 +94,7 @@ export default class PropositionImportExecutorService {
                 }
             }
 
-            // Phase 4: Créer les associations entre propositions
+            // Phase 4: Create proposition associations
             await this.createPropositionAssociations(session.exportData.propositions, configuration, propositionIdMap, trx);
 
             await trx.commit();
@@ -109,7 +109,7 @@ export default class PropositionImportExecutorService {
     }
 
     /**
-     * Résout tous les utilisateurs référencés
+     * Resolve all referenced users
      */
     private async resolveUsers(
         propositions: ExportedProposition[],
@@ -120,7 +120,7 @@ export default class PropositionImportExecutorService {
     ): Promise<void> {
         const allUserRefs = new Map<string, ExportedUserReference>();
 
-        // Collecter toutes les références utilisateur uniques
+        // Collect all unique user references
         for (const prop of propositions) {
             allUserRefs.set(prop.externalReferences.creator.sourceId, prop.externalReferences.creator);
 
@@ -129,13 +129,13 @@ export default class PropositionImportExecutorService {
             }
         }
 
-        // Résoudre chaque utilisateur
+        // Resolve each user
         for (const [sourceId, userRef] of allUserRefs) {
             const resolution = this.findResolution(configuration, userRef.sourceId, 'creator');
 
             if (resolution) {
                 if (resolution.strategy === ResolutionStrategy.CREATE_NEW) {
-                    // Créer un nouvel utilisateur
+                    // Create a new user
                     const newUser = await User.create(
                         {
                             username: userRef.username,
@@ -150,13 +150,13 @@ export default class PropositionImportExecutorService {
                     userIdMap.set(sourceId, newUser.id);
                     result.summary.usersCreated++;
                 } else if (resolution.strategy === ResolutionStrategy.MAP_EXISTING) {
-                    // Mapper sur un utilisateur existant
+                    // Map to an existing user
                     if (resolution.mappedId) {
                         userIdMap.set(sourceId, resolution.mappedId);
                     }
                 }
             } else {
-                // Essayer de trouver automatiquement
+                // Try to find automatically
                 const existingUser = await User.query({ client: trx }).where('email', userRef.email).orWhere('username', userRef.username).first();
 
                 if (existingUser) {
@@ -167,7 +167,7 @@ export default class PropositionImportExecutorService {
     }
 
     /**
-     * Résout toutes les catégories référencées
+     * Resolve all referenced categories
      */
     private async resolveCategories(
         propositions: ExportedProposition[],
@@ -178,20 +178,20 @@ export default class PropositionImportExecutorService {
     ): Promise<void> {
         const allCategoryRefs = new Map<string, ExportedCategoryReference>();
 
-        // Collecter toutes les références catégorie uniques
+        // Collect all unique category references
         for (const prop of propositions) {
             for (const cat of prop.externalReferences.categories) {
                 allCategoryRefs.set(cat.sourceId, cat);
             }
         }
 
-        // Résoudre chaque catégorie
+        // Resolve each category
         for (const [sourceId, catRef] of allCategoryRefs) {
             const resolution = this.findResolution(configuration, sourceId, 'categories');
 
             if (resolution) {
                 if (resolution.strategy === ResolutionStrategy.CREATE_NEW) {
-                    // Créer une nouvelle catégorie
+                    // Create a new category
                     const newCategory = await PropositionCategory.create(
                         {
                             name: catRef.name,
@@ -202,19 +202,19 @@ export default class PropositionImportExecutorService {
                     categoryIdMap.set(sourceId, newCategory.id);
                     result.summary.categoriesCreated++;
                 } else if (resolution.strategy === ResolutionStrategy.MAP_EXISTING) {
-                    // Mapper sur une catégorie existante
+                    // Map to an existing category
                     if (resolution.mappedId) {
                         categoryIdMap.set(sourceId, resolution.mappedId);
                     }
                 }
             } else {
-                // Essayer de trouver automatiquement
+                // Try to find automatically
                 const existingCategory = await PropositionCategory.query({ client: trx }).where('name', catRef.name).first();
 
                 if (existingCategory) {
                     categoryIdMap.set(sourceId, existingCategory.id);
                 } else {
-                    // Auto-créer si pas de résolution spécifiée
+                    // Auto-create if no resolution specified
                     const newCategory = await PropositionCategory.create(
                         {
                             name: catRef.name,
@@ -230,7 +230,7 @@ export default class PropositionImportExecutorService {
     }
 
     /**
-     * Importe une proposition
+     * Import a proposition
      */
     private async importProposition(
         exportedProp: ExportedProposition,
@@ -246,7 +246,7 @@ export default class PropositionImportExecutorService {
     ): Promise<any> {
         const resolution = this.findResolution(configuration, exportedProp.sourceId, 'proposition');
 
-        // Vérifier si skip
+        // Check if skip
         if (resolution && resolution.strategy === ResolutionStrategy.SKIP) {
             result.summary.propositionsSkipped++;
             return {
@@ -257,7 +257,7 @@ export default class PropositionImportExecutorService {
             };
         }
 
-        // Résoudre le créateur
+        // Resolve the creator
         const creatorId = userIdMap.get(exportedProp.externalReferences.creator.sourceId);
         if (!creatorId) {
             throw new Error(`Créateur non résolu pour la proposition "${exportedProp.title}"`);
@@ -265,7 +265,7 @@ export default class PropositionImportExecutorService {
 
         const creator = await User.findOrFail(creatorId, { client: trx });
 
-        // Résoudre les catégories
+        // Resolve categories
         const categoryIds: string[] = [];
         for (const catRef of exportedProp.externalReferences.categories) {
             const catId = categoryIdMap.get(catRef.sourceId);
@@ -274,7 +274,7 @@ export default class PropositionImportExecutorService {
             }
         }
 
-        // Résoudre les rescue initiators
+        // Resolve rescue initiators
         const rescueInitiatorIds: string[] = [];
         for (const initiatorRef of exportedProp.externalReferences.rescueInitiators) {
             const userId = userIdMap.get(initiatorRef.sourceId);
@@ -283,7 +283,7 @@ export default class PropositionImportExecutorService {
             }
         }
 
-        // Importer les fichiers
+        // Import files
         let visualFileId: string | null = null;
         if (exportedProp.externalReferences.visual) {
             const visualFile = await this.importFile(exportedProp.externalReferences.visual, FileTypeEnum.PROPOSITION_VISUAL, fileIdMap, result, trx);
@@ -296,24 +296,24 @@ export default class PropositionImportExecutorService {
             attachmentFileIds.push(attachmentFile.id);
         }
 
-        // Créer ou fusionner la proposition
+        // Create or merge the proposition
         if (resolution && resolution.strategy === ResolutionStrategy.MERGE && resolution.mappedId) {
-            // Fusionner avec une proposition existante
+            // Merge with an existing proposition
             const existingProp = await Proposition.findOrFail(resolution.mappedId, { client: trx });
             existingProp.useTransaction(trx);
 
-            // Appliquer les champs selon fieldResolutions
+            // Apply fields according to fieldResolutions
             if (resolution.fieldResolutions) {
                 for (const fieldRes of resolution.fieldResolutions) {
                     if (fieldRes.action === MergeAction.KEEP_INCOMING) {
-                        // Appliquer la valeur importée
+                        // Apply the imported value
                         const value = (exportedProp as any)[fieldRes.field];
                         if (value !== undefined) {
                             (existingProp as any)[fieldRes.field] = value;
                         }
                     }
-                    // KEEP_CURRENT: ne rien faire
-                    // MERGE_BOTH: pour les catégories notamment
+                    // KEEP_CURRENT: do nothing
+                    // MERGE_BOTH: for categories notably
                     if (fieldRes.field === 'categories' && fieldRes.action === MergeAction.MERGE_BOTH) {
                         await existingProp.load('categories');
                         const existingCatIds = existingProp.categories?.map((c) => c.id) || [];
@@ -335,7 +335,7 @@ export default class PropositionImportExecutorService {
                 warnings: [],
             };
         } else {
-            // Créer une nouvelle proposition
+            // Create a new proposition
             const categories = await PropositionCategory.query({ client: trx }).whereIn('id', categoryIds);
 
             const rescueUsers = rescueInitiatorIds.length > 0 ? await User.query({ client: trx }).whereIn('id', rescueInitiatorIds) : [];
@@ -367,17 +367,17 @@ export default class PropositionImportExecutorService {
 
             proposition.useTransaction(trx);
 
-            // Associer les catégories
+            // Associate categories
             if (categories.length > 0) {
                 await proposition.related('categories').attach(categories.map((c) => c.id));
             }
 
-            // Associer les rescue initiators
+            // Associate rescue initiators
             if (rescueUsers.length > 0) {
                 await proposition.related('rescueInitiators').attach(rescueUsers.map((u) => u.id));
             }
 
-            // Associer les attachments
+            // Associate attachments
             if (attachmentFileIds.length > 0) {
                 await proposition.related('attachments').attach(attachmentFileIds);
             }
@@ -398,17 +398,17 @@ export default class PropositionImportExecutorService {
     }
 
     /**
-     * Importe un fichier
+     * Import a file
      */
     private async importFile(fileRef: ExportedFileReference, fileType: FileTypeEnum, fileIdMap: Map<string, string>, result: ImportResult, trx: TransactionClientContract): Promise<File> {
-        // Décoder le fichier base64
+        // Decode the base64 file
         const buffer = Buffer.from(fileRef.data, 'base64');
 
-        // Générer un nouveau nom de fichier
+        // Generate a new filename
         const sanitizedName = `${cuid()}-${fileRef.name}`;
         const key = fileType === FileTypeEnum.PROPOSITION_VISUAL ? `propositions/visuals/${sanitizedName}` : `propositions/attachments/${sanitizedName}`;
 
-        // Sauvegarder dans le storage
+        // Save in storage
         await this.fileService.saveBuffer(buffer, key, fileRef.mimeType);
 
         // Créer l'entrée DB
@@ -431,7 +431,7 @@ export default class PropositionImportExecutorService {
     }
 
     /**
-     * Crée les associations entre propositions
+     * Create proposition associations
      */
     private async createPropositionAssociations(
         propositions: ExportedProposition[],
@@ -448,13 +448,13 @@ export default class PropositionImportExecutorService {
             const associatedIds: string[] = [];
 
             for (const assocRef of exportedProp.externalReferences.associatedPropositions) {
-                // Chercher dans le map d'import
+                // Search in the import map
                 const assocId = propositionIdMap.get(assocRef.sourceId);
 
                 if (assocId) {
                     associatedIds.push(assocId);
                 } else {
-                    // Chercher via résolution de conflit
+                    // Search via conflict resolution
                     const resolution = this.findResolution(configuration, assocRef.sourceId, 'associatedPropositions');
 
                     if (resolution && resolution.mappedId) {
@@ -463,7 +463,7 @@ export default class PropositionImportExecutorService {
                 }
             }
 
-            // Créer les associations
+            // Create the associations
             if (associatedIds.length > 0) {
                 const associationRows = associatedIds.map((assocId) => ({
                     proposition_id: propositionId,
@@ -482,7 +482,7 @@ export default class PropositionImportExecutorService {
     }
 
     /**
-     * Trouve une résolution dans la configuration
+     * Find a resolution in the configuration
      */
     private findResolution(configuration: ImportConfiguration, sourceId: string, field: string): any {
         for (const resolution of configuration.resolutions) {

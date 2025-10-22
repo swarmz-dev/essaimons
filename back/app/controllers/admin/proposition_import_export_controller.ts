@@ -18,7 +18,7 @@ export default class AdminPropositionImportExportController {
 
     /**
      * POST /api/admin/propositions/export
-     * Exporte des propositions au format JSON
+     * Export propositions as JSON
      */
     public async export({ request, response, auth, i18n }: HttpContext) {
         const user = auth.getUserOrFail();
@@ -26,7 +26,7 @@ export default class AdminPropositionImportExportController {
         try {
             const payload = await request.validateUsing(exportPropositionsValidator);
 
-            // Charger les propositions
+            // Load propositions
             const propositions = await Proposition.query().whereIn('id', payload.propositionIds).exec();
 
             if (propositions.length === 0) {
@@ -44,11 +44,11 @@ export default class AdminPropositionImportExportController {
             // Exporter
             const exportData: ExportData = await this.exportService.exportPropositions(propositions, user, payload.options || {});
 
-            // Générer un nom de fichier
+            // Generate a filename
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const filename = `propositions-export-${timestamp}.json`;
 
-            // Retourner le JSON
+            // Return the JSON
             return response
                 .header('Content-Type', 'application/json')
                 .header('Content-Disposition', `attachment; filename="${filename}"`)
@@ -63,7 +63,7 @@ export default class AdminPropositionImportExportController {
 
     /**
      * POST /api/admin/propositions/import/analyze
-     * Analyse un fichier d'import et retourne les conflits
+     * Analyze an import file and return conflicts
      */
     public async analyzeImport({ request, response, auth, i18n }: HttpContext) {
         const user = auth.getUserOrFail();
@@ -72,7 +72,7 @@ export default class AdminPropositionImportExportController {
             const payload = await request.validateUsing(importUploadValidator);
             const uploadedFile = payload.file;
 
-            // Lire le contenu du fichier JSON
+            // Read JSON file content
             if (!uploadedFile.tmpPath) {
                 return response.badRequest({
                     error: i18n.t('messages.admin.propositions.import.error.invalid-json'),
@@ -93,7 +93,7 @@ export default class AdminPropositionImportExportController {
             // Analyser l'import
             const conflictReport = await this.analyzerService.analyzeImport(exportData, user.id);
 
-            // Retourner le rapport
+            // Return the report
             return response.ok(conflictReport);
         } catch (error: any) {
             return response.badRequest({
@@ -105,13 +105,13 @@ export default class AdminPropositionImportExportController {
 
     /**
      * POST /api/admin/propositions/import/configure
-     * Sauvegarde la configuration de résolution des conflits
+     * Save conflict resolution configuration
      */
     public async configureImport({ request, response, i18n }: HttpContext) {
         try {
             const configuration = await request.validateUsing(importConfigurationValidator);
 
-            // Vérifier que la session existe
+            // Verify that the session exists
             const session = this.analyzerService.getImportSession(configuration.importId);
 
             if (!session) {
@@ -120,7 +120,7 @@ export default class AdminPropositionImportExportController {
                 });
             }
 
-            // Mettre à jour la configuration
+            // Update the configuration
             this.analyzerService.updateSessionConfiguration(configuration.importId, configuration);
 
             return response.ok({
@@ -137,7 +137,7 @@ export default class AdminPropositionImportExportController {
 
     /**
      * POST /api/admin/propositions/import/execute
-     * Exécute l'import avec la configuration fournie
+     * Execute import with the provided configuration
      */
     public async executeImport({ request, response, auth, i18n }: HttpContext) {
         const user = auth.getUserOrFail();
@@ -178,7 +178,7 @@ export default class AdminPropositionImportExportController {
 
     /**
      * GET /api/admin/propositions/import/:importId/session
-     * Récupère une session d'import
+     * Get an import session
      */
     public async getSession({ request, response, i18n }: HttpContext) {
         try {
@@ -192,7 +192,7 @@ export default class AdminPropositionImportExportController {
                 });
             }
 
-            // Ne pas retourner les données complètes d'export (trop volumineuses)
+            // Don't return complete export data (too large)
             return response.ok({
                 id: session.id,
                 conflictReport: session.conflictReport,

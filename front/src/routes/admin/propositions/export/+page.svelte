@@ -139,7 +139,7 @@
                 return;
             }
 
-            // Télécharger le fichier
+            // Download the file
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');

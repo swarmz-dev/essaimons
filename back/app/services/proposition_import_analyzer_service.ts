@@ -11,7 +11,7 @@ export default class PropositionImportAnalyzerService {
     private readonly SESSION_EXPIRY_MS = 3600000; // 1 heure
 
     /**
-     * Analyse un fichier d'import et détecte les conflits
+     * Analyze an import file and detect conflicts
      */
     public async analyzeImport(exportData: ExportData, importerId: string): Promise<ConflictReport> {
         const conflicts: ImportConflict[] = [];
@@ -33,7 +33,7 @@ export default class PropositionImportAnalyzerService {
         for (let i = 0; i < exportData.propositions.length; i++) {
             const proposition = exportData.propositions[i];
 
-            // Vérifier si la proposition existe déjà
+            // Check if the proposition already exists
             const existingProposition = await this.findExistingProposition(proposition);
 
             if (existingProposition) {
@@ -70,29 +70,29 @@ export default class PropositionImportAnalyzerService {
                 newCount++;
             }
 
-            // Vérifier le créateur
+            // Check the creator
             const creatorConflict = await this.checkUserReference(proposition.externalReferences.creator, i, 'creator');
             if (creatorConflict) conflicts.push(creatorConflict);
 
-            // Vérifier les rescue initiators
+            // Check rescue initiators
             for (const initiator of proposition.externalReferences.rescueInitiators) {
                 const initiatorConflict = await this.checkUserReference(initiator, i, 'rescueInitiator');
                 if (initiatorConflict) conflicts.push(initiatorConflict);
             }
 
-            // Vérifier les catégories
+            // Check categories
             for (const category of proposition.externalReferences.categories) {
                 const categoryConflict = await this.checkCategoryReference(category, i);
                 if (categoryConflict) conflicts.push(categoryConflict);
             }
 
-            // Vérifier les propositions associées
+            // Check associated propositions
             for (const associatedProp of proposition.externalReferences.associatedPropositions) {
                 const assocConflict = await this.checkAssociatedProposition(associatedProp, i, exportData.propositions);
                 if (assocConflict) conflicts.push(assocConflict);
             }
 
-            // Validation des données
+            // Data validation
             if (!proposition.title || proposition.title.trim().length === 0) {
                 validationErrors.push(`Proposition #${i + 1}: le titre est requis`);
             }
@@ -102,7 +102,7 @@ export default class PropositionImportAnalyzerService {
             }
         }
 
-        // Créer le rapport
+        // Create the report
         const importId = cuid();
         const report: ConflictReport = {
             importId,
@@ -116,44 +116,44 @@ export default class PropositionImportAnalyzerService {
             validationErrors,
         };
 
-        // Sauvegarder la session d'import
+        // Save the import session
         this.saveImportSession(importId, importerId, exportData, report);
 
         return report;
     }
 
     /**
-     * Trouve une proposition existante par titre et créateur (heuristique)
+     * Find an existing proposition by title and creator (heuristic)
      */
     private async findExistingProposition(exportedProposition: ExportedProposition): Promise<Proposition | null> {
-        // Recherche par titre exact
+        // Search by exact title
         const propositions = await Proposition.query().where('title', exportedProposition.title).preload('creator');
 
         if (propositions.length === 0) {
             return null;
         }
 
-        // Si un seul résultat, c'est probablement un doublon
+        // If single result, it's probably a duplicate
         if (propositions.length === 1) {
             return propositions[0];
         }
 
-        // Si plusieurs, essayer de matcher par créateur
+        // If multiple, try to match by creator
         for (const prop of propositions) {
             if (prop.creator.email === exportedProposition.externalReferences.creator.email || prop.creator.username === exportedProposition.externalReferences.creator.username) {
                 return prop;
             }
         }
 
-        // Sinon retourner le premier
+        // Otherwise return the first
         return propositions[0];
     }
 
     /**
-     * Vérifie une référence utilisateur
+     * Check a user reference
      */
     private async checkUserReference(userRef: any, propositionIndex: number, field: string): Promise<ImportConflict | null> {
-        // Chercher l'utilisateur par email ou username
+        // Search for user by email or username
         const existingUser = await User.query().where('email', userRef.email).orWhere('username', userRef.username).first();
 
         if (!existingUser) {
@@ -185,9 +185,9 @@ export default class PropositionImportAnalyzerService {
             };
         }
 
-        // Vérifier si l'email/username correspond exactement
+        // Check if email/username matches exactly
         if (existingUser.email !== userRef.email || existingUser.username !== userRef.username) {
-            // Correspondance partielle - proposer un mapping
+            // Partial match - suggest mapping
             return {
                 type: ConflictType.MISSING_USER,
                 severity: ConflictSeverity.WARNING,
@@ -220,7 +220,7 @@ export default class PropositionImportAnalyzerService {
     }
 
     /**
-     * Vérifie une référence catégorie
+     * Check a category reference
      */
     private async checkCategoryReference(categoryRef: any, propositionIndex: number): Promise<ImportConflict | null> {
         const existingCategory = await PropositionCategory.query().where('name', categoryRef.name).first();
@@ -255,18 +255,18 @@ export default class PropositionImportAnalyzerService {
     }
 
     /**
-     * Vérifie une proposition associée
+     * Check an associated proposition
      */
     private async checkAssociatedProposition(associatedRef: any, propositionIndex: number, allExportedPropositions: ExportedProposition[]): Promise<ImportConflict | null> {
-        // Vérifier si la proposition associée est dans le même export
+        // Check if the associated proposition is in the same export
         const isInExport = allExportedPropositions.some((p) => p.sourceId === associatedRef.sourceId);
 
         if (isInExport) {
-            // OK, sera importée en même temps
+            // OK, will be imported at the same time
             return null;
         }
 
-        // Chercher dans les propositions existantes
+        // Search in existing propositions
         const existingProposition = await Proposition.query().where('title', associatedRef.title).first();
 
         if (!existingProposition) {
@@ -295,7 +295,7 @@ export default class PropositionImportAnalyzerService {
     }
 
     /**
-     * Génère un aperçu de fusion
+     * Generate a merge preview
      */
     private async generateMergePreview(incoming: ExportedProposition, current: Proposition): Promise<any> {
         await current.load('categories');
@@ -345,7 +345,7 @@ export default class PropositionImportAnalyzerService {
     }
 
     /**
-     * Récupère les options d'utilisateurs pour le mapping
+     * Get user options for mapping
      */
     private async getUserOptions(): Promise<Array<{ id: string; label: string }>> {
         const users = await User.query().where('enabled', true).orderBy('username', 'asc').limit(50);
@@ -357,7 +357,7 @@ export default class PropositionImportAnalyzerService {
     }
 
     /**
-     * Récupère les options de catégories pour le mapping
+     * Get category options for mapping
      */
     private async getCategoryOptions(): Promise<Array<{ id: string; label: string; name: string }>> {
         const categories = await PropositionCategory.query().orderBy('name', 'asc');
@@ -370,7 +370,7 @@ export default class PropositionImportAnalyzerService {
     }
 
     /**
-     * Récupère les options de propositions pour le mapping
+     * Get proposition options for mapping
      */
     private async getPropositionOptions(): Promise<Array<{ id: string; label: string }>> {
         const propositions = await Proposition.query().whereNotIn('status', ['ARCHIVED']).orderBy('created_at', 'desc').limit(100);
@@ -382,7 +382,7 @@ export default class PropositionImportAnalyzerService {
     }
 
     /**
-     * Sauvegarde une session d'import
+     * Save an import session
      */
     private saveImportSession(importId: string, userId: string, exportData: ExportData, conflictReport: ConflictReport): void {
         const session: ImportSession = {
@@ -397,12 +397,12 @@ export default class PropositionImportAnalyzerService {
 
         this.sessions.set(importId, session);
 
-        // Nettoyer les sessions expirées
+        // Clean expired sessions
         this.cleanExpiredSessions();
     }
 
     /**
-     * Récupère une session d'import
+     * Get an import session
      */
     public getImportSession(importId: string): ImportSession | null {
         const session = this.sessions.get(importId);
@@ -420,7 +420,7 @@ export default class PropositionImportAnalyzerService {
     }
 
     /**
-     * Met à jour la configuration d'une session
+     * Update session configuration
      */
     public updateSessionConfiguration(importId: string, configuration: any): void {
         const session = this.sessions.get(importId);
@@ -431,7 +431,7 @@ export default class PropositionImportAnalyzerService {
     }
 
     /**
-     * Nettoie les sessions expirées
+     * Clean expired sessions
      */
     private cleanExpiredSessions(): void {
         const now = new Date();
