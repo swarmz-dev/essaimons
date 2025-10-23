@@ -96,4 +96,27 @@ export default class FileService {
             name: filename,
         };
     }
+
+    /**
+     * Récupère le contenu d'un fichier sous forme de Buffer
+     */
+    public async getFileBuffer(file: File): Promise<Buffer> {
+        const { stream } = await this.stream(file.path);
+
+        return new Promise((resolve, reject) => {
+            const chunks: Buffer[] = [];
+
+            stream.on('data', (chunk: Buffer) => {
+                chunks.push(chunk);
+            });
+
+            stream.on('end', () => {
+                resolve(Buffer.concat(chunks));
+            });
+
+            stream.on('error', (error) => {
+                reject(error);
+            });
+        });
+    }
 }

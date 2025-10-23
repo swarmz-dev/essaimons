@@ -120,7 +120,7 @@
         quillInstance.root.addEventListener('paste', (e: ClipboardEvent) => {
             if (shiftPressed) {
                 e.preventDefault();
-                const text = clipboardEvent.clipboardData?.getData('text/plain');
+                const text = e.clipboardData?.getData('text/plain');
                 if (text) {
                     const selection = quillInstance.getSelection();
                     if (selection) {

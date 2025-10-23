@@ -7,7 +7,7 @@ import * as m from '$lib/paraglide/messages';
 type TransmitSubscription = ReturnType<Transmit['subscription']>;
 
 export class NotificationSSEService {
-    private subscription: Subscription | null = null;
+    private subscription: TransmitSubscription | null = null;
 
     constructor(private transmit: Transmit) {}
 

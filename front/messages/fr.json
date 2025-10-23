@@ -14,7 +14,6 @@
         "cancel": "Annuler",
         "back-to-home": "Retour à la page d'accueil",
         "name": "Nom",
-        "created-at": "Créé le",
         "updated-at": "Mis à jour le",
         "public": "Public",
         "private": "Privé",
@@ -25,10 +24,7 @@
             "label": "Rechercher",
             "placeholder": "Rechercher..."
         },
-        "title": {
-            "label": "Titre",
-            "placeholder": "Photo de Jésus"
-        },
+        "title": "Titre",
         "username": {
             "label": "Nom d'utilisateur",
             "placeholder": "Jean123"
@@ -89,7 +85,12 @@
             "loading-label": "Chargement de l'éditeur...",
             "toggle-html": "Afficher le code HTML",
             "toggle-visual": "Retour à l'éditeur visuel"
-        }
+        },
+        "back": "Retour",
+        "remove": "Retirer",
+        "status": "Statut",
+        "creator": "Créateur",
+        "created_at": "Créé le"
     },
     "open-graph": {
         "profile-picture": {
@@ -439,6 +440,149 @@
                         "action-invalid": "Le nom de l’action doit contenir des caractères alphanumériques.",
                         "role-needs-action": "Un rôle personnalisé doit comporter au moins une action."
                     }
+                }
+            }
+        },
+        "propositions": {
+            "export": {
+                "title": "Exporter des propositions",
+                "button": "Exporter la sélection",
+                "success": "Les propositions ont été exportées avec succès",
+                "error": {
+                    "no_selection": "Veuillez sélectionner au moins une proposition à exporter",
+                    "not_found": "Aucune proposition trouvée pour l'export",
+                    "some_not_found": "Certaines propositions n'ont pas été trouvées",
+                    "default": "Impossible d'exporter les propositions pour le moment"
+                },
+                "options": {
+                    "title": "Options d'export",
+                    "description": "Sélectionnez les données à inclure dans l'export",
+                    "status_history": "Historique des statuts",
+                    "votes": "Votes",
+                    "ballots": "Bulletins de vote",
+                    "mandates": "Mandats",
+                    "comments": "Commentaires",
+                    "events": "Événements",
+                    "reactions": "Réactions"
+                },
+                "select": {
+                    "title": "Sélection des propositions",
+                    "description": [
+                        {
+                            "declarations": ["input count"],
+                            "match": {
+                                "count=0": "Aucune proposition sélectionnée",
+                                "count=1": "{count} proposition sélectionnée",
+                                "count=*": "{count} propositions sélectionnées"
+                            }
+                        }
+                    ]
+                }
+            },
+            "import": {
+                "title": "Importer des propositions",
+                "step": {
+                    "upload": "Upload",
+                    "resolve": "Résolution",
+                    "execute": "Exécution",
+                    "complete": "Terminé"
+                },
+                "error": {
+                    "invalid_file": "Veuillez sélectionner un fichier JSON valide",
+                    "validation": "Le fichier contient des erreurs de validation",
+                    "analyze": "Impossible d'analyser le fichier",
+                    "execute": "Erreur lors de l'exécution de l'import"
+                },
+                "analyze": {
+                    "success": "Fichier analysé avec succès"
+                },
+                "upload": {
+                    "title": "Charger un fichier d'export",
+                    "description": "Sélectionnez le fichier JSON exporté depuis un autre environnement",
+                    "drag": "Glissez-déposez votre fichier JSON ici",
+                    "or": "ou",
+                    "browse": "Parcourir les fichiers",
+                    "analyze": "Analyser le fichier"
+                },
+                "resolve": {
+                    "title": "Résolution des conflits",
+                    "description": "Résolvez les conflits détectés avant de procéder à l'import",
+                    "total": "Total",
+                    "new": "Nouvelles",
+                    "existing": "Existantes",
+                    "conflicts": "Conflits",
+                    "no_conflicts": "Aucun conflit détecté ! Vous pouvez procéder à l'import.",
+                    "errors": "Erreurs critiques",
+                    "errors_desc": "Ces conflits doivent être résolus pour continuer",
+                    "warnings": "Avertissements",
+                    "warnings_desc": "Ces conflits sont optionnels mais recommandés",
+                    "error": {
+                        "unresolved": "Veuillez résoudre tous les conflits critiques avant de continuer"
+                    },
+                    "progress": [
+                        {
+                            "declarations": ["input resolved", "input total"],
+                            "match": {
+                                "*": "{resolved}/{total} conflits résolus"
+                            }
+                        }
+                    ],
+                    "proceed": "Procéder à l'import"
+                },
+                "conflict": {
+                    "type": {
+                        "missing_user": "Utilisateur manquant",
+                        "missing_category": "Catégorie manquante",
+                        "duplicate_proposition": "Proposition existante",
+                        "missing_associated_proposition": "Proposition associée manquante",
+                        "invalid_data": "Données invalides"
+                    },
+                    "resolution": "Choisissez une résolution",
+                    "select_option": "Sélectionner une option",
+                    "apply": "Appliquer la résolution",
+                    "merge_fields": "Champs à fusionner",
+                    "current": "Actuel",
+                    "incoming": "Nouveau",
+                    "keep_incoming": "Garder le nouveau",
+                    "keep_current": "Garder l'actuel",
+                    "merge_both": "Fusionner les deux"
+                },
+                "execute": {
+                    "title": "Exécution de l'import",
+                    "description": "Vérifiez le résumé avant de lancer l'import définitif",
+                    "summary": "Résumé",
+                    "propositions": "Propositions à importer",
+                    "conflicts_resolved": "Conflits résolus",
+                    "will_create": "Propositions à créer",
+                    "will_merge": "Propositions à fusionner",
+                    "button": "Lancer l'import",
+                    "warning": {
+                        "title": "Attention",
+                        "message": "Cette action va modifier la base de données. Assurez-vous d'avoir bien vérifié toutes les résolutions."
+                    },
+                    "success": "Import exécuté avec succès",
+                    "error": "L'import a échoué"
+                },
+                "complete": {
+                    "title": "Import terminé",
+                    "description": "L'import a été exécuté avec succès",
+                    "created": "Créées",
+                    "merged": "Fusionnées",
+                    "skipped": "Ignorées",
+                    "additional": "Statistiques additionnelles",
+                    "users_created": "Utilisateurs créés",
+                    "categories_created": "Catégories créées",
+                    "files_uploaded": "Fichiers importés",
+                    "details": "Détails de l'import",
+                    "action": {
+                        "created": "Créée",
+                        "merged": "Fusionnée",
+                        "skipped": "Ignorée",
+                        "failed": "Échec"
+                    },
+                    "errors": "Erreurs",
+                    "new_import": "Nouvel import",
+                    "view_propositions": "Voir les propositions"
                 }
             }
         }

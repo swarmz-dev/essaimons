@@ -36,10 +36,9 @@ export const actions: Actions = {
             };
         } else {
             try {
-                const { data: returnedData } = await locals.client.post('api/auth', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
+                const { data: returnedData } = await locals.client.post('api/auth', {
+                    identity: formData.get('identity'),
+                    password: formData.get('password'),
                 });
                 data = returnedData;
             } catch (error: any) {

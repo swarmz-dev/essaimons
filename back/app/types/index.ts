@@ -39,3 +39,32 @@ export type { SerializedMandateDeliverable } from './serialized/serialized_manda
 export type { SerializedMandateApplication } from './serialized/serialized_mandate_application.js';
 export type { SerializedMandateRevocationRequest } from './serialized/serialized_mandate_revocation_request.js';
 export type { SerializedMandate } from './serialized/serialized_mandate.js';
+
+// Import/Export types
+export type {
+    ExportData,
+    ExportedProposition,
+    ExportedUserReference,
+    ExportedCategoryReference,
+    ExportedFileReference,
+    ExportedPropositionReference,
+    ExportedStatusHistory,
+    ExportedVote,
+    ExportedVoteOption,
+    ExportedVoteBallot,
+    ExportedMandate,
+    ExportedComment,
+    ExportedEvent,
+    ExportedReaction,
+    ExportOptions,
+    ConflictReport,
+    ImportConflict,
+    ConflictResolution,
+    ImportConfiguration,
+    ImportResult,
+    ImportSession,
+    ResolutionOption,
+    MergePreview,
+} from './import_export_types.js';
+
+export { ConflictType, ConflictSeverity, ResolutionStrategy, MergeAction } from './import_export_types.js';
