@@ -53,7 +53,6 @@ const startAutomation = async () => {
         // await runSweep();
         await scheduleNext();
     } catch (error) {
-        console.log(error)
         logger.error('automation.bootstrap_failed', {
             error: error instanceof Error ? error.message : error,
             stack: error instanceof Error ? error.stack : undefined,
