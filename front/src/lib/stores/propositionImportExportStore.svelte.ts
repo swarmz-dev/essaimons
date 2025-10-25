@@ -161,10 +161,19 @@ class PropositionImportExportStore {
             return this.state.conflictReport?.summary.newPropositions ?? 0;
         }
 
-        // Count resolutions that create something new
-        const createResolutions = this.state.configuration.resolutions.filter((r) => r.strategy === 'CREATE_NEW');
+        // Start with new propositions (those that don't have conflicts)
+        let count = this.state.conflictReport.summary.newPropositions ?? 0;
 
-        return (this.state.conflictReport.summary.newPropositions ?? 0) + createResolutions.length;
+        // Add DUPLICATE_PROPOSITION conflicts where user chose CREATE_NEW (create duplicate)
+        for (const resolution of this.state.configuration.resolutions) {
+            const conflict = this.state.conflictReport.conflicts[resolution.conflictIndex];
+
+            if (conflict?.type === 'DUPLICATE_PROPOSITION' && resolution.strategy === 'CREATE_NEW') {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     /**
@@ -172,13 +181,22 @@ class PropositionImportExportStore {
      */
     getWillMergeCount(): number {
         if (!this.state.configuration || !this.state.conflictReport) {
-            return this.state.conflictReport?.summary.existingPropositions ?? 0;
+            return 0;
         }
 
-        // Count resolutions that merge
-        const mergeResolutions = this.state.configuration.resolutions.filter((r) => r.strategy === 'MERGE' || r.strategy === 'MAP_EXISTING');
+        let count = 0;
 
-        return (this.state.conflictReport.summary.existingPropositions ?? 0) + mergeResolutions.length;
+        // Count only DUPLICATE_PROPOSITION conflicts that will be merged
+        for (const resolution of this.state.configuration.resolutions) {
+            const conflict = this.state.conflictReport.conflicts[resolution.conflictIndex];
+
+            // If it's a DUPLICATE_PROPOSITION and user chose MERGE, count it
+            if (conflict?.type === 'DUPLICATE_PROPOSITION' && resolution.strategy === 'MERGE') {
+                count++;
+            }
+        }
+
+        return count;
     }
 }
 

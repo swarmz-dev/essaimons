@@ -7,7 +7,7 @@ import { ExportData, ExportedProposition, ConflictReport, ImportConflict, Confli
 
 @inject()
 export default class PropositionImportAnalyzerService {
-    private sessions: Map<string, ImportSession> = new Map();
+    private static sessions: Map<string, ImportSession> = new Map();
     private readonly SESSION_EXPIRY_MS = 3600000; // 1 heure
 
     /**
@@ -395,7 +395,7 @@ export default class PropositionImportAnalyzerService {
             expiresAt: new Date(Date.now() + this.SESSION_EXPIRY_MS),
         };
 
-        this.sessions.set(importId, session);
+        PropositionImportAnalyzerService.sessions.set(importId, session);
 
         // Clean expired sessions
         this.cleanExpiredSessions();
@@ -405,14 +405,14 @@ export default class PropositionImportAnalyzerService {
      * Get an import session
      */
     public getImportSession(importId: string): ImportSession | null {
-        const session = this.sessions.get(importId);
+        const session = PropositionImportAnalyzerService.sessions.get(importId);
 
         if (!session) {
             return null;
         }
 
         if (session.expiresAt < new Date()) {
-            this.sessions.delete(importId);
+            PropositionImportAnalyzerService.sessions.delete(importId);
             return null;
         }
 
@@ -423,7 +423,7 @@ export default class PropositionImportAnalyzerService {
      * Update session configuration
      */
     public updateSessionConfiguration(importId: string, configuration: any): void {
-        const session = this.sessions.get(importId);
+        const session = PropositionImportAnalyzerService.sessions.get(importId);
 
         if (session) {
             session.configuration = configuration;
@@ -436,9 +436,9 @@ export default class PropositionImportAnalyzerService {
     private cleanExpiredSessions(): void {
         const now = new Date();
 
-        for (const [id, session] of this.sessions.entries()) {
+        for (const [id, session] of PropositionImportAnalyzerService.sessions.entries()) {
             if (session.expiresAt < now) {
-                this.sessions.delete(id);
+                PropositionImportAnalyzerService.sessions.delete(id);
             }
         }
     }

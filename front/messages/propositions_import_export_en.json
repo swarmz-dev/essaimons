@@ -48,7 +48,8 @@
                     "invalid_file": "Please select a valid JSON file",
                     "validation": "The file contains validation errors",
                     "analyze": "Unable to analyze the file",
-                    "execute": "Error during import execution"
+                    "execute": "Error during import execution",
+                    "session-not-found": "Import session not found. Please restart the import process."
                 },
                 "analyze": {
                     "success": "File analyzed successfully"
