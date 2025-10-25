@@ -1,7 +1,7 @@
 <script lang="ts">
     import Meta from '#components/Meta.svelte';
-    import Search from '#components/Search.svelte';
     import Pagination from '#components/Pagination.svelte';
+    import { Input } from '#lib/components/ui/input';
     import { Button } from '#lib/components/ui/button';
     import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '#lib/components/ui/card';
     import { MultiSelect, type MultiSelectOption } from '#lib/components/ui/multi-select';
@@ -10,7 +10,7 @@
     import { m } from '#lib/paraglide/messages';
     import { goto } from '$app/navigation';
     import type { PaginatedPropositions, SerializedPropositionCategory, SerializedPropositionListItem, PropositionStatusEnum } from 'backend/types';
-    import { LayoutGrid, TableProperties, RotateCcw, ArrowRight, ArrowUpDown, ArrowUp, ArrowDown } from '@lucide/svelte';
+    import { LayoutGrid, TableProperties, RotateCcw, ArrowRight, ArrowUpDown, ArrowUp, ArrowDown, Search as SearchIcon } from '@lucide/svelte';
 
     type ActiveFilters = {
         query: string;
@@ -233,13 +233,16 @@
     };
 
     // Track the last server state to detect real changes vs our own updates
+    let lastServerQuery = $state<string>(data.activeFilters.query ?? '');
     let lastServerCategories = $state<string[]>([...data.activeFilters.categories]);
     let lastServerStatuses = $state<string[]>([...(data.activeFilters.statuses ?? [])]);
 
     // Synchronize local state from server on data changes (navigation, etc.)
     $effect(() => {
         const serverQuery = data.activeFilters.query ?? '';
-        if (serverQuery !== query) {
+        // Only update query if server state actually changed (not from our own typing)
+        if (serverQuery !== lastServerQuery) {
+            lastServerQuery = serverQuery;
             query = serverQuery;
         }
 
@@ -338,7 +341,13 @@
 
 <div class="flex flex-col gap-4 w-full">
     <div class="flex flex-wrap items-center gap-3 justify-between">
-        <Search bind:search={query} resultsArray={data.propositions} placeholder={m['proposition-list.search.placeholder']()} onSearch={handleSearch} />
+        <div class="flex gap-2 flex-1 max-w-md">
+            <Input type="text" bind:value={query} placeholder={m['proposition-list.search.placeholder']()} onkeydown={(e) => e.key === 'Enter' && handleSearch()} class="flex-1" />
+            <Button variant="default" onclick={handleSearch}>
+                <SearchIcon class="size-4" />
+                <span class="ml-2 hidden sm:inline">{m['common.search.label']?.() ?? 'Search'}</span>
+            </Button>
+        </div>
         <div class="flex gap-2">
             <Button variant={view === 'card' ? 'default' : 'outline'} onclick={() => handleToggleView('card')} aria-pressed={view === 'card'}>
                 <LayoutGrid class="size-4" />
