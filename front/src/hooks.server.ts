@@ -3,7 +3,7 @@ import { paraglideMiddleware } from '#lib/paraglide/server';
 import { getClient } from '#lib/api.server';
 import type { LanguageCode } from '#lib/stores/languageStore';
 
-const handleParaglide: Handle = ({ event, resolve }): Promise<Response> => {
+const handleParaglide: Handle = ({ event, resolve }) => {
     // For methods with body (POST, PUT, PATCH, DELETE), skip paraglide middleware
     // to avoid body consumption issues. The locale will be handled by cookies instead.
     if (event.request.method !== 'GET' && event.request.method !== 'HEAD') {
@@ -12,7 +12,7 @@ const handleParaglide: Handle = ({ event, resolve }): Promise<Response> => {
         });
     }
 
-    return paraglideMiddleware(event.request, ({ request, locale }) => {
+    return paraglideMiddleware(event.request, ({ request, locale }: { request: Request; locale: string }) => {
         event.request = request;
 
         return resolve(event, {
