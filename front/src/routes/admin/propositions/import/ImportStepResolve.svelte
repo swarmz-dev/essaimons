@@ -6,11 +6,13 @@
     import { showToast } from '#lib/services/toastService';
     import ConflictItem from './ConflictItem.svelte';
     import type { ConflictResolution } from 'backend/types';
+    import { PUBLIC_API_BASE_URI } from '$env/static/public';
 
     const store = propositionImportExportStore;
 
     const conflictReport = $derived(store.conflictReport);
     const configuration = $derived(store.configuration);
+    const isLoading = $derived(store.isLoading);
 
     const errorConflicts = $derived(conflictReport?.conflicts.filter((c) => c.severity === 'ERROR') ?? []);
     const warningConflicts = $derived(conflictReport?.conflicts.filter((c) => c.severity === 'WARNING') ?? []);
@@ -21,13 +23,47 @@
         store.addResolution(resolution);
     };
 
-    const proceedToExecution = () => {
+    const proceedToExecution = async () => {
         if (!canProceed) {
             showToast(m['admin.propositions.import.resolve.error.unresolved'](), 'error');
             return;
         }
 
-        store.setStep('execute');
+        if (!configuration) {
+            showToast(m['admin.propositions.import.error.validation'](), 'error');
+            return;
+        }
+
+        // Sauvegarder la configuration sur le serveur avant de continuer
+        store.setLoading(true);
+
+        try {
+            const token = document.cookie
+                .split('; ')
+                .find((row) => row.startsWith('client_token='))
+                ?.split('=')[1];
+
+            const response = await fetch(`${PUBLIC_API_BASE_URI}/api/admin/propositions/import/configure`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                credentials: 'include',
+                body: JSON.stringify(configuration),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to save configuration');
+            }
+
+            store.setStep('execute');
+        } catch (error) {
+            showToast(String(error), 'error');
+        } finally {
+            store.setLoading(false);
+        }
     };
 
     const goBack = () => {
@@ -138,7 +174,7 @@
                     total: store.getTotalConflictsCount(),
                 })}
             </span>
-            <Button onclick={proceedToExecution} disabled={!canProceed}>
+            <Button onclick={proceedToExecution} disabled={!canProceed || isLoading} loading={isLoading}>
                 {m['admin.propositions.import.resolve.proceed']()}
             </Button>
         </div>
