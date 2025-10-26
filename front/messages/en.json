@@ -88,6 +88,8 @@
         },
         "back": "Back",
         "remove": "Remove",
+        "upload": "Upload",
+        "change": "Change",
         "status": "Status",
         "creator": "Creator",
         "created_at": "Created at"
@@ -121,6 +123,14 @@
         "profile-picture": {
             "title": "Profile picture",
             "description": "Upload here a profile picture"
+        },
+        "crop": {
+            "title": "Adjust profile picture",
+            "instructions": "Drag to reposition the image. Use the slider to zoom in or out so it fills the square.",
+            "zoom": "Zoom",
+            "background": "Background color",
+            "reset": "Reset",
+            "apply": "Apply"
         },
         "export-data": {
             "title": "Download your data",
@@ -335,6 +345,14 @@
                     "title": "Profile picture",
                     "description": "User profile picture (square image recommended)"
                 }
+            },
+            "crop": {
+                "title": "Adjust profile picture",
+                "instructions": "Drag to reposition the image. Use the slider to zoom in or out so it fills the square.",
+                "zoom": "Zoom",
+                "background": "Background color",
+                "reset": "Reset",
+                "apply": "Apply"
             }
         },
         "categories": {

@@ -27,7 +27,7 @@ export const actions: Actions = {
         if (isSuccess) {
             redirect(
                 303,
-                `/${cookies.get('PARAGLIDE_LOCALE')}/admin/user/edit/${data.user.id}`,
+                `/${cookies.get('PARAGLIDE_LOCALE')}/admin/user`,
                 {
                     type: 'success',
                     message: data?.message,

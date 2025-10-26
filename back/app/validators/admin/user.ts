@@ -20,6 +20,7 @@ export const createUserValidator = vine.compile(
     vine.object({
         username: vine.string().trim().minLength(3).maxLength(50).alphaNumeric(),
         email: vine.string().trim().maxLength(100).email(),
+        enabled: vine.boolean().optional(),
         profilePicture: vine
             .file({
                 size: '2mb',
@@ -39,6 +40,7 @@ export const updateUserValidator = vine.compile(
     vine.object({
         username: vine.string().trim().minLength(3).maxLength(50).alphaNumeric(),
         email: vine.string().trim().maxLength(100).email(),
+        enabled: vine.boolean().optional(),
         profilePicture: vine
             .file({
                 size: '2mb',

@@ -65,6 +65,7 @@
     let columnVisibility = $state<VisibilityState>({});
 
     let showModal: boolean = $state(false);
+    let isDeleting: boolean = $state(false);
     const deletable: boolean = $state(!!(batchDeleteTitle && batchDeleteText));
 
     const getRowIdentifier = (row: Row<any>): string | number => {
@@ -106,20 +107,25 @@
 
     const handleDelete = async (): Promise<void> => {
         showModal = false;
-        await wrappedFetch(`${$location}/delete`, { method: 'POST', body: { data: [...selectedRows] } }, (data) => {
-            const filteredStatuses: { isSuccess: boolean; message: string; id: string }[] = data.messages.filter((status: { isSuccess: boolean; message: string; id: string }) => {
-                showToast(status.message, status.isSuccess ? 'success' : 'error');
-                return status.isSuccess;
-            });
+        isDeleting = true;
+        try {
+            await wrappedFetch(`${$location}/delete`, { method: 'POST', body: { users: [...selectedRows] } }, (data) => {
+                const filteredStatuses: { isSuccess: boolean; message: string; id: string }[] = data.messages.filter((status: { isSuccess: boolean; message: string; id: string }) => {
+                    showToast(status.message, status.isSuccess ? 'success' : 'error');
+                    return status.isSuccess;
+                });
 
-            table.getFilteredSelectedRowModel().rows.forEach((row: Row<any>): void => {
-                row.toggleSelected(false);
-            });
+                table.getFilteredSelectedRowModel().rows.forEach((row: Row<any>): void => {
+                    row.toggleSelected(false);
+                });
 
-            if (onBatchDelete) {
-                onBatchDelete(filteredStatuses.map((status: { id: string }) => status.id));
-            }
-        });
+                if (onBatchDelete) {
+                    onBatchDelete(filteredStatuses.map((status: { id: string }) => status.id));
+                }
+            });
+        } finally {
+            isDeleting = false;
+        }
     };
 
     $effect((): void => {
@@ -194,7 +200,7 @@
     <Pagination {paginatedObject} onChange={(page: number, limit: number) => onPaginationChange(page, limit)} />
 
     <div class="w-full flex justify-end gap-5">
-        <Button variant="destructive" disabled={!deletable || ![...selectedRows].length} onclick={() => (showModal = true)}>
+        <Button variant="destructive" disabled={!deletable || ![...selectedRows].length || isDeleting} loading={isDeleting} onclick={() => (showModal = true)}>
             {m['common.delete']()}
         </Button>
         <Button variant="secondary">
@@ -205,15 +211,15 @@
     </div>
 </div>
 
-<AlertDialog open={showModal} onOpenChange={() => (showModal = false)}>
+<AlertDialog open={showModal || isDeleting} onOpenChange={() => !isDeleting && (showModal = false)}>
     <AlertDialogContent>
         <AlertDialogHeader>
             <AlertDialogTitle>{batchDeleteTitle}</AlertDialogTitle>
             <AlertDialogDescription>{batchDeleteText}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-            <AlertDialogCancel>{m['common.cancel']()}</AlertDialogCancel>
-            <AlertDialogAction onclick={handleDelete}>{m['common.continue']()}</AlertDialogAction>
+            <AlertDialogCancel disabled={isDeleting}>{m['common.cancel']()}</AlertDialogCancel>
+            <AlertDialogAction onclick={handleDelete} disabled={isDeleting} loading={isDeleting}>{m['common.continue']()}</AlertDialogAction>
         </AlertDialogFooter>
     </AlertDialogContent>
 </AlertDialog>

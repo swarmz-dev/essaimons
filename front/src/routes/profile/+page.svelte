@@ -6,11 +6,12 @@
     import { Button } from '#lib/components/ui/button';
     import { profile } from '#lib/stores/profileStore';
     import { m } from '#lib/paraglide/messages';
-    import FileUpload from '#components/FileUpload.svelte';
+    import LogoCropper from '#lib/components/ui/image/LogoCropper.svelte';
     import { type SerializedUser } from 'backend/types';
     import Meta from '#components/Meta.svelte';
     import * as zod from 'zod';
     import { showToast } from '#lib/services/toastService';
+    import { onDestroy } from 'svelte';
 
     const schema = zod.object({
         username: zod.string().min(3).max(50),
@@ -22,17 +23,87 @@
         username: $profile?.username || '',
         email: $profile?.email || '',
     });
-    let profilePicture: File | undefined = $state();
+
+    // Profile picture cropping state
+    let profileData: SerializedUser = $profile!;
+    const initialProfilePictureUrl: string | null = profileData.profilePicture ? `/assets/profile-picture/${profileData.profilePicture.id}?no-cache=true` : null;
+    let profilePicturePreview: string | null = $state(initialProfilePictureUrl);
+    let profilePictureInputRef: HTMLInputElement | undefined = $state();
+    let pendingProfilePictureFile: File | null = $state(null);
+    let showCropper: boolean = $state(false);
+    let croppedFile: File | null = $state(null);
+    let croppedPreviewUrl: string | null = $state(null);
+
+    let profilePicture: File | undefined = $derived(croppedFile || undefined);
     const canSubmit: boolean = $derived(schema.safeParse({ username: formValues.username, email: formValues.email, profilePicture }).success);
 
-    let profileData: SerializedUser = $profile!;
     let isExporting: boolean = $state(false);
+
+    onDestroy(() => {
+        if (croppedPreviewUrl && croppedPreviewUrl !== initialProfilePictureUrl) {
+            URL.revokeObjectURL(croppedPreviewUrl);
+        }
+    });
 
     const handleError = (): void => {
         formValues = {
             username: $profile!.username,
             email: $profile!.email,
         };
+        profilePicturePreview = initialProfilePictureUrl;
+    };
+
+    const handleProfilePictureChange = (event: Event): void => {
+        const input = event.currentTarget as HTMLInputElement;
+        const file = input.files?.[0];
+        if (!file) {
+            pendingProfilePictureFile = null;
+            return;
+        }
+        pendingProfilePictureFile = file;
+        showCropper = true;
+    };
+
+    const handleCropConfirm = (event: CustomEvent<{ file: File; previewUrl: string }>): void => {
+        const { file, previewUrl } = event.detail;
+        if (croppedPreviewUrl && croppedPreviewUrl !== previewUrl && croppedPreviewUrl !== initialProfilePictureUrl) {
+            URL.revokeObjectURL(croppedPreviewUrl);
+        }
+        croppedFile = file;
+        croppedPreviewUrl = previewUrl;
+        profilePicturePreview = previewUrl;
+        showCropper = false;
+        pendingProfilePictureFile = null;
+        if (profilePictureInputRef) {
+            profilePictureInputRef.value = '';
+        }
+    };
+
+    const handleCropCancel = (): void => {
+        showCropper = false;
+        pendingProfilePictureFile = null;
+        if (profilePictureInputRef) {
+            profilePictureInputRef.value = '';
+        }
+    };
+
+    const removeProfilePicture = (): void => {
+        if (croppedPreviewUrl && croppedPreviewUrl !== initialProfilePictureUrl) {
+            URL.revokeObjectURL(croppedPreviewUrl);
+        }
+        croppedFile = null;
+        croppedPreviewUrl = null;
+        profilePicturePreview = null;
+        if (profilePictureInputRef) {
+            profilePictureInputRef.value = '';
+        }
+    };
+
+    const handleBeforeSubmit = (formData: FormData): void => {
+        if (croppedFile) {
+            formData.delete('profilePicture');
+            formData.append('profilePicture', croppedFile, croppedFile.name);
+        }
     };
 
     const downloadExport = async (): Promise<void> => {
@@ -109,20 +180,73 @@
     </Link>
 </div>
 
-<Form isValid={canSubmit} onError={handleError}>
+<Form isValid={canSubmit} onError={handleError} onBeforeSubmit={handleBeforeSubmit}>
     <Input name="username" placeholder={m['common.username.label']()} label={m['common.username.label']()} min={3} max={50} bind:value={formValues.username} required />
     <Input name="email" placeholder={m['common.email.label']()} label={m['common.email.label']()} max={100} bind:value={formValues.email} readonly required />
-    <FileUpload
-        name="profilePicture"
-        accept="png jpg jpeg gif webp svg"
-        fileName={profileData.profilePicture?.name}
-        title={m['profile.profile-picture.title']()}
-        description={m['profile.profile-picture.description']()}
-        pathPrefix="profile-picture"
-        id={profileData.id}
-        bind:file={profilePicture}
-    />
+
+    <div class="flex flex-col gap-4">
+        <div>
+            <label for="profilePicture" class="text-sm font-medium text-foreground">
+                {m['profile.profile-picture.title']()}
+            </label>
+            <p class="text-xs text-muted-foreground mb-2">
+                {m['profile.profile-picture.description']()}
+            </p>
+        </div>
+
+        {#if profilePicturePreview}
+            <div class="relative w-32 h-32 rounded-full overflow-hidden border-2 border-border">
+                <img src={profilePicturePreview} alt="Profile preview" class="w-full h-full object-cover" />
+            </div>
+            <div class="flex gap-2">
+                <Button type="button" variant="outline" size="sm" onclick={removeProfilePicture}>
+                    {m['common.remove']()}
+                </Button>
+                <Button type="button" variant="outline" size="sm" onclick={() => profilePictureInputRef?.click()}>
+                    {m['common.change']()}
+                </Button>
+            </div>
+        {:else}
+            <Button type="button" variant="outline" onclick={() => profilePictureInputRef?.click()}>
+                {m['common.upload']()}
+            </Button>
+        {/if}
+
+        <input
+            bind:this={profilePictureInputRef}
+            type="file"
+            id="profilePicture"
+            name="profilePicture"
+            accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+            onchange={handleProfilePictureChange}
+            class="hidden"
+        />
+    </div>
 </Form>
+
+{#if showCropper && pendingProfilePictureFile}
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+        <LogoCropper
+            file={pendingProfilePictureFile}
+            previewWidth={320}
+            previewHeight={320}
+            outputWidth={512}
+            outputHeight={512}
+            showBackgroundPicker={true}
+            title={m['profile.crop.title']()}
+            instructions={m['profile.crop.instructions']()}
+            zoomLabel={m['profile.crop.zoom']()}
+            backgroundLabel={m['profile.crop.background']()}
+            resetLabel={m['profile.crop.reset']()}
+            cancelLabel={m['common.cancel']()}
+            applyLabel={m['profile.crop.apply']()}
+            outputMimeType="image/png"
+            outputQuality={0.92}
+            on:confirm={handleCropConfirm}
+            on:cancel={handleCropCancel}
+        />
+    </div>
+{/if}
 
 <section class="mt-10 space-y-4">
     <div>

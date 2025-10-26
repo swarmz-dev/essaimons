@@ -5,6 +5,8 @@
                 "success": "Successfully deleted {username}",
                 "error": {
                     "current": "You cannot delete your own account from back-office ({username})",
+                    "is-admin": "Cannot delete {username} because they are an administrator. Admin accounts cannot be deleted for security reasons.",
+                    "has-activity": "Cannot delete {username} because they have activity in the system (proposals, comments, amendments, clarifications, votes, reactions, mandate applications, deliverables, evaluations, or revocation requests). Deleting this user would permanently remove all their contributions due to cascade deletion. Consider disabling the account instead to preserve this data.",
                     "default": "Error while deleting user with identifier {id}"
                 }
             },

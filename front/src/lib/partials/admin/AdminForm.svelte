@@ -27,9 +27,10 @@
         deleteTitle?: string;
         deleteText?: string;
         onError?: () => void;
+        onBeforeSubmit?: (formData: FormData) => void;
     };
 
-    let { children, id, canSubmit, deleteTitle, deleteText, onError }: Props = $props();
+    let { children, id, canSubmit, deleteTitle, deleteText, onError, onBeforeSubmit }: Props = $props();
 
     let showModal: boolean = $state(false);
     let isSubmitting: boolean = $state(false);
@@ -48,8 +49,14 @@
         });
     };
 
-    const submitHandler: SubmitFunction<Record<string, any>, Record<string, any>> = async () => {
+    const submitHandler: SubmitFunction<Record<string, any>, Record<string, any>> = async ({ formData }) => {
         isSubmitting = true;
+
+        // Call the custom handler to modify formData before submission
+        if (onBeforeSubmit) {
+            onBeforeSubmit(formData);
+        }
+
         return async ({ result, update }) => {
             isSubmitting = false;
             if (result.type === 'failure') {

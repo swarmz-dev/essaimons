@@ -5,6 +5,8 @@
                 "success": "Utilisateur {username} supprimé avec succès",
                 "error": {
                     "current": "Vous ne pouvez pas supprimer votre propre compte depuis le back-office ({username})",
+                    "is-admin": "Impossible de supprimer {username} car il s'agit d'un administrateur. Les comptes administrateurs ne peuvent pas être supprimés pour des raisons de sécurité.",
+                    "has-activity": "Impossible de supprimer {username} car cet utilisateur a des activités dans le système (propositions, commentaires, amendements, clarifications, votes, réactions, candidatures aux mandats, livrables, évaluations ou demandes de révocation). La suppression de cet utilisateur entraînerait la suppression permanente de toutes ses contributions en raison de la suppression en cascade. Envisagez de désactiver le compte à la place pour préserver ces données.",
                     "default": "Erreur lors de la suppression de l'utilisateur avec l'identifiant {id}"
                 }
             },

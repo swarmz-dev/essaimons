@@ -32,27 +32,40 @@ export default class AdminUserController {
     public async delete({ request, response, i18n, user }: HttpContext) {
         const { users } = await request.validateUsing(deleteUsersValidator);
 
-        const statuses: { isDeleted: boolean; isCurrentUser?: boolean; username?: string; id: string }[] = await this.userRepository.delete(users, user);
+        const statuses: { isDeleted: boolean; isCurrentUser?: boolean; isAdmin?: boolean; hasActivity?: boolean; username?: string; id: string }[] = await this.userRepository.delete(users, user);
 
         return response.ok({
             messages: await Promise.all(
-                statuses.map(async (status: { isDeleted: boolean; isCurrentUser?: boolean; username?: string; id: string }): Promise<{ id: string; message: string; isSuccess: boolean }> => {
-                    if (status.isDeleted) {
-                        return { id: status.id, message: i18n.t(`messages.admin.user.delete.success`, { username: status.username }), isSuccess: true };
-                    } else {
-                        if (status.isCurrentUser) {
-                            return { id: status.id, message: i18n.t(`messages.admin.user.delete.error.current`, { username: status.username }), isSuccess: false };
+                statuses.map(
+                    async (status: {
+                        isDeleted: boolean;
+                        isCurrentUser?: boolean;
+                        isAdmin?: boolean;
+                        hasActivity?: boolean;
+                        username?: string;
+                        id: string;
+                    }): Promise<{ id: string; message: string; isSuccess: boolean }> => {
+                        if (status.isDeleted) {
+                            return { id: status.id, message: i18n.t(`messages.admin.user.delete.success`, { username: status.username }), isSuccess: true };
                         } else {
-                            return { id: status.id, message: i18n.t(`messages.admin.user.delete.error.default`, { id: status.id }), isSuccess: false };
+                            if (status.isCurrentUser) {
+                                return { id: status.id, message: i18n.t(`messages.admin.user.delete.error.current`, { username: status.username }), isSuccess: false };
+                            } else if (status.isAdmin) {
+                                return { id: status.id, message: i18n.t(`messages.admin.user.delete.error.is-admin`, { username: status.username }), isSuccess: false };
+                            } else if (status.hasActivity) {
+                                return { id: status.id, message: i18n.t(`messages.admin.user.delete.error.has-activity`, { username: status.username }), isSuccess: false };
+                            } else {
+                                return { id: status.id, message: i18n.t(`messages.admin.user.delete.error.default`, { id: status.id }), isSuccess: false };
+                            }
                         }
                     }
-                })
+                )
             ),
         });
     }
 
     public async create({ request, response, i18n }: HttpContext) {
-        const { username, email, profilePicture: inputProfilePicture } = await request.validateUsing(createUserValidator);
+        const { username, email, enabled, profilePicture: inputProfilePicture } = await request.validateUsing(createUserValidator);
 
         let user: User | null = await this.userRepository.findOneBy({ email });
         if (user) {
@@ -67,6 +80,7 @@ export default class AdminUserController {
         user = await User.create({
             username,
             email,
+            enabled: enabled ?? false,
             profilePictureId: profilePicture?.id,
             password: cuid(),
         });
@@ -81,11 +95,15 @@ export default class AdminUserController {
     }
 
     public async update({ request, response, i18n }: HttpContext) {
-        const { username, email, profilePicture: inputProfilePicture } = await request.validateUsing(updateUserValidator);
+        const { username, email, enabled, profilePicture: inputProfilePicture } = await request.validateUsing(updateUserValidator);
 
         const user: User = await this.userRepository.firstOrFail({ email });
 
         user.username = username;
+
+        if (enabled !== undefined) {
+            user.enabled = enabled;
+        }
 
         if (inputProfilePicture) {
             if (user.profilePicture && !this.areSameFiles(user.profilePicture, inputProfilePicture)) {

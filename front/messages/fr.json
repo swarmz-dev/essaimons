@@ -88,6 +88,8 @@
         },
         "back": "Retour",
         "remove": "Retirer",
+        "upload": "Téléverser",
+        "change": "Modifier",
         "status": "Statut",
         "creator": "Créateur",
         "created_at": "Créé le"
@@ -121,6 +123,14 @@
         "profile-picture": {
             "title": "Photo de profil",
             "description": "Uploadez ici une photo de profil"
+        },
+        "crop": {
+            "title": "Ajuster la photo de profil",
+            "instructions": "Faites glisser pour repositionner l'image. Utilisez le curseur pour zoomer et remplir le carré.",
+            "zoom": "Zoom",
+            "background": "Couleur de fond",
+            "reset": "Réinitialiser",
+            "apply": "Appliquer"
         },
         "export-data": {
             "title": "Télécharger vos données",
@@ -335,6 +345,14 @@
                     "title": "Image de profil",
                     "description": "Image de profil de l'utilisateur (format carré recommandé)"
                 }
+            },
+            "crop": {
+                "title": "Ajuster l'image de profil",
+                "instructions": "Faites glisser pour repositionner l'image. Utilisez le curseur pour zoomer et remplir le carré.",
+                "zoom": "Zoom",
+                "background": "Couleur de fond",
+                "reset": "Réinitialiser",
+                "apply": "Appliquer"
             }
         },
         "categories": {
