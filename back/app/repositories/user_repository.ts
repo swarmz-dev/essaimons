@@ -73,7 +73,7 @@ export default class UserRepository extends BaseRepository<typeof User> {
                     }
 
                     // Check for comments (includes amendments and clarifications)
-                    const commentCount = await PropositionComment.query().where('author_user_id', user.id).count('* as total');
+                    const commentCount = await PropositionComment.query().where('author_id', user.id).count('* as total');
                     if (commentCount[0].$extras.total > 0) {
                         return { isDeleted: false, hasActivity: true, username: user.username, id };
                     }
@@ -125,6 +125,7 @@ export default class UserRepository extends BaseRepository<typeof User> {
 
                     return { isDeleted: true, username: user.username, id: user.id };
                 } catch (error: any) {
+                    console.error('Error deleting user:', error);
                     return { isDeleted: false, id };
                 }
             }),
