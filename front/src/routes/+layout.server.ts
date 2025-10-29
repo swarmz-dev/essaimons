@@ -92,9 +92,6 @@ export const load: LayoutServerLoad = loadFlash(
             });
         }
 
-        const userCookie: string | undefined = cookies.get('user');
-        const user: SerializedUser | undefined = userCookie ? <SerializedUser>JSON.parse(userCookie) : undefined;
-
         let organization: SerializedOrganizationSettings = {
             defaultLocale: 'fr',
             fallbackLocale: 'en',
@@ -143,7 +140,7 @@ export const load: LayoutServerLoad = loadFlash(
 
         const formError: string | undefined = cookies.get('formError');
 
-        if (!userCookie) {
+        if (!cookies.get('user')) {
             cookies.delete('token', { path: '/' });
             cookies.delete('client_token', { path: '/' });
             if (openedPathNames.some((openedPathName: OpenedPathName): boolean => location.startsWith(openedPathName.pathname))) {
@@ -193,7 +190,7 @@ export const load: LayoutServerLoad = loadFlash(
 
             if (isAuthCheckExpired) {
                 try {
-                    await locals.client.get('api');
+                    await locals.client.get('/api');
                     cookies.set('authValidatedAt', Date.now().toString(), {
                         path: '/',
                         httpOnly: true,
@@ -224,6 +221,8 @@ export const load: LayoutServerLoad = loadFlash(
         }
 
         cookies.delete('previousPathName', { path: '/' });
+
+        const user: SerializedUser | undefined = cookies.get('user') ? <SerializedUser>JSON.parse(cookies.get('user')!) : undefined;
 
         if (formError) {
             cookies.delete('formError', { path: '/' });

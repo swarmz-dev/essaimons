@@ -2,7 +2,7 @@
     import type { SvelteComponent } from 'svelte';
     import { toCamelCase } from '#lib/services/stringService';
 
-    const iconNames = ['Discord', 'EnglishFlag', 'FrenchFlag', 'Github', 'Google', 'Spinner'] as const;
+    const iconNames = ['Discord', 'EnglishFlag', 'FrenchFlag', 'Spinner'] as const;
 
     type PascalCase = (typeof iconNames)[number];
     type CamelCase<S extends string> = S extends `${infer First}${infer Rest}` ? `${Lowercase<First>}${Rest}` : S;

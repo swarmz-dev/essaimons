@@ -64,8 +64,8 @@ export default await Env.create(new URL('../', import.meta.url), {
     ADMIN_EMAIL: Env.schema.string(),
     ADDITIONAL_EMAILS: Env.schema.string(),
 
-    FRONT_URI: Env.schema.string(), // injected by Docker
-    API_URI: Env.schema.string(), // injected by Docker
+    FRONT_URI: Env.schema.string.optional(), // injected by Docker
+    API_URI: Env.schema.string.optional(), // injected by Docker
     MAIL_MOCK: Env.schema.boolean.optional(),
 
     STORAGE_DRIVER: Env.schema.enum.optional(['local', 's3'] as const),
