@@ -17,8 +17,8 @@
 </script>
 
 <div class="flex flex-col gap-1 items-center px-8">
-    <Button type="button" size="icon" class="w-full" onclick={() => handleOauthClick('discord')}>
-        <Icon name="discord" size={54} />
-        <p>{m['login.login-with']()} Discord</p>
-    </Button>
+    <!--    <Button type="button" size="icon" class="w-full" onclick={() => handleOauthClick('discord')}>-->
+    <!--        <Icon name="discord" size={54} />-->
+    <!--        <p>{m['login.login-with']()} Discord</p>-->
+    <!--    </Button>-->
 </div>
