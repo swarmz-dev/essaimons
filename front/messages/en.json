@@ -204,9 +204,9 @@
             "view-all": "View all proposals"
         },
         "meta": {
-            "title": "Welcome to Essaimons-V1 - Your Full-Stack Starter Solution",
-            "description": "Get started quickly with Essaimons-V1, a powerful full-stack starter template combining Adonis backend and Svelte frontend. Build your projects faster and smarter.",
-            "keywords": "Adonis starter kit, Svelte starter kit, full-stack template, web development, backend, frontend, Essaimons-V1"
+            "title": "Welcome to Essaimons – The digital democracy tool of Les Ruches",
+            "description": "A space dedicated to consent-based decision-making and the management of your projects with binding and revocable mandates. Let’s organize and take action !",
+            "keywords": "démocratie directe, démocratie numérique, participation citoyenne, débat en ligne, vote collectif, amendements collaboratifs, gouvernance partagée, intelligence collective, décisions participatives, Les Ruches, Essaimons, direct democracy, online debate, citizen participation, collective voting, collaborative amendments, digital democracy, shared governance, participatory decision-making, civic tech, citizen empowerment"
         }
     },
     "login": {

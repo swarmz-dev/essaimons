@@ -32,8 +32,6 @@
                         <span class="grid size-16 place-items-center rounded-3xl bg-primary/15 text-primary shadow-inner overflow-hidden">
                             {#if logoUrl}
                                 <img src={logoUrl} alt={brandName} class="size-12 rounded-2xl object-cover" />
-                            {:else}
-                                <img src="/icons/favicon-96x96.png" alt={m['common.logo.alt']()} class="size-12 rounded-2xl" />
                             {/if}
                         </span>
                         <div class="flex flex-col leading-tight">

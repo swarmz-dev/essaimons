@@ -87,8 +87,6 @@
                             <span class="grid size-10 place-items-center overflow-hidden rounded-xl">
                                 {#if logoUrl}
                                     <img src={logoUrl} alt="" class="size-9 rounded-xl object-cover" />
-                                {:else}
-                                    <img src="/icons/favicon-96x96.png" alt="" class="size-9 rounded-xl object-cover" />
                                 {/if}
                             </span>
                             <span class="truncate">{brandName}</span>
