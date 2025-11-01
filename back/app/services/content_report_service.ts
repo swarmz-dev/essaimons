@@ -251,4 +251,76 @@ export default class ContentReportService {
 
         return null;
     }
+
+    /**
+     * Hide reported content and mark report as reviewed
+     */
+    public async hideContentAndReview(report: ContentReport, reviewer: User, reviewNotes?: string): Promise<ContentReport> {
+        if (reviewer.role !== UserRoleEnum.ADMIN) {
+            throw new Error('forbidden');
+        }
+
+        if (report.status !== ContentReportStatusEnum.PENDING) {
+            throw new Error('report.already-reviewed');
+        }
+
+        // Hide the content
+        if (report.contentType === ContentTypeEnum.COMMENT) {
+            const comment = await PropositionComment.find(report.contentId);
+            if (comment) {
+                comment.isHidden = true;
+                comment.hiddenAt = DateTime.now();
+                comment.hiddenByUserId = reviewer.id;
+                await comment.save();
+            }
+        } else if (report.contentType === ContentTypeEnum.PROPOSITION) {
+            const proposition = await Proposition.find(report.contentId);
+            if (proposition) {
+                proposition.isHidden = true;
+                proposition.hiddenAt = DateTime.now();
+                proposition.hiddenByUserId = reviewer.id;
+                await proposition.save();
+            }
+        }
+
+        // Mark report as reviewed
+        report.status = ContentReportStatusEnum.REVIEWED;
+        report.reviewedByUserId = reviewer.id;
+        report.reviewedAt = DateTime.now();
+        report.reviewNotes = reviewNotes || 'Content hidden by moderator';
+
+        await report.save();
+        await report.load('reviewer', (query) => {
+            query.select(['id', 'username']);
+        });
+        await report.load('reporter', (query) => {
+            query.select(['id']);
+        });
+
+        // Notify the reporter that their report has been reviewed
+        await this.notificationService.create(
+            {
+                type: NotificationTypeEnum.CONTENT_REPORT_REVIEWED,
+                titleKey: 'notification.content-report-reviewed.title',
+                messageKey: 'notification.content-report-reviewed.message',
+                data: {
+                    status: ContentReportStatusEnum.REVIEWED,
+                    contentType: report.contentType,
+                },
+            },
+            [report.reporter.id]
+        );
+
+        logger.info(
+            {
+                reportId: report.id,
+                reviewerId: reviewer.id,
+                contentType: report.contentType,
+                contentId: report.contentId,
+            },
+            'Content hidden and report reviewed'
+        );
+
+        return report;
+    }
 }

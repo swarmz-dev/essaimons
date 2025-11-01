@@ -31,7 +31,7 @@
     {#if comments.length}
         <ul class="mt-4 space-y-4">
             {#each comments as comment (comment.id)}
-                <li id="comment-{comment.id}" class="space-y-3 rounded-xl border border-border/40 bg-card/60 p-4">
+                <li id="comment-{comment.id}" class="space-y-3 rounded-xl border border-border/40 p-4 {comment.isHidden ? 'bg-red-50 dark:bg-red-950/20' : 'bg-card/60'}">
                     <div class="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                         <div class="flex items-center gap-2">
                             <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
@@ -82,7 +82,7 @@
                     {#if (comment.replies ?? []).length}
                         <ul class="ml-4 space-y-2 border-l border-border/30 pl-4">
                             {#each comment.replies ?? [] as reply (reply.id)}
-                                <li id="comment-{reply.id}" class="space-y-1 rounded-lg bg-background/60 p-3">
+                                <li id="comment-{reply.id}" class="space-y-1 rounded-lg p-3 {reply.isHidden ? 'bg-red-50 dark:bg-red-950/20' : 'bg-background/60'}">
                                     <div class="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
                                         <span>{reply.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
                                         <div class="flex items-center gap-2">

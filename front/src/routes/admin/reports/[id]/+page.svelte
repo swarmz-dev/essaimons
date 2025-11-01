@@ -189,21 +189,18 @@
 
         isSubmitting = true;
 
-        let deleteUrl = '';
-        if (reportDetails.report.contentType === ContentTypeEnum.COMMENT) {
-            deleteUrl = `/propositions/comments/${reportDetails.report.contentId}`;
-        } else if (reportDetails.report.contentType === ContentTypeEnum.PROPOSITION) {
-            deleteUrl = `/propositions/${reportDetails.report.contentId}`;
-        }
-
-        const result = await wrappedFetch(deleteUrl, { method: 'DELETE' });
+        const result = await wrappedFetch(`/admin/reports/${reportId}/hide-content`, {
+            method: 'POST',
+            body: {
+                reviewNotes: reviewNotes.trim() || undefined,
+            },
+        });
 
         isSubmitting = false;
 
         if (result.isSuccess) {
             showToast(m['admin.reports.detail.delete-success'](), 'success');
-            // Automatically mark the report as reviewed
-            await handleReview(ContentReportStatusEnum.REVIEWED);
+            goto('/admin/reports');
         } else {
             let errorMessage = m['admin.reports.detail.delete-error']();
             if (result.error && typeof result.error === 'string') {

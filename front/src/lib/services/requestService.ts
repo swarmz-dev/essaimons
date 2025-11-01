@@ -54,9 +54,7 @@ export const wrappedFetch = async (
     // Prepend API_BASE_URL for client-side requests
     const url = typeof input === 'string' && browser && !input.startsWith('http') ? `${API_BASE_URL}${input}` : input;
 
-    console.log('[wrappedFetch] About to fetch:', url, 'with options:', { ...fetchOptions, headers: Object.fromEntries(headers.entries()) });
     const response: Response = await fetch(url, fetchOptions);
-    console.log('[wrappedFetch] Fetch response:', response.status, response.statusText);
 
     if (response.status === 401) {
         try {

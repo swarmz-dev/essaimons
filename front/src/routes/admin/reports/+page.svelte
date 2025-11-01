@@ -87,19 +87,15 @@
                 if (contentTypeFilter) params.set('contentType', contentTypeFilter);
 
                 const url = `/admin/reports?${params.toString()}`;
-                console.log('[Reports] About to fetch:', url);
 
                 // Add timeout to prevent indefinite hangs
                 const timeoutId = setTimeout(() => {
-                    console.warn('[Reports] Request timeout - aborting after 10 seconds');
                     if (abortController) {
                         abortController.abort();
                     }
                 }, 10000);
 
-                console.log('[Reports] Calling wrappedFetch...');
                 const result = await wrappedFetch(url, { method: 'GET', signal });
-                console.log('[Reports] wrappedFetch returned:', result);
                 clearTimeout(timeoutId);
 
                 if (result.isSuccess) {

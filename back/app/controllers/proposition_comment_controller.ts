@@ -19,8 +19,9 @@ export default class PropositionCommentController {
         const proposition = await this.findProposition(request.param('id'), response);
         if (!proposition) return;
 
-        const comments = await this.commentService.list(proposition);
         const actor = (user ?? null) as User | null;
+        const isAdmin = actor?.role === 'admin';
+        const comments = await this.commentService.list(proposition, isAdmin);
         const formatted = comments.map((comment) => this.serializeComment(comment, actor));
         return response.ok({ comments: formatted });
     }
@@ -116,11 +117,13 @@ export default class PropositionCommentController {
         const replies = (json.replies ?? []).map((reply: any) => ({
             ...reply,
             editable: !!actor && reply.authorId === actor.id,
+            isHidden: reply.isHidden || false,
         }));
         return {
             ...json,
             editable,
             replies,
+            isHidden: comment.isHidden || false,
         };
     }
 }

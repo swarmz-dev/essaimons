@@ -26,12 +26,16 @@ export default class PropositionCommentService {
         private readonly propositionNotificationService: PropositionNotificationService
     ) {}
 
-    public async list(proposition: Proposition): Promise<PropositionComment[]> {
+    public async list(proposition: Proposition, includeHidden: boolean = false): Promise<PropositionComment[]> {
         return proposition
             .related('comments')
             .query()
+            .if(!includeHidden, (query) => query.where('is_hidden', false))
             .preload('author', (query) => query.select(['id', 'username', 'profile_picture_id']))
             .preload('replies', (replyQuery) => {
+                if (!includeHidden) {
+                    replyQuery.where('is_hidden', false);
+                }
                 replyQuery.preload('author', (query) => query.select(['id', 'username', 'profile_picture_id'])).orderBy('created_at', 'asc');
             })
             .orderBy('created_at', 'asc');

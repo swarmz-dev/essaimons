@@ -151,6 +151,7 @@ router
                                 router.get('/pending/count', [AdminContentReportController, 'pendingCount']);
                                 router.get('/:id', [AdminContentReportController, 'show']);
                                 router.put('/:id/review', [AdminContentReportController, 'review']);
+                                router.post('/:id/hide-content', [AdminContentReportController, 'hideContent']);
                             })
                             .prefix('reports');
                     })

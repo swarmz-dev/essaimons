@@ -31,7 +31,7 @@ export default class PropositionController {
         private readonly propositionWorkflowService: PropositionWorkflowService
     ) {}
 
-    public async search({ request, response }: HttpContext): Promise<void> {
+    public async search({ request, response, user }: HttpContext): Promise<void> {
         const rawCategoryIds: string[] = this.parseCsv(request.input('categories'));
         const rawStatuses: string[] = this.parseCsv(request.input('statuses'));
 
@@ -43,11 +43,13 @@ export default class PropositionController {
             statuses: rawStatuses,
         });
 
+        const isAdmin = user?.role === 'admin';
         const paginated: PaginatedPropositions = await this.propositionRepository.searchWithFilters(
             {
                 search: query && query.length ? query : undefined,
                 categoryIds: categoryIds?.length ? categoryIds : undefined,
                 statuses: statuses?.length ? statuses : undefined,
+                includeHidden: isAdmin,
             },
             page || 1,
             limit || 12

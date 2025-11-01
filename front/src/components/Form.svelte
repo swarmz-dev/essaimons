@@ -36,7 +36,6 @@
             return;
         }
 
-        console.log(formError);
         formError.errors.forEach((error: PageDataError) => {
             showToast(error.message, error.type);
         });

@@ -92,4 +92,38 @@ export default class AdminContentReportController {
 
         return response.ok({ count });
     }
+
+    /**
+     * Hide content and mark report as reviewed
+     * POST /api/admin/reports/:id/hide-content
+     */
+    public async hideContent({ params, request, response, user, i18n }: HttpContext) {
+        try {
+            const report = await this.contentReportService.getById(params.id);
+            const reviewNotes = request.input('reviewNotes');
+
+            const updatedReport = await this.contentReportService.hideContentAndReview(report, user!, reviewNotes);
+
+            return response.ok({
+                report: updatedReport,
+                message: i18n.t('messages.reports.hide-content.success'),
+            });
+        } catch (error) {
+            if ((error as Error).message === 'forbidden') {
+                return response.forbidden({
+                    error: i18n.t('messages.reports.hide-content.error.forbidden'),
+                });
+            }
+
+            if ((error as Error).message === 'report.already-reviewed') {
+                return response.badRequest({
+                    error: i18n.t('messages.reports.hide-content.error.already-reviewed'),
+                });
+            }
+
+            return response.notFound({
+                error: i18n.t('messages.reports.hide-content.error.not-found'),
+            });
+        }
+    }
 }
