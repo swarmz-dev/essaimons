@@ -1919,10 +1919,10 @@
         }
     };
 
-    const openEvaluationDialog = (mandateId: string, deliverableId: string): void => {
+    const openEvaluationDialog = (mandateId: string, deliverableId: string, verdict: DeliverableVerdictEnum = DeliverableVerdictEnum.COMPLIANT): void => {
         evaluationMandateId = mandateId;
         evaluationDeliverableId = deliverableId;
-        evaluationVerdict = DeliverableVerdictEnum.COMPLIANT;
+        evaluationVerdict = verdict;
         evaluationComment = '';
         evaluationErrors = [];
         isEvaluationSubmitting = false;
@@ -2311,8 +2311,7 @@
             onRejectApplication={rejectApplication}
             onUploadDeliverable={openDeliverableDialog}
             onEvaluateDeliverable={(mandateId, deliverableId, verdict) => {
-                evaluationVerdict = verdict;
-                openEvaluationDialog(mandateId, deliverableId);
+                openEvaluationDialog(mandateId, deliverableId, verdict);
             }}
             {formatDateTime}
             {formatFileSize}
