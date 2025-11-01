@@ -788,7 +788,8 @@
                 "categories": "Catégories",
                 "status": "Statut",
                 "vote": "Vote",
-                "updated": "Mise à jour"
+                "updated": "Mise à jour",
+                "next-deadline": "Prochaine échéance"
             }
         },
         "empty": "Aucune proposition ne correspond à votre recherche."

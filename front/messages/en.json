@@ -788,7 +788,8 @@
                 "categories": "Categories",
                 "status": "Status",
                 "vote": "Vote",
-                "updated": "Updated"
+                "updated": "Updated",
+                "next-deadline": "Next Deadline"
             }
         },
         "empty": "No proposal matches your filters."
