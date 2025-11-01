@@ -250,70 +250,68 @@
             }
         }
     },
-    "notification": {
-        "status-transition": {
-            "title": "Proposal status changed",
-            "body": "The proposal \"{propositionTitle}\" has been changed to {newStatus}"
+    "notifications": {
+        "status_transition": {
+            "to_clarify": {
+                "title": "Proposal requires clarification",
+                "message": "The proposal \"{propositionTitle}\" has been moved to clarification phase"
+            },
+            "to_amend": {
+                "title": "Proposal requires amendments",
+                "message": "The proposal \"{propositionTitle}\" has been moved to amendment phase"
+            },
+            "to_vote": {
+                "title": "Proposal moved to vote",
+                "message": "The proposal \"{propositionTitle}\" is now open for voting"
+            },
+            "to_mandate": {
+                "title": "Proposal mandate phase",
+                "message": "The proposal \"{propositionTitle}\" has been moved to mandate phase"
+            },
+            "to_evaluate": {
+                "title": "Deliverable ready for evaluation",
+                "message": "A deliverable has been submitted for the proposal \"{propositionTitle}\" and is ready for your evaluation"
+            },
+            "to_archived": {
+                "title": "Proposal archived",
+                "message": "The proposal \"{propositionTitle}\" has been archived"
+            }
         },
-        "mandate-assigned": {
+        "mandate_assigned": {
             "title": "New mandate assigned",
-            "body": "You have been assigned to the mandate for proposal \"{propositionTitle}\""
+            "message": "You have been assigned to the mandate for proposal \"{propositionTitle}\""
         },
-        "mandate-revoked": {
+        "mandate_revoked": {
             "title": "Mandate revoked",
-            "body": "Your mandate for proposal \"{propositionTitle}\" has been revoked"
+            "message": "Your mandate for proposal \"{propositionTitle}\" has been revoked"
         },
-        "deliverable-uploaded": {
+        "deliverable_uploaded": {
             "title": "New deliverable uploaded",
-            "body": "{username} uploaded a deliverable for \"{propositionTitle}\""
+            "message": "{username} uploaded a deliverable for \"{propositionTitle}\""
         },
-        "deliverable-evaluated": {
+        "deliverable_evaluated": {
             "title": "Deliverable evaluated",
-            "body": "Your deliverable for \"{propositionTitle}\" has been evaluated"
+            "message": "Your deliverable for \"{propositionTitle}\" has been evaluated"
         },
-        "deadline-approaching": {
-            "title": "Deadline approaching",
-            "body": "The deadline for \"{propositionTitle}\" is in {days} days"
-        },
-        "nonconformity-threshold": {
-            "title": "Non-conformity threshold reached",
-            "body": "The proposal \"{propositionTitle}\" has reached the non-conformity threshold"
-        },
-        "procedure-opened": {
-            "title": "Procedure opened",
-            "body": "A procedure has been opened for proposal \"{propositionTitle}\""
-        },
-        "revocation-vote-opened": {
-            "title": "Revocation vote opened",
-            "body": "A revocation vote has been opened for \"{propositionTitle}\""
-        },
-        "comment-added": {
+        "comment_added": {
             "title": "New comment",
-            "body": "{username} commented on proposal \"{propositionTitle}\""
+            "message": "{username} commented on proposal \"{propositionTitle}\""
         },
-        "clarification-added": {
+        "clarification_added": {
             "title": "New clarification",
-            "body": "{username} added a clarification to \"{propositionTitle}\""
+            "message": "{username} added a clarification to \"{propositionTitle}\""
         },
-        "clarification-updated": {
+        "clarification_updated": {
             "title": "Clarification updated",
-            "body": "{username} updated a clarification for \"{propositionTitle}\""
+            "message": "{username} updated a clarification for \"{propositionTitle}\""
         },
-        "clarification-deleted": {
+        "clarification_deleted": {
             "title": "Clarification deleted",
-            "body": "{username} deleted a clarification from \"{propositionTitle}\""
+            "message": "{username} deleted a clarification from \"{propositionTitle}\""
         },
-        "exchange-scheduled": {
+        "exchange_scheduled": {
             "title": "Exchange scheduled",
-            "body": "An exchange has been scheduled for \"{propositionTitle}\" on {date}"
-        },
-        "proposition-new-comment": {
-            "title": "New comment",
-            "body": "{username} commented on your proposal \"{propositionTitle}\""
-        },
-        "proposition-validated": {
-            "title": "Proposal validated",
-            "body": "Your proposal \"{propositionTitle}\" has been validated"
+            "message": "An exchange has been scheduled for \"{propositionTitle}\" on {date}"
         }
     }
 }
