@@ -54,6 +54,9 @@
                 }
             }
         },
+        "reports": {
+            "pending-count": "{count} pending reports"
+        },
         "discord": {
             "update": {
                 "success": "Discord settings updated successfully",
@@ -198,6 +201,23 @@
         "export": {
             "error": {
                 "default": "We could not generate your data export at this time. Please try again later."
+            }
+        }
+    },
+    "reports": {
+        "create": {
+            "success": "Content reported successfully. Our moderation team will review it.",
+            "error": {
+                "already-exists": "You have already reported this content",
+                "content-not-found": "The content you are trying to report could not be found"
+            }
+        },
+        "review": {
+            "success": "Report reviewed successfully",
+            "error": {
+                "forbidden": "You do not have permission to review reports",
+                "already-reviewed": "This report has already been reviewed",
+                "not-found": "Report not found"
             }
         }
     },

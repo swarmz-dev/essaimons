@@ -54,6 +54,9 @@
                 }
             }
         },
+        "reports": {
+            "pending-count": "{count} signalements en attente"
+        },
         "discord": {
             "update": {
                 "success": "Paramètres Discord mis à jour avec succès",
@@ -198,6 +201,23 @@
         "export": {
             "error": {
                 "default": "Impossible de générer votre export de données pour le moment. Veuillez réessayer plus tard."
+            }
+        }
+    },
+    "reports": {
+        "create": {
+            "success": "Contenu signalé avec succès. Notre équipe de modération l'examinera.",
+            "error": {
+                "already-exists": "Vous avez déjà signalé ce contenu",
+                "content-not-found": "Le contenu que vous essayez de signaler est introuvable"
+            }
+        },
+        "review": {
+            "success": "Signalement examiné avec succès",
+            "error": {
+                "forbidden": "Vous n'avez pas la permission d'examiner les signalements",
+                "already-reviewed": "Ce signalement a déjà été examiné",
+                "not-found": "Signalement introuvable"
             }
         }
     },

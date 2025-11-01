@@ -40,8 +40,10 @@
         DeliverableVerdictEnum,
     } from 'backend/types';
     import type { PropositionComment, PropositionEvent, PropositionMandate, PropositionTimelinePhase, PropositionVote, WorkflowRole } from '#lib/types/proposition';
-    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload, Loader2, Eye, MessageCircle, CheckCircle, UserPlus, Check, X } from '@lucide/svelte';
+    import { ArrowLeft, Printer, Download, CalendarDays, Pencil, Trash2, Plus, RefreshCcw, Upload, Loader2, Eye, MessageCircle, CheckCircle, UserPlus, Check, X, Flag } from '@lucide/svelte';
     import { z } from 'zod';
+    import ReportDialog from '#lib/components/ReportDialog.svelte';
+    import { ContentTypeEnum } from 'backend/types';
 
     const { data } = $props<{
         data: {
@@ -538,6 +540,12 @@
     let amendmentDeleteParentId: string | null = $state(null);
     let isAmendmentDeleteSubmitting: boolean = $state(false);
 
+    // Report dialog state
+    let isReportDialogOpen: boolean = $state(false);
+    let reportContentType: ContentTypeEnum = $state(ContentTypeEnum.COMMENT);
+    let reportContentId: string = $state('');
+    let reportContentDescription: string = $state('');
+
     const eventSchema = z.object({
         title: z.string().trim().min(1).max(255),
         type: z.nativeEnum(PropositionEventTypeEnum),
@@ -948,6 +956,13 @@
         clarificationDeleteParentId = parentId;
         isClarificationDeleteSubmitting = false;
         isClarificationDeleteDialogOpen = true;
+    };
+
+    const openReportDialog = (contentType: ContentTypeEnum, contentId: string, description: string = ''): void => {
+        reportContentType = contentType;
+        reportContentId = contentId;
+        reportContentDescription = description;
+        isReportDialogOpen = true;
     };
 
     const submitClarificationDelete = async (): Promise<void> => {
@@ -2454,6 +2469,21 @@
                                                 {m['proposition-detail.comments.delete']()}
                                             </Button>
                                         {/if}
+                                    {:else}
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            class="gap-1 text-muted-foreground hover:text-foreground"
+                                            onclick={() =>
+                                                openReportDialog(
+                                                    ContentTypeEnum.COMMENT,
+                                                    comment.id,
+                                                    `${comment.author?.username ?? m['proposition-detail.comments.anonymous']()}: ${comment.content.slice(0, 50)}...`
+                                                )}
+                                        >
+                                            <Flag class="size-3.5" />
+                                            {m['report.button']()}
+                                        </Button>
                                     {/if}
                                 </div>
                             </div>
@@ -2487,6 +2517,21 @@
                                                         >
                                                             <Trash2 class="size-3" />
                                                             {m['proposition-detail.comments.delete']()}
+                                                        </Button>
+                                                    {:else}
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            class="gap-1 text-muted-foreground hover:text-foreground"
+                                                            onclick={() =>
+                                                                openReportDialog(
+                                                                    ContentTypeEnum.COMMENT,
+                                                                    reply.id,
+                                                                    `${reply.author?.username ?? m['proposition-detail.comments.anonymous']()}: ${reply.content.slice(0, 50)}...`
+                                                                )}
+                                                        >
+                                                            <Flag class="size-3" />
+                                                            {m['report.button']()}
                                                         </Button>
                                                     {/if}
                                                 </div>
@@ -2602,6 +2647,21 @@
                                                     {m['proposition-detail.comments.delete']()}
                                                 </Button>
                                             {/if}
+                                        {:else}
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                class="gap-1 text-muted-foreground hover:text-foreground"
+                                                onclick={() =>
+                                                    openReportDialog(
+                                                        ContentTypeEnum.COMMENT,
+                                                        comment.id,
+                                                        `${comment.author?.username ?? m['proposition-detail.comments.anonymous']()}: ${comment.content.slice(0, 50)}...`
+                                                    )}
+                                            >
+                                                <Flag class="size-3.5" />
+                                                {m['report.button']()}
+                                            </Button>
                                         {/if}
                                     </div>
                                 </div>
@@ -2635,6 +2695,21 @@
                                                             >
                                                                 <Trash2 class="size-3" />
                                                                 {m['proposition-detail.comments.delete']()}
+                                                            </Button>
+                                                        {:else}
+                                                            <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                class="gap-1 text-muted-foreground hover:text-foreground"
+                                                                onclick={() =>
+                                                                    openReportDialog(
+                                                                        ContentTypeEnum.COMMENT,
+                                                                        reply.id,
+                                                                        `${reply.author?.username ?? m['proposition-detail.comments.anonymous']()}: ${reply.content.slice(0, 50)}...`
+                                                                    )}
+                                                            >
+                                                                <Flag class="size-3" />
+                                                                {m['report.button']()}
                                                             </Button>
                                                         {/if}
                                                     </div>
@@ -4115,6 +4190,8 @@
         </form>
     </DialogContent>
 </Dialog>
+
+<ReportDialog bind:open={isReportDialogOpen} contentType={reportContentType} contentId={reportContentId} contentDescription={reportContentDescription} />
 
 {#if isMandateDeleteDialogOpen}
     <AlertDialog

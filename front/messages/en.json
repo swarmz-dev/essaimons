@@ -1195,5 +1195,22 @@
             "title": "Exchange scheduled",
             "message": "A new exchange \"{eventTitle}\" has been scheduled for \"{propositionTitle}\""
         }
+    },
+    "report": {
+        "button": "Report",
+        "dialog-title": "Report Content",
+        "dialog-description": "Help us maintain a respectful community by reporting inappropriate content. Our moderation team will review your report.",
+        "reason-label": "Why are you reporting this?",
+        "reason-spam": "Spam or advertising",
+        "reason-harassment": "Harassment or hate speech",
+        "reason-inappropriate": "Inappropriate or offensive content",
+        "reason-other": "Other reason",
+        "description-label": "Additional details (optional)",
+        "description-placeholder": "Please provide any additional context that might help our review...",
+        "description-hint": "This information will only be visible to moderators",
+        "submit": "Submit Report",
+        "success-title": "Report Submitted",
+        "success-description": "Thank you for helping keep our community safe. Our moderation team will review this content.",
+        "error-default": "Unable to submit report. Please try again."
     }
 }

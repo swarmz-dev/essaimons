@@ -13,6 +13,7 @@ const AdminOrganizationSettingsController = () => import('#controllers/admin/org
 const AdminDiscordController = () => import('#controllers/admin/discord_controller');
 const AdminEmailTemplateController = () => import('#controllers/admin/email_template_controller');
 const AdminPropositionImportExportController = () => import('#controllers/admin/proposition_import_export_controller');
+const AdminContentReportController = () => import('#controllers/admin/content_report_controller');
 
 // App controllers
 const HealthCheckController = () => import('#controllers/health_checks_controller');
@@ -29,6 +30,7 @@ const MandateApplicationController = () => import('#controllers/mandate_applicat
 const PropositionCommentController = () => import('#controllers/proposition_comment_controller');
 const SettingsController = () => import('#controllers/settings_controller');
 const DiscordEventController = () => import('#controllers/discord_event_controller');
+const ContentReportController = () => import('#controllers/content_report_controller');
 
 router.get('healthcheck', [HealthCheckController]);
 
@@ -142,6 +144,15 @@ router
                                 router.get('/import/:importId/session', [AdminPropositionImportExportController, 'getSession']);
                             })
                             .prefix('propositions');
+
+                        router
+                            .group((): void => {
+                                router.get('/', [AdminContentReportController, 'index']);
+                                router.get('/pending/count', [AdminContentReportController, 'pendingCount']);
+                                router.get('/:id', [AdminContentReportController, 'show']);
+                                router.put('/:id/review', [AdminContentReportController, 'review']);
+                            })
+                            .prefix('reports');
                     })
                     .prefix('admin')
                     .use([middleware.isAdmin()]);
@@ -165,6 +176,8 @@ router
                         router.patch('/mark-all-read', [NotificationsController, 'markAllAsRead']);
                     })
                     .prefix('notifications');
+
+                router.post('/reports', [ContentReportController, 'create']);
 
                 const PushSubscriptionsController = () => import('#controllers/push_subscriptions_controller');
                 router

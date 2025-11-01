@@ -1196,5 +1196,22 @@
             "title": "Échange planifié",
             "message": "Un nouvel échange \"{eventTitle}\" a été planifié pour \"{propositionTitle}\""
         }
+    },
+    "report": {
+        "button": "Signaler",
+        "dialog-title": "Signaler le contenu",
+        "dialog-description": "Aidez-nous à maintenir une communauté respectueuse en signalant les contenus inappropriés. Notre équipe de modération examinera votre signalement.",
+        "reason-label": "Pourquoi signalez-vous ce contenu ?",
+        "reason-spam": "Spam ou publicité",
+        "reason-harassment": "Harcèlement ou discours haineux",
+        "reason-inappropriate": "Contenu inapproprié ou offensant",
+        "reason-other": "Autre raison",
+        "description-label": "Détails supplémentaires (optionnel)",
+        "description-placeholder": "Veuillez fournir tout contexte supplémentaire pouvant aider notre examen...",
+        "description-hint": "Ces informations ne seront visibles que par les modérateurs",
+        "submit": "Soumettre le signalement",
+        "success-title": "Signalement soumis",
+        "success-description": "Merci d'aider à maintenir notre communauté sûre. Notre équipe de modération examinera ce contenu.",
+        "error-default": "Impossible de soumettre le signalement. Veuillez réessayer."
     }
 }
