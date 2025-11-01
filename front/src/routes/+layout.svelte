@@ -36,13 +36,8 @@
         }
     });
 
-    onDestroy(() => {
-        if (notificationSSE) {
-            notificationSSE.disconnect();
-        }
-    });
-
-    $effect((): void => {
+    onMount(() => {
+        // Initialize Transmit once on mount
         if (typeof window !== 'undefined') {
             (async () => {
                 const { Transmit } = await import('@adonisjs/transmit-client');
@@ -50,11 +45,24 @@
                 transmit.set(transmitInstance);
             })();
         }
+    });
 
+    onDestroy(() => {
+        if (notificationSSE) {
+            notificationSSE.disconnect();
+            notificationSSE = null;
+        }
+    });
+
+    // Handle flash messages
+    $effect(() => {
         if ($flash) {
             showToast($flash.message, $flash.type);
         }
+    });
 
+    // Handle SSE connection based on profile and page
+    $effect(() => {
         // Initialize notification SSE when user is logged in
         // But disable on admin pages to avoid connection limit issues
         const isAdminPage = page.url.pathname.startsWith('/admin');
