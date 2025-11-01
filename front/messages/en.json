@@ -1205,7 +1205,11 @@
             "clarification_added": "Clarification requests",
             "clarification_updated": "Clarification updates",
             "clarification_deleted": "Clarification deletions",
-            "exchange_scheduled": "Scheduled exchanges"
+            "exchange_scheduled": "Scheduled exchanges",
+            "deadline_reminder_48h": "48-hour deadline reminders",
+            "deadline_reminder_24h_initiator": "24-hour deadline reminders (initiators)",
+            "weekly_vote_digest": "Weekly vote digest",
+            "vote_quorum_warning": "Vote quorum warnings"
         },
         "status_transition": {
             "to_evaluate": {

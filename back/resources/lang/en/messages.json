@@ -344,6 +344,22 @@
         "content_hidden": {
             "title": "Content hidden by moderation",
             "message": "A {contentType} has been hidden by the moderation team"
+        },
+        "deadline_reminder_48h": {
+            "title": "Deadline approaching in 48 hours",
+            "message": "The {deadlineType} deadline for \"{propositionTitle}\" is in 48 hours ({deadlineDate})"
+        },
+        "deadline_reminder_24h_initiator": {
+            "title": "Deadline approaching in 24 hours",
+            "message": "As an initiator of \"{propositionTitle}\", the {deadlineType} deadline is in 24 hours ({deadlineDate}). You can request a postponement if needed."
+        },
+        "weekly_vote_digest": {
+            "title": "Weekly vote summary",
+            "message": "There are {count} upcoming votes this week"
+        },
+        "vote_quorum_warning": {
+            "title": "Vote quorum at risk",
+            "message": "The vote for \"{propositionTitle}\" closes in 48 hours and has not yet reached quorum ({current}/{required} participants)"
         }
     }
 }

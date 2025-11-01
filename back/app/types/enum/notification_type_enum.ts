@@ -16,4 +16,8 @@ export enum NotificationTypeEnum {
     CONTENT_REPORTED = 'content_reported',
     CONTENT_REPORT_REVIEWED = 'content_report_reviewed',
     CONTENT_HIDDEN = 'content_hidden',
+    DEADLINE_REMINDER_48H = 'deadline_reminder_48h',
+    DEADLINE_REMINDER_24H_INITIATOR = 'deadline_reminder_24h_initiator',
+    WEEKLY_VOTE_DIGEST = 'weekly_vote_digest',
+    VOTE_QUORUM_WARNING = 'vote_quorum_warning',
 }

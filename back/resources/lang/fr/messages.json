@@ -344,6 +344,22 @@
         "content_hidden": {
             "title": "Contenu masqué par la modération",
             "message": "Un {contentType} a été masqué par l'équipe de modération"
+        },
+        "deadline_reminder_48h": {
+            "title": "Échéance dans 48 heures",
+            "message": "L'échéance {deadlineType} pour \"{propositionTitle}\" est dans 48 heures ({deadlineDate})"
+        },
+        "deadline_reminder_24h_initiator": {
+            "title": "Échéance dans 24 heures",
+            "message": "En tant qu'initiateur de \"{propositionTitle}\", l'échéance {deadlineType} est dans 24 heures ({deadlineDate}). Vous pouvez demander un report si nécessaire."
+        },
+        "weekly_vote_digest": {
+            "title": "Récapitulatif hebdomadaire des votes",
+            "message": "Il y a {count} votes à venir cette semaine"
+        },
+        "vote_quorum_warning": {
+            "title": "Quorum de vote en danger",
+            "message": "Le vote pour \"{propositionTitle}\" ferme dans 48 heures et n'a pas encore atteint le quorum ({current}/{required} participants)"
         }
     }
 }
