@@ -34,7 +34,7 @@
             return;
         }
 
-        // Sauvegarder la configuration sur le serveur avant de continuer
+        // Save the configuration on the server before proceeding
         store.setLoading(true);
 
         try {
