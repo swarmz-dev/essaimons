@@ -65,6 +65,58 @@
             "list-channels": {
                 "error": "Error retrieving Discord channels"
             }
+        },
+        "propositions": {
+            "export": {
+                "error": {
+                    "not-found": "No propositions found for export",
+                    "some-not-found": "Some propositions were not found",
+                    "default": "Unable to export propositions at this time"
+                }
+            },
+            "import": {
+                "error": {
+                    "invalid-json": "The file is not valid JSON",
+                    "analyze-failed": "Unable to analyze the import file",
+                    "session-not-found": "Import session not found or expired",
+                    "configure-failed": "Unable to save the configuration",
+                    "execute-failed": "Unable to execute the import",
+                    "session-failed": "Unable to retrieve the import session"
+                },
+                "configure": {
+                    "success": "Import configuration saved successfully"
+                },
+                "execute": {
+                    "success": "Import executed successfully",
+                    "error": {
+                        "failed": "Import failed, please check the errors"
+                    }
+                },
+                "validation": {
+                    "unsupported-version": "Unsupported export version: {version}. Expected version: {expected}",
+                    "no-propositions": "No propositions found in import file",
+                    "title-required": "Proposition #{index}: title is required",
+                    "title-too-long": "Proposition #{index} \"{title}\": title exceeds 150 characters"
+                },
+                "conflict": {
+                    "duplicate-proposition": "The proposition \"{title}\" already exists in the environment",
+                    "missing-user": "User \"{username}\" ({email}) not found",
+                    "user-found-with-differences": "User \"{username}\" found but with differences",
+                    "missing-category": "Category \"{name}\" not found",
+                    "missing-associated-proposition": "Associated proposition \"{title}\" not found"
+                },
+                "resolution": {
+                    "merge": "Merge with existing proposition",
+                    "create-new": "Create a new proposition (duplicate)",
+                    "create-new-user": "Create a new user",
+                    "create-category": "Create category \"{name}\"",
+                    "skip": "Skip this proposition",
+                    "map-existing": "Map to an existing {type}",
+                    "map-user": "Map to \"{username}\" ({email})",
+                    "remove": "Do not associate category",
+                    "remove-association": "Do not create association"
+                }
+            }
         }
     },
     "auth": {

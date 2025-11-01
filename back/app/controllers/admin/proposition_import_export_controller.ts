@@ -41,7 +41,7 @@ export default class AdminPropositionImportExportController {
                 });
             }
 
-            // Exporter
+            // Export
             const exportData: ExportData = await this.exportService.exportPropositions(propositions, user, payload.options || {});
 
             // Generate a filename
@@ -90,8 +90,8 @@ export default class AdminPropositionImportExportController {
                 });
             }
 
-            // Analyser l'import
-            const conflictReport = await this.analyzerService.analyzeImport(exportData, user.id);
+            // Analyze the import
+            const conflictReport = await this.analyzerService.analyzeImport(exportData, user.id, i18n);
 
             // Return the report
             return response.ok(conflictReport);
@@ -145,7 +145,7 @@ export default class AdminPropositionImportExportController {
         try {
             const configuration = await request.validateUsing(importConfigurationValidator);
 
-            // Vérifier que la session existe
+            // Verify that the session exists
             const session = this.analyzerService.getImportSession(configuration.importId);
 
             if (!session) {
@@ -154,7 +154,7 @@ export default class AdminPropositionImportExportController {
                 });
             }
 
-            // Exécuter l'import
+            // Execute the import
             const result = await this.executorService.executeImport(configuration as any, user);
 
             if (result.success) {

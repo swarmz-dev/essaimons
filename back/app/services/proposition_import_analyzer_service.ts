@@ -1,4 +1,5 @@
 import { inject } from '@adonisjs/core';
+import { I18n } from '@adonisjs/i18n';
 import User from '#models/user';
 import Proposition from '#models/proposition';
 import PropositionCategory from '#models/proposition_category';
@@ -13,17 +14,22 @@ export default class PropositionImportAnalyzerService {
     /**
      * Analyze an import file and detect conflicts
      */
-    public async analyzeImport(exportData: ExportData, importerId: string): Promise<ConflictReport> {
+    public async analyzeImport(exportData: ExportData, importerId: string, i18n: I18n): Promise<ConflictReport> {
         const conflicts: ImportConflict[] = [];
         const validationErrors: string[] = [];
 
         // Format validation
         if (exportData.exportVersion !== '1.0') {
-            validationErrors.push(`Version d'export non supportée: ${exportData.exportVersion}. Version attendue: 1.0`);
+            validationErrors.push(
+                i18n.t('messages.admin.propositions.import.validation.unsupported-version', {
+                    version: exportData.exportVersion,
+                    expected: '1.0',
+                })
+            );
         }
 
         if (!exportData.propositions || exportData.propositions.length === 0) {
-            validationErrors.push("Aucune proposition trouvée dans le fichier d'import");
+            validationErrors.push(i18n.t('messages.admin.propositions.import.validation.no-propositions'));
         }
 
         // Analyze each proposition
@@ -49,20 +55,22 @@ export default class PropositionImportAnalyzerService {
                     },
                     propositionIndex: i,
                     field: 'proposition',
-                    message: `La proposition "${proposition.title}" existe déjà dans l'environnement`,
+                    message: i18n.t('messages.admin.propositions.import.conflict.duplicate-proposition', {
+                        title: proposition.title,
+                    }),
                     resolutions: [
                         {
                             strategy: ResolutionStrategy.MERGE,
-                            label: 'Fusionner avec la proposition existante',
+                            label: i18n.t('messages.admin.propositions.import.resolution.merge'),
                             preview: await this.generateMergePreview(proposition, existingProposition),
                         },
                         {
                             strategy: ResolutionStrategy.CREATE_NEW,
-                            label: 'Créer une nouvelle proposition (doublon)',
+                            label: i18n.t('messages.admin.propositions.import.resolution.create-new'),
                         },
                         {
                             strategy: ResolutionStrategy.SKIP,
-                            label: 'Ignorer cette proposition',
+                            label: i18n.t('messages.admin.propositions.import.resolution.skip'),
                         },
                     ],
                 });
@@ -71,34 +79,43 @@ export default class PropositionImportAnalyzerService {
             }
 
             // Check the creator
-            const creatorConflict = await this.checkUserReference(proposition.externalReferences.creator, i, 'creator');
+            const creatorConflict = await this.checkUserReference(proposition.externalReferences.creator, i, 'creator', i18n);
             if (creatorConflict) conflicts.push(creatorConflict);
 
             // Check rescue initiators
             for (const initiator of proposition.externalReferences.rescueInitiators) {
-                const initiatorConflict = await this.checkUserReference(initiator, i, 'rescueInitiator');
+                const initiatorConflict = await this.checkUserReference(initiator, i, 'rescueInitiator', i18n);
                 if (initiatorConflict) conflicts.push(initiatorConflict);
             }
 
             // Check categories
             for (const category of proposition.externalReferences.categories) {
-                const categoryConflict = await this.checkCategoryReference(category, i);
+                const categoryConflict = await this.checkCategoryReference(category, i, i18n);
                 if (categoryConflict) conflicts.push(categoryConflict);
             }
 
             // Check associated propositions
             for (const associatedProp of proposition.externalReferences.associatedPropositions) {
-                const assocConflict = await this.checkAssociatedProposition(associatedProp, i, exportData.propositions);
+                const assocConflict = await this.checkAssociatedProposition(associatedProp, i, exportData.propositions, i18n);
                 if (assocConflict) conflicts.push(assocConflict);
             }
 
             // Data validation
             if (!proposition.title || proposition.title.trim().length === 0) {
-                validationErrors.push(`Proposition #${i + 1}: le titre est requis`);
+                validationErrors.push(
+                    i18n.t('messages.admin.propositions.import.validation.title-required', {
+                        index: i + 1,
+                    })
+                );
             }
 
             if (proposition.title && proposition.title.length > 150) {
-                validationErrors.push(`Proposition #${i + 1} "${proposition.title}": le titre dépasse 150 caractères`);
+                validationErrors.push(
+                    i18n.t('messages.admin.propositions.import.validation.title-too-long', {
+                        index: i + 1,
+                        title: proposition.title,
+                    })
+                );
             }
         }
 
@@ -152,7 +169,7 @@ export default class PropositionImportAnalyzerService {
     /**
      * Check a user reference
      */
-    private async checkUserReference(userRef: any, propositionIndex: number, field: string): Promise<ImportConflict | null> {
+    private async checkUserReference(userRef: any, propositionIndex: number, field: string, i18n: I18n): Promise<ImportConflict | null> {
         // Search for user by email or username
         const existingUser = await User.query().where('email', userRef.email).orWhere('username', userRef.username).first();
 
@@ -164,22 +181,25 @@ export default class PropositionImportAnalyzerService {
                 reference: userRef,
                 propositionIndex,
                 field,
-                message: `Utilisateur "${userRef.username}" (${userRef.email}) introuvable`,
+                message: i18n.t('messages.admin.propositions.import.conflict.missing-user', {
+                    username: userRef.username,
+                    email: userRef.email,
+                }),
                 resolutions: [
                     {
                         strategy: ResolutionStrategy.CREATE_NEW,
-                        label: 'Créer un nouvel utilisateur',
+                        label: i18n.t('messages.admin.propositions.import.resolution.create-new-user'),
                         requiresInput: true,
                         fields: ['username', 'email', 'password'],
                     },
                     {
                         strategy: ResolutionStrategy.MAP_EXISTING,
-                        label: 'Mapper sur un utilisateur existant',
+                        label: i18n.t('messages.admin.propositions.import.resolution.map-existing', { type: 'utilisateur' }),
                         options: await this.getUserOptions(),
                     },
                     {
                         strategy: ResolutionStrategy.SKIP,
-                        label: 'Ignorer cette proposition',
+                        label: i18n.t('messages.admin.propositions.import.resolution.skip'),
                     },
                 ],
             };
@@ -194,11 +214,16 @@ export default class PropositionImportAnalyzerService {
                 reference: userRef,
                 propositionIndex,
                 field,
-                message: `Utilisateur "${userRef.username}" trouvé mais avec des différences`,
+                message: i18n.t('messages.admin.propositions.import.conflict.user-found-with-differences', {
+                    username: userRef.username,
+                }),
                 resolutions: [
                     {
                         strategy: ResolutionStrategy.MAP_EXISTING,
-                        label: `Mapper sur "${existingUser.username}" (${existingUser.email})`,
+                        label: i18n.t('messages.admin.propositions.import.resolution.map-user', {
+                            username: existingUser.username,
+                            email: existingUser.email,
+                        }),
                         options: [
                             {
                                 id: existingUser.id,
@@ -208,7 +233,7 @@ export default class PropositionImportAnalyzerService {
                     },
                     {
                         strategy: ResolutionStrategy.CREATE_NEW,
-                        label: 'Créer un nouvel utilisateur',
+                        label: i18n.t('messages.admin.propositions.import.resolution.create-new-user'),
                         requiresInput: true,
                         fields: ['username', 'email', 'password'],
                     },
@@ -222,7 +247,7 @@ export default class PropositionImportAnalyzerService {
     /**
      * Check a category reference
      */
-    private async checkCategoryReference(categoryRef: any, propositionIndex: number): Promise<ImportConflict | null> {
+    private async checkCategoryReference(categoryRef: any, propositionIndex: number, i18n: I18n): Promise<ImportConflict | null> {
         const existingCategory = await PropositionCategory.query().where('name', categoryRef.name).first();
 
         if (!existingCategory) {
@@ -232,20 +257,24 @@ export default class PropositionImportAnalyzerService {
                 reference: categoryRef,
                 propositionIndex,
                 field: 'categories',
-                message: `Catégorie "${categoryRef.name}" introuvable`,
+                message: i18n.t('messages.admin.propositions.import.conflict.missing-category', {
+                    name: categoryRef.name,
+                }),
                 resolutions: [
                     {
                         strategy: ResolutionStrategy.CREATE_NEW,
-                        label: `Créer la catégorie "${categoryRef.name}"`,
+                        label: i18n.t('messages.admin.propositions.import.resolution.create-category', {
+                            name: categoryRef.name,
+                        }),
                     },
                     {
                         strategy: ResolutionStrategy.MAP_EXISTING,
-                        label: 'Mapper sur une catégorie existante',
+                        label: i18n.t('messages.admin.propositions.import.resolution.map-existing', { type: 'catégorie' }),
                         options: await this.getCategoryOptions(),
                     },
                     {
                         strategy: ResolutionStrategy.REMOVE,
-                        label: 'Ne pas associer de catégorie',
+                        label: i18n.t('messages.admin.propositions.import.resolution.remove'),
                     },
                 ],
             };
@@ -257,7 +286,7 @@ export default class PropositionImportAnalyzerService {
     /**
      * Check an associated proposition
      */
-    private async checkAssociatedProposition(associatedRef: any, propositionIndex: number, allExportedPropositions: ExportedProposition[]): Promise<ImportConflict | null> {
+    private async checkAssociatedProposition(associatedRef: any, propositionIndex: number, allExportedPropositions: ExportedProposition[], i18n: I18n): Promise<ImportConflict | null> {
         // Check if the associated proposition is in the same export
         const isInExport = allExportedPropositions.some((p) => p.sourceId === associatedRef.sourceId);
 
@@ -276,16 +305,18 @@ export default class PropositionImportAnalyzerService {
                 reference: associatedRef,
                 propositionIndex,
                 field: 'associatedPropositions',
-                message: `Proposition associée "${associatedRef.title}" introuvable`,
+                message: i18n.t('messages.admin.propositions.import.conflict.missing-associated-proposition', {
+                    title: associatedRef.title,
+                }),
                 resolutions: [
                     {
                         strategy: ResolutionStrategy.MAP_EXISTING,
-                        label: 'Mapper sur une proposition existante',
+                        label: i18n.t('messages.admin.propositions.import.resolution.map-existing', { type: 'proposition' }),
                         options: await this.getPropositionOptions(),
                     },
                     {
                         strategy: ResolutionStrategy.REMOVE,
-                        label: "Ne pas créer d'association",
+                        label: i18n.t('messages.admin.propositions.import.resolution.remove-association'),
                     },
                 ],
             };

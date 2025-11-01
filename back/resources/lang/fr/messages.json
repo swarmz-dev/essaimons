@@ -91,6 +91,30 @@
                     "error": {
                         "failed": "L'import a échoué, veuillez vérifier les erreurs"
                     }
+                },
+                "validation": {
+                    "unsupported-version": "Version d'export non supportée : {version}. Version attendue : {expected}",
+                    "no-propositions": "Aucune proposition trouvée dans le fichier d'import",
+                    "title-required": "Proposition #{index} : le titre est requis",
+                    "title-too-long": "Proposition #{index} \"{title}\" : le titre dépasse 150 caractères"
+                },
+                "conflict": {
+                    "duplicate-proposition": "La proposition \"{title}\" existe déjà dans l'environnement",
+                    "missing-user": "Utilisateur \"{username}\" ({email}) introuvable",
+                    "user-found-with-differences": "Utilisateur \"{username}\" trouvé mais avec des différences",
+                    "missing-category": "Catégorie \"{name}\" introuvable",
+                    "missing-associated-proposition": "Proposition associée \"{title}\" introuvable"
+                },
+                "resolution": {
+                    "merge": "Fusionner avec la proposition existante",
+                    "create-new": "Créer une nouvelle proposition (doublon)",
+                    "create-new-user": "Créer un nouvel utilisateur",
+                    "create-category": "Créer la catégorie \"{name}\"",
+                    "skip": "Ignorer cette proposition",
+                    "map-existing": "Mapper sur un(e) {type} existant(e)",
+                    "map-user": "Mapper sur \"{username}\" ({email})",
+                    "remove": "Ne pas associer de catégorie",
+                    "remove-association": "Ne pas créer d'association"
                 }
             }
         }
