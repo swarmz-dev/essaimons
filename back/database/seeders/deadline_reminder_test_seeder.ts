@@ -6,7 +6,15 @@ import PropositionCategory from '#models/proposition_category';
 import PropositionComment from '#models/proposition_comment';
 import PropositionVote from '#models/proposition_vote';
 import VoteBallot from '#models/vote_ballot';
-import { PropositionStatusEnum, PropositionVisibilityEnum, PropositionVoteMethodEnum, PropositionVotePhaseEnum, PropositionCommentScopeEnum, PropositionCommentVisibilityEnum } from '#types';
+import {
+    PropositionStatusEnum,
+    PropositionVisibilityEnum,
+    PropositionVoteMethodEnum,
+    PropositionVotePhaseEnum,
+    PropositionVoteStatusEnum,
+    PropositionCommentScopeEnum,
+    PropositionCommentVisibilityEnum,
+} from '#types';
 
 export default class extends BaseSeeder {
     async run() {
@@ -149,7 +157,7 @@ export default class extends BaseSeeder {
             method: PropositionVoteMethodEnum.BINARY,
             openAt: DateTime.now().plus({ days: 3 }),
             closeAt: DateTime.now().plus({ days: 5 }),
-            status: 'pending',
+            status: PropositionVoteStatusEnum.SCHEDULED,
             metadata: { requiredParticipation: 50 },
         });
 
@@ -186,7 +194,7 @@ export default class extends BaseSeeder {
             method: PropositionVoteMethodEnum.BINARY,
             openAt: DateTime.now().minus({ hours: 24 }),
             closeAt: DateTime.now().plus({ hours: 48 }),
-            status: 'open',
+            status: PropositionVoteStatusEnum.OPEN,
             metadata: { requiredParticipation: 50 }, // 50% required
         });
 

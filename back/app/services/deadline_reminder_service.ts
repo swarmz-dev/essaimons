@@ -6,7 +6,7 @@ import PropositionVote from '#models/proposition_vote';
 import User from '#models/user';
 import DeadlineReminderSent from '#models/deadline_reminder_sent';
 import NotificationService from '#services/notification_service';
-import { NotificationTypeEnum, PropositionStatusEnum, PropositionVoteStatusEnum } from '#types';
+import { NotificationTypeEnum, PropositionVoteStatusEnum } from '#types';
 
 @inject()
 export default class DeadlineReminderService {
@@ -396,7 +396,7 @@ export default class DeadlineReminderService {
             .where('proposition_id', propositionId)
             .where('reminder_type', reminderType)
             .where('deadline_type', deadlineType)
-            .where('deadline_at', deadlineAt.toSQL())
+            .where('deadline_at', deadlineAt.toSQL()!)
             .first();
 
         return existing !== null;
