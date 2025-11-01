@@ -4,9 +4,10 @@ import ContentReport from '#models/content_report';
 import PropositionComment from '#models/proposition_comment';
 import Proposition from '#models/proposition';
 import User from '#models/user';
-import { ContentReportReasonEnum, ContentReportStatusEnum, ContentTypeEnum, UserRoleEnum } from '#types';
+import { ContentReportReasonEnum, ContentReportStatusEnum, ContentTypeEnum, NotificationTypeEnum, UserRoleEnum } from '#types';
 import { ModelPaginatorContract } from '@adonisjs/lucid/types/model';
 import logger from '@adonisjs/core/services/logger';
+import NotificationService from '#services/notification_service';
 
 interface CreateReportPayload {
     contentType: ContentTypeEnum;
@@ -29,6 +30,8 @@ interface ListReportsFilters {
 
 @inject()
 export default class ContentReportService {
+    constructor(private readonly notificationService: NotificationService) {}
+
     /**
      * Create a new content report
      */
@@ -60,6 +63,25 @@ export default class ContentReportService {
         await report.load('reporter', (query) => {
             query.select(['id', 'username', 'email']);
         });
+
+        // Notify the content author that their content has been reported
+        const content = await this.getReportedContent(report);
+        if (content) {
+            const authorId = 'author' in content ? content.author.id : content.creator.id;
+
+            await this.notificationService.create(
+                {
+                    type: NotificationTypeEnum.CONTENT_REPORTED,
+                    titleKey: 'notification.content-reported.title',
+                    messageKey: 'notification.content-reported.message',
+                    data: {
+                        contentType: payload.contentType,
+                        reason: payload.reason,
+                    },
+                },
+                [authorId]
+            );
+        }
 
         logger.info(
             {
@@ -96,6 +118,23 @@ export default class ContentReportService {
         await report.load('reviewer', (query) => {
             query.select(['id', 'username']);
         });
+        await report.load('reporter', (query) => {
+            query.select(['id']);
+        });
+
+        // Notify the reporter that their report has been reviewed
+        await this.notificationService.create(
+            {
+                type: NotificationTypeEnum.CONTENT_REPORT_REVIEWED,
+                titleKey: 'notification.content-report-reviewed.title',
+                messageKey: 'notification.content-report-reviewed.message',
+                data: {
+                    status: payload.status,
+                    contentType: report.contentType,
+                },
+            },
+            [report.reporter.id]
+        );
 
         logger.info(
             {

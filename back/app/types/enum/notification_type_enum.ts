@@ -13,4 +13,7 @@ export enum NotificationTypeEnum {
     CLARIFICATION_UPDATED = 'clarification_updated',
     CLARIFICATION_DELETED = 'clarification_deleted',
     EXCHANGE_SCHEDULED = 'exchange_scheduled',
+    CONTENT_REPORTED = 'content_reported',
+    CONTENT_REPORT_REVIEWED = 'content_report_reviewed',
+    CONTENT_HIDDEN = 'content_hidden',
 }
