@@ -113,12 +113,16 @@ export default class ContentReportService {
      * List content reports with filters and pagination
      */
     public async list(filters: ListReportsFilters = {}): Promise<ModelPaginatorContract<ContentReport>> {
+        logger.info('ContentReportService.list - START', { filters });
+
         const page = filters.page || 1;
         const limit = filters.limit || 20;
 
+        logger.info('ContentReportService.list - Building query', { page, limit });
+
         let query = ContentReport.query()
             .preload('reporter', (query) => {
-                query.select(['id', 'username', 'email', 'profile_picture_id']).preload('profilePicture');
+                query.select(['id', 'username', 'email']);
             })
             .preload('reviewer', (query) => {
                 query.select(['id', 'username']);
@@ -133,7 +137,11 @@ export default class ContentReportService {
             query = query.where('content_type', filters.contentType);
         }
 
-        return query.paginate(page, limit);
+        logger.info('ContentReportService.list - Executing query');
+        const result = await query.paginate(page, limit);
+        logger.info('ContentReportService.list - Query complete', { count: result.all().length });
+
+        return result;
     }
 
     /**

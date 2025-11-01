@@ -6,12 +6,16 @@ import { LogResponseStatusEnum } from '#types/enum/log_response_status_enum';
 import { DateTime } from 'luxon';
 import { inject } from '@adonisjs/core';
 import LogUserRepository from '#repositories/log_user_repository';
+import logger from '@adonisjs/core/services/logger';
 
 @inject()
 export default class LogHttpRequest {
     constructor(private readonly logUserRepository: LogUserRepository) {}
 
     public async handle(ctx: HttpContext, next: () => Promise<void>): Promise<void> {
+        const requestUrl = ctx.request.url();
+        const requestMethod = ctx.request.method();
+        logger.info(`LogMiddleware - START: ${requestMethod} ${requestUrl}`);
         const { request, response } = ctx;
 
         const start: DateTime = DateTime.utc();
@@ -51,13 +55,18 @@ export default class LogHttpRequest {
         log.startTime = start;
 
         try {
+            logger.info('LogMiddleware - Before next()');
             await next();
+            logger.info('LogMiddleware - After next()');
 
             if (ctx.user) {
+                logger.info('LogMiddleware - Creating log user');
                 const logUser: LogUser = await this.logUserRepository.firstOrCreate({ email: ctx.user.email }, { email: ctx.user.email });
                 log.userId = logUser.id;
+                logger.info('LogMiddleware - Log user created');
             }
         } finally {
+            logger.info('LogMiddleware - In finally block');
             log.responseStatus = response.getStatus() === 200 ? LogResponseStatusEnum.SUCCESS : LogResponseStatusEnum.ERROR;
 
             const respBodyRaw: unknown = response.getBody();
@@ -66,10 +75,13 @@ export default class LogHttpRequest {
             log.endTime = DateTime.utc();
 
             try {
+                logger.info('LogMiddleware - Saving log to database');
                 await log.save();
+                logger.info('LogMiddleware - Log saved successfully');
             } catch (err) {
                 ctx.logger.warn('Failed to save log', err);
             }
+            logger.info('LogMiddleware - COMPLETE');
         }
     }
 }

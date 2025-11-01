@@ -759,7 +759,8 @@
 
     const tabItems = $derived(buildTabs());
 
-    let activeTab: string = $state('overview');
+    // Initialize activeTab from URL parameter if present, otherwise default to 'overview'
+    let activeTab: string = $state(page.url.searchParams.get('tab') || 'overview');
 
     $effect(() => {
         const isActiveAvailable = tabItems.some((tab) => tab.id === activeTab && !tab.disabled);
@@ -2448,7 +2449,7 @@
             {#if commentsByScope.clarification.length}
                 <ul class="mt-4 space-y-4">
                     {#each commentsByScope.clarification as comment (comment.id)}
-                        <li class="space-y-3 rounded-xl border border-border/40 bg-card/60 p-4">
+                        <li id="comment-{comment.id}" class="space-y-3 rounded-xl border border-border/40 bg-card/60 p-4">
                             <div class="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                                 <div class="flex items-center gap-2">
                                     <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
@@ -2499,7 +2500,7 @@
                             {#if (comment.replies ?? []).length}
                                 <ul class="ml-4 space-y-2 border-l border-border/30 pl-4">
                                     {#each comment.replies ?? [] as reply (reply.id)}
-                                        <li class="space-y-1 rounded-lg bg-background/60 p-3">
+                                        <li id="comment-{reply.id}" class="space-y-1 rounded-lg bg-background/60 p-3">
                                             <div class="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
                                                 <span>{reply.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
                                                 <div class="flex items-center gap-2">
@@ -2626,7 +2627,7 @@
                 {#if commentsByScope.amendment.length}
                     <ul class="space-y-3">
                         {#each commentsByScope.amendment as comment (comment.id)}
-                            <li class="space-y-3 rounded-xl border border-border/40 bg-card/60 p-4">
+                            <li id="comment-{comment.id}" class="space-y-3 rounded-xl border border-border/40 bg-card/60 p-4">
                                 <div class="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                                     <div class="flex items-center gap-2">
                                         <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
@@ -2677,7 +2678,7 @@
                                 {#if (comment.replies ?? []).length}
                                     <ul class="ml-4 space-y-2 border-l border-border/30 pl-4">
                                         {#each comment.replies ?? [] as reply (reply.id)}
-                                            <li class="space-y-1 rounded-lg bg-background/60 p-3">
+                                            <li id="comment-{reply.id}" class="space-y-1 rounded-lg bg-background/60 p-3">
                                                 <div class="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
                                                     <span>{reply.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>
                                                     <div class="flex items-center gap-2">
@@ -3266,7 +3267,7 @@
                 {#if commentsByScope.evaluation.length}
                     <ul class="mt-4 space-y-3">
                         {#each commentsByScope.evaluation as comment (comment.id)}
-                            <li class="rounded-xl border border-border/40 bg-card/60 p-4">
+                            <li id="comment-{comment.id}" class="rounded-xl border border-border/40 bg-card/60 p-4">
                                 <div class="flex items-center justify-between text-xs text-muted-foreground">
                                     <div class="flex items-center gap-2">
                                         <span>{comment.author?.username ?? m['proposition-detail.comments.anonymous']()}</span>

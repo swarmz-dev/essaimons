@@ -11,12 +11,22 @@ export default class AdminContentReportController {
      * List all content reports with filters
      * GET /api/admin/reports
      */
-    public async index({ request, response }: HttpContext) {
+    public async index({ request, response, logger }: HttpContext) {
+        logger.info('Admin reports index - START', { query: request.qs() });
+
         const filters = await request.validateUsing(listContentReportsValidator);
+        logger.info('Admin reports index - Filters validated', { filters });
 
-        const reports = await this.contentReportService.list(filters);
+        const paginatedReports = await this.contentReportService.list(filters);
+        logger.info('Admin reports index - Data fetched', { count: paginatedReports.all().length });
 
-        return response.ok(reports);
+        const serialized = paginatedReports.all().map((report) => report.serialize());
+        logger.info('Admin reports index - COMPLETE');
+
+        return response.ok({
+            data: serialized,
+            meta: paginatedReports.getMeta(),
+        });
     }
 
     /**

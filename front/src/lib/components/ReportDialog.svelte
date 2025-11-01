@@ -25,10 +25,10 @@
     let isSubmitting = $state(false);
 
     const reasons = [
-        { value: ContentReportReasonEnum.SPAM, labelKey: 'report.reason-spam' },
-        { value: ContentReportReasonEnum.HARASSMENT, labelKey: 'report.reason-harassment' },
-        { value: ContentReportReasonEnum.INAPPROPRIATE, labelKey: 'report.reason-inappropriate' },
-        { value: ContentReportReasonEnum.OTHER, labelKey: 'report.reason-other' },
+        { value: ContentReportReasonEnum.SPAM, label: m['report.reason-spam']() },
+        { value: ContentReportReasonEnum.HARASSMENT, label: m['report.reason-harassment']() },
+        { value: ContentReportReasonEnum.INAPPROPRIATE, label: m['report.reason-inappropriate']() },
+        { value: ContentReportReasonEnum.OTHER, label: m['report.reason-other']() },
     ];
 
     async function handleSubmit() {
@@ -112,7 +112,7 @@
                                 {/if}
                             </div>
                             <span class="text-sm font-normal text-foreground">
-                                {m[reason.labelKey]()}
+                                {reason.label}
                             </span>
                         </label>
                     {/each}

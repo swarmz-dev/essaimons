@@ -32,8 +32,8 @@ const dbConfig: DatabaseConfig = defineConfig({
             },
             pool: {
                 min: 2,
-                max: 10,
-                acquireTimeoutMillis: 60000,
+                max: 20,
+                acquireTimeoutMillis: 10000,
                 idleTimeoutMillis: 600000,
                 reapIntervalMillis: 1000,
             },

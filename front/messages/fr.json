@@ -17,6 +17,15 @@
         "updated-at": "Mis à jour le",
         "public": "Public",
         "private": "Privé",
+        "previous": "Précédent",
+        "next": "Suivant",
+        "page": [
+            {
+                "declarations": ["input current", "input total"],
+                "match": "*",
+                "value": "Page {current} sur {total}"
+            }
+        ],
         "error": {
             "default-message": "Quelque chose s'est mal passé"
         },
@@ -92,7 +101,10 @@
         "change": "Modifier",
         "status": "Statut",
         "creator": "Créateur",
-        "created_at": "Créé le"
+        "created_at": "Créé le",
+        "previous": "Précédent",
+        "next": "Suivant",
+        "page": "{current} sur {total}"
     },
     "open-graph": {
         "profile-picture": {
@@ -602,6 +614,60 @@
                     "new_import": "Nouvel import",
                     "view_propositions": "Voir les propositions"
                 }
+            }
+        },
+        "reports": {
+            "title": "Modération",
+            "filters": {
+                "title": "Filtres",
+                "description": "Filtrer les signalements par statut et type de contenu",
+                "status": "Statut",
+                "content-type": "Type de contenu",
+                "all-statuses": "Tous les statuts",
+                "all-types": "Tous les types"
+            },
+            "status": {
+                "pending": "En attente",
+                "reviewed": "Traité",
+                "dismissed": "Rejeté"
+            },
+            "content-type": {
+                "comment": "Commentaire",
+                "proposition": "Proposition"
+            },
+            "reported-by": "Signalé par",
+            "view": "Voir les détails",
+            "no-reports": "Aucun signalement trouvé",
+            "detail": {
+                "title": "Détails du signalement",
+                "report-info": "Informations du signalement",
+                "reporter": "Signalé par",
+                "reported-at": "Signalé le",
+                "reporter-notes": "Notes du signaleur",
+                "reviewer": "Traité par",
+                "reviewed-at": "Traité le",
+                "review-notes": "Notes de révision",
+                "reported-content": "Contenu signalé",
+                "content-description": "Contenu signalé ({type})",
+                "content-author": "Auteur",
+                "content-title": "Titre",
+                "content-text": "Contenu",
+                "content-created-at": "Créé le",
+                "review-title": "Examiner ce signalement",
+                "review-description": "Choisissez une action pour ce signalement. Ajoutez des notes pour documenter votre décision.",
+                "review-notes-label": "Notes de révision (optionnel)",
+                "review-notes-placeholder": "Ajoutez des notes sur votre décision...",
+                "action-reviewed": "Marquer comme traité",
+                "action-dismissed": "Rejeter le signalement",
+                "view-in-context": "Voir dans le contexte",
+                "delete-content": "Supprimer le contenu et marquer comme traité",
+                "delete-confirm": "Êtes-vous sûr de vouloir supprimer ce contenu ? Cette action est irréversible.",
+                "delete-success": "Contenu supprimé avec succès",
+                "delete-error": "Échec de la suppression du contenu"
+            },
+            "review": {
+                "success": "Signalement examiné avec succès",
+                "error": "Échec de l'examen du signalement"
             }
         }
     },
