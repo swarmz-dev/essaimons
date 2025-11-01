@@ -92,22 +92,46 @@ export default class PropositionExportService {
             relations.push('reactions', 'reactions.author');
         }
 
-        await proposition.load((loader) => {
-            for (const relation of relations) {
-                const parts = relation.split('.');
-                if (parts.length === 1) {
-                    loader.load(parts[0] as any);
-                } else if (parts.length === 2) {
-                    loader.load(parts[0] as any, (query) => {
-                        query.preload(parts[1] as any);
-                    });
-                } else if (parts.length === 3) {
-                    loader.load(parts[0] as any, (query: any) => {
-                        query.preload(parts[1] as any, (subQuery: any) => {
-                            subQuery.preload(parts[2] as any);
-                        });
-                    });
+        // Group relations by parent to properly handle nested preloads
+        const simpleRelations: string[] = [];
+        const nestedRelations: Map<string, string[]> = new Map();
+
+        for (const relation of relations) {
+            const parts = relation.split('.');
+            if (parts.length === 1) {
+                simpleRelations.push(parts[0]);
+            } else {
+                const parent = parts[0];
+                const nested = parts.slice(1).join('.');
+                if (!nestedRelations.has(parent)) {
+                    nestedRelations.set(parent, []);
                 }
+                nestedRelations.get(parent)!.push(nested);
+            }
+        }
+
+        await proposition.load((loader) => {
+            // Load simple relations
+            for (const relation of simpleRelations) {
+                if (!nestedRelations.has(relation)) {
+                    loader.load(relation as any);
+                }
+            }
+
+            // Load relations with nested preloads
+            for (const [parent, nested] of nestedRelations.entries()) {
+                loader.load(parent as any, (query) => {
+                    for (const nestedRelation of nested) {
+                        const nestedParts = nestedRelation.split('.');
+                        if (nestedParts.length === 1) {
+                            query.preload(nestedParts[0] as any);
+                        } else if (nestedParts.length === 2) {
+                            query.preload(nestedParts[0] as any, (subQuery: any) => {
+                                subQuery.preload(nestedParts[1] as any);
+                            });
+                        }
+                    }
+                });
             }
         });
     }
