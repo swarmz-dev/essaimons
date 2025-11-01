@@ -332,6 +332,18 @@
         "exchange_scheduled": {
             "title": "Échange planifié",
             "message": "Un échange a été planifié pour \"{propositionTitle}\" le {date}"
+        },
+        "content_reported": {
+            "title": "Votre contenu a été signalé",
+            "message": "Votre {contentType} a été signalé pour : {reason}"
+        },
+        "content_report_reviewed": {
+            "title": "Votre signalement a été examiné",
+            "message": "Votre signalement pour {contentType} a été examiné avec le statut : {status}"
+        },
+        "content_hidden": {
+            "title": "Contenu masqué par la modération",
+            "message": "Un {contentType} a été masqué par l'équipe de modération"
         }
     }
 }

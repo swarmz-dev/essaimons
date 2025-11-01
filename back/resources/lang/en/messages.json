@@ -332,6 +332,18 @@
         "exchange_scheduled": {
             "title": "Exchange scheduled",
             "message": "An exchange has been scheduled for \"{propositionTitle}\" on {date}"
+        },
+        "content_reported": {
+            "title": "Your content has been reported",
+            "message": "Your {contentType} has been reported for: {reason}"
+        },
+        "content_report_reviewed": {
+            "title": "Your report has been reviewed",
+            "message": "Your report for {contentType} has been reviewed with status: {status}"
+        },
+        "content_hidden": {
+            "title": "Content hidden by moderation",
+            "message": "A {contentType} has been hidden by the moderation team"
         }
     }
 }
