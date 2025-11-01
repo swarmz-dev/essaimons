@@ -56,7 +56,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
     };
 
     if (query.length) {
-        params.search = query;
+        params.query = query;
     }
 
     if (categoryIds.length) {

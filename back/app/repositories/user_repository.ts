@@ -41,14 +41,77 @@ export default class UserRepository extends BaseRepository<typeof User> {
         };
     }
 
-    public async delete(ids: string[], currentUser: User): Promise<{ isDeleted: boolean; isCurrentUser?: boolean; username?: string; id: string }[]> {
+    public async delete(ids: string[], currentUser: User): Promise<{ isDeleted: boolean; isCurrentUser?: boolean; isAdmin?: boolean; hasActivity?: boolean; username?: string; id: string }[]> {
         // Delete some other things if needed
         return await Promise.all([
-            ...ids.map(async (id: string): Promise<{ isDeleted: boolean; isCurrentUser?: boolean; username?: string; id: string }> => {
+            ...ids.map(async (id: string): Promise<{ isDeleted: boolean; isCurrentUser?: boolean; isAdmin?: boolean; hasActivity?: boolean; username?: string; id: string }> => {
                 try {
                     const user: User = await this.Model.query().where('id', id).firstOrFail();
                     if (user.id === currentUser.id) {
                         return { isDeleted: false, isCurrentUser: true, username: user.username, id };
+                    }
+
+                    // Prevent deletion of admin users
+                    if (user.role === 'admin') {
+                        return { isDeleted: false, isAdmin: true, username: user.username, id };
+                    }
+
+                    // Check for any user activity in the system
+                    const { default: Proposition } = await import('#models/proposition');
+                    const { default: PropositionComment } = await import('#models/proposition_comment');
+                    const { default: PropositionReaction } = await import('#models/proposition_reaction');
+                    const { default: VoteBallot } = await import('#models/vote_ballot');
+                    const { default: MandateApplication } = await import('#models/mandate_application');
+                    const { default: MandateDeliverable } = await import('#models/mandate_deliverable');
+                    const { default: DeliverableEvaluation } = await import('#models/deliverable_evaluation');
+                    const { default: MandateRevocationRequest } = await import('#models/mandate_revocation_request');
+
+                    // Check for propositions
+                    const propositionCount = await Proposition.query().where('creator_id', user.id).count('* as total');
+                    if (propositionCount[0].$extras.total > 0) {
+                        return { isDeleted: false, hasActivity: true, username: user.username, id };
+                    }
+
+                    // Check for comments (includes amendments and clarifications)
+                    const commentCount = await PropositionComment.query().where('author_id', user.id).count('* as total');
+                    if (commentCount[0].$extras.total > 0) {
+                        return { isDeleted: false, hasActivity: true, username: user.username, id };
+                    }
+
+                    // Check for reactions
+                    const reactionCount = await PropositionReaction.query().where('user_id', user.id).count('* as total');
+                    if (reactionCount[0].$extras.total > 0) {
+                        return { isDeleted: false, hasActivity: true, username: user.username, id };
+                    }
+
+                    // Check for votes
+                    const voteCount = await VoteBallot.query().where('voter_id', user.id).count('* as total');
+                    if (voteCount[0].$extras.total > 0) {
+                        return { isDeleted: false, hasActivity: true, username: user.username, id };
+                    }
+
+                    // Check for mandate applications
+                    const applicationCount = await MandateApplication.query().where('applicant_user_id', user.id).count('* as total');
+                    if (applicationCount[0].$extras.total > 0) {
+                        return { isDeleted: false, hasActivity: true, username: user.username, id };
+                    }
+
+                    // Check for deliverables
+                    const deliverableCount = await MandateDeliverable.query().where('uploaded_by_user_id', user.id).count('* as total');
+                    if (deliverableCount[0].$extras.total > 0) {
+                        return { isDeleted: false, hasActivity: true, username: user.username, id };
+                    }
+
+                    // Check for evaluations
+                    const evaluationCount = await DeliverableEvaluation.query().where('evaluator_user_id', user.id).count('* as total');
+                    if (evaluationCount[0].$extras.total > 0) {
+                        return { isDeleted: false, hasActivity: true, username: user.username, id };
+                    }
+
+                    // Check for revocation requests
+                    const revocationCount = await MandateRevocationRequest.query().where('initiated_by_user_id', user.id).count('* as total');
+                    if (revocationCount[0].$extras.total > 0) {
+                        return { isDeleted: false, hasActivity: true, username: user.username, id };
                     }
 
                     await user.delete();
@@ -62,6 +125,7 @@ export default class UserRepository extends BaseRepository<typeof User> {
 
                     return { isDeleted: true, username: user.username, id: user.id };
                 } catch (error: any) {
+                    console.error('Error deleting user:', error);
                     return { isDeleted: false, id };
                 }
             }),

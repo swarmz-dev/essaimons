@@ -19,7 +19,7 @@ export default class PropositionRepository extends BaseRepository<typeof Proposi
     }
 
     public async searchWithFilters(
-        filters: { search?: string; categoryIds?: string[]; statuses?: string[] },
+        filters: { search?: string; categoryIds?: string[]; statuses?: string[]; includeHidden?: boolean },
         page: number,
         limit: number,
         sortBy: string = 'created_at',
@@ -38,6 +38,7 @@ export default class PropositionRepository extends BaseRepository<typeof Proposi
         const dbColumn = columnMapping[sortBy] || sortBy;
 
         const query = this.Model.query()
+            .if(!filters.includeHidden, (query) => query.where('is_hidden', false))
             .preload('categories')
             .preload('creator')
             .preload('visual')
@@ -84,6 +85,7 @@ export default class PropositionRepository extends BaseRepository<typeof Proposi
 
         // Find propositions where user is creator, rescue initiator, or has commented
         const query = this.Model.query()
+            .where('is_hidden', false)
             .preload('categories')
             .preload('creator')
             .preload('visual')

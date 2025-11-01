@@ -1,7 +1,7 @@
 <script lang="ts">
     import Meta from '#components/Meta.svelte';
-    import Search from '#components/Search.svelte';
     import Pagination from '#components/Pagination.svelte';
+    import { Input } from '#lib/components/ui/input';
     import { Button } from '#lib/components/ui/button';
     import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '#lib/components/ui/card';
     import { MultiSelect, type MultiSelectOption } from '#lib/components/ui/multi-select';
@@ -10,10 +10,10 @@
     import { m } from '#lib/paraglide/messages';
     import { goto } from '$app/navigation';
     import type { PaginatedPropositions, SerializedPropositionCategory, SerializedPropositionListItem, PropositionStatusEnum } from 'backend/types';
-    import { LayoutGrid, TableProperties, RotateCcw, ArrowRight } from '@lucide/svelte';
+    import { LayoutGrid, TableProperties, RotateCcw, ArrowRight, ArrowUpDown, ArrowUp, ArrowDown, Search as SearchIcon } from '@lucide/svelte';
 
     type ActiveFilters = {
-        search: string;
+        query: string;
         categories: string[];
         statuses: string[];
         view: 'card' | 'table';
@@ -35,6 +35,8 @@
     let selectedCategories = $state([...data.activeFilters.categories]);
     let selectedStatuses = $state([...(data.activeFilters.statuses ?? [])]);
     let view: 'card' | 'table' = $state(data.activeFilters.view ?? 'card');
+    let sortBy = $state<string>('updatedAt');
+    let sortOrder = $state<'asc' | 'desc'>('desc');
 
     const categoryOptions: MultiSelectOption[] = $derived(data.filters.categories.map((category: SerializedPropositionCategory) => ({ value: category.id, label: category.name })));
 
@@ -124,6 +126,23 @@
         return typeof translator === 'function' ? (translator as () => string)() : phase;
     };
 
+    const getNextDeadline = (item: SerializedPropositionListItem): { date: string | undefined; label: string } => {
+        switch (item.status) {
+            case 'clarify':
+                return { date: item.clarificationDeadline, label: getPhaseLabel('clarification') };
+            case 'amend':
+                return { date: item.amendmentDeadline, label: getPhaseLabel('amendment') };
+            case 'vote':
+                return { date: item.voteDeadline, label: getPhaseLabel('vote') };
+            case 'mandate':
+                return { date: item.mandateDeadline, label: getPhaseLabel('mandate') };
+            case 'evaluate':
+                return { date: item.evaluationDeadline, label: getPhaseLabel('evaluation') };
+            default:
+                return { date: undefined, label: '-' };
+        }
+    };
+
     const updateQuery = async (updates: { search?: string; categories?: string[]; statuses?: string[]; page?: number; limit?: number; view?: 'card' | 'table' }): Promise<void> => {
         const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
         const originalQuery = params.toString();
@@ -183,7 +202,7 @@
 
     const handleSearch = async (): Promise<void> => {
         const normalized = query.trim();
-        if (normalized === data.activeFilters.search) {
+        if (normalized === data.activeFilters.query) {
             return;
         }
         await updateQuery({ search: normalized });
@@ -213,24 +232,36 @@
         await updateQuery({ view: nextView });
     };
 
+    // Track the last server state to detect real changes vs our own updates
+    let lastServerQuery = $state<string>(data.activeFilters.query ?? '');
+    let lastServerCategories = $state<string[]>([...data.activeFilters.categories]);
+    let lastServerStatuses = $state<string[]>([...(data.activeFilters.statuses ?? [])]);
+
     // Synchronize local state from server on data changes (navigation, etc.)
     $effect(() => {
-        const serverQuery = data.activeFilters.search ?? '';
-        if (serverQuery !== query) {
+        const serverQuery = data.activeFilters.query ?? '';
+        // Only update query if server state actually changed (not from our own typing)
+        if (serverQuery !== lastServerQuery) {
+            lastServerQuery = serverQuery;
             query = serverQuery;
-        }
-
-        if (!isSameSelection(selectedCategories, data.activeFilters.categories)) {
-            selectedCategories = [...data.activeFilters.categories];
-        }
-
-        if (!isSameSelection(selectedStatuses, data.activeFilters.statuses ?? [])) {
-            selectedStatuses = [...(data.activeFilters.statuses ?? [])];
         }
 
         const serverView = data.activeFilters.view ?? 'card';
         if (view !== serverView) {
             view = serverView;
+        }
+
+        // Only update categories if server state actually changed (not from our own update)
+        if (!isSameSelection(data.activeFilters.categories, lastServerCategories)) {
+            lastServerCategories = [...data.activeFilters.categories];
+            selectedCategories = [...data.activeFilters.categories];
+        }
+
+        // Only update statuses if server state actually changed (not from our own update)
+        const serverStatuses = data.activeFilters.statuses ?? [];
+        if (!isSameSelection(serverStatuses, lastServerStatuses)) {
+            lastServerStatuses = [...serverStatuses];
+            selectedStatuses = [...serverStatuses];
         }
     });
 
@@ -253,6 +284,54 @@
     const openDetail = async (proposition: SerializedPropositionListItem): Promise<void> => {
         await goto(`/propositions/${proposition.id}`);
     };
+
+    const handleSort = (column: string): void => {
+        if (sortBy === column) {
+            // Toggle sort order
+            sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            // New column, default to descending for dates, ascending for strings
+            sortBy = column;
+            sortOrder = column === 'title' ? 'asc' : 'desc';
+        }
+    };
+
+    const sortedPropositions = $derived.by(() => {
+        if (view !== 'table') {
+            return data.propositions;
+        }
+
+        const sorted = [...data.propositions].sort((a, b) => {
+            let aValue: any;
+            let bValue: any;
+
+            switch (sortBy) {
+                case 'title':
+                    aValue = a.title.toLowerCase();
+                    bValue = b.title.toLowerCase();
+                    break;
+                case 'status':
+                    aValue = a.status;
+                    bValue = b.status;
+                    break;
+                case 'nextDeadline':
+                    aValue = getNextDeadline(a).date ? new Date(getNextDeadline(a).date!).getTime() : 0;
+                    bValue = getNextDeadline(b).date ? new Date(getNextDeadline(b).date!).getTime() : 0;
+                    break;
+                case 'updatedAt':
+                default:
+                    aValue = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+                    bValue = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                    break;
+            }
+
+            if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        return sorted;
+    });
 </script>
 
 <Meta title={m['proposition-list.meta.title']()} description={m['proposition-list.meta.description']()} keywords={m['proposition-list.meta.keywords']().split(', ')} pathname="/propositions" />
@@ -260,9 +339,15 @@
 <Title title={m['proposition-list.title']()} />
 <p class="-mt-4 text-sm text-muted-foreground md:text-base">{m['proposition-list.introduction']()}</p>
 
-<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-4 w-full">
     <div class="flex flex-wrap items-center gap-3 justify-between">
-        <Search bind:search={query} resultsArray={data.propositions} placeholder={m['proposition-list.search.placeholder']()} onSearch={handleSearch} />
+        <div class="flex gap-2 flex-1 max-w-md">
+            <Input type="text" bind:value={query} placeholder={m['proposition-list.search.placeholder']()} onkeydown={(e) => e.key === 'Enter' && handleSearch()} class="flex-1" />
+            <Button variant="default" onclick={handleSearch}>
+                <SearchIcon class="size-4" />
+                <span class="ml-2 hidden sm:inline">{m['common.search.label']?.() ?? 'Search'}</span>
+            </Button>
+        </div>
         <div class="flex gap-2">
             <Button variant={view === 'card' ? 'default' : 'outline'} onclick={() => handleToggleView('card')} aria-pressed={view === 'card'}>
                 <LayoutGrid class="size-4" />
@@ -363,18 +448,71 @@
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>{m['proposition-list.table.columns.title']()}</TableHead>
+                        <TableHead>
+                            <button type="button" class="flex items-center gap-2 hover:text-primary transition-colors" onclick={() => handleSort('title')}>
+                                {m['proposition-list.table.columns.title']()}
+                                {#if sortBy === 'title'}
+                                    {#if sortOrder === 'asc'}
+                                        <ArrowUp class="size-4" />
+                                    {:else}
+                                        <ArrowDown class="size-4" />
+                                    {/if}
+                                {:else}
+                                    <ArrowUpDown class="size-4 opacity-30" />
+                                {/if}
+                            </button>
+                        </TableHead>
                         <TableHead>{m['proposition-list.table.columns.summary']()}</TableHead>
                         <TableHead>{m['proposition-list.table.columns.categories']()}</TableHead>
-                        <TableHead>{m['proposition-list.table.columns.status']()}</TableHead>
-                        <TableHead>{m['proposition-list.table.columns.vote']()}</TableHead>
-                        <TableHead>{m['proposition-list.table.columns.updated']()}</TableHead>
+                        <TableHead>
+                            <button type="button" class="flex items-center gap-2 hover:text-primary transition-colors" onclick={() => handleSort('status')}>
+                                {m['proposition-list.table.columns.status']()}
+                                {#if sortBy === 'status'}
+                                    {#if sortOrder === 'asc'}
+                                        <ArrowUp class="size-4" />
+                                    {:else}
+                                        <ArrowDown class="size-4" />
+                                    {/if}
+                                {:else}
+                                    <ArrowUpDown class="size-4 opacity-30" />
+                                {/if}
+                            </button>
+                        </TableHead>
+                        <TableHead>
+                            <button type="button" class="flex items-center gap-2 hover:text-primary transition-colors" onclick={() => handleSort('nextDeadline')}>
+                                {m['proposition-list.table.columns.next-deadline']?.() ?? 'Next Deadline'}
+                                {#if sortBy === 'nextDeadline'}
+                                    {#if sortOrder === 'asc'}
+                                        <ArrowUp class="size-4" />
+                                    {:else}
+                                        <ArrowDown class="size-4" />
+                                    {/if}
+                                {:else}
+                                    <ArrowUpDown class="size-4 opacity-30" />
+                                {/if}
+                            </button>
+                        </TableHead>
+                        <TableHead>
+                            <button type="button" class="flex items-center gap-2 hover:text-primary transition-colors" onclick={() => handleSort('updatedAt')}>
+                                {m['proposition-list.table.columns.updated']()}
+                                {#if sortBy === 'updatedAt'}
+                                    {#if sortOrder === 'asc'}
+                                        <ArrowUp class="size-4" />
+                                    {:else}
+                                        <ArrowDown class="size-4" />
+                                    {/if}
+                                {:else}
+                                    <ArrowUpDown class="size-4 opacity-30" />
+                                {/if}
+                            </button>
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {#each data.propositions as proposition, index (proposition.id ?? index)}
+                    {#each sortedPropositions as proposition, index (proposition.id ?? index)}
                         <TableRow class="cursor-pointer hover:bg-primary/5" onclick={() => openDetail(proposition)}>
                             {@const tableOverdue = getOverduePhase(proposition)}
+                            {@const nextDeadline = getNextDeadline(proposition)}
                             <TableCell class="font-semibold">{proposition.title}</TableCell>
                             <TableCell class="max-w-xs text-sm text-muted-foreground">
                                 <div class="line-clamp-2 overflow-hidden text-ellipsis">
@@ -400,7 +538,12 @@
                                     {/if}
                                 </div>
                             </TableCell>
-                            <TableCell>{formatDate(proposition.voteDeadline)}</TableCell>
+                            <TableCell>
+                                <div class="flex flex-col">
+                                    <span class="text-sm">{formatDate(nextDeadline.date)}</span>
+                                    <span class="text-xs text-muted-foreground">{nextDeadline.label}</span>
+                                </div>
+                            </TableCell>
                             <TableCell>{formatDate(proposition.updatedAt)}</TableCell>
                         </TableRow>
                     {/each}

@@ -24,6 +24,14 @@ import {
 } from '#types/import_export_types';
 import { UserRoleEnum } from '#types/enum/user_role_enum';
 import PropositionImportAnalyzerService from '#services/proposition_import_analyzer_service';
+import PropositionStatusHistory from '#models/proposition_status_history';
+import PropositionVote from '#models/proposition_vote';
+import VoteOption from '#models/vote_option';
+import VoteBallot from '#models/vote_ballot';
+import PropositionComment from '#models/proposition_comment';
+import PropositionEvent from '#models/proposition_event';
+import PropositionReaction from '#models/proposition_reaction';
+import PropositionMandate from '#models/proposition_mandate';
 
 @inject()
 export default class PropositionImportExecutorService {
@@ -82,6 +90,11 @@ export default class PropositionImportExecutorService {
                     const detailResult = await this.importProposition(exportedProposition, i, configuration, userIdMap, categoryIdMap, propositionIdMap, fileIdMap, result, executor, trx);
 
                     result.details.push(detailResult);
+
+                    // Import enriched data if proposition was created or merged
+                    if (detailResult.targetId) {
+                        await this.importEnrichedData(exportedProposition, detailResult.targetId, userIdMap, trx);
+                    }
                 } catch (error: any) {
                     result.details.push({
                         sourceId: exportedProposition.sourceId,
@@ -126,6 +139,53 @@ export default class PropositionImportExecutorService {
 
             for (const initiator of prop.externalReferences.rescueInitiators) {
                 allUserRefs.set(initiator.sourceId, initiator);
+            }
+
+            // Collect users from enriched data
+            if (prop.statusHistory) {
+                for (const history of prop.statusHistory) {
+                    if (history.triggeredBy) {
+                        allUserRefs.set(history.triggeredBy.sourceId, history.triggeredBy);
+                    }
+                }
+            }
+
+            if (prop.comments) {
+                for (const comment of prop.comments) {
+                    allUserRefs.set(comment.author.sourceId, comment.author);
+                }
+            }
+
+            if (prop.events) {
+                for (const event of prop.events) {
+                    if (event.createdBy) {
+                        allUserRefs.set(event.createdBy.sourceId, event.createdBy);
+                    }
+                }
+            }
+
+            if (prop.reactions) {
+                for (const reaction of prop.reactions) {
+                    allUserRefs.set(reaction.author.sourceId, reaction.author);
+                }
+            }
+
+            if (prop.mandates) {
+                for (const mandate of prop.mandates) {
+                    if (mandate.holder) {
+                        allUserRefs.set(mandate.holder.sourceId, mandate.holder);
+                    }
+                }
+            }
+
+            if (prop.votes) {
+                for (const vote of prop.votes) {
+                    if (vote.ballots) {
+                        for (const ballot of vote.ballots) {
+                            allUserRefs.set(ballot.voter.sourceId, ballot.voter);
+                        }
+                    }
+                }
             }
         }
 
@@ -361,6 +421,8 @@ export default class PropositionImportExecutorService {
                     settingsSnapshot: exportedProp.settingsSnapshot || {},
                     creatorId: creator.id,
                     visualFileId,
+                    createdAt: DateTime.fromISO(exportedProp.createdAt),
+                    updatedAt: DateTime.fromISO(exportedProp.updatedAt),
                 },
                 { client: trx }
             );
@@ -382,8 +444,10 @@ export default class PropositionImportExecutorService {
                 await proposition.related('attachments').attach(attachmentFileIds);
             }
 
-            // Enregistrer l'historique initial
-            await this.workflowService.recordInitialHistory(proposition, creator, trx);
+            // Enregistrer l'historique initial (only if no status history to import)
+            if (!exportedProp.statusHistory || exportedProp.statusHistory.length === 0) {
+                await this.workflowService.recordInitialHistory(proposition, creator, trx);
+            }
 
             propositionIdMap.set(exportedProp.sourceId, proposition.id);
             result.summary.propositionsCreated++;
@@ -394,6 +458,289 @@ export default class PropositionImportExecutorService {
                 action: 'CREATED',
                 warnings: [],
             };
+        }
+    }
+
+    /**
+     * Import enriched data for a proposition
+     */
+    private async importEnrichedData(exportedProp: ExportedProposition, propositionId: string, userIdMap: Map<string, string>, trx: TransactionClientContract): Promise<void> {
+        // Import status history
+        if (exportedProp.statusHistory && exportedProp.statusHistory.length > 0) {
+            await this.importStatusHistory(exportedProp.statusHistory, propositionId, userIdMap, trx);
+        }
+
+        // Import votes with options and ballots
+        if (exportedProp.votes && exportedProp.votes.length > 0) {
+            await this.importVotes(exportedProp.votes, propositionId, userIdMap, trx);
+        }
+
+        // Import mandates
+        if (exportedProp.mandates && exportedProp.mandates.length > 0) {
+            await this.importMandates(exportedProp.mandates, propositionId, userIdMap, trx);
+        }
+
+        // Import comments
+        if (exportedProp.comments && exportedProp.comments.length > 0) {
+            await this.importComments(exportedProp.comments, propositionId, userIdMap, trx);
+        }
+
+        // Import events
+        if (exportedProp.events && exportedProp.events.length > 0) {
+            await this.importEvents(exportedProp.events, propositionId, userIdMap, trx);
+        }
+
+        // Import reactions
+        if (exportedProp.reactions && exportedProp.reactions.length > 0) {
+            await this.importReactions(exportedProp.reactions, propositionId, userIdMap, trx);
+        }
+    }
+
+    /**
+     * Import status history
+     */
+    private async importStatusHistory(statusHistoryData: any[], propositionId: string, userIdMap: Map<string, string>, trx: TransactionClientContract): Promise<void> {
+        for (const historyItem of statusHistoryData) {
+            const triggeredByUserId = historyItem.triggeredBy ? userIdMap.get(historyItem.triggeredBy.sourceId) : null;
+
+            await PropositionStatusHistory.create(
+                {
+                    propositionId,
+                    fromStatus: historyItem.fromStatus,
+                    toStatus: historyItem.toStatus,
+                    triggeredByUserId: triggeredByUserId || null,
+                    reason: historyItem.reason,
+                    metadata: historyItem.metadata || {},
+                    createdAt: DateTime.fromISO(historyItem.createdAt),
+                    updatedAt: DateTime.fromISO(historyItem.createdAt), // Use same timestamp
+                },
+                { client: trx }
+            );
+        }
+    }
+
+    /**
+     * Import votes with options and ballots
+     */
+    private async importVotes(votesData: any[], propositionId: string, userIdMap: Map<string, string>, trx: TransactionClientContract): Promise<void> {
+        for (const voteData of votesData) {
+            const vote = await PropositionVote.create(
+                {
+                    propositionId,
+                    phase: voteData.phase,
+                    method: voteData.method,
+                    title: voteData.title,
+                    description: voteData.description,
+                    openAt: voteData.openAt ? DateTime.fromISO(voteData.openAt) : null,
+                    closeAt: voteData.closeAt ? DateTime.fromISO(voteData.closeAt) : null,
+                    maxSelections: voteData.maxSelections,
+                    status: voteData.status,
+                    metadata: voteData.metadata || {},
+                },
+                { client: trx }
+            );
+
+            // Import vote options
+            const optionIdMap = new Map<string, string>();
+            if (voteData.options && voteData.options.length > 0) {
+                for (const optionData of voteData.options) {
+                    const option = await VoteOption.create(
+                        {
+                            voteId: vote.id,
+                            label: optionData.label,
+                            description: optionData.description,
+                            position: optionData.position,
+                            metadata: optionData.metadata || {},
+                        },
+                        { client: trx }
+                    );
+                    optionIdMap.set(optionData.sourceId, option.id);
+                }
+            }
+
+            // Import ballots
+            if (voteData.ballots && voteData.ballots.length > 0) {
+                for (const ballotData of voteData.ballots) {
+                    const voterId = userIdMap.get(ballotData.voter.sourceId);
+                    if (!voterId) {
+                        continue; // Skip if voter not resolved
+                    }
+
+                    // Map option IDs in payload
+                    const payload = this.mapBallotPayload(ballotData.payload, optionIdMap);
+
+                    await VoteBallot.create(
+                        {
+                            voteId: vote.id,
+                            voterId,
+                            payload,
+                            recordedAt: DateTime.fromISO(ballotData.recordedAt),
+                            revokedAt: ballotData.revokedAt ? DateTime.fromISO(ballotData.revokedAt) : null,
+                        },
+                        { client: trx }
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Map ballot payload option IDs
+     */
+    private mapBallotPayload(payload: Record<string, any>, optionIdMap: Map<string, string>): Record<string, any> {
+        if (payload.optionId && optionIdMap.has(payload.optionId)) {
+            return {
+                ...payload,
+                optionId: optionIdMap.get(payload.optionId),
+            };
+        }
+        if (payload.optionIds && Array.isArray(payload.optionIds)) {
+            return {
+                ...payload,
+                optionIds: payload.optionIds.map((id: string) => optionIdMap.get(id) || id),
+            };
+        }
+        return payload;
+    }
+
+    /**
+     * Import mandates
+     */
+    private async importMandates(mandatesData: any[], propositionId: string, userIdMap: Map<string, string>, trx: TransactionClientContract): Promise<void> {
+        for (const mandateData of mandatesData) {
+            const holderUserId = mandateData.holder ? userIdMap.get(mandateData.holder.sourceId) : null;
+
+            await PropositionMandate.create(
+                {
+                    propositionId,
+                    title: mandateData.title,
+                    description: mandateData.description,
+                    holderUserId: holderUserId || null,
+                    status: mandateData.status,
+                    targetObjectiveRef: mandateData.targetObjectiveRef,
+                    initialDeadline: mandateData.initialDeadline ? DateTime.fromISO(mandateData.initialDeadline) : null,
+                    currentDeadline: mandateData.currentDeadline ? DateTime.fromISO(mandateData.currentDeadline) : null,
+                    metadata: mandateData.metadata || {},
+                },
+                { client: trx }
+            );
+        }
+    }
+
+    /**
+     * Import comments with proper threading
+     */
+    private async importComments(commentsData: any[], propositionId: string, userIdMap: Map<string, string>, trx: TransactionClientContract): Promise<void> {
+        const commentIdMap = new Map<string, string>();
+
+        // First pass: create all root comments (no parent)
+        for (const commentData of commentsData) {
+            if (commentData.parentSourceId) {
+                continue; // Skip replies for now
+            }
+
+            const authorId = userIdMap.get(commentData.author.sourceId);
+            if (!authorId) {
+                continue; // Skip if author not resolved
+            }
+
+            const comment = await PropositionComment.create(
+                {
+                    propositionId,
+                    authorId,
+                    scope: commentData.scope,
+                    section: commentData.section,
+                    visibility: commentData.visibility,
+                    content: commentData.content,
+                    createdAt: DateTime.fromISO(commentData.createdAt),
+                    updatedAt: DateTime.fromISO(commentData.createdAt),
+                },
+                { client: trx }
+            );
+
+            commentIdMap.set(commentData.sourceId, comment.id);
+        }
+
+        // Second pass: create all replies (with parent)
+        for (const commentData of commentsData) {
+            if (!commentData.parentSourceId) {
+                continue; // Skip root comments
+            }
+
+            const authorId = userIdMap.get(commentData.author.sourceId);
+            if (!authorId) {
+                continue; // Skip if author not resolved
+            }
+
+            const parentId = commentIdMap.get(commentData.parentSourceId);
+            if (!parentId) {
+                continue; // Skip if parent not found
+            }
+
+            const comment = await PropositionComment.create(
+                {
+                    propositionId,
+                    parentId,
+                    authorId,
+                    scope: commentData.scope,
+                    section: commentData.section,
+                    visibility: commentData.visibility,
+                    content: commentData.content,
+                    createdAt: DateTime.fromISO(commentData.createdAt),
+                    updatedAt: DateTime.fromISO(commentData.createdAt),
+                },
+                { client: trx }
+            );
+
+            commentIdMap.set(commentData.sourceId, comment.id);
+        }
+    }
+
+    /**
+     * Import events
+     */
+    private async importEvents(eventsData: any[], propositionId: string, userIdMap: Map<string, string>, trx: TransactionClientContract): Promise<void> {
+        for (const eventData of eventsData) {
+            const createdByUserId = eventData.createdBy ? userIdMap.get(eventData.createdBy.sourceId) : null;
+
+            await PropositionEvent.create(
+                {
+                    propositionId,
+                    type: eventData.type,
+                    title: eventData.title,
+                    description: eventData.description,
+                    startAt: eventData.startAt ? DateTime.fromISO(eventData.startAt) : null,
+                    endAt: eventData.endAt ? DateTime.fromISO(eventData.endAt) : null,
+                    location: eventData.location,
+                    videoLink: eventData.videoLink,
+                    createdByUserId: createdByUserId || null,
+                    createdAt: DateTime.fromISO(eventData.createdAt),
+                    updatedAt: DateTime.fromISO(eventData.createdAt),
+                },
+                { client: trx }
+            );
+        }
+    }
+
+    /**
+     * Import reactions
+     */
+    private async importReactions(reactionsData: any[], propositionId: string, userIdMap: Map<string, string>, trx: TransactionClientContract): Promise<void> {
+        for (const reactionData of reactionsData) {
+            const authorId = userIdMap.get(reactionData.author.sourceId);
+            if (!authorId) {
+                continue; // Skip if author not resolved
+            }
+
+            await PropositionReaction.create(
+                {
+                    propositionId,
+                    authorId,
+                    type: reactionData.type,
+                    createdAt: DateTime.fromISO(reactionData.createdAt),
+                },
+                { client: trx }
+            );
         }
     }
 

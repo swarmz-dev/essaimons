@@ -36,13 +36,8 @@
         }
     });
 
-    onDestroy(() => {
-        if (notificationSSE) {
-            notificationSSE.disconnect();
-        }
-    });
-
-    $effect((): void => {
+    onMount(() => {
+        // Initialize Transmit once on mount
         if (typeof window !== 'undefined') {
             (async () => {
                 const { Transmit } = await import('@adonisjs/transmit-client');
@@ -50,16 +45,32 @@
                 transmit.set(transmitInstance);
             })();
         }
+    });
 
+    onDestroy(() => {
+        if (notificationSSE) {
+            notificationSSE.disconnect();
+            notificationSSE = null;
+        }
+    });
+
+    // Handle flash messages
+    $effect(() => {
         if ($flash) {
             showToast($flash.message, $flash.type);
         }
+    });
 
+    // Handle SSE connection based on profile and page
+    $effect(() => {
         // Initialize notification SSE when user is logged in
-        if ($profile && !notificationSSE && $transmit) {
+        // But disable on admin pages to avoid connection limit issues
+        const isAdminPage = page.url.pathname.startsWith('/admin');
+
+        if ($profile && !notificationSSE && $transmit && !isAdminPage) {
             notificationSSE = new NotificationSSEService($transmit);
             notificationSSE.connect($profile.id);
-        } else if (!$profile && notificationSSE) {
+        } else if ((!$profile || isAdminPage) && notificationSSE) {
             notificationSSE.disconnect();
             notificationSSE = null;
         }
@@ -72,7 +83,7 @@
     <main class="flex min-h-screen flex-col">
         <Menu>
             <div class:min-h-screen={!page.data.isAdmin} class="px-4 pb-16 pt-12 md:px-8 lg:px-12">
-                <div class="mx-auto w-full max-w-6xl space-y-12">
+                <div class="mx-auto w-full space-y-12">
                     {@render children()}
                     {#if !page.data.isAdmin}
                         <Footer />

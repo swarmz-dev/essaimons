@@ -101,6 +101,7 @@
     </CardHeader>
     <CardContent class="space-y-4">
         <!-- Drag & Drop Zone -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
             class="border-2 border-dashed rounded-lg p-12 text-center transition-colors {isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}"
             ondragover={handleDragOver}

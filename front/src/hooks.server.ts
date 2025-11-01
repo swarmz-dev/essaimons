@@ -12,7 +12,7 @@ const handleParaglide: Handle = ({ event, resolve }) => {
         });
     }
 
-    return paraglideMiddleware(event.request, ({ request, locale }) => {
+    return paraglideMiddleware(event.request, ({ request, locale }: { request: Request; locale: string }) => {
         event.request = request;
 
         return resolve(event, {

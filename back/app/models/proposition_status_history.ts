@@ -36,6 +36,8 @@ export default class PropositionStatusHistory extends BaseModel {
     @belongsTo((): typeof Proposition => Proposition)
     declare proposition: BelongsTo<typeof Proposition>;
 
-    @belongsTo((): typeof User => User)
+    @belongsTo((): typeof User => User, {
+        foreignKey: 'triggeredByUserId',
+    })
     declare triggeredBy: BelongsTo<typeof User>;
 }

@@ -26,9 +26,6 @@
                 .find((row) => row.startsWith('client_token='))
                 ?.split('=')[1];
 
-            console.log('Executing import with configuration:', configuration);
-            console.log('URL:', `${PUBLIC_API_BASE_URI}/api/admin/propositions/import/execute`);
-
             const response = await fetch(`${PUBLIC_API_BASE_URI}/api/admin/propositions/import/execute`, {
                 method: 'POST',
                 headers: {

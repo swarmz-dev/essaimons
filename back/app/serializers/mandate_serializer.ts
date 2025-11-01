@@ -11,7 +11,6 @@ const toIso = (value?: DateTime | null): string | null => (value ? value.toISO()
 
 const serializeUserSummary = (user?: User | null) => {
     if (!user) {
-        console.warn('serializeUserSummary called with undefined/null user');
         return undefined;
     }
     return user.summarySerialize();
@@ -32,12 +31,6 @@ export function serializeDeliverableEvaluation(evaluation: DeliverableEvaluation
 }
 
 export function serializeMandateDeliverable(deliverable: MandateDeliverable): SerializedMandateDeliverable {
-    // Debug logging
-    if (!deliverable.uploadedBy && deliverable.uploadedByUserId) {
-        console.error('ERROR: uploadedBy is undefined but uploadedByUserId exists:', deliverable.uploadedByUserId);
-        console.error('Preloaded relations:', Object.keys(deliverable.$preloaded || {}));
-    }
-
     return {
         id: deliverable.id,
         mandateId: deliverable.mandateId,

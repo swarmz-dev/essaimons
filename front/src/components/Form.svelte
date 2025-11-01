@@ -19,13 +19,14 @@
         footer?: Snippet;
         submitContent?: Snippet;
         onError?: (data?: any) => void;
+        onBeforeSubmit?: (formData: FormData) => void;
         isValid?: boolean;
         submittable?: boolean;
         hasBackground?: boolean;
         class?: string;
     };
 
-    let { children, header, links, footer, onError, isValid = false, submittable = true, hasBackground = true, submitContent, class: className }: Props = $props();
+    let { children, header, links, footer, onError, onBeforeSubmit, isValid = false, submittable = true, hasBackground = true, submitContent, class: className }: Props = $props();
 
     let isLoading: boolean = $state(false);
     let isSendButtonDisabled: boolean = $state(false);
@@ -35,7 +36,6 @@
             return;
         }
 
-        console.log(formError);
         formError.errors.forEach((error: PageDataError) => {
             showToast(error.message, error.type);
         });
@@ -47,8 +47,14 @@
         onError?.(formError);
     };
 
-    const submitHandler: SubmitFunction<Record<string, any>, Record<string, any>> = async () => {
+    const submitHandler: SubmitFunction<Record<string, any>, Record<string, any>> = async ({ formData }) => {
         isLoading = true;
+
+        // Call the custom handler to modify formData before submission
+        if (onBeforeSubmit) {
+            onBeforeSubmit(formData);
+        }
+
         return async ({ result, update }) => {
             isLoading = false;
             if (result.type === 'failure') {

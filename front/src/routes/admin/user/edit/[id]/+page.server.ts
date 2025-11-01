@@ -35,7 +35,6 @@ export const actions: Actions = {
         const { request, cookies, locals } = event;
 
         const formData: FormData = await request.formData();
-        console.log(formData);
 
         let data: any;
         let isSuccess: boolean = true;

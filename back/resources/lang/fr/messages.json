@@ -5,6 +5,8 @@
                 "success": "Utilisateur {username} supprimé avec succès",
                 "error": {
                     "current": "Vous ne pouvez pas supprimer votre propre compte depuis le back-office ({username})",
+                    "is-admin": "Impossible de supprimer {username} car il s'agit d'un administrateur. Les comptes administrateurs ne peuvent pas être supprimés pour des raisons de sécurité.",
+                    "has-activity": "Impossible de supprimer {username} car cet utilisateur a des activités dans le système (propositions, commentaires, amendements, clarifications, votes, réactions, candidatures aux mandats, livrables, évaluations ou demandes de révocation). La suppression de cet utilisateur entraînerait la suppression permanente de toutes ses contributions en raison de la suppression en cascade. Envisagez de désactiver le compte à la place pour préserver ces données.",
                     "default": "Erreur lors de la suppression de l'utilisateur avec l'identifiant {id}"
                 }
             },
@@ -52,6 +54,9 @@
                 }
             }
         },
+        "reports": {
+            "pending-count": "{count} signalements en attente"
+        },
         "discord": {
             "update": {
                 "success": "Paramètres Discord mis à jour avec succès",
@@ -89,6 +94,30 @@
                     "error": {
                         "failed": "L'import a échoué, veuillez vérifier les erreurs"
                     }
+                },
+                "validation": {
+                    "unsupported-version": "Version d'export non supportée : {version}. Version attendue : {expected}",
+                    "no-propositions": "Aucune proposition trouvée dans le fichier d'import",
+                    "title-required": "Proposition #{index} : le titre est requis",
+                    "title-too-long": "Proposition #{index} \"{title}\" : le titre dépasse 150 caractères"
+                },
+                "conflict": {
+                    "duplicate-proposition": "La proposition \"{title}\" existe déjà dans l'environnement",
+                    "missing-user": "Utilisateur \"{username}\" ({email}) introuvable",
+                    "user-found-with-differences": "Utilisateur \"{username}\" trouvé mais avec des différences",
+                    "missing-category": "Catégorie \"{name}\" introuvable",
+                    "missing-associated-proposition": "Proposition associée \"{title}\" introuvable"
+                },
+                "resolution": {
+                    "merge": "Fusionner avec la proposition existante",
+                    "create-new": "Créer une nouvelle proposition (doublon)",
+                    "create-new-user": "Créer un nouvel utilisateur",
+                    "create-category": "Créer la catégorie \"{name}\"",
+                    "skip": "Ignorer cette proposition",
+                    "map-existing": "Mapper sur un(e) {type} existant(e)",
+                    "map-user": "Mapper sur \"{username}\" ({email})",
+                    "remove": "Ne pas associer de catégorie",
+                    "remove-association": "Ne pas créer d'association"
                 }
             }
         }
@@ -175,6 +204,23 @@
             }
         }
     },
+    "reports": {
+        "create": {
+            "success": "Contenu signalé avec succès. Notre équipe de modération l'examinera.",
+            "error": {
+                "already-exists": "Vous avez déjà signalé ce contenu",
+                "content-not-found": "Le contenu que vous essayez de signaler est introuvable"
+            }
+        },
+        "review": {
+            "success": "Signalement examiné avec succès",
+            "error": {
+                "forbidden": "Vous n'avez pas la permission d'examiner les signalements",
+                "already-reviewed": "Ce signalement a déjà été examiné",
+                "not-found": "Signalement introuvable"
+            }
+        }
+    },
     "proposition": {
         "create": {
             "success": "Proposition \"{title}\" créée avec succès",
@@ -224,70 +270,96 @@
             }
         }
     },
-    "notification": {
-        "status-transition": {
-            "title": "Changement de statut de proposition",
-            "body": "La proposition \"{propositionTitle}\" est passée au statut {newStatus}"
+    "notifications": {
+        "status_transition": {
+            "to_clarify": {
+                "title": "Proposition nécessite des clarifications",
+                "message": "La proposition \"{propositionTitle}\" est passée en phase de clarification"
+            },
+            "to_amend": {
+                "title": "Proposition nécessite des amendements",
+                "message": "La proposition \"{propositionTitle}\" est passée en phase d'amendement"
+            },
+            "to_vote": {
+                "title": "Proposition passée au vote",
+                "message": "La proposition \"{propositionTitle}\" est maintenant ouverte au vote"
+            },
+            "to_mandate": {
+                "title": "Proposition en phase de mandat",
+                "message": "La proposition \"{propositionTitle}\" est passée en phase de mandat"
+            },
+            "to_evaluate": {
+                "title": "Livrable prêt pour évaluation",
+                "message": "Un livrable a été soumis pour la proposition \"{propositionTitle}\" et est prêt pour votre évaluation"
+            },
+            "to_archived": {
+                "title": "Proposition archivée",
+                "message": "La proposition \"{propositionTitle}\" a été archivée"
+            }
         },
-        "mandate-assigned": {
+        "mandate_assigned": {
             "title": "Nouveau mandat assigné",
-            "body": "Vous avez été assigné au mandat pour la proposition \"{propositionTitle}\""
+            "message": "Vous avez été assigné au mandat pour la proposition \"{propositionTitle}\""
         },
-        "mandate-revoked": {
+        "mandate_revoked": {
             "title": "Mandat révoqué",
-            "body": "Votre mandat pour la proposition \"{propositionTitle}\" a été révoqué"
+            "message": "Votre mandat pour la proposition \"{propositionTitle}\" a été révoqué"
         },
-        "deliverable-uploaded": {
+        "deliverable_uploaded": {
             "title": "Nouveau livrable déposé",
-            "body": "{username} a déposé un livrable pour \"{propositionTitle}\""
+            "message": "{username} a déposé un livrable pour \"{propositionTitle}\""
         },
-        "deliverable-evaluated": {
+        "deliverable_evaluated": {
             "title": "Livrable évalué",
-            "body": "Votre livrable pour \"{propositionTitle}\" a été évalué"
+            "message": "Votre livrable pour \"{propositionTitle}\" a été évalué"
         },
-        "deadline-approaching": {
-            "title": "Échéance approchant",
-            "body": "L'échéance pour \"{propositionTitle}\" arrive dans {days} jours"
-        },
-        "nonconformity-threshold": {
-            "title": "Seuil de non-conformité atteint",
-            "body": "La proposition \"{propositionTitle}\" a atteint le seuil de non-conformité"
-        },
-        "procedure-opened": {
-            "title": "Procédure ouverte",
-            "body": "Une procédure a été ouverte pour la proposition \"{propositionTitle}\""
-        },
-        "revocation-vote-opened": {
-            "title": "Vote de révocation ouvert",
-            "body": "Un vote de révocation a été ouvert pour \"{propositionTitle}\""
-        },
-        "comment-added": {
+        "comment_added": {
             "title": "Nouveau commentaire",
-            "body": "{username} a commenté la proposition \"{propositionTitle}\""
+            "message": "{username} a commenté la proposition \"{propositionTitle}\""
         },
-        "clarification-added": {
+        "clarification_added": {
             "title": "Nouvelle clarification",
-            "body": "{username} a ajouté une clarification à \"{propositionTitle}\""
+            "message": "{username} a ajouté une clarification à \"{propositionTitle}\""
         },
-        "clarification-updated": {
+        "clarification_updated": {
             "title": "Clarification mise à jour",
-            "body": "{username} a mis à jour une clarification de \"{propositionTitle}\""
+            "message": "{username} a mis à jour une clarification de \"{propositionTitle}\""
         },
-        "clarification-deleted": {
+        "clarification_deleted": {
             "title": "Clarification supprimée",
-            "body": "{username} a supprimé une clarification de \"{propositionTitle}\""
+            "message": "{username} a supprimé une clarification de \"{propositionTitle}\""
         },
-        "exchange-scheduled": {
+        "exchange_scheduled": {
             "title": "Échange planifié",
-            "body": "Un échange a été planifié pour \"{propositionTitle}\" le {date}"
+            "message": "Un échange a été planifié pour \"{propositionTitle}\" le {date}"
         },
-        "proposition-new-comment": {
-            "title": "Nouveau commentaire",
-            "body": "{username} a commenté votre proposition \"{propositionTitle}\""
+        "content_reported": {
+            "title": "Votre contenu a été signalé",
+            "message": "Votre {contentType} a été signalé pour : {reason}"
         },
-        "proposition-validated": {
-            "title": "Proposition validée",
-            "body": "Votre proposition \"{propositionTitle}\" a été validée"
+        "content_report_reviewed": {
+            "title": "Votre signalement a été examiné",
+            "message": "Votre signalement pour {contentType} a été examiné avec le statut : {status}"
+        },
+        "content_hidden": {
+            "title": "Contenu masqué par la modération",
+            "message": "Un {contentType} a été masqué par l'équipe de modération"
+        },
+        "deadline_reminder_48h": {
+            "title": "Échéance dans 48 heures",
+            "message": "L'échéance {deadlineType} pour \"{propositionTitle}\" est dans 48 heures ({deadlineDate})"
+        },
+        "deadline_reminder_24h_initiator": {
+            "title": "Échéance dans 24 heures",
+            "message": "En tant qu'initiateur de \"{propositionTitle}\", l'échéance {deadlineType} est dans 24 heures ({deadlineDate}). Vous pouvez demander un report si nécessaire."
+        },
+        "weekly_vote_digest": {
+            "title": "Récapitulatif hebdomadaire des votes",
+            "message": "Il y a {count} votes à venir cette semaine"
+        },
+        "vote_quorum_warning": {
+            "title": "Quorum de vote en danger",
+            "message": "Le vote pour \"{propositionTitle}\" ferme dans 48 heures et n'a pas encore atteint le quorum ({current}/{required} participants)"
         }
     }
 }

@@ -19,6 +19,9 @@ export { MandateRevocationStatusEnum } from './enum/mandate_revocation_status_en
 export { NotificationTypeEnum } from './enum/notification_type_enum.js';
 export { NotificationChannelEnum } from './enum/notification_channel_enum.js';
 export { DeliveryStatusEnum } from './enum/delivery_status_enum.js';
+export { ContentReportReasonEnum } from './enum/content_report_reason_enum.js';
+export { ContentReportStatusEnum } from './enum/content_report_status_enum.js';
+export { ContentTypeEnum } from './enum/content_type_enum.js';
 
 export type { PaginatedUsers } from './paginated/paginated_users.js';
 export type { PaginatedPropositions } from './paginated/paginated_propositions.js';

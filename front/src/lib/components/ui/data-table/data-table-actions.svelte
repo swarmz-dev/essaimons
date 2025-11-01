@@ -28,27 +28,33 @@
     let { id, onDelete, deleteTitle, deleteText }: Props = $props();
 
     let showModal: boolean = $state(false);
+    let isDeleting: boolean = $state(false);
     const deletable: boolean = $state(!!(deleteTitle && deleteText));
 
     const handleDelete = async (): Promise<void> => {
         showModal = false;
-        await wrappedFetch(`${$location}/delete`, { method: 'POST', body: { data: [id] } }, (data) => {
-            const isSuccess: boolean = data.messages.map((status: { isSuccess: boolean; message: string; code: string }) => {
-                showToast(status.message, status.isSuccess ? 'success' : 'error');
-                return status.isSuccess;
-            })[0];
+        isDeleting = true;
+        try {
+            await wrappedFetch(`${$location}/delete`, { method: 'POST', body: { users: [id] } }, (data) => {
+                const isSuccess: boolean = data.messages.map((status: { isSuccess: boolean; message: string; code: string }) => {
+                    showToast(status.message, status.isSuccess ? 'success' : 'error');
+                    return status.isSuccess;
+                })[0];
 
-            if (isSuccess) {
-                onDelete?.([String(id)]);
-            }
-        });
+                if (isSuccess) {
+                    onDelete?.([String(id)]);
+                }
+            });
+        } finally {
+            isDeleting = false;
+        }
     };
 </script>
 
 <DropdownMenu>
     <DropdownMenuTrigger>
         {#snippet child({ props })}
-            <Button {...props} variant="ghost" size="icon" class="size-12 flex justify-start items-center">
+            <Button {...props} variant="ghost" size="icon" class="size-12 flex justify-start items-center" disabled={isDeleting} loading={isDeleting}>
                 <EllipsisIcon class="size-5" />
             </Button>
         {/snippet}
@@ -60,22 +66,22 @@
                 {m['common.edit']()}
             </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={!deletable} class="hover:underline underline-offset-4 flex gap-1 py-3" onclick={() => (showModal = true)}>
+        <DropdownMenuItem disabled={!deletable || isDeleting} class="hover:underline underline-offset-4 flex gap-1 py-3" onclick={() => (showModal = true)}>
             <Trash class="size-4 text-red-500" />
             {m['common.delete']()}
         </DropdownMenuItem>
     </DropdownMenuContent>
 </DropdownMenu>
 
-<AlertDialog open={showModal} onOpenChange={() => (showModal = false)}>
+<AlertDialog open={showModal || isDeleting} onOpenChange={() => !isDeleting && (showModal = false)}>
     <AlertDialogContent>
         <AlertDialogHeader>
             <AlertDialogTitle>{deleteTitle}</AlertDialogTitle>
             <AlertDialogDescription>{deleteText}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-            <AlertDialogCancel>{m['common.cancel']()}</AlertDialogCancel>
-            <AlertDialogAction onclick={handleDelete}>{m['common.continue']()}</AlertDialogAction>
+            <AlertDialogCancel disabled={isDeleting}>{m['common.cancel']()}</AlertDialogCancel>
+            <AlertDialogAction onclick={handleDelete} disabled={isDeleting} loading={isDeleting}>{m['common.continue']()}</AlertDialogAction>
         </AlertDialogFooter>
     </AlertDialogContent>
 </AlertDialog>

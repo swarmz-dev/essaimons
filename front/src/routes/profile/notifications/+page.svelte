@@ -33,8 +33,6 @@
     onMount(async () => {
         try {
             settings = await settingsService.getSettings();
-            console.log('Loaded settings:', settings);
-            console.log('Notification types:', notificationTypes);
             if (settings.length === 0) {
                 error = "Aucun paramètre de notification trouvé. Vous n'êtes peut-être pas connecté.";
             }
@@ -49,12 +47,6 @@
 
     function getSetting(notificationType: string): NotificationSetting | undefined {
         const found = settings.find((s) => (s.type || s.notificationType) === notificationType);
-        if (!found) {
-            console.log(
-                `No setting found for type: ${notificationType}`,
-                settings.map((s) => s.type || s.notificationType)
-            );
-        }
         return found;
     }
 

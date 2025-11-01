@@ -100,7 +100,7 @@
         {#if !isResolved}
             <div class="space-y-4">
                 <div>
-                    <label class="text-sm font-medium">{m['admin.propositions.import.conflict.resolution']()}</label>
+                    <p class="text-sm font-medium">{m['admin.propositions.import.conflict.resolution']()}</p>
                     <div class="mt-2 space-y-2">
                         {#each conflict.resolutions as resolutionOption}
                             <label class="flex items-start space-x-2 rounded-lg border p-3 hover:bg-muted/50 cursor-pointer">

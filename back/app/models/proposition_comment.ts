@@ -30,6 +30,15 @@ export default class PropositionComment extends BaseModel {
     @column()
     declare content: string;
 
+    @column()
+    declare isHidden: boolean;
+
+    @column.dateTime()
+    declare hiddenAt?: DateTime | null;
+
+    @column()
+    declare hiddenByUserId?: string | null;
+
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime;
 
@@ -48,6 +57,11 @@ export default class PropositionComment extends BaseModel {
         foreignKey: 'authorId',
     })
     declare author: BelongsTo<typeof User>;
+
+    @belongsTo((): typeof User => User, {
+        foreignKey: 'hiddenByUserId',
+    })
+    declare hiddenBy: BelongsTo<typeof User>;
 
     @hasMany((): typeof PropositionComment => PropositionComment, {
         foreignKey: 'parentId',

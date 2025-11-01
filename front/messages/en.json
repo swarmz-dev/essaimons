@@ -17,6 +17,15 @@
         "updated-at": "Updated at",
         "public": "Public",
         "private": "Private",
+        "previous": "Previous",
+        "next": "Next",
+        "page": [
+            {
+                "declarations": ["input current", "input total"],
+                "match": "*",
+                "value": "Page {current} of {total}"
+            }
+        ],
         "error": {
             "default-message": "Something went wrong"
         },
@@ -88,9 +97,14 @@
         },
         "back": "Back",
         "remove": "Remove",
+        "upload": "Upload",
+        "change": "Change",
         "status": "Status",
         "creator": "Creator",
-        "created_at": "Created at"
+        "created_at": "Created at",
+        "previous": "Previous",
+        "next": "Next",
+        "page": "{current} of {total}"
     },
     "open-graph": {
         "profile-picture": {
@@ -121,6 +135,14 @@
         "profile-picture": {
             "title": "Profile picture",
             "description": "Upload here a profile picture"
+        },
+        "crop": {
+            "title": "Adjust profile picture",
+            "instructions": "Drag to reposition the image. Use the slider to zoom in or out so it fills the square.",
+            "zoom": "Zoom",
+            "background": "Background color",
+            "reset": "Reset",
+            "apply": "Apply"
         },
         "export-data": {
             "title": "Download your data",
@@ -335,6 +357,14 @@
                     "title": "Profile picture",
                     "description": "User profile picture (square image recommended)"
                 }
+            },
+            "crop": {
+                "title": "Adjust profile picture",
+                "instructions": "Drag to reposition the image. Use the slider to zoom in or out so it fills the square.",
+                "zoom": "Zoom",
+                "background": "Background color",
+                "reset": "Reset",
+                "apply": "Apply"
             }
         },
         "categories": {
@@ -585,6 +615,60 @@
                     "view_propositions": "View Propositions"
                 }
             }
+        },
+        "reports": {
+            "title": "Moderation",
+            "filters": {
+                "title": "Filters",
+                "description": "Filter reports by status and content type",
+                "status": "Status",
+                "content-type": "Content Type",
+                "all-statuses": "All Statuses",
+                "all-types": "All Types"
+            },
+            "status": {
+                "pending": "Pending",
+                "reviewed": "Reviewed",
+                "dismissed": "Dismissed"
+            },
+            "content-type": {
+                "comment": "Comment",
+                "proposition": "Proposition"
+            },
+            "reported-by": "Reported by",
+            "view": "View Details",
+            "no-reports": "No reports found",
+            "detail": {
+                "title": "Report Details",
+                "report-info": "Report Information",
+                "reporter": "Reported by",
+                "reported-at": "Reported at",
+                "reporter-notes": "Reporter's Notes",
+                "reviewer": "Reviewed by",
+                "reviewed-at": "Reviewed at",
+                "review-notes": "Review Notes",
+                "reported-content": "Reported Content",
+                "content-description": "Content being reported ({type})",
+                "content-author": "Author",
+                "content-title": "Title",
+                "content-text": "Content",
+                "content-created-at": "Created at",
+                "review-title": "Review this Report",
+                "review-description": "Choose an action for this report. Add notes to document your decision.",
+                "review-notes-label": "Review Notes (optional)",
+                "review-notes-placeholder": "Add any notes about your decision...",
+                "action-reviewed": "Mark as Reviewed",
+                "action-dismissed": "Dismiss Report",
+                "view-in-context": "View in Context",
+                "delete-content": "Delete Content & Mark as Reviewed",
+                "delete-confirm": "Are you sure you want to delete this content? This action cannot be undone.",
+                "delete-success": "Content deleted successfully",
+                "delete-error": "Failed to delete content"
+            },
+            "review": {
+                "success": "Report reviewed successfully",
+                "error": "Failed to review report"
+            }
         }
     },
     "proposition-create": {
@@ -770,7 +854,8 @@
                 "categories": "Categories",
                 "status": "Status",
                 "vote": "Vote",
-                "updated": "Updated"
+                "updated": "Updated",
+                "next-deadline": "Next Deadline"
             }
         },
         "empty": "No proposal matches your filters."
@@ -1120,7 +1205,11 @@
             "clarification_added": "Clarification requests",
             "clarification_updated": "Clarification updates",
             "clarification_deleted": "Clarification deletions",
-            "exchange_scheduled": "Scheduled exchanges"
+            "exchange_scheduled": "Scheduled exchanges",
+            "deadline_reminder_48h": "48-hour deadline reminders",
+            "deadline_reminder_24h_initiator": "24-hour deadline reminders (initiators)",
+            "weekly_vote_digest": "Weekly vote digest",
+            "vote_quorum_warning": "Vote quorum warnings"
         },
         "status_transition": {
             "to_evaluate": {
@@ -1176,5 +1265,22 @@
             "title": "Exchange scheduled",
             "message": "A new exchange \"{eventTitle}\" has been scheduled for \"{propositionTitle}\""
         }
+    },
+    "report": {
+        "button": "Report",
+        "dialog-title": "Report Content",
+        "dialog-description": "Help us maintain a respectful community by reporting inappropriate content. Our moderation team will review your report.",
+        "reason-label": "Why are you reporting this?",
+        "reason-spam": "Spam or advertising",
+        "reason-harassment": "Harassment or hate speech",
+        "reason-inappropriate": "Inappropriate or offensive content",
+        "reason-other": "Other reason",
+        "description-label": "Additional details (optional)",
+        "description-placeholder": "Please provide any additional context that might help our review...",
+        "description-hint": "This information will only be visible to moderators",
+        "submit": "Submit Report",
+        "success-title": "Report Submitted",
+        "success-description": "Thank you for helping keep our community safe. Our moderation team will review this content.",
+        "error-default": "Unable to submit report. Please try again."
     }
 }

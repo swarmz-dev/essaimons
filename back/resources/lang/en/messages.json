@@ -5,6 +5,8 @@
                 "success": "Successfully deleted {username}",
                 "error": {
                     "current": "You cannot delete your own account from back-office ({username})",
+                    "is-admin": "Cannot delete {username} because they are an administrator. Admin accounts cannot be deleted for security reasons.",
+                    "has-activity": "Cannot delete {username} because they have activity in the system (proposals, comments, amendments, clarifications, votes, reactions, mandate applications, deliverables, evaluations, or revocation requests). Deleting this user would permanently remove all their contributions due to cascade deletion. Consider disabling the account instead to preserve this data.",
                     "default": "Error while deleting user with identifier {id}"
                 }
             },
@@ -52,6 +54,9 @@
                 }
             }
         },
+        "reports": {
+            "pending-count": "{count} pending reports"
+        },
         "discord": {
             "update": {
                 "success": "Discord settings updated successfully",
@@ -62,6 +67,58 @@
             },
             "list-channels": {
                 "error": "Error retrieving Discord channels"
+            }
+        },
+        "propositions": {
+            "export": {
+                "error": {
+                    "not-found": "No propositions found for export",
+                    "some-not-found": "Some propositions were not found",
+                    "default": "Unable to export propositions at this time"
+                }
+            },
+            "import": {
+                "error": {
+                    "invalid-json": "The file is not valid JSON",
+                    "analyze-failed": "Unable to analyze the import file",
+                    "session-not-found": "Import session not found or expired",
+                    "configure-failed": "Unable to save the configuration",
+                    "execute-failed": "Unable to execute the import",
+                    "session-failed": "Unable to retrieve the import session"
+                },
+                "configure": {
+                    "success": "Import configuration saved successfully"
+                },
+                "execute": {
+                    "success": "Import executed successfully",
+                    "error": {
+                        "failed": "Import failed, please check the errors"
+                    }
+                },
+                "validation": {
+                    "unsupported-version": "Unsupported export version: {version}. Expected version: {expected}",
+                    "no-propositions": "No propositions found in import file",
+                    "title-required": "Proposition #{index}: title is required",
+                    "title-too-long": "Proposition #{index} \"{title}\": title exceeds 150 characters"
+                },
+                "conflict": {
+                    "duplicate-proposition": "The proposition \"{title}\" already exists in the environment",
+                    "missing-user": "User \"{username}\" ({email}) not found",
+                    "user-found-with-differences": "User \"{username}\" found but with differences",
+                    "missing-category": "Category \"{name}\" not found",
+                    "missing-associated-proposition": "Associated proposition \"{title}\" not found"
+                },
+                "resolution": {
+                    "merge": "Merge with existing proposition",
+                    "create-new": "Create a new proposition (duplicate)",
+                    "create-new-user": "Create a new user",
+                    "create-category": "Create category \"{name}\"",
+                    "skip": "Skip this proposition",
+                    "map-existing": "Map to an existing {type}",
+                    "map-user": "Map to \"{username}\" ({email})",
+                    "remove": "Do not associate category",
+                    "remove-association": "Do not create association"
+                }
             }
         }
     },
@@ -147,6 +204,23 @@
             }
         }
     },
+    "reports": {
+        "create": {
+            "success": "Content reported successfully. Our moderation team will review it.",
+            "error": {
+                "already-exists": "You have already reported this content",
+                "content-not-found": "The content you are trying to report could not be found"
+            }
+        },
+        "review": {
+            "success": "Report reviewed successfully",
+            "error": {
+                "forbidden": "You do not have permission to review reports",
+                "already-reviewed": "This report has already been reviewed",
+                "not-found": "Report not found"
+            }
+        }
+    },
     "proposition": {
         "create": {
             "success": "Proposal \"{title}\" created successfully",
@@ -196,70 +270,96 @@
             }
         }
     },
-    "notification": {
-        "status-transition": {
-            "title": "Proposal status changed",
-            "body": "The proposal \"{propositionTitle}\" has been changed to {newStatus}"
+    "notifications": {
+        "status_transition": {
+            "to_clarify": {
+                "title": "Proposal requires clarification",
+                "message": "The proposal \"{propositionTitle}\" has been moved to clarification phase"
+            },
+            "to_amend": {
+                "title": "Proposal requires amendments",
+                "message": "The proposal \"{propositionTitle}\" has been moved to amendment phase"
+            },
+            "to_vote": {
+                "title": "Proposal moved to vote",
+                "message": "The proposal \"{propositionTitle}\" is now open for voting"
+            },
+            "to_mandate": {
+                "title": "Proposal mandate phase",
+                "message": "The proposal \"{propositionTitle}\" has been moved to mandate phase"
+            },
+            "to_evaluate": {
+                "title": "Deliverable ready for evaluation",
+                "message": "A deliverable has been submitted for the proposal \"{propositionTitle}\" and is ready for your evaluation"
+            },
+            "to_archived": {
+                "title": "Proposal archived",
+                "message": "The proposal \"{propositionTitle}\" has been archived"
+            }
         },
-        "mandate-assigned": {
+        "mandate_assigned": {
             "title": "New mandate assigned",
-            "body": "You have been assigned to the mandate for proposal \"{propositionTitle}\""
+            "message": "You have been assigned to the mandate for proposal \"{propositionTitle}\""
         },
-        "mandate-revoked": {
+        "mandate_revoked": {
             "title": "Mandate revoked",
-            "body": "Your mandate for proposal \"{propositionTitle}\" has been revoked"
+            "message": "Your mandate for proposal \"{propositionTitle}\" has been revoked"
         },
-        "deliverable-uploaded": {
+        "deliverable_uploaded": {
             "title": "New deliverable uploaded",
-            "body": "{username} uploaded a deliverable for \"{propositionTitle}\""
+            "message": "{username} uploaded a deliverable for \"{propositionTitle}\""
         },
-        "deliverable-evaluated": {
+        "deliverable_evaluated": {
             "title": "Deliverable evaluated",
-            "body": "Your deliverable for \"{propositionTitle}\" has been evaluated"
+            "message": "Your deliverable for \"{propositionTitle}\" has been evaluated"
         },
-        "deadline-approaching": {
-            "title": "Deadline approaching",
-            "body": "The deadline for \"{propositionTitle}\" is in {days} days"
-        },
-        "nonconformity-threshold": {
-            "title": "Non-conformity threshold reached",
-            "body": "The proposal \"{propositionTitle}\" has reached the non-conformity threshold"
-        },
-        "procedure-opened": {
-            "title": "Procedure opened",
-            "body": "A procedure has been opened for proposal \"{propositionTitle}\""
-        },
-        "revocation-vote-opened": {
-            "title": "Revocation vote opened",
-            "body": "A revocation vote has been opened for \"{propositionTitle}\""
-        },
-        "comment-added": {
+        "comment_added": {
             "title": "New comment",
-            "body": "{username} commented on proposal \"{propositionTitle}\""
+            "message": "{username} commented on proposal \"{propositionTitle}\""
         },
-        "clarification-added": {
+        "clarification_added": {
             "title": "New clarification",
-            "body": "{username} added a clarification to \"{propositionTitle}\""
+            "message": "{username} added a clarification to \"{propositionTitle}\""
         },
-        "clarification-updated": {
+        "clarification_updated": {
             "title": "Clarification updated",
-            "body": "{username} updated a clarification for \"{propositionTitle}\""
+            "message": "{username} updated a clarification for \"{propositionTitle}\""
         },
-        "clarification-deleted": {
+        "clarification_deleted": {
             "title": "Clarification deleted",
-            "body": "{username} deleted a clarification from \"{propositionTitle}\""
+            "message": "{username} deleted a clarification from \"{propositionTitle}\""
         },
-        "exchange-scheduled": {
+        "exchange_scheduled": {
             "title": "Exchange scheduled",
-            "body": "An exchange has been scheduled for \"{propositionTitle}\" on {date}"
+            "message": "An exchange has been scheduled for \"{propositionTitle}\" on {date}"
         },
-        "proposition-new-comment": {
-            "title": "New comment",
-            "body": "{username} commented on your proposal \"{propositionTitle}\""
+        "content_reported": {
+            "title": "Your content has been reported",
+            "message": "Your {contentType} has been reported for: {reason}"
         },
-        "proposition-validated": {
-            "title": "Proposal validated",
-            "body": "Your proposal \"{propositionTitle}\" has been validated"
+        "content_report_reviewed": {
+            "title": "Your report has been reviewed",
+            "message": "Your report for {contentType} has been reviewed with status: {status}"
+        },
+        "content_hidden": {
+            "title": "Content hidden by moderation",
+            "message": "A {contentType} has been hidden by the moderation team"
+        },
+        "deadline_reminder_48h": {
+            "title": "Deadline approaching in 48 hours",
+            "message": "The {deadlineType} deadline for \"{propositionTitle}\" is in 48 hours ({deadlineDate})"
+        },
+        "deadline_reminder_24h_initiator": {
+            "title": "Deadline approaching in 24 hours",
+            "message": "As an initiator of \"{propositionTitle}\", the {deadlineType} deadline is in 24 hours ({deadlineDate}). You can request a postponement if needed."
+        },
+        "weekly_vote_digest": {
+            "title": "Weekly vote summary",
+            "message": "There are {count} upcoming votes this week"
+        },
+        "vote_quorum_warning": {
+            "title": "Vote quorum at risk",
+            "message": "The vote for \"{propositionTitle}\" closes in 48 hours and has not yet reached quorum ({current}/{required} participants)"
         }
     }
 }

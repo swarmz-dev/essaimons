@@ -55,6 +55,13 @@
     const attachmentUrl = (fileId: string): string => `/assets/propositions/attachments/${fileId}`;
 
     const visibleAttachments = $derived(existingAttachments.filter((att) => !deletedAttachmentIds.includes(att.id)));
+
+    const handleDeleteAttachment = (attachmentId: string): void => {
+        if (!deletedAttachmentIds.includes(attachmentId)) {
+            deletedAttachmentIds = [...deletedAttachmentIds, attachmentId];
+        }
+        onDeleteAttachment(attachmentId);
+    };
 </script>
 
 <div class="space-y-6">
@@ -117,7 +124,7 @@
                                 </a>
                                 <button
                                     type="button"
-                                    onclick={() => onDeleteAttachment(attachment.id)}
+                                    onclick={() => handleDeleteAttachment(attachment.id)}
                                     class="inline-flex items-center gap-1 rounded-md p-1.5 text-destructive transition-colors hover:bg-destructive/10"
                                     title="Supprimer"
                                 >
