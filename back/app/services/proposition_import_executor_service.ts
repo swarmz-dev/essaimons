@@ -140,6 +140,53 @@ export default class PropositionImportExecutorService {
             for (const initiator of prop.externalReferences.rescueInitiators) {
                 allUserRefs.set(initiator.sourceId, initiator);
             }
+
+            // Collect users from enriched data
+            if (prop.statusHistory) {
+                for (const history of prop.statusHistory) {
+                    if (history.triggeredBy) {
+                        allUserRefs.set(history.triggeredBy.sourceId, history.triggeredBy);
+                    }
+                }
+            }
+
+            if (prop.comments) {
+                for (const comment of prop.comments) {
+                    allUserRefs.set(comment.author.sourceId, comment.author);
+                }
+            }
+
+            if (prop.events) {
+                for (const event of prop.events) {
+                    if (event.createdBy) {
+                        allUserRefs.set(event.createdBy.sourceId, event.createdBy);
+                    }
+                }
+            }
+
+            if (prop.reactions) {
+                for (const reaction of prop.reactions) {
+                    allUserRefs.set(reaction.author.sourceId, reaction.author);
+                }
+            }
+
+            if (prop.mandates) {
+                for (const mandate of prop.mandates) {
+                    if (mandate.holder) {
+                        allUserRefs.set(mandate.holder.sourceId, mandate.holder);
+                    }
+                }
+            }
+
+            if (prop.votes) {
+                for (const vote of prop.votes) {
+                    if (vote.ballots) {
+                        for (const ballot of vote.ballots) {
+                            allUserRefs.set(ballot.voter.sourceId, ballot.voter);
+                        }
+                    }
+                }
+            }
         }
 
         // Resolve each user

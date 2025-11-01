@@ -56,10 +56,13 @@
         }
 
         // Initialize notification SSE when user is logged in
-        if ($profile && !notificationSSE && $transmit) {
+        // But disable on admin pages to avoid connection limit issues
+        const isAdminPage = page.url.pathname.startsWith('/admin');
+
+        if ($profile && !notificationSSE && $transmit && !isAdminPage) {
             notificationSSE = new NotificationSSEService($transmit);
             notificationSSE.connect($profile.id);
-        } else if (!$profile && notificationSSE) {
+        } else if ((!$profile || isAdminPage) && notificationSSE) {
             notificationSSE.disconnect();
             notificationSSE = null;
         }
