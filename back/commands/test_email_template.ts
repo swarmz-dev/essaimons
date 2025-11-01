@@ -63,6 +63,7 @@ export default class TestEmailTemplate extends BaseCommand {
                 bodyKey: 'messages.notification.status-transition.body',
                 interpolationData: {
                     propositionTitle: 'Proposition validée',
+                    newStatus: 'En cours de validation',
                 },
                 actionUrl: '/propositions/test-456',
             }),

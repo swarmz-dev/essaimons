@@ -8,7 +8,7 @@ import { ExportData, ExportedProposition, ConflictReport, ImportConflict, Confli
 @inject()
 export default class PropositionImportAnalyzerService {
     private static sessions: Map<string, ImportSession> = new Map();
-    private readonly SESSION_EXPIRY_MS = 3600000; // 1 heure
+    private readonly SESSION_EXPIRY_MS = 3600000; // 1 hour
 
     /**
      * Analyze an import file and detect conflicts
@@ -17,7 +17,7 @@ export default class PropositionImportAnalyzerService {
         const conflicts: ImportConflict[] = [];
         const validationErrors: string[] = [];
 
-        // Validation du format
+        // Format validation
         if (exportData.exportVersion !== '1.0') {
             validationErrors.push(`Version d'export non supportée: ${exportData.exportVersion}. Version attendue: 1.0`);
         }
@@ -26,7 +26,7 @@ export default class PropositionImportAnalyzerService {
             validationErrors.push("Aucune proposition trouvée dans le fichier d'import");
         }
 
-        // Analyser chaque proposition
+        // Analyze each proposition
         let newCount = 0;
         let existingCount = 0;
 
@@ -38,7 +38,7 @@ export default class PropositionImportAnalyzerService {
 
             if (existingProposition) {
                 existingCount++;
-                // Conflit: proposition existante
+                // Conflict: existing proposition
                 conflicts.push({
                     type: ConflictType.DUPLICATE_PROPOSITION,
                     severity: ConflictSeverity.WARNING,
@@ -157,7 +157,7 @@ export default class PropositionImportAnalyzerService {
         const existingUser = await User.query().where('email', userRef.email).orWhere('username', userRef.username).first();
 
         if (!existingUser) {
-            // Utilisateur manquant
+            // Missing user
             return {
                 type: ConflictType.MISSING_USER,
                 severity: ConflictSeverity.ERROR,
