@@ -71,6 +71,15 @@ export default class Proposition extends BaseModel {
     declare archivedAt?: DateTime | null;
 
     @column()
+    declare isHidden: boolean;
+
+    @column.dateTime()
+    declare hiddenAt?: DateTime | null;
+
+    @column()
+    declare hiddenByUserId?: string | null;
+
+    @column()
     declare settingsSnapshot: Record<string, unknown>;
 
     @column()
@@ -83,6 +92,11 @@ export default class Proposition extends BaseModel {
         foreignKey: 'creatorId',
     })
     declare creator: BelongsTo<typeof User>;
+
+    @belongsTo((): typeof User => User, {
+        foreignKey: 'hiddenByUserId',
+    })
+    declare hiddenBy: BelongsTo<typeof User>;
 
     @belongsTo((): typeof File => File, {
         foreignKey: 'visualFileId',
