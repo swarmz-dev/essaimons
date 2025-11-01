@@ -4,6 +4,8 @@ import type { BelongsTo } from '@adonisjs/lucid/types/relations';
 import Proposition from '#models/proposition';
 
 export default class DeadlineReminderSent extends BaseModel {
+    static table = 'deadline_reminders_sent';
+
     @column({ isPrimary: true })
     declare id: string;
 

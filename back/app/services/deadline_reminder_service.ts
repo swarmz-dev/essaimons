@@ -64,7 +64,8 @@ export default class DeadlineReminderService {
                                         entityId: proposition.id,
                                         actionUrl: `/propositions/${proposition.id}`,
                                     },
-                                    contributorIds
+                                    contributorIds,
+                                    true
                                 );
 
                                 await this.recordReminderSent(proposition.id, '48h', type, deadlineDateTime);
@@ -150,7 +151,8 @@ export default class DeadlineReminderService {
                                         entityId: proposition.id,
                                         actionUrl: `/propositions/${proposition.id}`,
                                     },
-                                    uniqueInitiatorIds
+                                    uniqueInitiatorIds,
+                                    true
                                 );
 
                                 await this.recordReminderSent(proposition.id, '24h_initiator', type, deadlineDateTime);
@@ -234,7 +236,8 @@ export default class DeadlineReminderService {
                     },
                     actionUrl: '/votes',
                 },
-                userIds
+                userIds,
+                true
             );
 
             logger.info(
@@ -313,7 +316,8 @@ export default class DeadlineReminderService {
                                 entityId: vote.id,
                                 actionUrl: `/propositions/${vote.propositionId}/votes/${vote.id}`,
                             },
-                            eligibleNonVoterIds
+                            eligibleNonVoterIds,
+                            true
                         );
 
                         await this.recordReminderSent(vote.propositionId, 'quorum_warning', 'vote', vote.closeAt || DateTime.now());

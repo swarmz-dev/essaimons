@@ -37,7 +37,7 @@ export default class NotificationService {
     /**
      * Create a notification and fan-out to multiple users
      */
-    public async create(payload: NotificationPayload, userIds: string[]): Promise<Notification> {
+    public async create(payload: NotificationPayload, userIds: string[], waitForDelivery = false): Promise<Notification> {
         // Map entityType and entityId to the appropriate columns
         const entityMapping: Record<string, string | null> = {
             propositionId: payload.entityType === 'proposition' ? payload.entityId || null : null,
@@ -79,10 +79,16 @@ export default class NotificationService {
             userNotifications.push(userNotification);
         }
 
-        // Send to channels asynchronously (don't wait)
-        this.sendToChannels(notification, userNotifications).catch((error) => {
-            logger.error({ err: error }, 'Failed to send notifications to channels');
-        });
+        // Send to channels
+        if (waitForDelivery) {
+            // Wait for delivery (for commands/cron jobs)
+            await this.sendToChannels(notification, userNotifications);
+        } else {
+            // Send asynchronously (don't wait) for HTTP requests
+            this.sendToChannels(notification, userNotifications).catch((error) => {
+                logger.error({ err: error }, 'Failed to send notifications to channels');
+            });
+        }
 
         return notification;
     }
