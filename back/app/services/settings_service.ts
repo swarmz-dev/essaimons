@@ -48,6 +48,10 @@ interface OrganizationSettingsValue {
         mandateOffsetDays: number;
         evaluationOffsetDays: number;
     };
+    deadlineReminders?: {
+        contributorHoursBeforeDeadline: number;
+        initiatorHoursBeforeDeadline: number;
+    };
     permissions?: PermissionsWrapper;
     permissionCatalog?: PermissionsWrapper;
     workflowAutomation?: WorkflowAutomationSettingsValue;
@@ -65,6 +69,7 @@ interface UpdateOrganizationSettingsPayload {
         copyright: Record<string, string>;
     };
     propositionDefaults?: Partial<OrganizationSettingsValue['propositionDefaults']>;
+    deadlineReminders?: Partial<OrganizationSettingsValue['deadlineReminders']>;
     permissions?: PermissionsWrapper | PermissionMatrix;
     permissionCatalog?: PermissionsWrapper | PermissionMatrix;
     workflowAutomation?: Partial<WorkflowAutomationSettingsValue>;
@@ -80,10 +85,16 @@ const DEFAULT_PROPOSITION_DEFAULTS = {
     evaluationOffsetDays: 30,
 };
 
+const DEFAULT_DEADLINE_REMINDERS = {
+    contributorHoursBeforeDeadline: 48,
+    initiatorHoursBeforeDeadline: 24,
+};
+
 const DEFAULT_JOB_SCHEDULES: Record<string, { enabled: boolean; intervalHours?: number; intervalMinutes?: number }> = {
     email_batch: { enabled: true, intervalHours: 1 },
     deadline_sweep: { enabled: true, intervalHours: 6 },
     revocation_sweep: { enabled: true, intervalHours: 24 },
+    deadline_reminders: { enabled: true, intervalHours: 12 },
 };
 
 const DEFAULT_PERMISSIONS: PermissionMatrix = {
@@ -436,6 +447,7 @@ export default class SettingsService {
                         copyright: currentValue.copyright ?? {},
                         logoFileId: currentValue.logoFileId ?? null,
                         propositionDefaults: currentValue.propositionDefaults ?? { ...DEFAULT_PROPOSITION_DEFAULTS },
+                        deadlineReminders: currentValue.deadlineReminders ?? { ...DEFAULT_DEADLINE_REMINDERS },
                         permissions: { perStatus: existingPermissions },
                         permissionCatalog: { perStatus: catalogMatrix },
                         workflowAutomation: this.normalizeWorkflowAutomationValue(currentValue.workflowAutomation),
@@ -535,6 +547,18 @@ export default class SettingsService {
                 voteOffsetDays: normalizeOffset(defaults?.voteOffsetDays, value.propositionDefaults?.voteOffsetDays ?? DEFAULT_PROPOSITION_DEFAULTS.voteOffsetDays),
                 mandateOffsetDays: normalizeOffset(defaults?.mandateOffsetDays, value.propositionDefaults?.mandateOffsetDays ?? DEFAULT_PROPOSITION_DEFAULTS.mandateOffsetDays),
                 evaluationOffsetDays: normalizeOffset(defaults?.evaluationOffsetDays, value.propositionDefaults?.evaluationOffsetDays ?? DEFAULT_PROPOSITION_DEFAULTS.evaluationOffsetDays),
+            };
+
+            const reminders = payload.deadlineReminders;
+            value.deadlineReminders = {
+                contributorHoursBeforeDeadline: normalizeOffset(
+                    reminders?.contributorHoursBeforeDeadline,
+                    value.deadlineReminders?.contributorHoursBeforeDeadline ?? DEFAULT_DEADLINE_REMINDERS.contributorHoursBeforeDeadline
+                ),
+                initiatorHoursBeforeDeadline: normalizeOffset(
+                    reminders?.initiatorHoursBeforeDeadline,
+                    value.deadlineReminders?.initiatorHoursBeforeDeadline ?? DEFAULT_DEADLINE_REMINDERS.initiatorHoursBeforeDeadline
+                ),
             };
 
             value.permissionCatalog = {

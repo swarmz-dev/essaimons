@@ -18,7 +18,7 @@ export default class UserRepository extends BaseRepository<typeof User> {
     }
 
     public async getAllOtherUsers(currentUser: User): Promise<User[]> {
-        return this.Model.query().whereNot('id', currentUser.id);
+        return await this.Model.query().whereNot('id', currentUser.id);
     }
 
     public async getAdminUsers(query: string, page: number, limit: number, sortBy: { field: keyof User['$attributes']; order: 'asc' | 'desc' }): Promise<PaginatedUsers> {
@@ -160,6 +160,6 @@ export default class UserRepository extends BaseRepository<typeof User> {
             query.whereIn('id', uuidIds);
         }
 
-        return query;
+        return await query;
     }
 }

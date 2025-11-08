@@ -23,6 +23,12 @@ export default class NotificationSetting extends BaseModel {
     @column()
     declare pushEnabled: boolean;
 
+    @column({
+        prepare: (value: any) => (value ? JSON.stringify(value) : null),
+        consume: (value: any) => (value ? JSON.parse(value) : null),
+    })
+    declare settings: Record<string, any> | null;
+
     @column.dateTime({ autoCreate: true })
     declare createdAt: DateTime;
 

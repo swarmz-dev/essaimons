@@ -6,22 +6,30 @@ import PropositionVote from '#models/proposition_vote';
 import User from '#models/user';
 import DeadlineReminderSent from '#models/deadline_reminder_sent';
 import NotificationService from '#services/notification_service';
+import SettingsService from '#services/settings_service';
 import { NotificationTypeEnum, PropositionVoteStatusEnum } from '#types';
 
 @inject()
 export default class DeadlineReminderService {
-    constructor(private readonly notificationService: NotificationService) {}
+    constructor(
+        private readonly notificationService: NotificationService,
+        private readonly settingsService: SettingsService
+    ) {}
 
     /**
-     * Send 48-hour reminders to all contributors for approaching deadlines
+     * Send contributor reminders for approaching deadlines
+     * Uses configurable hours from organization settings (default: 48 hours)
      */
     public async send48HourReminders(): Promise<void> {
         try {
-            logger.info('Starting 48-hour deadline reminders');
+            const settings = await this.settingsService.getOrganizationSettings();
+            const hoursBeforeDeadline = settings.deadlineReminders?.contributorHoursBeforeDeadline ?? 48;
+
+            logger.info('Starting contributor deadline reminders', { hoursBeforeDeadline });
 
             const now = DateTime.now();
-            const lowerBound = now.plus({ hours: 47 });
-            const upperBound = now.plus({ hours: 49 });
+            const lowerBound = now.plus({ hours: hoursBeforeDeadline - 1 });
+            const upperBound = now.plus({ hours: hoursBeforeDeadline + 1 });
 
             const propositions = await Proposition.query()
                 .whereNotNull('clarification_deadline')
@@ -52,9 +60,9 @@ export default class DeadlineReminderService {
                             if (contributorIds.length > 0) {
                                 await this.notificationService.create(
                                     {
-                                        type: NotificationTypeEnum.DEADLINE_REMINDER_48H,
-                                        titleKey: 'notification.deadline_reminder_48h.title',
-                                        messageKey: 'notification.deadline_reminder_48h.message',
+                                        type: NotificationTypeEnum.DEADLINE_REMINDER_CONTRIBUTOR,
+                                        titleKey: 'notification.deadline_reminder_contributor.title',
+                                        messageKey: 'notification.deadline_reminder_contributor.message',
                                         data: {
                                             propositionTitle: proposition.title,
                                             deadlineType: type,
@@ -92,15 +100,19 @@ export default class DeadlineReminderService {
     }
 
     /**
-     * Send 24-hour reminders to initiators only for approaching deadlines
+     * Send initiator reminders for approaching deadlines
+     * Uses configurable hours from organization settings (default: 24 hours)
      */
     public async send24HourInitiatorReminders(): Promise<void> {
         try {
-            logger.info('Starting 24-hour initiator deadline reminders');
+            const settings = await this.settingsService.getOrganizationSettings();
+            const hoursBeforeDeadline = settings.deadlineReminders?.initiatorHoursBeforeDeadline ?? 24;
+
+            logger.info('Starting initiator deadline reminders', { hoursBeforeDeadline });
 
             const now = DateTime.now();
-            const lowerBound = now.plus({ hours: 23 });
-            const upperBound = now.plus({ hours: 25 });
+            const lowerBound = now.plus({ hours: hoursBeforeDeadline - 1 });
+            const upperBound = now.plus({ hours: hoursBeforeDeadline + 1 });
 
             const propositions = await Proposition.query()
                 .preload('creator')
@@ -139,9 +151,9 @@ export default class DeadlineReminderService {
                             if (uniqueInitiatorIds.length > 0) {
                                 await this.notificationService.create(
                                     {
-                                        type: NotificationTypeEnum.DEADLINE_REMINDER_24H_INITIATOR,
-                                        titleKey: 'notification.deadline_reminder_24h_initiator.title',
-                                        messageKey: 'notification.deadline_reminder_24h_initiator.message',
+                                        type: NotificationTypeEnum.DEADLINE_REMINDER_INITIATOR,
+                                        titleKey: 'notification.deadline_reminder_initiator.title',
+                                        messageKey: 'notification.deadline_reminder_initiator.message',
                                         data: {
                                             propositionTitle: proposition.title,
                                             deadlineType: type,

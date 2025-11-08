@@ -93,7 +93,7 @@ export default class WebPushService {
      * Get all active subscriptions for a user
      */
     public async getUserSubscriptions(userId: string): Promise<PushSubscription[]> {
-        return PushSubscription.query().where('user_id', userId).where('active', true);
+        return await PushSubscription.query().where('user_id', userId).where('active', true);
     }
 
     /**

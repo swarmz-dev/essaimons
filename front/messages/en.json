@@ -433,6 +433,12 @@
                 "vote": "Vote offset (days)",
                 "mandate": "Mandate offset (days)",
                 "evaluation": "Evaluation offset (days)",
+                "deadline_reminders": {
+                    "title": "Deadline Reminders",
+                    "description": "Configure how many hours before a deadline to send notification reminders to users.",
+                    "contributor": "Reminder for contributors (hours before deadline)",
+                    "initiator": "Reminder for initiators (hours before deadline)"
+                },
                 "automations": {
                     "title": "Automations",
                     "evaluation-shift": "Evaluation auto-shift (days)",
@@ -646,6 +652,10 @@
                 "revocation-sweep": {
                     "title": "Revocation Sweep",
                     "description": "Checks and processes mandate revocations that need processing"
+                },
+                "deadline-reminders": {
+                    "title": "Deadline Reminders",
+                    "description": "Sends reminder notifications to users about upcoming deadlines"
                 }
             },
             "stats": {
@@ -1332,10 +1342,16 @@
             "clarification_updated": "Clarification updates",
             "clarification_deleted": "Clarification deletions",
             "exchange_scheduled": "Scheduled exchanges",
-            "deadline_reminder_48h": "48-hour deadline reminders",
-            "deadline_reminder_24h_initiator": "24-hour deadline reminders (initiators)",
+            "deadline_reminder_contributor": "Deadline reminders for contributors",
+            "deadline_reminder_initiator": "Deadline reminders for initiators",
             "weekly_vote_digest": "Weekly vote digest",
             "vote_quorum_warning": "Vote quorum warnings"
+        },
+        "deadline_reminder_settings": {
+            "hours_before": "Hours before deadline",
+            "contributor_default": "Default: 48 hours",
+            "initiator_default": "Default: 24 hours",
+            "description": "Configure how many hours before a deadline you want to be notified"
         },
         "status_transition": {
             "to_evaluate": {

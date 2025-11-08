@@ -13,11 +13,11 @@ export default class PropositionCategoryRepository extends BaseRepository<typeof
             return [];
         }
 
-        return this.Model.query({ client: trx }).whereIn('id', categoryIds);
+        return await this.Model.query({ client: trx }).whereIn('id', categoryIds);
     }
 
     public async listAll(orderBy: keyof PropositionCategory['$attributes'] = 'name', trx?: TransactionClientContract): Promise<PropositionCategory[]> {
-        return trx ? this.Model.query({ client: trx }).orderBy(orderBy as string) : this.Model.query().orderBy(orderBy as string);
+        return await (trx ? this.Model.query({ client: trx }).orderBy(orderBy as string) : this.Model.query().orderBy(orderBy as string));
     }
 
     public async findByPublicId(

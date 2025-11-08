@@ -51,6 +51,9 @@ export default class OrganizationSettingsController {
         if (payload.propositionDefaults) {
             settingsPayload.propositionDefaults = payload.propositionDefaults;
         }
+        if (payload.deadlineReminders) {
+            settingsPayload.deadlineReminders = payload.deadlineReminders;
+        }
         if (payload.permissions?.perStatus) {
             settingsPayload.permissions = payload.permissions.perStatus;
         }

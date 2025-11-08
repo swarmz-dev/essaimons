@@ -15,7 +15,7 @@ export default class PropositionRepository extends BaseRepository<typeof Proposi
             return [];
         }
 
-        return this.Model.query({ client: trx }).whereIn('id', associatedIds);
+        return await this.Model.query({ client: trx }).whereIn('id', associatedIds);
     }
 
     public async searchWithFilters(

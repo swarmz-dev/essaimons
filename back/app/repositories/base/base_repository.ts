@@ -37,13 +37,13 @@ export default class BaseRepository<T extends LucidModel> {
         const query = trx ? this.Model.query({ client: trx }) : this.Model.query();
         this.applyConditions(query, conditions);
         preload.forEach((relation: ExtractModelRelations<InstanceType<T>>) => query.preload(relation));
-        return query;
+        return await query;
     }
 
     public async all(preload: ExtractModelRelations<InstanceType<T>>[] = [], trx?: TransactionClientContract): Promise<InstanceType<T>[]> {
         const query = trx ? this.Model.query({ client: trx }) : this.Model.query();
         preload.forEach((relation: ExtractModelRelations<InstanceType<T>>) => query.preload(relation));
-        return query;
+        return await query;
     }
 
     public async firstOrCreate(

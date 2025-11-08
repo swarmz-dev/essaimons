@@ -5,5 +5,11 @@ export const updateSettingsValidator = vine.compile(
         inAppEnabled: vine.boolean().optional(),
         emailEnabled: vine.boolean().optional(),
         pushEnabled: vine.boolean().optional(),
+        settings: vine
+            .object({
+                hoursBeforeDeadline: vine.number().min(1).max(168).optional(),
+            })
+            .optional()
+            .nullable(),
     })
 );

@@ -63,7 +63,7 @@ export default class PropositionVoteService {
 
         // Reload votes if changes were made
         if (hasChanges) {
-            return proposition.related('votes').query().preload('options').orderBy('created_at', 'asc');
+            return await proposition.related('votes').query().preload('options').orderBy('created_at', 'asc');
         }
 
         return votes;

@@ -129,6 +129,8 @@
     let voteOffsetDays: string = $state(String(settings.propositionDefaults?.voteOffsetDays ?? 7));
     let mandateOffsetDays: string = $state(String(settings.propositionDefaults?.mandateOffsetDays ?? 15));
     let evaluationOffsetDays: string = $state(String(settings.propositionDefaults?.evaluationOffsetDays ?? 30));
+    let contributorHoursBeforeDeadline: string = $state(String(settings.deadlineReminders?.contributorHoursBeforeDeadline ?? 48));
+    let initiatorHoursBeforeDeadline: string = $state(String(settings.deadlineReminders?.initiatorHoursBeforeDeadline ?? 24));
     const defaultPermissionMatrix: Record<string, Record<string, Record<string, boolean>>> = {
         draft: {
             initiator: {
@@ -639,6 +641,9 @@
         formData.set('propositionDefaults[mandateOffsetDays]', mandateOffsetDays.trim() || '0');
         formData.set('propositionDefaults[evaluationOffsetDays]', evaluationOffsetDays.trim() || '0');
 
+        formData.set('deadlineReminders[contributorHoursBeforeDeadline]', contributorHoursBeforeDeadline.trim() || '48');
+        formData.set('deadlineReminders[initiatorHoursBeforeDeadline]', initiatorHoursBeforeDeadline.trim() || '24');
+
         for (const status of getStatuses()) {
             const roles = getRolesForStatus(status);
             for (const role of roles) {
@@ -923,6 +928,35 @@
                     <FieldLabel forId="evaluationOffsetDays" label={m['admin.organization.propositions.evaluation']()}>
                         <Input id="evaluationOffsetDays" type="number" name="propositionDefaults[evaluationOffsetDays]" min={0} bind:value={evaluationOffsetDays} required />
                     </FieldLabel>
+
+                    <section class="space-y-4">
+                        <h3 class="text-sm font-semibold text-muted-foreground">{m['admin.organization.propositions.deadline_reminders.title']()}</h3>
+                        <p class="text-sm text-muted-foreground">{m['admin.organization.propositions.deadline_reminders.description']()}</p>
+
+                        <FieldLabel forId="contributorHoursBeforeDeadline" label={m['admin.organization.propositions.deadline_reminders.contributor']()}>
+                            <Input
+                                id="contributorHoursBeforeDeadline"
+                                type="number"
+                                name="deadlineReminders[contributorHoursBeforeDeadline]"
+                                min={1}
+                                max={168}
+                                bind:value={contributorHoursBeforeDeadline}
+                                required
+                            />
+                        </FieldLabel>
+
+                        <FieldLabel forId="initiatorHoursBeforeDeadline" label={m['admin.organization.propositions.deadline_reminders.initiator']()}>
+                            <Input
+                                id="initiatorHoursBeforeDeadline"
+                                type="number"
+                                name="deadlineReminders[initiatorHoursBeforeDeadline]"
+                                min={1}
+                                max={168}
+                                bind:value={initiatorHoursBeforeDeadline}
+                                required
+                            />
+                        </FieldLabel>
+                    </section>
 
                     <section class="space-y-4">
                         <h3 class="text-sm font-semibold text-muted-foreground">{m['admin.organization.propositions.automations.title']()}</h3>

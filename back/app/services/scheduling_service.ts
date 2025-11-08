@@ -136,6 +136,7 @@ export default class SchedulingService {
             email_batch: { enabled: true, intervalHours: 1 },
             deadline_sweep: { enabled: true, intervalHours: 6 },
             revocation_sweep: { enabled: true, intervalHours: 24 },
+            deadline_reminders: { enabled: true, intervalHours: 12 },
         };
 
         return jobSchedules[jobType] || defaultSchedules[jobType] || { enabled: true, intervalHours: 24 };

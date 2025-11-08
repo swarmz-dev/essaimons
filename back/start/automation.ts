@@ -3,6 +3,7 @@ import logger from '@adonisjs/core/services/logger';
 import DeliverableAutomationService from '#services/deliverable_automation_service';
 import EmailBatchService from '#services/email_batch_service';
 import SchedulingService from '#services/scheduling_service';
+import DeadlineReminderService from '#services/deadline_reminder_service';
 import { JobTypeEnum } from '#types';
 
 const startAutomation = async () => {
@@ -14,6 +15,7 @@ const startAutomation = async () => {
         const automationService = await app.container.make(DeliverableAutomationService);
         const emailBatchService = await app.container.make(EmailBatchService);
         const schedulingService = await app.container.make(SchedulingService);
+        const deadlineReminderService = await app.container.make(DeadlineReminderService);
 
         const runSweep = async () => {
             // Check if scheduling is globally paused
@@ -60,6 +62,27 @@ const startAutomation = async () => {
                 } catch (error) {
                     await schedulingService.failJobExecution(emailExecution, error instanceof Error ? error : String(error));
                     logger.error('automation.email.batch_failed', {
+                        error: error instanceof Error ? error.message : error,
+                    });
+                }
+            }
+
+            // Run deadline reminders if scheduled
+            if (await schedulingService.shouldJobRun(JobTypeEnum.DEADLINE_REMINDERS)) {
+                const reminderExecution = await schedulingService.startJobExecution(JobTypeEnum.DEADLINE_REMINDERS);
+                try {
+                    // Run all deadline reminder types
+                    await deadlineReminderService.send48HourReminders();
+                    await deadlineReminderService.send24HourInitiatorReminders();
+                    await deadlineReminderService.sendQuorumWarnings();
+                    await deadlineReminderService.sendWeeklyVoteDigest();
+
+                    await schedulingService.completeJobExecution(reminderExecution, {
+                        message: 'All deadline reminders sent successfully',
+                    });
+                } catch (error) {
+                    await schedulingService.failJobExecution(reminderExecution, error instanceof Error ? error : String(error));
+                    logger.error('automation.deadline_reminders.failed', {
                         error: error instanceof Error ? error.message : error,
                     });
                 }

@@ -41,7 +41,7 @@ export default class PropositionEventService {
     ) {}
 
     public async list(proposition: Proposition): Promise<PropositionEvent[]> {
-        return proposition.related('events').query().orderBy('start_at', 'asc').orderBy('created_at', 'asc');
+        return await proposition.related('events').query().orderBy('start_at', 'asc').orderBy('created_at', 'asc');
     }
 
     public async create(proposition: Proposition, actor: User, payload: CreateEventPayload, trx?: TransactionClientContract): Promise<PropositionEvent> {

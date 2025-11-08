@@ -74,6 +74,8 @@
                 return m['admin.scheduling.jobs.deadline-sweep.title']();
             case 'revocation_sweep':
                 return m['admin.scheduling.jobs.revocation-sweep.title']();
+            case 'deadline_reminders':
+                return m['admin.scheduling.jobs.deadline-reminders.title']();
             default:
                 return jobType;
         }
@@ -87,6 +89,8 @@
                 return m['admin.scheduling.jobs.deadline-sweep.description']();
             case 'revocation_sweep':
                 return m['admin.scheduling.jobs.revocation-sweep.description']();
+            case 'deadline_reminders':
+                return m['admin.scheduling.jobs.deadline-reminders.description']();
             default:
                 return '';
         }

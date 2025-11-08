@@ -27,6 +27,7 @@ export default class NotificationSettingsController {
                 inAppEnabled: setting?.inAppEnabled ?? true,
                 emailEnabled: setting?.emailEnabled ?? false,
                 pushEnabled: setting?.pushEnabled ?? true,
+                settings: setting?.settings ?? null,
             };
         });
 
@@ -64,6 +65,7 @@ export default class NotificationSettingsController {
                     inAppEnabled: payload.inAppEnabled ?? true,
                     emailEnabled: payload.emailEnabled ?? true,
                     pushEnabled: payload.pushEnabled ?? true,
+                    settings: payload.settings ?? null,
                 });
             } else {
                 if (payload.inAppEnabled !== undefined) {
@@ -75,6 +77,9 @@ export default class NotificationSettingsController {
                 if (payload.pushEnabled !== undefined) {
                     setting.pushEnabled = payload.pushEnabled;
                 }
+                if (payload.settings !== undefined) {
+                    setting.settings = payload.settings;
+                }
                 await setting.save();
             }
 
@@ -83,6 +88,7 @@ export default class NotificationSettingsController {
                 inAppEnabled: setting.inAppEnabled,
                 emailEnabled: setting.emailEnabled,
                 pushEnabled: setting.pushEnabled,
+                settings: setting.settings,
             });
         } catch (error) {
             if (error.messages) {
@@ -119,7 +125,7 @@ export default class NotificationSettingsController {
         const results = [];
 
         for (const update of updates) {
-            const { type, inAppEnabled, emailEnabled, pushEnabled } = update;
+            const { type, inAppEnabled, emailEnabled, pushEnabled, settings } = update;
 
             // Validate notification type
             if (!Object.values(NotificationTypeEnum).includes(type)) {
@@ -136,6 +142,7 @@ export default class NotificationSettingsController {
                     inAppEnabled: inAppEnabled ?? true,
                     emailEnabled: emailEnabled ?? true,
                     pushEnabled: pushEnabled ?? true,
+                    settings: settings ?? null,
                 });
             } else {
                 if (inAppEnabled !== undefined) {
@@ -147,6 +154,9 @@ export default class NotificationSettingsController {
                 if (pushEnabled !== undefined) {
                     setting.pushEnabled = pushEnabled;
                 }
+                if (settings !== undefined) {
+                    setting.settings = settings;
+                }
                 await setting.save();
             }
 
@@ -155,6 +165,7 @@ export default class NotificationSettingsController {
                 inAppEnabled: setting.inAppEnabled,
                 emailEnabled: setting.emailEnabled,
                 pushEnabled: setting.pushEnabled,
+                settings: setting.settings,
             });
         }
 

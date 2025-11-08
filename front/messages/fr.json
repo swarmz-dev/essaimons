@@ -427,12 +427,18 @@
                 "propositions": "Propositions"
             },
             "propositions": {
-                "description": "Définissez les décalages par défaut appliqués lors de la création d’une proposition. Chaque valeur représente un nombre de jours après l’échéance précédente.",
+                "description": "Définissez les décalages par défaut appliqués lors de la création d'une proposition. Chaque valeur représente un nombre de jours après l'échéance précédente.",
                 "clarification": "Décalage clarification (jours)",
                 "improvement": "Décalage amendement (jours)",
                 "vote": "Décalage vote (jours)",
                 "mandate": "Décalage mandature (jours)",
                 "evaluation": "Décalage évaluation (jours)",
+                "deadline_reminders": {
+                    "title": "Rappels de deadline",
+                    "description": "Configurez combien d'heures avant une deadline envoyer des rappels de notification aux utilisateurs.",
+                    "contributor": "Rappel pour les contributeurs (heures avant la deadline)",
+                    "initiator": "Rappel pour les initiateurs (heures avant la deadline)"
+                },
                 "automations": {
                     "title": "Automatisations",
                     "evaluation-shift": "Décalage auto évaluation (jours)",
@@ -646,6 +652,10 @@
                 "revocation-sweep": {
                     "title": "Traitement des révocations",
                     "description": "Vérifie et traite les révocations de mandats nécessitant un traitement"
+                },
+                "deadline-reminders": {
+                    "title": "Rappels d'échéance",
+                    "description": "Envoie des notifications de rappel aux utilisateurs concernant les échéances à venir"
                 }
             },
             "stats": {
@@ -1332,7 +1342,17 @@
             "clarification_added": "Demandes de clarification",
             "clarification_updated": "Mises à jour de clarification",
             "clarification_deleted": "Suppressions de clarification",
-            "exchange_scheduled": "Échanges planifiés"
+            "exchange_scheduled": "Échanges planifiés",
+            "deadline_reminder_contributor": "Rappels de deadline pour contributeurs",
+            "deadline_reminder_initiator": "Rappels de deadline pour initiateurs",
+            "weekly_vote_digest": "Résumé hebdomadaire des votes",
+            "vote_quorum_warning": "Alertes de quorum de vote"
+        },
+        "deadline_reminder_settings": {
+            "hours_before": "Heures avant la deadline",
+            "contributor_default": "Par défaut : 48 heures",
+            "initiator_default": "Par défaut : 24 heures",
+            "description": "Configurez combien d'heures avant une deadline vous souhaitez être notifié"
         },
         "status_transition": {
             "to_evaluate": {

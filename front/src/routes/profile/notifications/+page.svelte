@@ -28,6 +28,10 @@
         { key: 'clarification_updated', labelKey: 'notifications.types.clarification_updated' },
         { key: 'clarification_deleted', labelKey: 'notifications.types.clarification_deleted' },
         { key: 'exchange_scheduled', labelKey: 'notifications.types.exchange_scheduled' },
+        { key: 'deadline_reminder_contributor', labelKey: 'notifications.types.deadline_reminder_contributor' },
+        { key: 'deadline_reminder_initiator', labelKey: 'notifications.types.deadline_reminder_initiator' },
+        { key: 'weekly_vote_digest', labelKey: 'notifications.types.weekly_vote_digest' },
+        { key: 'vote_quorum_warning', labelKey: 'notifications.types.vote_quorum_warning' },
     ];
 
     onMount(async () => {

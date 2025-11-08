@@ -264,8 +264,6 @@ export default class NotificationService {
      * Get paginated notifications for a user
      */
     public async getUserNotifications(userId: string, page: number = 1, limit: number = 20) {
-        const query = UserNotification.query().where('user_id', userId).preload('notification').orderBy('created_at', 'desc').paginate(page, limit);
-
-        return query;
+        return await UserNotification.query().where('user_id', userId).preload('notification').orderBy('created_at', 'desc').paginate(page, limit);
     }
 }

@@ -63,6 +63,10 @@ export const load: PageServerLoad<{ settings: SerializedOrganizationSettings }> 
                     mandateOffsetDays: 15,
                     evaluationOffsetDays: 30,
                 },
+                deadlineReminders: {
+                    contributorHoursBeforeDeadline: 48,
+                    initiatorHoursBeforeDeadline: 24,
+                },
                 permissions: { perStatus: {} },
                 permissionCatalog: { perStatus: {} },
                 workflowAutomation: {
