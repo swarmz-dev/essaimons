@@ -1,41 +1,41 @@
-# Système d'Import/Export de Propositions
+# Proposition Import/Export System
 
-Cette documentation décrit le système complet d'import/export de propositions permettant de migrer des propositions entre différents environnements de l'application.
+This documentation describes the complete import/export system for propositions, enabling migration of propositions between different application environments.
 
-## 📋 Vue d'ensemble
+## 📋 Overview
 
-Le système permet aux administrateurs de :
-- **Exporter** une ou plusieurs propositions avec toutes leurs données associées
-- **Importer** des propositions dans un nouvel environnement avec résolution intelligente des conflits
-- **Gérer les mappings** entre entités source et destination
-- **Fusionner** des propositions existantes avec des données importées
+The system allows administrators to:
+- **Export** one or more propositions with all their associated data
+- **Import** propositions into a new environment with intelligent conflict resolution
+- **Manage mappings** between source and destination entities
+- **Merge** existing propositions with imported data
 
 ## 🏗️ Architecture
 
 ### Backend (AdonisJS)
 
-#### Services créés
+#### Created Services
 
 1. **PropositionExportService** (`back/app/services/proposition_export_service.ts`)
-   - Exporte les propositions au format JSON
-   - Inclut toutes les relations (users, categories, files, votes, mandates, etc.)
-   - Encode les fichiers en base64
-   - Supporte les exports partiels (avec options)
+   - Exports propositions in JSON format
+   - Includes all relations (users, categories, files, votes, mandates, etc.)
+   - Encodes files in base64
+   - Supports partial exports (with options)
 
 2. **PropositionImportAnalyzerService** (`back/app/services/proposition_import_analyzer_service.ts`)
-   - Analyse le fichier importé
-   - Détecte les conflits (users manquants, catégories manquantes, doublons)
-   - Génère des suggestions de résolution
-   - Gère les sessions d'import temporaires (1h)
+   - Analyzes the imported file
+   - Detects conflicts (missing users, missing categories, duplicates)
+   - Generates resolution suggestions
+   - Manages temporary import sessions (1h)
 
 3. **PropositionImportExecutorService** (`back/app/services/proposition_import_executor_service.ts`)
-   - Exécute l'import avec les résolutions définies
-   - Crée les entités manquantes
-   - Fusionne les propositions existantes
-   - Gère les transactions DB
-   - Importe les fichiers
+   - Executes the import with defined resolutions
+   - Creates missing entities
+   - Merges existing propositions
+   - Manages DB transactions
+   - Imports files
 
-#### Routes API
+#### API Routes
 
 ```
 POST   /api/admin/propositions/export
@@ -45,108 +45,108 @@ POST   /api/admin/propositions/import/execute
 GET    /api/admin/propositions/import/:importId/session
 ```
 
-#### Types TypeScript
+#### TypeScript Types
 
-Tous les types sont définis dans `back/app/types/import_export_types.ts` :
-- `ExportData` - Format complet d'export
-- `ExportedProposition` - Structure d'une proposition exportée
-- `ConflictReport` - Rapport d'analyse
-- `ImportConflict` - Détail d'un conflit
-- `ConflictResolution` - Résolution d'un conflit
-- `ImportResult` - Résultat de l'exécution
+All types are defined in `back/app/types/import_export_types.ts`:
+- `ExportData` - Complete export format
+- `ExportedProposition` - Exported proposition structure
+- `ConflictReport` - Analysis report
+- `ImportConflict` - Conflict detail
+- `ConflictResolution` - Conflict resolution
+- `ImportResult` - Execution result
 
 ### Frontend (SvelteKit)
 
-#### Pages créées
+#### Created Pages
 
-1. **Page d'export** (`front/src/routes/admin/propositions/export/+page.svelte`)
-   - Sélection multiple de propositions avec DataTable
-   - Options d'export (historique, votes, mandats, etc.)
-   - Téléchargement direct du fichier JSON
+1. **Export page** (`front/src/routes/admin/propositions/export/+page.svelte`)
+   - Multiple proposition selection with DataTable
+   - Export options (history, votes, mandates, etc.)
+   - Direct JSON file download
 
-2. **Page d'import** (`front/src/routes/admin/propositions/import/+page.svelte`)
-   - Workflow en 4 étapes avec indicateur de progression
-   - Stepper visuel
+2. **Import page** (`front/src/routes/admin/propositions/import/+page.svelte`)
+   - 4-step workflow with progress indicator
+   - Visual stepper
 
-3. **Composants d'import**
-   - `ImportStepUpload.svelte` - Upload du fichier avec drag & drop
-   - `ImportStepResolve.svelte` - Résolution des conflits
-   - `ImportStepExecute.svelte` - Confirmation et exécution
-   - `ImportStepComplete.svelte` - Rapport final
-   - `ConflictItem.svelte` - Widget de résolution d'un conflit
+3. **Import Components**
+   - `ImportStepUpload.svelte` - File upload with drag & drop
+   - `ImportStepResolve.svelte` - Conflict resolution
+   - `ImportStepExecute.svelte` - Confirmation and execution
+   - `ImportStepComplete.svelte` - Final report
+   - `ConflictItem.svelte` - Conflict resolution widget
 
-#### Store Svelte
+#### Svelte Store
 
 **PropositionImportExportStore** (`front/src/lib/stores/propositionImportExportStore.svelte.ts`)
-- Gère l'état de l'import (step, conflits, résolutions, résultat)
-- Méthodes de navigation entre étapes
-- Validation des résolutions critiques
+- Manages import state (step, conflicts, resolutions, result)
+- Step navigation methods
+- Critical resolution validation
 
-## 🔄 Workflow d'utilisation
+## 🔄 Usage Workflow
 
-### Export de propositions
+### Exporting Propositions
 
-1. Accéder à `/admin/propositions/export`
-2. Sélectionner les propositions à exporter (via checkboxes)
-3. Choisir les options d'export (votes, mandates, comments, etc.)
-4. Cliquer sur "Exporter la sélection"
-5. Le fichier JSON est téléchargé automatiquement
+1. Access `/admin/propositions/export`
+2. Select propositions to export (via checkboxes)
+3. Choose export options (votes, mandates, comments, etc.)
+4. Click "Export Selection"
+5. The JSON file is automatically downloaded
 
-**Format du fichier :** `propositions-export-YYYY-MM-DDTHH-mm-ss.json`
+**File format:** `propositions-export-YYYY-MM-DDTHH-mm-ss.json`
 
-### Import de propositions
+### Importing Propositions
 
-#### Étape 1 : Upload
-1. Accéder à `/admin/propositions/import`
-2. Glisser-déposer ou sélectionner le fichier JSON
-3. Cliquer sur "Analyser le fichier"
+#### Step 1: Upload
+1. Access `/admin/propositions/import`
+2. Drag-and-drop or select the JSON file
+3. Click "Analyze File"
 
-#### Étape 2 : Résolution des conflits
-Après l'analyse, l'application détecte automatiquement :
+#### Step 2: Conflict Resolution
+After analysis, the application automatically detects:
 
-**Types de conflits :**
-- **MISSING_USER** (ERROR) : Utilisateur introuvable
-  - Créer un nouvel utilisateur
-  - Mapper sur un utilisateur existant
-  - Ignorer la proposition
+**Conflict Types:**
+- **MISSING_USER** (ERROR): User not found
+  - Create a new user
+  - Map to an existing user
+  - Skip the proposition
 
-- **MISSING_CATEGORY** (WARNING) : Catégorie introuvable
-  - Créer la catégorie
-  - Mapper sur une catégorie existante
-  - Ne pas associer de catégorie
+- **MISSING_CATEGORY** (WARNING): Category not found
+  - Create the category
+  - Map to an existing category
+  - Do not associate a category
 
-- **DUPLICATE_PROPOSITION** (WARNING) : Proposition déjà existante
-  - Fusionner avec l'existante (avec choix par champ)
-  - Créer un doublon
-  - Ignorer
+- **DUPLICATE_PROPOSITION** (WARNING): Proposition already exists
+  - Merge with existing (with field-by-field choice)
+  - Create a duplicate
+  - Skip
 
-- **MISSING_ASSOCIATED_PROPOSITION** (WARNING) : Proposition associée introuvable
-  - Mapper sur une proposition existante
-  - Ne pas créer d'association
+- **MISSING_ASSOCIATED_PROPOSITION** (WARNING): Associated proposition not found
+  - Map to an existing proposition
+  - Do not create association
 
-**Interface de résolution :**
-- Les conflits critiques (ERROR) doivent être résolus
-- Les avertissements (WARNING) sont optionnels
-- Chaque conflit propose plusieurs stratégies
-- Pour les fusions, choix champ par champ (KEEP_INCOMING, KEEP_CURRENT, MERGE_BOTH)
+**Resolution Interface:**
+- Critical conflicts (ERROR) must be resolved
+- Warnings (WARNING) are optional
+- Each conflict offers multiple strategies
+- For merges, field-by-field choice (KEEP_INCOMING, KEEP_CURRENT, MERGE_BOTH)
 
-#### Étape 3 : Exécution
-1. Vérifier le résumé
-2. Cliquer sur "Lancer l'import"
-3. L'import s'exécute dans une transaction DB
+#### Step 3: Execution
+1. Review the summary
+2. Click "Start Import"
+3. The import executes within a DB transaction
 
-#### Étape 4 : Rapport
-Affichage du résultat :
-- Nombre de propositions créées
-- Nombre de propositions fusionnées
-- Nombre d'utilisateurs/catégories créés
-- Fichiers importés
-- Détails par proposition avec liens directs
-- Erreurs éventuelles
+#### Step 4: Report
+Result display:
+- Number of propositions created
+- Number of propositions merged
+- Number of users/categories created
+- Imported files
+- Details per proposition with direct links
+- Any errors
 
-## 📊 Format d'export
+## 📊 Export Format
 
-### Structure JSON
+### JSON Structure
 
 ```json
 {
@@ -164,8 +164,8 @@ Affichage du résultat :
   "propositions": [
     {
       "sourceId": "uuid-from-source",
-      "title": "Ma proposition",
-      "summary": "Résumé...",
+      "title": "My proposition",
+      "summary": "Summary...",
       "detailedDescription": "Description...",
       "status": "VOTE",
       "visibility": "PUBLIC",
@@ -194,142 +194,142 @@ Affichage du résultat :
         "attachments": [...],
         "associatedPropositions": [...]
       },
-      "statusHistory": [...],  // optionnel
-      "votes": [...],          // optionnel
-      "mandates": [...],       // optionnel
-      "comments": [...],       // optionnel
-      "events": [...],         // optionnel
-      "reactions": [...]       // optionnel
+      "statusHistory": [...],  // optional
+      "votes": [...],          // optional
+      "mandates": [...],       // optional
+      "comments": [...],       // optional
+      "events": [...],         // optional
+      "reactions": [...]       // optional
     }
   ]
 }
 ```
 
-### Options d'export
+### Export Options
 
 ```typescript
 {
-  includeStatusHistory?: boolean   // Historique des changements de statut
-  includeVotes?: boolean           // Votes configurés
-  includeBallots?: boolean         // Bulletins de vote individuels
-  includeMandates?: boolean        // Mandats attribués
-  includeComments?: boolean        // Commentaires/clarifications
-  includeEvents?: boolean          // Événements planifiés
-  includeReactions?: boolean       // Réactions emoji
+  includeStatusHistory?: boolean   // Status change history
+  includeVotes?: boolean           // Configured votes
+  includeBallots?: boolean         // Individual ballots
+  includeMandates?: boolean        // Assigned mandates
+  includeComments?: boolean        // Comments/clarifications
+  includeEvents?: boolean          // Scheduled events
+  includeReactions?: boolean       // Emoji reactions
 }
 ```
 
-## 🛡️ Sécurité
+## 🛡️ Security
 
-- Routes accessibles uniquement aux **administrateurs** (middleware `isAdmin`)
-- Sessions d'import expirées après **1 heure**
-- Toutes les modifications en **transaction DB** avec rollback automatique en cas d'erreur
-- Validation complète des données avant import
-- Pas de bypass des hooks git ou de commit forcé
+- Routes accessible only to **administrators** (`isAdmin` middleware)
+- Import sessions expire after **1 hour**
+- All modifications within **DB transactions** with automatic rollback on error
+- Complete data validation before import
+- No git hook bypassing or forced commits
 
-## 🧪 Tests recommandés
+## 🧪 Recommended Tests
 
-### Scénarios de test
+### Test Scenarios
 
-1. **Export basique**
-   - Exporter 1 proposition sans options
-   - Vérifier le JSON généré
+1. **Basic Export**
+   - Export 1 proposition without options
+   - Verify generated JSON
 
-2. **Export complet**
-   - Exporter avec toutes les options
-   - Vérifier les votes, mandates, comments
+2. **Complete Export**
+   - Export with all options
+   - Verify votes, mandates, comments
 
-3. **Import sans conflit**
-   - Importer dans un environnement vide
-   - Tout doit être créé automatiquement
+3. **Import Without Conflicts**
+   - Import into an empty environment
+   - Everything should be created automatically
 
-4. **Import avec utilisateurs manquants**
-   - Tester la création automatique
-   - Tester le mapping manuel
+4. **Import With Missing Users**
+   - Test automatic creation
+   - Test manual mapping
 
-5. **Import avec doublons**
-   - Tester la fusion champ par champ
-   - Tester le skip
+5. **Import With Duplicates**
+   - Test field-by-field merge
+   - Test skip
 
-6. **Import avec erreur**
-   - Vérifier le rollback complet
+6. **Import With Error**
+   - Verify complete rollback
 
-### Commandes utiles
+### Useful Commands
 
 ```bash
-# Backend - vérifier la compilation
+# Backend - verify compilation
 cd back && npx tsc --noEmit
 
-# Backend - lancer les tests (à créer)
+# Backend - run tests (to be created)
 cd back && npm test
 
-# Frontend - vérifier la compilation
+# Frontend - verify compilation
 cd front && npm run check
 
 # Frontend - build
 cd front && npm run build
 ```
 
-## 📝 Traductions
+## 📝 Translations
 
-### Français
-Fichier de référence : `front/messages/propositions_import_export_fr.json`
+### French
+Reference file: `front/messages/propositions_import_export_fr.json`
 
-À intégrer dans `front/messages/fr.json` dans la section `admin.propositions`
+To be integrated into `front/messages/fr.json` in the `admin.propositions` section
 
-### Anglais
-À créer : `front/messages/propositions_import_export_en.json`
+### English
+To be created: `front/messages/propositions_import_export_en.json`
 
 ## 🔧 Maintenance
 
-### Sessions d'import
-Les sessions sont stockées en mémoire avec expiration automatique (1h).
+### Import Sessions
+Sessions are stored in memory with automatic expiration (1h).
 
-**Production :** Implémenter un stockage persistant (Redis, DB) pour les clusters multi-instances.
+**Production:** Implement persistent storage (Redis, DB) for multi-instance clusters.
 
-### Taille des fichiers
-Actuellement limité à **50 MB** par le validator.
+### File Size
+Currently limited to **50 MB** by the validator.
 
-Ajuster si nécessaire dans `back/app/validators/proposition_import_validator.ts`
+Adjust if needed in `back/app/validators/proposition_import_validator.ts`
 
 ### Performance
-Pour de gros volumes (>100 propositions), considérer :
-- Import par batches
-- Workers background (Bull/Bee Queue)
-- Pagination du rapport
+For large volumes (>100 propositions), consider:
+- Batch imports
+- Background workers (Bull/Bee Queue)
+- Report pagination
 
-## 🚀 Améliorations futures
+## 🚀 Future Improvements
 
-1. **Support Excel** - Export/import XLSX en plus de JSON
-2. **Import incrémental** - Synchronisation des changements uniquement
-3. **Audit détaillé** - Logs de toutes les actions d'import/export
-4. **Prévisualisation** - Aperçu des propositions avant import
-5. **Rollback manuel** - Possibilité d'annuler un import
-6. **Planification** - Import différé ou récurrent
-7. **API publique** - Endpoint pour automatisation CI/CD
+1. **Excel Support** - Export/import XLSX in addition to JSON
+2. **Incremental Import** - Synchronization of changes only
+3. **Detailed Audit** - Logs of all import/export actions
+4. **Preview** - Preview propositions before import
+5. **Manual Rollback** - Ability to cancel an import
+6. **Scheduling** - Deferred or recurring imports
+7. **Public API** - Endpoint for CI/CD automation
 
-## 🐛 Dépannage
+## 🐛 Troubleshooting
 
-### Erreur "Session not found"
-La session a expiré (>1h). Recommencer l'upload.
+### Error "Session not found"
+The session has expired (>1h). Restart the upload.
 
-### Erreur "Transaction failed"
-Vérifier les logs backend pour l'erreur SQL spécifique.
+### Error "Transaction failed"
+Check backend logs for specific SQL error.
 
-### Fichiers non importés
-Vérifier les permissions du dossier `storage/` et les quotas disque.
+### Files Not Imported
+Check `storage/` folder permissions and disk quotas.
 
-### Conflit non résolvable
-Vérifier que l'utilisateur/catégorie existe ou créer manuellement puis réessayer.
+### Unresolvable Conflict
+Verify that the user/category exists or create manually then retry.
 
-## 📚 Ressources
+## 📚 Resources
 
-- [Documentation AdonisJS - Transactions](https://docs.adonisjs.com/guides/database/transactions)
-- [Documentation SvelteKit - Form Actions](https://kit.svelte.dev/docs/form-actions)
+- [AdonisJS Documentation - Transactions](https://docs.adonisjs.com/guides/database/transactions)
+- [SvelteKit Documentation - Form Actions](https://kit.svelte.dev/docs/form-actions)
 - [Paraglide - i18n](https://inlang.com/m/gerre34r/library-inlang-paraglideJs)
 
 ---
 
-**Auteur :** Claude Code
-**Date :** 2025-10-19
-**Version :** 1.0
+**Author:** Claude Code
+**Date:** 2025-10-19
+**Version:** 1.0
