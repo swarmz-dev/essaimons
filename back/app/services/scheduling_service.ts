@@ -33,7 +33,13 @@ export default class SchedulingService {
         try {
             const settings = await this.settingsService.getOrganizationSettings();
             await this.settingsService.updateOrganizationSettings({
-                ...settings,
+                fallbackLocale: settings.fallbackLocale,
+                translations: {
+                    name: settings.name,
+                    description: settings.description,
+                    sourceCodeUrl: settings.sourceCodeUrl,
+                    copyright: settings.copyright,
+                },
                 schedulingPaused: paused,
             });
             logger.info(`Scheduling ${paused ? 'paused' : 'resumed'}`, { paused });
@@ -162,8 +168,8 @@ export default class SchedulingService {
         }
 
         // Calculate next run based on last completion time
-        const lastCompletedAt = DateTime.fromJSDate(lastExecution.completedAt);
-        const nextRun = lastCompletedAt.plus({ minutes: totalMinutes });
+        // completedAt is already a Luxon DateTime object
+        const nextRun = lastExecution.completedAt.plus({ minutes: totalMinutes });
 
         // If next run is in the past, it should run soon (return near future)
         if (nextRun < DateTime.now()) {
@@ -207,8 +213,8 @@ export default class SchedulingService {
         }
 
         // Check if enough time has passed since last execution
-        const lastCompletedAt = DateTime.fromJSDate(lastExecution.completedAt);
-        const nextRun = lastCompletedAt.plus({ minutes: totalMinutes });
+        // completedAt is already a Luxon DateTime object
+        const nextRun = lastExecution.completedAt.plus({ minutes: totalMinutes });
 
         return nextRun <= DateTime.now();
     }
@@ -298,7 +304,13 @@ export default class SchedulingService {
         jobSchedules[jobType] = schedule;
 
         await this.settingsService.updateOrganizationSettings({
-            ...settings,
+            fallbackLocale: settings.fallbackLocale,
+            translations: {
+                name: settings.name,
+                description: settings.description,
+                sourceCodeUrl: settings.sourceCodeUrl,
+                copyright: settings.copyright,
+            },
             jobSchedules,
         });
 

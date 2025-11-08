@@ -115,6 +115,7 @@ router
                                 router.get('/', [AdminSchedulingController, 'index']);
                                 router.put('/pause', [AdminSchedulingController, 'setPaused']);
                                 router.get('/jobs/:jobType', [AdminSchedulingController, 'show']);
+                                router.get('/jobs/:jobType/preview', [AdminSchedulingController, 'preview']);
                                 router.post('/jobs/:jobType/trigger', [AdminSchedulingController, 'trigger']);
                                 router.put('/jobs/:jobType/schedule', [AdminSchedulingController, 'updateSchedule']);
                             })

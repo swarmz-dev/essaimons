@@ -2,8 +2,9 @@
     import { onMount } from 'svelte';
     import { Title } from '#lib/components/ui/title';
     import { Button } from '#lib/components/ui/button';
+    import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '#lib/components/ui/dialog';
     import { showToast } from '#lib/services/toastService';
-    import { Loader2, Play, Pause, Clock, CheckCircle, XCircle, AlertCircle, RefreshCw } from '@lucide/svelte';
+    import { Loader2, Play, Pause, Clock, CheckCircle, XCircle, AlertCircle, RefreshCw, Eye } from '@lucide/svelte';
     import { PUBLIC_API_REAL_URI } from '$env/static/public';
     import { m } from '#lib/paraglide/messages';
 
@@ -59,6 +60,11 @@
     let editingSchedule = $state(false);
     let scheduleForm = $state<JobSchedule>({ enabled: true, intervalHours: 24, intervalMinutes: 0 });
     let updatingSchedule = $state(false);
+    let executionDetailsModal = $state(false);
+    let selectedExecution = $state<JobExecution | null>(null);
+    let previewModal = $state(false);
+    let loadingPreview = $state(false);
+    let previewData = $state<any>(null);
 
     function getJobLabel(jobType: string): string {
         switch (jobType) {
@@ -281,6 +287,29 @@
         }
     }
 
+    function openExecutionDetails(execution: JobExecution) {
+        selectedExecution = execution;
+        executionDetailsModal = true;
+    }
+
+    async function openPreview(jobType: string) {
+        if (!jobType) return;
+
+        loadingPreview = true;
+        previewModal = true;
+        previewData = null;
+
+        try {
+            const response = await fetchAPI<{ jobType: string; preview: any }>(`/api/admin/scheduling/jobs/${jobType}/preview`);
+            previewData = response.preview;
+        } catch (err) {
+            showToast(m['admin.scheduling.messages.error-preview'](), 'error');
+            previewModal = false;
+        } finally {
+            loadingPreview = false;
+        }
+    }
+
     function formatMetadata(jobType: string, metadata: Record<string, any> | null): string {
         if (!metadata) return '';
 
@@ -472,15 +501,21 @@
                             <h2 class="text-xl font-semibold text-foreground">{getJobLabel(selectedJob)}</h2>
                             <p class="text-sm text-muted-foreground mt-1">{getJobDescription(selectedJob)}</p>
                         </div>
-                        <Button onclick={() => triggerJob(selectedJob!)} variant="outline" disabled={triggering === selectedJob || jobDetails.isRunning || status.isPaused}>
-                            {#if triggering === selectedJob}
-                                <Loader2 class="mr-2 size-4 animate-spin" />
-                                {m['admin.scheduling.details.triggering']()}
-                            {:else}
-                                <Play class="mr-2 size-4" />
-                                {m['admin.scheduling.details.trigger-button']()}
-                            {/if}
-                        </Button>
+                        <div class="flex gap-2">
+                            <Button onclick={() => openPreview(selectedJob!)} variant="outline" size="sm">
+                                <Eye class="mr-2 size-4" />
+                                {m['admin.scheduling.details.preview-button']()}
+                            </Button>
+                            <Button onclick={() => triggerJob(selectedJob!)} variant="outline" disabled={triggering === selectedJob || jobDetails.isRunning || status.isPaused}>
+                                {#if triggering === selectedJob}
+                                    <Loader2 class="mr-2 size-4 animate-spin" />
+                                    {m['admin.scheduling.details.triggering']()}
+                                {:else}
+                                    <Play class="mr-2 size-4" />
+                                    {m['admin.scheduling.details.trigger-button']()}
+                                {/if}
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
@@ -607,6 +642,7 @@
                                             <th class="px-4 py-3 text-left text-sm font-semibold text-foreground">{m['admin.scheduling.table.completed']()}</th>
                                             <th class="px-4 py-3 text-left text-sm font-semibold text-foreground">{m['admin.scheduling.table.duration']()}</th>
                                             <th class="px-4 py-3 text-left text-sm font-semibold text-foreground">{m['admin.scheduling.table.details']()}</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold text-foreground">{m['admin.scheduling.table.actions']()}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -641,6 +677,15 @@
                                                         </div>
                                                     {/if}
                                                 </td>
+                                                <td class="px-4 py-3">
+                                                    <button
+                                                        onclick={() => openExecutionDetails(execution)}
+                                                        class="p-1 hover:bg-muted rounded-md transition-colors"
+                                                        title={m['admin.scheduling.details.view-details']()}
+                                                    >
+                                                        <Eye class="size-4 text-muted-foreground hover:text-foreground" />
+                                                    </button>
+                                                </td>
                                             </tr>
                                         {/each}
                                     </tbody>
@@ -653,3 +698,321 @@
         {/if}
     {/if}
 </div>
+
+<!-- Execution Details Modal -->
+<Dialog open={executionDetailsModal} onOpenChange={(open) => (executionDetailsModal = open)}>
+    <DialogContent class="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+            <DialogTitle>{m['admin.scheduling.details.execution-details']()}</DialogTitle>
+            <DialogDescription>
+                {#if selectedExecution}
+                    {m['admin.scheduling.details.execution-id']()}: {selectedExecution.id}
+                {/if}
+            </DialogDescription>
+        </DialogHeader>
+
+        {#if selectedExecution}
+            {@const StatusIcon = getStatusIcon(selectedExecution.status)}
+            <div class="space-y-4 pt-4">
+                <!-- Status Section -->
+                <div class="rounded-lg border border-border bg-muted/30 p-4">
+                    <h4 class="text-sm font-semibold text-foreground mb-3">{m['admin.scheduling.details.status-info']()}</h4>
+                    <div class="grid gap-3">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-muted-foreground">{m['admin.scheduling.table.status']()}:</span>
+                            <div class="flex items-center gap-2 {getStatusColor(selectedExecution.status)}">
+                                <StatusIcon class="size-4 {selectedExecution.status === 'running' ? 'animate-spin' : ''}" />
+                                <span class="capitalize font-medium">{m[`admin.scheduling.status.${selectedExecution.status}`]()}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-muted-foreground">{m['admin.scheduling.table.started']()}:</span>
+                            <span class="font-medium">{formatDate(selectedExecution.startedAt)}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-muted-foreground">{m['admin.scheduling.table.completed']()}:</span>
+                            <span class="font-medium">{formatDate(selectedExecution.completedAt)}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-muted-foreground">{m['admin.scheduling.table.duration']()}:</span>
+                            <span class="font-medium">{formatDuration(selectedExecution.durationMs)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Message Section -->
+                {#if selectedExecution.errorMessage}
+                    <div class="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800 p-4">
+                        <h4 class="text-sm font-semibold text-red-700 dark:text-red-400 mb-2">{m['admin.scheduling.details.error-message']()}</h4>
+                        <p class="text-sm text-red-600 dark:text-red-300 font-mono whitespace-pre-wrap">{selectedExecution.errorMessage}</p>
+                    </div>
+                {/if}
+
+                <!-- Metadata Section -->
+                {#if selectedExecution.metadata}
+                    <div class="rounded-lg border border-border bg-muted/30 p-4">
+                        <h4 class="text-sm font-semibold text-foreground mb-3">{m['admin.scheduling.details.execution-metadata']()}</h4>
+
+                        {#if selectedExecution.metadata.manual}
+                            <div class="mb-3">
+                                <span class="inline-flex items-center gap-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-md">
+                                    <AlertCircle class="size-3" />
+                                    {m['admin.scheduling.table.manual-trigger']()}
+                                </span>
+                            </div>
+                        {/if}
+
+                        {#if selectedJob === 'email_batch' && selectedExecution.metadata.emailsSent !== undefined}
+                            <div class="grid gap-3">
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-muted-foreground">{m['admin.scheduling.details.emails-sent']()}:</span>
+                                    <span class="font-medium">{selectedExecution.metadata.emailsSent}</span>
+                                </div>
+                                {#if selectedExecution.metadata.usersNotified !== undefined}
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-muted-foreground">{m['admin.scheduling.details.users-notified']()}:</span>
+                                        <span class="font-medium">{selectedExecution.metadata.usersNotified}</span>
+                                    </div>
+                                {/if}
+                                {#if selectedExecution.metadata.failures !== undefined && selectedExecution.metadata.failures > 0}
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-muted-foreground">{m['admin.scheduling.details.failures']()}:</span>
+                                        <span class="font-medium text-red-600">{selectedExecution.metadata.failures}</span>
+                                    </div>
+                                {/if}
+                            </div>
+                        {:else if selectedJob === 'deadline_sweep' && selectedExecution.metadata.deadlinesChecked !== undefined}
+                            <div class="grid gap-3">
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-muted-foreground">{m['admin.scheduling.details.deadlines-checked']()}:</span>
+                                    <span class="font-medium">{selectedExecution.metadata.deadlinesChecked}</span>
+                                </div>
+                                {#if selectedExecution.metadata.deadlinesShifted !== undefined}
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-muted-foreground">{m['admin.scheduling.details.deadlines-shifted']()}:</span>
+                                        <span class="font-medium">{selectedExecution.metadata.deadlinesShifted}</span>
+                                    </div>
+                                {/if}
+                                {#if selectedExecution.metadata.failures !== undefined && selectedExecution.metadata.failures > 0}
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-muted-foreground">{m['admin.scheduling.details.failures']()}:</span>
+                                        <span class="font-medium text-red-600">{selectedExecution.metadata.failures}</span>
+                                    </div>
+                                {/if}
+                            </div>
+                        {:else if selectedJob === 'revocation_sweep' && selectedExecution.metadata.deliverablesChecked !== undefined}
+                            <div class="grid gap-3">
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-muted-foreground">{m['admin.scheduling.details.deliverables-checked']()}:</span>
+                                    <span class="font-medium">{selectedExecution.metadata.deliverablesChecked}</span>
+                                </div>
+                                {#if selectedExecution.metadata.revocationsEscalated !== undefined}
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-muted-foreground">{m['admin.scheduling.details.revocations-escalated']()}:</span>
+                                        <span class="font-medium">{selectedExecution.metadata.revocationsEscalated}</span>
+                                    </div>
+                                {/if}
+                                {#if selectedExecution.metadata.failures !== undefined && selectedExecution.metadata.failures > 0}
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-muted-foreground">{m['admin.scheduling.details.failures']()}:</span>
+                                        <span class="font-medium text-red-600">{selectedExecution.metadata.failures}</span>
+                                    </div>
+                                {/if}
+                            </div>
+                        {:else}
+                            <div class="text-sm text-muted-foreground">
+                                {m['admin.scheduling.details.no-metadata']()}
+                            </div>
+                        {/if}
+                    </div>
+                {/if}
+
+                <!-- Raw Metadata (for debugging) -->
+                {#if selectedExecution.metadata && Object.keys(selectedExecution.metadata).length > 0}
+                    <details class="rounded-lg border border-border bg-muted/30 p-4">
+                        <summary class="text-sm font-semibold text-foreground cursor-pointer">
+                            {m['admin.scheduling.details.raw-metadata']()}
+                        </summary>
+                        <pre class="mt-3 text-xs font-mono bg-background p-3 rounded border border-border overflow-x-auto">{JSON.stringify(selectedExecution.metadata, null, 2)}</pre>
+                    </details>
+                {/if}
+            </div>
+        {/if}
+    </DialogContent>
+</Dialog>
+
+<!-- Preview Next Run Modal -->
+<Dialog open={previewModal} onOpenChange={(open) => (previewModal = open)}>
+    <DialogContent class="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+            <DialogTitle>{m['admin.scheduling.preview.title']()}</DialogTitle>
+            <DialogDescription>
+                {#if selectedJob}
+                    {m['admin.scheduling.preview.description']()}: {getJobLabel(selectedJob)}
+                {/if}
+            </DialogDescription>
+        </DialogHeader>
+
+        {#if loadingPreview}
+            <div class="flex items-center justify-center py-12">
+                <Loader2 class="size-8 animate-spin text-muted-foreground" />
+            </div>
+        {:else if previewData}
+            <div class="space-y-4 pt-4">
+                {#if selectedJob === 'email_batch'}
+                    <!-- Email Batch Preview -->
+                    <div class="rounded-lg border border-border bg-muted/30 p-4">
+                        <h4 class="text-sm font-semibold text-foreground mb-3">{m['admin.scheduling.preview.summary']()}</h4>
+                        <div class="grid gap-3">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-muted-foreground">{m['admin.scheduling.preview.total-emails']()}:</span>
+                                <span class="font-medium">{previewData.totalEmails}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-muted-foreground">{m['admin.scheduling.preview.users-to-notify']()}:</span>
+                                <span class="font-medium">{previewData.userCount}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {#if previewData.users && previewData.users.length > 0}
+                        <div class="rounded-lg border border-border bg-card">
+                            <div class="px-4 py-3 border-b border-border">
+                                <h4 class="text-sm font-semibold text-foreground">{m['admin.scheduling.preview.users-list']()}</h4>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-muted/50">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold text-foreground">{m['admin.scheduling.preview.username']()}</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold text-foreground">{m['admin.scheduling.preview.email']()}</th>
+                                            <th class="px-4 py-3 text-right text-xs font-semibold text-foreground">{m['admin.scheduling.preview.notifications']()}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {#each previewData.users as user}
+                                            <tr class="border-t border-border hover:bg-muted/30 transition-colors">
+                                                <td class="px-4 py-3 text-sm">{user.username}</td>
+                                                <td class="px-4 py-3 text-sm text-muted-foreground">{user.email}</td>
+                                                <td class="px-4 py-3 text-sm text-right font-medium">{user.notificationCount}</td>
+                                            </tr>
+                                        {/each}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {#if previewData.totalEmails > previewData.users.length}
+                                <div class="px-4 py-3 border-t border-border text-sm text-muted-foreground text-center">
+                                    {m['admin.scheduling.preview.showing-first']()}
+                                    {previewData.users.length}
+                                    {m['admin.scheduling.preview.of']()}
+                                    {previewData.userCount}
+                                    {m['admin.scheduling.preview.users']()}
+                                </div>
+                            {/if}
+                        </div>
+                    {:else}
+                        <div class="text-center py-8 text-muted-foreground">
+                            {m['admin.scheduling.preview.no-items']()}
+                        </div>
+                    {/if}
+                {:else if selectedJob === 'deadline_sweep'}
+                    <!-- Deadline Sweep Preview -->
+                    <div class="rounded-lg border border-border bg-muted/30 p-4">
+                        <h4 class="text-sm font-semibold text-foreground mb-3">{m['admin.scheduling.preview.summary']()}</h4>
+                        <div class="grid gap-3">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-muted-foreground">{m['admin.scheduling.preview.propositions-to-check']()}:</span>
+                                <span class="font-medium">{previewData.totalPropositions}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {#if previewData.propositions && previewData.propositions.length > 0}
+                        <div class="rounded-lg border border-border bg-card">
+                            <div class="px-4 py-3 border-b border-border">
+                                <h4 class="text-sm font-semibold text-foreground">{m['admin.scheduling.preview.propositions-list']()}</h4>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-muted/50">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold text-foreground">{m['admin.scheduling.preview.proposition']()}</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold text-foreground">{m['admin.scheduling.preview.status']()}</th>
+                                            <th class="px-4 py-3 text-right text-xs font-semibold text-foreground">{m['admin.scheduling.preview.hours-until-deadline']()}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {#each previewData.propositions as prop}
+                                            <tr class="border-t border-border hover:bg-muted/30 transition-colors">
+                                                <td class="px-4 py-3 text-sm">{prop.title}</td>
+                                                <td class="px-4 py-3 text-sm">
+                                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                                                        {prop.status}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 text-sm text-right font-medium">{prop.hoursUntilDeadline}h</td>
+                                            </tr>
+                                        {/each}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {:else}
+                        <div class="text-center py-8 text-muted-foreground">
+                            {m['admin.scheduling.preview.no-items']()}
+                        </div>
+                    {/if}
+                {:else if selectedJob === 'revocation_sweep'}
+                    <!-- Revocation Sweep Preview -->
+                    <div class="rounded-lg border border-border bg-muted/30 p-4">
+                        <h4 class="text-sm font-semibold text-foreground mb-3">{m['admin.scheduling.preview.summary']()}</h4>
+                        <div class="grid gap-3">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-muted-foreground">{m['admin.scheduling.preview.deliverables-to-check']()}:</span>
+                                <span class="font-medium">{previewData.totalDeliverables}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {#if previewData.deliverables && previewData.deliverables.length > 0}
+                        <div class="rounded-lg border border-border bg-card">
+                            <div class="px-4 py-3 border-b border-border">
+                                <h4 class="text-sm font-semibold text-foreground">{m['admin.scheduling.preview.deliverables-list']()}</h4>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-muted/50">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold text-foreground">{m['admin.scheduling.preview.deliverable']()}</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold text-foreground">{m['admin.scheduling.preview.proposition']()}</th>
+                                            <th class="px-4 py-3 text-left text-xs font-semibold text-foreground">{m['admin.scheduling.preview.status']()}</th>
+                                            <th class="px-4 py-3 text-right text-xs font-semibold text-foreground">{m['admin.scheduling.preview.days-since-upload']()}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {#each previewData.deliverables as deliverable}
+                                            <tr class="border-t border-border hover:bg-muted/30 transition-colors">
+                                                <td class="px-4 py-3 text-sm">{deliverable.label}</td>
+                                                <td class="px-4 py-3 text-sm text-muted-foreground">{deliverable.propositionTitle}</td>
+                                                <td class="px-4 py-3 text-sm">
+                                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300">
+                                                        {deliverable.status}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 text-sm text-right font-medium">{deliverable.daysSinceUpload} {m['admin.scheduling.preview.days']()}</td>
+                                            </tr>
+                                        {/each}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {:else}
+                        <div class="text-center py-8 text-muted-foreground">
+                            {m['admin.scheduling.preview.no-items']()}
+                        </div>
+                    {/if}
+                {/if}
+            </div>
+        {/if}
+    </DialogContent>
+</Dialog>

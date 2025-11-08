@@ -1,7 +1,6 @@
 import app from '@adonisjs/core/services/app';
 import logger from '@adonisjs/core/services/logger';
 import DeliverableAutomationService from '#services/deliverable_automation_service';
-import SettingsService from '#services/settings_service';
 import EmailBatchService from '#services/email_batch_service';
 import SchedulingService from '#services/scheduling_service';
 import { JobTypeEnum } from '#types';
@@ -13,7 +12,6 @@ const startAutomation = async () => {
     }
     try {
         const automationService = await app.container.make(DeliverableAutomationService);
-        const settingsService = await app.container.make(SettingsService);
         const emailBatchService = await app.container.make(EmailBatchService);
         const schedulingService = await app.container.make(SchedulingService);
 

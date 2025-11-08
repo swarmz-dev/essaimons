@@ -1,5 +1,4 @@
 import type { SerializedFile } from './serialized_file.js';
-import type { JobTypeEnum } from '../enum/job_type_enum.js';
 
 export type SerializedStatusPermissions = Record<string, Record<string, Record<string, boolean>>>;
 

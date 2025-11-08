@@ -212,4 +212,46 @@ export default class EmailBatchService {
 
         await PendingEmailNotification.query().where('sent', true).where('sent_at', '<', thirtyDaysAgo.toSQL()).delete();
     }
+
+    /**
+     * Preview what emails will be sent in the next run
+     */
+    async previewNextRun(): Promise<{
+        totalEmails: number;
+        userCount: number;
+        users: Array<{ userId: string; username: string; email: string; notificationCount: number }>;
+    }> {
+        const now = DateTime.now();
+
+        // Get all pending emails that are scheduled for now or earlier
+        const pendingEmails = await PendingEmailNotification.query().where('sent', false).where('scheduled_for', '<=', now.toSQL()).preload('user').preload('notification');
+
+        // Group by user
+        const emailsByUser = new Map<string, { user: User; notifications: Notification[] }>();
+
+        for (const pending of pendingEmails) {
+            const existing = emailsByUser.get(pending.userId);
+            if (existing) {
+                existing.notifications.push(pending.notification);
+            } else {
+                emailsByUser.set(pending.userId, {
+                    user: pending.user,
+                    notifications: [pending.notification],
+                });
+            }
+        }
+
+        const users = Array.from(emailsByUser.values()).map(({ user, notifications }) => ({
+            userId: user.id,
+            username: user.username,
+            email: user.email,
+            notificationCount: notifications.length,
+        }));
+
+        return {
+            totalEmails: pendingEmails.length,
+            userCount: emailsByUser.size,
+            users: users.slice(0, 20), // Limit to first 20 users for preview
+        };
+    }
 }

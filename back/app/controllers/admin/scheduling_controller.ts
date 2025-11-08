@@ -176,4 +176,44 @@ export default class SchedulingController {
             },
         });
     }
+
+    /**
+     * GET /admin/scheduling/jobs/:jobType/preview
+     * Preview what items will be processed in the next job run
+     */
+    public async preview({ request, response }: HttpContext): Promise<void> {
+        const jobType = request.param('jobType') as JobTypeEnum;
+
+        if (!Object.values(JobTypeEnum).includes(jobType)) {
+            return response.badRequest({
+                error: 'Invalid job type',
+            });
+        }
+
+        try {
+            let preview: any;
+
+            switch (jobType) {
+                case JobTypeEnum.EMAIL_BATCH:
+                    preview = await this.emailBatchService.previewNextRun();
+                    break;
+                case JobTypeEnum.DEADLINE_SWEEP:
+                    preview = await this.deliverableAutomationService.previewDeadlineSweep();
+                    break;
+                case JobTypeEnum.REVOCATION_SWEEP:
+                    preview = await this.deliverableAutomationService.previewRevocationSweep();
+                    break;
+            }
+
+            return response.ok({
+                jobType,
+                preview,
+            });
+        } catch (error) {
+            return response.badRequest({
+                error: 'Failed to generate preview',
+                message: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
 }

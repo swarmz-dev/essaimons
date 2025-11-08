@@ -12,7 +12,17 @@ import PropositionVote from '#models/proposition_vote';
 import VoteOption from '#models/vote_option';
 import type User from '#models/user';
 import SettingsService from '#services/settings_service';
-import { DeliverableVerdictEnum, MandateRevocationStatusEnum, MandateStatusEnum, PropositionStatusEnum, PropositionVoteMethodEnum, PropositionVotePhaseEnum, PropositionVoteStatusEnum } from '#types';
+import SchedulingService from '#services/scheduling_service';
+import {
+    DeliverableVerdictEnum,
+    JobTypeEnum,
+    MandateRevocationStatusEnum,
+    MandateStatusEnum,
+    PropositionStatusEnum,
+    PropositionVoteMethodEnum,
+    PropositionVotePhaseEnum,
+    PropositionVoteStatusEnum,
+} from '#types';
 
 interface MandateAutomationHistoryEntry {
     mandateDeadline: string;
@@ -69,7 +79,10 @@ interface RecalculateOptions {
 
 @inject()
 export default class DeliverableAutomationService {
-    constructor(private readonly settingsService: SettingsService) {}
+    constructor(
+        private readonly settingsService: SettingsService,
+        private readonly schedulingService: SchedulingService
+    ) {}
 
     public getRevocationSweepIntervalMs(workflowFrequencyHours: number): number {
         const hours = Math.max(1, workflowFrequencyHours);
@@ -558,5 +571,122 @@ export default class DeliverableAutomationService {
                 error: error instanceof Error ? error.message : error,
             });
         }
+    }
+
+    /**
+     * Preview what will be checked in the next deadline sweep
+     */
+    public async previewDeadlineSweep(): Promise<{
+        totalPropositions: number;
+        propositions: Array<{
+            id: string;
+            title: string;
+            status: string;
+            currentDeadline: string | null;
+            hoursUntilDeadline: number;
+        }>;
+    }> {
+        const now = DateTime.now();
+        // Get the next execution time for the deadline sweep job
+        const nextRunTime = await this.schedulingService.getNextRunTime(JobTypeEnum.DEADLINE_SWEEP);
+        const windowEnd = nextRunTime || now.plus({ hours: 24 }); // fallback to 24h if no next run scheduled
+
+        const propositions = await Proposition.query()
+            .whereIn('status', [PropositionStatusEnum.MANDATE, PropositionStatusEnum.EVALUATE])
+            .preload('mandates', (mandatesQuery) => {
+                mandatesQuery.whereNotNull('current_deadline');
+            });
+
+        const approaching = propositions
+            .filter((prop) => {
+                return prop.mandates.some((mandate) => {
+                    if (!mandate.currentDeadline) return false;
+                    return mandate.currentDeadline <= windowEnd;
+                });
+            })
+            .slice(0, 20)
+            .map((prop) => {
+                const nearestMandate = prop.mandates.reduce(
+                    (nearest, mandate) => {
+                        if (!mandate.currentDeadline) return nearest;
+                        if (!nearest) return { mandate, deadline: mandate.currentDeadline };
+
+                        const nearestDeadline = nearest.mandate.currentDeadline;
+                        if (!nearestDeadline) return { mandate, deadline: mandate.currentDeadline };
+
+                        return mandate.currentDeadline < nearestDeadline ? { mandate, deadline: mandate.currentDeadline } : nearest;
+                    },
+                    null as { mandate: PropositionMandate; deadline: DateTime } | null
+                );
+
+                const hoursUntil = nearestMandate ? nearestMandate.deadline.diff(now, 'hours').hours : 0;
+
+                return {
+                    id: prop.id,
+                    title: prop.title,
+                    status: prop.status,
+                    currentDeadline: nearestMandate?.deadline.toISO() || null,
+                    hoursUntilDeadline: Math.round(hoursUntil),
+                };
+            });
+
+        return {
+            totalPropositions: approaching.length,
+            propositions: approaching,
+        };
+    }
+
+    /**
+     * Preview what will be checked in the next revocation sweep
+     */
+    public async previewRevocationSweep(): Promise<{
+        totalDeliverables: number;
+        deliverables: Array<{
+            id: string;
+            label: string;
+            mandateId: string;
+            mandateTitle: string;
+            propositionId: string;
+            propositionTitle: string;
+            status: string;
+            uploadedAt: string;
+            daysSinceUpload: number;
+        }>;
+    }> {
+        const settings = await this.settingsService.getOrganizationSettings();
+        const automation = settings.workflowAutomation;
+        const revocationDelayDays = automation.revocationAutoTriggerDelayDays || 7;
+        const now = DateTime.now();
+        const threshold = now.minus({ days: revocationDelayDays });
+
+        const deliverables = await MandateDeliverable.query()
+            .whereIn('status', ['uploaded', 'pending_evaluation'])
+            .where('uploaded_at', '<=', threshold.toJSDate())
+            .preload('mandate', (mandateQuery) => {
+                mandateQuery.preload('proposition');
+            })
+            .limit(20);
+
+        const items = deliverables.map((deliverable) => {
+            const uploadedAt = deliverable.uploadedAt!;
+            const daysSince = now.diff(uploadedAt, 'days').days;
+
+            return {
+                id: deliverable.id,
+                label: deliverable.label || '',
+                mandateId: deliverable.mandateId,
+                mandateTitle: deliverable.mandate.title,
+                propositionId: deliverable.mandate.propositionId,
+                propositionTitle: deliverable.mandate.proposition.title,
+                status: deliverable.status,
+                uploadedAt: uploadedAt.toISO()!,
+                daysSinceUpload: Math.floor(daysSince),
+            };
+        });
+
+        return {
+            totalDeliverables: items.length,
+            deliverables: items,
+        };
     }
 }
