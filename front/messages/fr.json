@@ -1395,6 +1395,14 @@
         "exchange_scheduled": {
             "title": "Échange planifié",
             "message": "Un nouvel échange \"{eventTitle}\" a été planifié pour \"{propositionTitle}\""
+        },
+        "content_reported": {
+            "title": "Votre contenu a été signalé",
+            "message": "Votre {contentType} a été signalé pour examen par notre équipe de modération"
+        },
+        "content_report_reviewed": {
+            "title": "Votre signalement a été examiné",
+            "message": "Votre signalement concernant {contentType} a été examiné avec le statut : {status}"
         }
     },
     "report": {

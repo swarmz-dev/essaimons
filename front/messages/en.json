@@ -1398,6 +1398,14 @@
         "exchange_scheduled": {
             "title": "Exchange scheduled",
             "message": "A new exchange \"{eventTitle}\" has been scheduled for \"{propositionTitle}\""
+        },
+        "content_reported": {
+            "title": "Your content has been reported",
+            "message": "Your {contentType} has been reported for review by our moderation team"
+        },
+        "content_report_reviewed": {
+            "title": "Your report has been reviewed",
+            "message": "Your report about {contentType} has been reviewed with status: {status}"
         }
     },
     "report": {
