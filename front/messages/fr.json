@@ -1376,6 +1376,14 @@
             "title": "Votre livrable a été évalué",
             "message": "Votre livrable pour \"{mandateTitle}\" dans \"{propositionTitle}\" a été évalué"
         },
+        "comment_added": {
+            "title": "Nouveau commentaire",
+            "message": "Un nouveau commentaire a été ajouté à \"{propositionTitle}\""
+        },
+        "clarification_added": {
+            "title": "Nouvelle clarification",
+            "message": "Une clarification a été ajoutée à \"{propositionTitle}\""
+        },
         "clarification_updated": {
             "title": "Clarification mise à jour",
             "message": "Une clarification a été mise à jour dans \"{propositionTitle}\""

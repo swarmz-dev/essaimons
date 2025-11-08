@@ -1379,6 +1379,14 @@
             "title": "Your deliverable was evaluated",
             "message": "Your deliverable for \"{mandateTitle}\" in \"{propositionTitle}\" has been evaluated"
         },
+        "comment_added": {
+            "title": "New comment",
+            "message": "A new comment was added to \"{propositionTitle}\""
+        },
+        "clarification_added": {
+            "title": "New clarification",
+            "message": "A clarification was added to \"{propositionTitle}\""
+        },
         "clarification_updated": {
             "title": "Clarification updated",
             "message": "A clarification was updated in \"{propositionTitle}\""

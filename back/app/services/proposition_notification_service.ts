@@ -5,6 +5,7 @@ import Proposition from '#models/proposition';
 import PropositionMandate from '#models/proposition_mandate';
 import MandateDeliverable from '#models/mandate_deliverable';
 import PropositionEvent from '#models/proposition_event';
+import PropositionComment from '#models/proposition_comment';
 import { PropositionStatusEnum } from '#types/enum/proposition_status_enum';
 import { PropositionCommentScopeEnum } from '#types/enum/proposition_comment_scope_enum';
 import transmit from '@adonisjs/transmit/services/main';
@@ -269,9 +270,20 @@ export default class PropositionNotificationService {
         await proposition.load('creator');
         await proposition.load('rescueInitiators');
 
-        const userIds = [proposition.creatorId, ...proposition.rescueInitiators.map((u) => u.id)].filter((id) => id !== authorId);
+        const userIds = [proposition.creatorId, ...proposition.rescueInitiators.map((u) => u.id)];
 
-        if (userIds.length === 0) {
+        // If this is a reply to another comment, notify the parent comment's author
+        if (comment.parentId) {
+            const parentComment = await PropositionComment.find(comment.parentId);
+            if (parentComment && parentComment.authorId !== authorId) {
+                userIds.push(parentComment.authorId);
+            }
+        }
+
+        // Remove duplicates and the author
+        const uniqueUserIds = [...new Set(userIds)].filter((id) => id !== authorId);
+
+        if (uniqueUserIds.length === 0) {
             return;
         }
 
@@ -302,7 +314,7 @@ export default class PropositionNotificationService {
                 entityId: proposition.id,
                 actionUrl: `/propositions/${proposition.id}#comment-${comment.id}`,
             },
-            [...new Set(userIds)]
+            uniqueUserIds
         );
 
         await this.broadcastPropositionUpdate(proposition, {

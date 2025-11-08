@@ -5,6 +5,7 @@
     import { showToast } from '#lib/services/toastService';
     import { Loader2, Bell, Users, Clock, CheckCircle, XCircle, Mail, Smartphone } from '@lucide/svelte';
     import { NotificationService, type AdminNotification, type NotificationRecipient } from '$lib/services/notificationService';
+    import * as m from '#lib/paraglide/messages';
 
     const notificationService = new NotificationService();
 
@@ -66,6 +67,19 @@
             exchange_scheduled: 'Échange planifié',
         };
         return typeLabels[type] || type;
+    }
+
+    function translateKey(key: string, interpolationData?: Record<string, any>): string {
+        // The key format from backend is: "notifications.clarification_added.title"
+        // Paraglide exposes functions with dot notation: m['notifications.clarification_added.title']()
+        const messageFunc = (m as any)[key];
+
+        if (typeof messageFunc === 'function') {
+            return messageFunc(interpolationData || {});
+        }
+
+        // Fallback to the key if translation not found
+        return key;
     }
 
     function toggleExpanded(notificationId: string) {
@@ -172,8 +186,8 @@
                                     </span>
                                 </div>
                                 <div class="flex flex-col">
-                                    <span class="text-sm font-medium text-foreground">{notification.titleKey}</span>
-                                    <span class="text-xs text-muted-foreground">{notification.bodyKey}</span>
+                                    <span class="text-sm font-medium text-foreground">{translateKey(notification.titleKey, notification.interpolationData)}</span>
+                                    <span class="text-xs text-muted-foreground">{translateKey(notification.bodyKey, notification.interpolationData)}</span>
                                 </div>
                                 <div class="flex items-center gap-2 text-sm text-muted-foreground">
                                     <Users class="size-4" />
