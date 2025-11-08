@@ -67,20 +67,22 @@ export default class ContentReportService {
         // Notify the content author that their content has been reported
         const content = await this.getReportedContent(report);
         if (content) {
-            const authorId = 'author' in content ? content.author.id : content.creator.id;
+            const authorId = 'author' in content ? content.author?.id : content.creator?.id;
 
-            await this.notificationService.create(
-                {
-                    type: NotificationTypeEnum.CONTENT_REPORTED,
-                    titleKey: 'notification.content-reported.title',
-                    messageKey: 'notification.content-reported.message',
-                    data: {
-                        contentType: payload.contentType,
-                        reason: payload.reason,
+            if (authorId) {
+                await this.notificationService.create(
+                    {
+                        type: NotificationTypeEnum.CONTENT_REPORTED,
+                        titleKey: 'notification.content-reported.title',
+                        messageKey: 'notification.content-reported.message',
+                        data: {
+                            contentType: payload.contentType,
+                            reason: payload.reason,
+                        },
                     },
-                },
-                [authorId]
-            );
+                    [authorId]
+                );
+            }
         }
 
         logger.info(
