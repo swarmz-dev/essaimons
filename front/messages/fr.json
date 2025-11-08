@@ -1147,8 +1147,10 @@
             "add": "Configurer un vote",
             "dialog": {
                 "title": "Configurer un vote",
+                "title-edit": "Modifier le vote",
                 "description": "Définissez la méthode, le calendrier et les options du vote avant son ouverture.",
-                "submit": "Créer le vote"
+                "submit": "Créer le vote",
+                "submit-edit": "Enregistrer les modifications"
             },
             "form": {
                 "title": "Titre",
@@ -1185,6 +1187,34 @@
                 "binary": "Binaire",
                 "multi_choice": "Choix multiple",
                 "majority_judgment": "Jugement majoritaire"
+            },
+            "publish": {
+                "title": "Publier le vote",
+                "description": "Le vote sera planifié et visible par tous les participants. Il s'ouvrira automatiquement à la date prévue.",
+                "confirm": "Publier le vote"
+            },
+            "open": {
+                "title": "Ouvrir le vote",
+                "description": "Le vote sera ouvert immédiatement et les participants pourront commencer à voter.",
+                "confirm": "Ouvrir le vote"
+            },
+            "close": {
+                "title": "Clôturer le vote",
+                "description": "Le vote sera fermé et les participants ne pourront plus voter. Les résultats seront visibles.",
+                "confirm": "Clôturer le vote"
+            },
+            "delete": {
+                "title": "Supprimer le vote",
+                "description": "Cette action est irréversible. Le vote et toutes les données associées seront définitivement supprimés.",
+                "confirm": "Supprimer le vote",
+                "success": "Le vote a été supprimé avec succès."
+            },
+            "success": {
+                "created": "Le vote a été créé avec succès.",
+                "updated": "Le vote a été modifié avec succès.",
+                "published": "Le vote a été publié avec succès.",
+                "opened": "Le vote a été ouvert avec succès.",
+                "closed": "Le vote a été clôturé avec succès."
             }
         },
         "mandate": {

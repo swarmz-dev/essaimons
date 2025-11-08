@@ -40,10 +40,10 @@
         voteResults?: Record<string, any>;
         onAddVote: () => void;
         onEditVote: (vote: PropositionVote) => void;
-        onPublishVote: (voteId: string) => Promise<void>;
-        onOpenVote: (voteId: string) => Promise<void>;
-        onCloseVote: (voteId: string) => Promise<void>;
-        onDeleteVote: (voteId: string) => Promise<void>;
+        onPublishVote: (voteId: string) => void;
+        onOpenVote: (voteId: string) => void;
+        onCloseVote: (voteId: string) => void;
+        onDeleteVote: (voteId: string) => void;
         onCastBallot: (vote: PropositionVote) => Promise<void>;
         onRevokeBallot: (voteId: string) => Promise<void>;
         getVoteTimeRemaining: (vote: PropositionVote, currentTime: Date) => { text: string; color: string } | null;
@@ -52,6 +52,22 @@
         translateVotePhase: (phase: string) => string;
         onBallotSelectionChange: (voteId: string, type: 'radio' | 'checkbox' | 'rating', value: any) => void;
     }>();
+
+    // Check if vote end date has passed
+    const isVoteEndDatePassed = (vote: PropositionVote): boolean => {
+        if (!vote.closeAt) return false;
+        return new Date(vote.closeAt) <= currentTime;
+    };
+
+    // Check if user can close the vote
+    const canCloseVote = (vote: PropositionVote): boolean => {
+        if (vote.status !== 'open') return false;
+        // Admins can close anytime
+        if (workflowRole === 'admin') return true;
+        // Initiators can close after end date
+        if ((workflowRole === 'initiator' || canConfigureVote) && isVoteEndDatePassed(vote)) return true;
+        return false;
+    };
 </script>
 
 <section class="rounded-2xl bg-background/60 p-6 shadow-sm ring-1 ring-border/40">
@@ -91,10 +107,12 @@
                             <span class="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-400">{translateVotePhase(vote.phase)}</span>
                             <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{vote.status}</span>
                             {#if canConfigureVote}
-                                <Button size="sm" variant="ghost" class="gap-1" onclick={() => onEditVote(vote)}>
-                                    <Pencil class="size-3.5" />
-                                    {m['common.edit']()}
-                                </Button>
+                                {#if vote.status === 'draft' || (workflowRole === 'admin' && vote.status === 'scheduled')}
+                                    <Button size="sm" variant="ghost" class="gap-1" onclick={() => onEditVote(vote)}>
+                                        <Pencil class="size-3.5" />
+                                        {m['common.edit']()}
+                                    </Button>
+                                {/if}
                                 {#if vote.status === 'draft'}
                                     <Button size="sm" variant="default" class="gap-1" onclick={() => onPublishVote(vote.id)}>
                                         <CheckCircle class="size-3.5" />
@@ -107,10 +125,10 @@
                                         Ouvrir
                                     </Button>
                                 {/if}
-                                {#if workflowRole === 'admin' && vote.status === 'open'}
+                                {#if canCloseVote(vote)}
                                     <Button size="sm" variant="outline" class="gap-1" onclick={() => onCloseVote(vote.id)}>Clôturer</Button>
                                 {/if}
-                                {#if workflowRole === 'admin'}
+                                {#if workflowRole === 'admin' && (vote.status === 'draft' || vote.status === 'scheduled')}
                                     <Button size="sm" variant="ghost" class="gap-1 text-destructive hover:text-destructive" onclick={() => onDeleteVote(vote.id)}>
                                         <Trash2 class="size-3.5" />
                                         {m['common.delete']()}

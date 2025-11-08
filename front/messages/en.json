@@ -1146,8 +1146,10 @@
             "add": "Configure a vote",
             "dialog": {
                 "title": "Configure a vote",
+                "title-edit": "Edit vote",
                 "description": "Define the voting method, schedule and available options before it opens.",
-                "submit": "Create vote"
+                "submit": "Create vote",
+                "submit-edit": "Save changes"
             },
             "form": {
                 "title": "Title",
@@ -1184,6 +1186,34 @@
                 "binary": "Binary",
                 "multi_choice": "Multiple choice",
                 "majority_judgment": "Majority judgment"
+            },
+            "publish": {
+                "title": "Publish vote",
+                "description": "The vote will be scheduled and visible to all participants. It will open automatically at the scheduled date.",
+                "confirm": "Publish vote"
+            },
+            "open": {
+                "title": "Open vote",
+                "description": "The vote will be opened immediately and participants will be able to start voting.",
+                "confirm": "Open vote"
+            },
+            "close": {
+                "title": "Close vote",
+                "description": "The vote will be closed and participants will no longer be able to vote. Results will be visible.",
+                "confirm": "Close vote"
+            },
+            "delete": {
+                "title": "Delete vote",
+                "description": "This action is irreversible. The vote and all associated data will be permanently deleted.",
+                "confirm": "Delete vote",
+                "success": "The vote has been successfully deleted."
+            },
+            "success": {
+                "created": "The vote has been successfully created.",
+                "updated": "The vote has been successfully updated.",
+                "published": "The vote has been successfully published.",
+                "opened": "The vote has been successfully opened.",
+                "closed": "The vote has been successfully closed."
             }
         },
         "mandate": {

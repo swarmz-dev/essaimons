@@ -635,6 +635,7 @@
     let voteErrors: string[] = $state([]);
     let voteFieldErrors: Record<string, string | undefined> = $state({});
     let isVoteSubmitting: boolean = $state(false);
+    let editingVoteId: string | null = $state(null);
     let voteOpenInput: HTMLInputElement | null = $state(null);
     let voteCloseInput: HTMLInputElement | null = $state(null);
 
@@ -643,6 +644,14 @@
     let isCastingVote = $state<Record<string, boolean>>({});
     let ballotSelections = $state<Record<string, any>>({});
     let voteResults = $state<Record<string, any>>({});
+
+    // États pour les confirmations de vote
+    let isVotePublishDialogOpen: boolean = $state(false);
+    let isVoteOpenDialogOpen: boolean = $state(false);
+    let isVoteCloseDialogOpen: boolean = $state(false);
+    let isVoteDeleteDialogOpen: boolean = $state(false);
+    let voteActionId: string | null = $state(null);
+    let isVoteActionSubmitting: boolean = $state(false);
 
     const mandateSchema = z.object({
         title: z.string().trim().min(1).max(255),
@@ -1433,10 +1442,11 @@
 
         isVoteSubmitting = true;
         try {
+            const targetVoteId = editingVoteId;
             const response = await wrappedFetch(
-                `/propositions/${proposition.id}/votes`,
+                `/propositions/${proposition.id}/votes${targetVoteId ? `/${targetVoteId}` : ''}`,
                 {
-                    method: 'POST',
+                    method: targetVoteId ? 'PUT' : 'POST',
                     body: {
                         title: parsed.data.title,
                         description: parsed.data.description,
@@ -1454,7 +1464,9 @@
                 },
                 ({ vote }) => {
                     propositionDetailStore.upsertVote(vote);
+                    showToast(targetVoteId ? m['proposition-detail.votes.success.updated']() : m['proposition-detail.votes.success.created'](), 'success');
                     voteForm = { ...defaultVoteForm };
+                    editingVoteId = null;
                     isVoteDialogOpen = false;
                 },
                 ({ message }) => {
@@ -1470,14 +1482,68 @@
         }
     };
 
-    const openEditVote = (vote: PropositionVote): void => {
-        // TODO: Populate form with vote data and open dialog
+    const openAddVote = (): void => {
+        voteForm = { ...defaultVoteForm };
+        editingVoteId = null;
+        voteErrors = [];
+        voteFieldErrors = {};
+        isVoteSubmitting = false;
+        isVoteDialogOpen = true;
     };
 
-    const publishVote = async (voteId: string): Promise<void> => {
+    const openEditVote = (vote: PropositionVote): void => {
+        // Populate form with vote data
+        voteForm = {
+            title: vote.title ?? '',
+            description: vote.description ?? '',
+            phase: vote.phase,
+            openAt: fromIsoToLocalInput(vote.openAt),
+            closeAt: fromIsoToLocalInput(vote.closeAt),
+            maxSelections: vote.maxSelections ?? 1,
+            isMajorityJudgment: vote.method === PropositionVoteMethodEnum.MAJORITY_JUDGMENT,
+            optionsText: vote.options
+                .sort((a, b) => a.position - b.position)
+                .map((opt) => opt.label)
+                .join('\n'),
+        };
+        editingVoteId = vote.id;
+        voteErrors = [];
+        voteFieldErrors = {};
+        isVoteSubmitting = false;
+        isVoteDialogOpen = true;
+    };
+
+    const confirmPublishVote = (voteId: string): void => {
+        voteActionId = voteId;
+        isVoteActionSubmitting = false;
+        isVotePublishDialogOpen = true;
+    };
+
+    const confirmOpenVote = (voteId: string): void => {
+        voteActionId = voteId;
+        isVoteActionSubmitting = false;
+        isVoteOpenDialogOpen = true;
+    };
+
+    const confirmCloseVote = (voteId: string): void => {
+        voteActionId = voteId;
+        isVoteActionSubmitting = false;
+        isVoteCloseDialogOpen = true;
+    };
+
+    const confirmDeleteVote = (voteId: string): void => {
+        voteActionId = voteId;
+        isVoteActionSubmitting = false;
+        isVoteDeleteDialogOpen = true;
+    };
+
+    const publishVote = async (): Promise<void> => {
+        if (!voteActionId) return;
+
+        isVoteActionSubmitting = true;
         try {
             await wrappedFetch(
-                `/propositions/${proposition.id}/votes/${voteId}/status`,
+                `/propositions/${proposition.id}/votes/${voteActionId}/status`,
                 {
                     method: 'POST',
                     body: {
@@ -1486,6 +1552,9 @@
                 },
                 ({ vote }) => {
                     propositionDetailStore.upsertVote(vote);
+                    showToast(m['proposition-detail.votes.success.published'](), 'success');
+                    voteActionId = null;
+                    isVotePublishDialogOpen = false;
                 },
                 ({ message }) => {
                     console.error('Failed to publish vote:', message);
@@ -1493,13 +1562,18 @@
             );
         } catch (error) {
             console.error('Error publishing vote:', error);
+        } finally {
+            isVoteActionSubmitting = false;
         }
     };
 
-    const openVote = async (voteId: string): Promise<void> => {
+    const openVote = async (): Promise<void> => {
+        if (!voteActionId) return;
+
+        isVoteActionSubmitting = true;
         try {
             await wrappedFetch(
-                `/propositions/${proposition.id}/votes/${voteId}/status`,
+                `/propositions/${proposition.id}/votes/${voteActionId}/status`,
                 {
                     method: 'POST',
                     body: {
@@ -1508,20 +1582,29 @@
                 },
                 ({ vote }) => {
                     propositionDetailStore.upsertVote(vote);
+                    showToast(m['proposition-detail.votes.success.opened'](), 'success');
+                    voteActionId = null;
+                    isVoteOpenDialogOpen = false;
                 },
                 ({ message }) => {
                     console.error('Failed to open vote:', message);
+                    showToast(message ?? m['common.error.default-message'](), 'error');
                 }
             );
         } catch (error) {
             console.error('Error opening vote:', error);
+        } finally {
+            isVoteActionSubmitting = false;
         }
     };
 
-    const closeVote = async (voteId: string): Promise<void> => {
+    const closeVote = async (): Promise<void> => {
+        if (!voteActionId) return;
+
+        isVoteActionSubmitting = true;
         try {
             await wrappedFetch(
-                `/propositions/${proposition.id}/votes/${voteId}/status`,
+                `/propositions/${proposition.id}/votes/${voteActionId}/status`,
                 {
                     method: 'POST',
                     body: {
@@ -1530,32 +1613,47 @@
                 },
                 ({ vote }) => {
                     propositionDetailStore.upsertVote(vote);
+                    showToast(m['proposition-detail.votes.success.closed'](), 'success');
+                    voteActionId = null;
+                    isVoteCloseDialogOpen = false;
                 },
                 ({ message }) => {
                     console.error('Failed to close vote:', message);
+                    showToast(message ?? m['common.error.default-message'](), 'error');
                 }
             );
         } catch (error) {
             console.error('Error closing vote:', error);
+        } finally {
+            isVoteActionSubmitting = false;
         }
     };
 
-    const deleteVote = async (voteId: string): Promise<void> => {
+    const deleteVote = async (): Promise<void> => {
+        if (!voteActionId) return;
+
+        isVoteActionSubmitting = true;
         try {
             await wrappedFetch(
-                `/propositions/${proposition.id}/votes/${voteId}`,
+                `/propositions/${proposition.id}/votes/${voteActionId}`,
                 {
                     method: 'DELETE',
                 },
                 () => {
-                    propositionDetailStore.removeVote(voteId);
+                    propositionDetailStore.removeVote(voteActionId!);
+                    showToast(m['proposition-detail.votes.delete.success'](), 'success');
+                    voteActionId = null;
+                    isVoteDeleteDialogOpen = false;
                 },
                 ({ message }) => {
                     console.error('Failed to delete vote:', message);
+                    showToast(message ?? m['common.error.default-message'](), 'error');
                 }
             );
         } catch (error) {
             console.error('Error deleting vote:', error);
+        } finally {
+            isVoteActionSubmitting = false;
         }
     };
 
@@ -2275,12 +2373,12 @@
             {ballotSelections}
             {isCastingVote}
             {voteResults}
-            onAddVote={() => (isVoteDialogOpen = true)}
+            onAddVote={openAddVote}
             onEditVote={openEditVote}
-            onPublishVote={publishVote}
-            onOpenVote={openVote}
-            onCloseVote={closeVote}
-            onDeleteVote={deleteVote}
+            onPublishVote={confirmPublishVote}
+            onOpenVote={confirmOpenVote}
+            onCloseVote={confirmCloseVote}
+            onDeleteVote={confirmDeleteVote}
             onCastBallot={castBallot}
             onRevokeBallot={revokeBallot}
             {getVoteTimeRemaining}
@@ -3022,7 +3120,7 @@
 >
     <DialogContent class="max-w-2xl">
         <DialogHeader>
-            <DialogTitle>{m['proposition-detail.votes.dialog.title']()}</DialogTitle>
+            <DialogTitle>{editingVoteId ? m['proposition-detail.votes.dialog.title-edit']() : m['proposition-detail.votes.dialog.title']()}</DialogTitle>
             <DialogDescription>{m['proposition-detail.votes.dialog.description']()}</DialogDescription>
         </DialogHeader>
         <form class="grid gap-4" onsubmit={handleVoteSubmit}>
@@ -3112,13 +3210,129 @@
                         <Loader2 class="size-4 animate-spin" />
                         {m['common.actions.loading']()}
                     {:else}
-                        {m['proposition-detail.votes.dialog.submit']()}
+                        {editingVoteId ? m['proposition-detail.votes.dialog.submit-edit']() : m['proposition-detail.votes.dialog.submit']()}
                     {/if}
                 </Button>
             </DialogFooter>
         </form>
     </DialogContent>
 </Dialog>
+
+<!-- Vote Publish Confirmation Dialog -->
+{#if isVotePublishDialogOpen}
+    <AlertDialog
+        open={isVotePublishDialogOpen}
+        onOpenChange={(value: boolean) => {
+            isVotePublishDialogOpen = value;
+            if (!value) {
+                voteActionId = null;
+            }
+        }}
+    >
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>{m['proposition-detail.votes.publish.title']()}</AlertDialogTitle>
+                <AlertDialogDescription>{m['proposition-detail.votes.publish.description']()}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>{m['common.cancel']()}</AlertDialogCancel>
+                <AlertDialogAction onclick={publishVote} disabled={isVoteActionSubmitting}>
+                    {#if isVoteActionSubmitting}
+                        <Loader2 class="mr-2 size-4 animate-spin" />
+                    {/if}
+                    {m['proposition-detail.votes.publish.confirm']()}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+{/if}
+
+<!-- Vote Open Confirmation Dialog -->
+{#if isVoteOpenDialogOpen}
+    <AlertDialog
+        open={isVoteOpenDialogOpen}
+        onOpenChange={(value: boolean) => {
+            isVoteOpenDialogOpen = value;
+            if (!value) {
+                voteActionId = null;
+            }
+        }}
+    >
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>{m['proposition-detail.votes.open.title']()}</AlertDialogTitle>
+                <AlertDialogDescription>{m['proposition-detail.votes.open.description']()}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>{m['common.cancel']()}</AlertDialogCancel>
+                <AlertDialogAction onclick={openVote} disabled={isVoteActionSubmitting}>
+                    {#if isVoteActionSubmitting}
+                        <Loader2 class="mr-2 size-4 animate-spin" />
+                    {/if}
+                    {m['proposition-detail.votes.open.confirm']()}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+{/if}
+
+<!-- Vote Close Confirmation Dialog -->
+{#if isVoteCloseDialogOpen}
+    <AlertDialog
+        open={isVoteCloseDialogOpen}
+        onOpenChange={(value: boolean) => {
+            isVoteCloseDialogOpen = value;
+            if (!value) {
+                voteActionId = null;
+            }
+        }}
+    >
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>{m['proposition-detail.votes.close.title']()}</AlertDialogTitle>
+                <AlertDialogDescription>{m['proposition-detail.votes.close.description']()}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>{m['common.cancel']()}</AlertDialogCancel>
+                <AlertDialogAction onclick={closeVote} disabled={isVoteActionSubmitting}>
+                    {#if isVoteActionSubmitting}
+                        <Loader2 class="mr-2 size-4 animate-spin" />
+                    {/if}
+                    {m['proposition-detail.votes.close.confirm']()}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+{/if}
+
+<!-- Vote Delete Confirmation Dialog -->
+{#if isVoteDeleteDialogOpen}
+    <AlertDialog
+        open={isVoteDeleteDialogOpen}
+        onOpenChange={(value: boolean) => {
+            isVoteDeleteDialogOpen = value;
+            if (!value) {
+                voteActionId = null;
+            }
+        }}
+    >
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>{m['proposition-detail.votes.delete.title']()}</AlertDialogTitle>
+                <AlertDialogDescription>{m['proposition-detail.votes.delete.description']()}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>{m['common.cancel']()}</AlertDialogCancel>
+                <AlertDialogAction onclick={deleteVote} disabled={isVoteActionSubmitting} class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    {#if isVoteActionSubmitting}
+                        <Loader2 class="mr-2 size-4 animate-spin" />
+                    {/if}
+                    {m['proposition-detail.votes.delete.confirm']()}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+{/if}
 
 <Dialog open={isMandateDialogOpen} onOpenChange={(value: boolean) => (isMandateDialogOpen = value)}>
     <DialogContent class="max-w-2xl">

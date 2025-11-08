@@ -110,8 +110,13 @@ export default class PropositionVoteService {
     public async update(proposition: Proposition, vote: PropositionVote, actor: User, payload: UpdateVotePayload): Promise<PropositionVote> {
         await this.ensureCanManageVotes(proposition, actor);
 
-        // Only admins can modify published votes
-        if (vote.status !== PropositionVoteStatusEnum.DRAFT && actor.role !== 'admin') {
+        // Cannot edit votes that are open, closed, or cancelled
+        if (vote.status === PropositionVoteStatusEnum.OPEN || vote.status === PropositionVoteStatusEnum.CLOSED || vote.status === PropositionVoteStatusEnum.CANCELLED) {
+            throw new Error('votes.update.locked');
+        }
+
+        // Only admins can modify scheduled votes
+        if (vote.status === PropositionVoteStatusEnum.SCHEDULED && actor.role !== 'admin') {
             throw new Error('votes.update.locked');
         }
 
@@ -147,8 +152,13 @@ export default class PropositionVoteService {
     public async delete(proposition: Proposition, vote: PropositionVote, actor: User): Promise<void> {
         await this.ensureCanManageVotes(proposition, actor);
 
-        // Only admins can delete published votes
-        if (vote.status !== PropositionVoteStatusEnum.DRAFT && actor.role !== 'admin') {
+        // Cannot delete votes that are open, closed, or cancelled
+        if (vote.status === PropositionVoteStatusEnum.OPEN || vote.status === PropositionVoteStatusEnum.CLOSED || vote.status === PropositionVoteStatusEnum.CANCELLED) {
+            throw new Error('votes.delete.locked');
+        }
+
+        // Only admins can delete scheduled votes
+        if (vote.status === PropositionVoteStatusEnum.SCHEDULED && actor.role !== 'admin') {
             throw new Error('votes.delete.locked');
         }
 
