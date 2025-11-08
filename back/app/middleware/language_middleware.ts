@@ -13,26 +13,26 @@ export default class LanguageMiddleware {
     constructor(private readonly languageRepository: LanguageRepository) {}
 
     public async handle(ctx: HttpContext, next: NextFn): Promise<void> {
-        logger.info('LanguageMiddleware - START', { url: ctx.request.url() });
+        logger.debug('LanguageMiddleware - START', { url: ctx.request.url() });
         const languageCode = this.getLanguageCode(ctx.request).toLowerCase();
-        logger.info('LanguageMiddleware - Language code:', languageCode);
+        logger.debug('LanguageMiddleware - Language code:', languageCode);
 
         const language: Language = await this.languageRepository.firstOrFail({
             code: languageCode,
         });
-        logger.info('LanguageMiddleware - Language loaded');
+        logger.debug('LanguageMiddleware - Language loaded');
 
         ctx.language = language;
         ctx.i18n = i18nManager.locale(language.code);
 
         if (env.get('NODE_ENV') === 'development') {
-            logger.info('LanguageMiddleware - Reloading translations');
+            logger.debug('LanguageMiddleware - Reloading translations');
             await i18nManager.reloadTranslations();
         }
 
-        logger.info('LanguageMiddleware - Before next()');
+        logger.debug('LanguageMiddleware - Before next()');
         await next();
-        logger.info('LanguageMiddleware - COMPLETE');
+        logger.debug('LanguageMiddleware - COMPLETE');
     }
 
     private getLanguageCode(request: Request): RequestLanguagesEnum {

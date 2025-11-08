@@ -2,6 +2,7 @@ import axios from 'axios';
 import env from '#start/env';
 import User from '#models/user';
 import { I18n } from '@adonisjs/i18n';
+import logger from '@adonisjs/core/services/logger';
 
 export default class BrevoMailService {
     private apiUrl: string = 'https://api.brevo.com/v3/smtp/email';
@@ -25,8 +26,20 @@ export default class BrevoMailService {
             return;
         }
 
+        logger.debug('Sending email via Brevo', {
+            to: payload.to,
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent,
+        });
+
         await axios.post(this.apiUrl, payload, {
             headers: this.headers,
+        });
+
+        logger.info('Email sent successfully via Brevo', {
+            to: payload.to,
+            subject: payload.subject,
         });
     }
 

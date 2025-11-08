@@ -51,6 +51,8 @@ interface OrganizationSettingsValue {
     permissions?: PermissionsWrapper;
     permissionCatalog?: PermissionsWrapper;
     workflowAutomation?: WorkflowAutomationSettingsValue;
+    schedulingPaused?: boolean;
+    jobSchedules?: Record<string, { enabled: boolean; intervalHours?: number; intervalMinutes?: number }>;
 }
 
 interface UpdateOrganizationSettingsPayload {
@@ -66,6 +68,8 @@ interface UpdateOrganizationSettingsPayload {
     permissions?: PermissionsWrapper | PermissionMatrix;
     permissionCatalog?: PermissionsWrapper | PermissionMatrix;
     workflowAutomation?: Partial<WorkflowAutomationSettingsValue>;
+    schedulingPaused?: boolean;
+    jobSchedules?: Record<string, { enabled: boolean; intervalHours?: number; intervalMinutes?: number }>;
 }
 
 const DEFAULT_PROPOSITION_DEFAULTS = {
@@ -74,6 +78,12 @@ const DEFAULT_PROPOSITION_DEFAULTS = {
     voteOffsetDays: 7,
     mandateOffsetDays: 15,
     evaluationOffsetDays: 30,
+};
+
+const DEFAULT_JOB_SCHEDULES: Record<string, { enabled: boolean; intervalHours?: number; intervalMinutes?: number }> = {
+    email_batch: { enabled: true, intervalHours: 1 },
+    deadline_sweep: { enabled: true, intervalHours: 6 },
+    revocation_sweep: { enabled: true, intervalHours: 24 },
 };
 
 const DEFAULT_PERMISSIONS: PermissionMatrix = {
@@ -352,6 +362,8 @@ export default class SettingsService {
             permissions: { perStatus: permissions },
             permissionCatalog: { perStatus: this.clonePermissionMatrix(permissionCatalog) },
             workflowAutomation,
+            schedulingPaused: value?.schedulingPaused ?? false,
+            jobSchedules: value?.jobSchedules ?? DEFAULT_JOB_SCHEDULES,
         };
     }
 
@@ -427,6 +439,8 @@ export default class SettingsService {
                         permissions: { perStatus: existingPermissions },
                         permissionCatalog: { perStatus: catalogMatrix },
                         workflowAutomation: this.normalizeWorkflowAutomationValue(currentValue.workflowAutomation),
+                        schedulingPaused: currentValue.schedulingPaused ?? false,
+                        jobSchedules: currentValue.jobSchedules ?? DEFAULT_JOB_SCHEDULES,
                     };
                 }
             } else {
@@ -496,6 +510,14 @@ export default class SettingsService {
                     ...payload.workflowAutomation,
                 });
                 value.workflowAutomation = nextAutomation;
+            }
+
+            if (payload.schedulingPaused !== undefined) {
+                value.schedulingPaused = payload.schedulingPaused;
+            }
+
+            if (payload.jobSchedules !== undefined) {
+                value.jobSchedules = payload.jobSchedules;
             }
 
             const normalizeOffset = (value: unknown, fallback: number): number => {

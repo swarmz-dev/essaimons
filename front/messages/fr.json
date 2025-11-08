@@ -616,6 +616,89 @@
                 }
             }
         },
+        "scheduling": {
+            "title": "Gestion des tâches planifiées",
+            "menu": "Planification",
+            "status": {
+                "paused": "En pause",
+                "active": "Actif",
+                "running": "En cours",
+                "success": "Succès",
+                "failure": "Échec",
+                "never-run": "Jamais exécuté"
+            },
+            "global": {
+                "title": "Statut global de la planification",
+                "paused-desc": "Toutes les tâches planifiées sont actuellement désactivées",
+                "active-desc": "Les tâches planifiées s'exécutent normalement",
+                "pause-button": "Mettre en pause",
+                "resume-button": "Reprendre"
+            },
+            "jobs": {
+                "email-batch": {
+                    "title": "Traitement des emails par lots",
+                    "description": "Traite les notifications par email en attente selon les préférences de fréquence des utilisateurs"
+                },
+                "deadline-sweep": {
+                    "title": "Vérification des échéances",
+                    "description": "Vérifie et traite les échéances des propositions, déclenchant des actions lorsqu'elles sont atteintes"
+                },
+                "revocation-sweep": {
+                    "title": "Traitement des révocations",
+                    "description": "Vérifie et traite les révocations de mandats nécessitant un traitement"
+                }
+            },
+            "stats": {
+                "status": "Statut",
+                "total-runs": "Total d'exécutions",
+                "success-rate": "Taux de réussite",
+                "avg-duration": "Durée moyenne",
+                "next-run": "Prochaine exécution",
+                "total-executions": "Exécutions totales",
+                "successful": "Réussies",
+                "failed": "Échouées"
+            },
+            "details": {
+                "statistics": "Statistiques",
+                "recent-executions": "Exécutions récentes",
+                "trigger-button": "Déclencher maintenant",
+                "triggering": "Déclenchement...",
+                "no-executions": "Aucune exécution pour le moment"
+            },
+            "table": {
+                "status": "Statut",
+                "started": "Démarré",
+                "completed": "Terminé",
+                "duration": "Durée",
+                "details": "Détails",
+                "manual-trigger": "Déclenchement manuel",
+                "scheduled": "Planifié"
+            },
+            "actions": {
+                "refresh": "Actualiser"
+            },
+            "messages": {
+                "paused": "Planification mise en pause",
+                "resumed": "Planification reprise",
+                "triggered": "{job} déclenché avec succès",
+                "error-toggle": "Échec du basculement de la planification",
+                "error-load": "Échec du chargement du statut de planification",
+                "error-details": "Échec du chargement des détails de la tâche",
+                "error-trigger": "Échec du déclenchement de {job}",
+                "schedule-updated": "Planification mise à jour avec succès",
+                "error-update-schedule": "Échec de la mise à jour de la planification"
+            },
+            "schedule-config": {
+                "title": "Configuration de la planification",
+                "enabled": "Activé",
+                "disabled": "Désactivé",
+                "interval": "Intervalle",
+                "hours": "Heures",
+                "minutes": "Minutes",
+                "save": "Enregistrer",
+                "cancel": "Annuler"
+            }
+        },
         "reports": {
             "title": "Modération",
             "filters": {

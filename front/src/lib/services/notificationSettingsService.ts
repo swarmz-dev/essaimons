@@ -14,12 +14,18 @@ export interface NotificationSetting {
 
 export interface NotificationSettingsResponse {
     settings: NotificationSetting[];
+    emailFrequency?: string;
 }
 
 export interface UpdateSettingPayload {
     inAppEnabled?: boolean;
     emailEnabled?: boolean;
     pushEnabled?: boolean;
+}
+
+export interface BulkUpdatePayload {
+    settings: Array<{ type: string } & UpdateSettingPayload>;
+    emailFrequency?: string;
 }
 
 export class NotificationSettingsService {
@@ -70,9 +76,9 @@ export class NotificationSettingsService {
     /**
      * Get all notification settings for current user
      */
-    async getSettings(): Promise<NotificationSetting[]> {
-        const data = await this.fetchAPI<any>('/api/notification-settings');
-        return data.settings || [];
+    async getSettings(): Promise<NotificationSettingsResponse> {
+        const data = await this.fetchAPI<NotificationSettingsResponse>('/api/notification-settings');
+        return data;
     }
 
     /**
@@ -89,11 +95,11 @@ export class NotificationSettingsService {
     /**
      * Bulk update multiple notification settings
      */
-    async bulkUpdate(settings: Array<{ type: string } & UpdateSettingPayload>): Promise<NotificationSetting[]> {
-        const data = await this.fetchAPI<any>('/api/notification-settings/bulk', {
+    async bulkUpdate(payload: BulkUpdatePayload): Promise<NotificationSettingsResponse> {
+        const data = await this.fetchAPI<NotificationSettingsResponse>('/api/notification-settings/bulk', {
             method: 'PUT',
-            body: JSON.stringify({ settings }),
+            body: JSON.stringify(payload),
         });
-        return data.settings || [];
+        return data;
     }
 }

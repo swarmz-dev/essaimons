@@ -18,10 +18,13 @@ export { PropositionReactionTypeEnum } from './enum/proposition_reaction_type_en
 export { MandateRevocationStatusEnum } from './enum/mandate_revocation_status_enum.js';
 export { NotificationTypeEnum } from './enum/notification_type_enum.js';
 export { NotificationChannelEnum } from './enum/notification_channel_enum.js';
+export { EmailFrequencyEnum } from './enum/email_frequency_enum.js';
 export { DeliveryStatusEnum } from './enum/delivery_status_enum.js';
 export { ContentReportReasonEnum } from './enum/content_report_reason_enum.js';
 export { ContentReportStatusEnum } from './enum/content_report_status_enum.js';
 export { ContentTypeEnum } from './enum/content_type_enum.js';
+export { JobTypeEnum } from './enum/job_type_enum.js';
+export { JobStatusEnum } from './enum/job_status_enum.js';
 
 export type { PaginatedUsers } from './paginated/paginated_users.js';
 export type { PaginatedPropositions } from './paginated/paginated_propositions.js';

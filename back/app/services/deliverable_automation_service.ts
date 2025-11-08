@@ -171,13 +171,13 @@ export default class DeliverableAutomationService {
         });
     }
 
-    public async runDeadlineSweep(): Promise<void> {
+    public async runDeadlineSweep(): Promise<{ deadlinesChecked: number; deadlinesShifted: number; failures: number }> {
         const settings = await this.settingsService.getOrganizationSettings();
         const automation = settings.workflowAutomation ?? {};
         const evaluationShift = automation.evaluationAutoShiftDays ?? 0;
 
         if (evaluationShift <= 0) {
-            return;
+            return { deadlinesChecked: 0, deadlinesShifted: 0, failures: 0 };
         }
 
         const now = DateTime.now();
@@ -194,12 +194,18 @@ export default class DeliverableAutomationService {
             })
             .preload('proposition');
 
+        let deadlinesChecked = 0;
+        let deadlinesShifted = 0;
+        let failures = 0;
+
         for (const mandate of mandates) {
             try {
                 const proposition = mandate.proposition as Proposition | undefined;
                 if (!proposition?.evaluationDeadline) {
                     continue;
                 }
+
+                deadlinesChecked++;
 
                 const tickNow = DateTime.now();
 
@@ -210,7 +216,9 @@ export default class DeliverableAutomationService {
                 await this.recalculateDeadlines(proposition, mandate, automation, tickNow, {
                     reason: 'late_detection',
                 });
+                deadlinesShifted++;
             } catch (error) {
+                failures++;
                 logger.error('automation.deadline.sweep.error', {
                     mandateId: mandate.id,
                     propositionId: mandate.propositionId,
@@ -218,14 +226,16 @@ export default class DeliverableAutomationService {
                 });
             }
         }
+
+        return { deadlinesChecked, deadlinesShifted, failures };
     }
 
-    public async runRevocationSweep(): Promise<void> {
+    public async runRevocationSweep(): Promise<{ deliverablesChecked: number; revocationsEscalated: number; failures: number }> {
         const settings = await this.settingsService.getOrganizationSettings();
         const automation = settings.workflowAutomation;
         const delayDays = automation.revocationAutoTriggerDelayDays ?? 0;
         if (delayDays <= 0) {
-            return;
+            return { deliverablesChecked: 0, revocationsEscalated: 0, failures: 0 };
         }
 
         const now = DateTime.now();
@@ -239,6 +249,10 @@ export default class DeliverableAutomationService {
                 mandateQuery.preload('proposition').preload('revocationRequests').preload('deliverables');
             });
 
+        let deliverablesChecked = 0;
+        let revocationsEscalated = 0;
+        let failures = 0;
+
         for (const deliverable of deliverables) {
             try {
                 const mandate = deliverable.mandate as PropositionMandate | undefined;
@@ -247,13 +261,17 @@ export default class DeliverableAutomationService {
                     continue;
                 }
 
+                deliverablesChecked++;
+
                 const deliverableMetadata = this.getDeliverableMetadata(deliverable);
                 if (!deliverableMetadata.procedure || deliverableMetadata.procedure.status === 'escalated' || deliverableMetadata.procedure.status === 'resolved') {
                     continue;
                 }
 
                 await this.escalateToRevocationVote(proposition, mandate, deliverable, deliverableMetadata, now);
+                revocationsEscalated++;
             } catch (error) {
+                failures++;
                 logger.error('automation.revocation.sweep.error', {
                     deliverableId: deliverable.id,
                     mandateId: deliverable.mandateId,
@@ -261,6 +279,8 @@ export default class DeliverableAutomationService {
                 });
             }
         }
+
+        return { deliverablesChecked, revocationsEscalated, failures };
     }
 
     private toIsoString(date: DateTime): string {

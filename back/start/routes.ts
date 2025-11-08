@@ -13,6 +13,7 @@ const AdminOrganizationSettingsController = () => import('#controllers/admin/org
 const AdminDiscordController = () => import('#controllers/admin/discord_controller');
 const AdminEmailTemplateController = () => import('#controllers/admin/email_template_controller');
 const AdminPropositionImportExportController = () => import('#controllers/admin/proposition_import_export_controller');
+const AdminSchedulingController = () => import('#controllers/admin/scheduling_controller');
 const AdminContentReportController = () => import('#controllers/admin/content_report_controller');
 
 // App controllers
@@ -111,6 +112,16 @@ router
 
                         router
                             .group((): void => {
+                                router.get('/', [AdminSchedulingController, 'index']);
+                                router.put('/pause', [AdminSchedulingController, 'setPaused']);
+                                router.get('/jobs/:jobType', [AdminSchedulingController, 'show']);
+                                router.post('/jobs/:jobType/trigger', [AdminSchedulingController, 'trigger']);
+                                router.put('/jobs/:jobType/schedule', [AdminSchedulingController, 'updateSchedule']);
+                            })
+                            .prefix('scheduling');
+
+                        router
+                            .group((): void => {
                                 router.get('/', [AdminDiscordController, 'show']);
                                 router.post('/', [AdminDiscordController, 'update']);
                                 router.post('/guilds', [AdminDiscordController, 'listGuilds']);
@@ -194,8 +205,8 @@ router
                 router
                     .group((): void => {
                         router.get('/', [NotificationSettingsController, 'index']);
-                        router.put('/:type', [NotificationSettingsController, 'update']);
                         router.put('/bulk', [NotificationSettingsController, 'bulkUpdate']);
+                        router.put('/:type', [NotificationSettingsController, 'update']);
                     })
                     .prefix('notification-settings');
 

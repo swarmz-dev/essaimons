@@ -1,6 +1,13 @@
 import type { SerializedFile } from './serialized_file.js';
+import type { JobTypeEnum } from '../enum/job_type_enum.js';
 
 export type SerializedStatusPermissions = Record<string, Record<string, Record<string, boolean>>>;
+
+export type JobScheduleConfig = {
+    enabled: boolean;
+    intervalHours?: number;
+    intervalMinutes?: number;
+};
 
 export type SerializedOrganizationSettings = {
     defaultLocale: string;
@@ -33,4 +40,6 @@ export type SerializedOrganizationSettings = {
         revocationCheckFrequencyHours: number;
         deliverableNamingPattern: string;
     };
+    schedulingPaused?: boolean;
+    jobSchedules?: Record<string, JobScheduleConfig>;
 };

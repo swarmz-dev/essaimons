@@ -616,6 +616,89 @@
                 }
             }
         },
+        "scheduling": {
+            "title": "Scheduling Management",
+            "menu": "Scheduling",
+            "status": {
+                "paused": "Paused",
+                "active": "Active",
+                "running": "Running",
+                "success": "Success",
+                "failure": "Failure",
+                "never-run": "Never run"
+            },
+            "global": {
+                "title": "Global Scheduling Status",
+                "paused-desc": "All scheduled jobs are currently disabled",
+                "active-desc": "Scheduled jobs are running normally",
+                "pause-button": "Pause Scheduling",
+                "resume-button": "Resume Scheduling"
+            },
+            "jobs": {
+                "email-batch": {
+                    "title": "Email Batch Processor",
+                    "description": "Processes pending email notifications based on user email frequency preferences"
+                },
+                "deadline-sweep": {
+                    "title": "Deadline Sweep",
+                    "description": "Checks and processes proposition deadlines, triggering actions when deadlines are reached"
+                },
+                "revocation-sweep": {
+                    "title": "Revocation Sweep",
+                    "description": "Checks and processes mandate revocations that need processing"
+                }
+            },
+            "stats": {
+                "status": "Status",
+                "total-runs": "Total Runs",
+                "success-rate": "Success Rate",
+                "avg-duration": "Avg Duration",
+                "next-run": "Next Run",
+                "total-executions": "Total Executions",
+                "successful": "Successful",
+                "failed": "Failed"
+            },
+            "details": {
+                "statistics": "Statistics",
+                "recent-executions": "Recent Executions",
+                "trigger-button": "Trigger Now",
+                "triggering": "Triggering...",
+                "no-executions": "No executions yet"
+            },
+            "table": {
+                "status": "Status",
+                "started": "Started",
+                "completed": "Completed",
+                "duration": "Duration",
+                "details": "Details",
+                "manual-trigger": "Manual Trigger",
+                "scheduled": "Scheduled"
+            },
+            "actions": {
+                "refresh": "Refresh"
+            },
+            "messages": {
+                "paused": "Scheduling paused",
+                "resumed": "Scheduling resumed",
+                "triggered": "{job} triggered successfully",
+                "error-toggle": "Failed to toggle scheduling",
+                "error-load": "Failed to load scheduling status",
+                "error-details": "Failed to load job details",
+                "error-trigger": "Failed to trigger {job}",
+                "schedule-updated": "Schedule updated successfully",
+                "error-update-schedule": "Failed to update schedule"
+            },
+            "schedule-config": {
+                "title": "Schedule Configuration",
+                "enabled": "Enabled",
+                "disabled": "Disabled",
+                "interval": "Interval",
+                "hours": "Hours",
+                "minutes": "Minutes",
+                "save": "Save Schedule",
+                "cancel": "Cancel"
+            }
+        },
         "reports": {
             "title": "Moderation",
             "filters": {

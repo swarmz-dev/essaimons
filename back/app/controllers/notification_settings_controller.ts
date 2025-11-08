@@ -1,7 +1,7 @@
 import { HttpContext } from '@adonisjs/core/http';
 import type User from '#models/user';
 import NotificationSetting from '#models/notification_setting';
-import { NotificationTypeEnum } from '#types';
+import { NotificationTypeEnum, EmailFrequencyEnum } from '#types';
 import { updateSettingsValidator } from '#validators/notification_settings';
 
 export default class NotificationSettingsController {
@@ -32,6 +32,7 @@ export default class NotificationSettingsController {
 
         return response.ok({
             settings: result,
+            emailFrequency: user.emailFrequency,
         });
     }
 
@@ -101,11 +102,18 @@ export default class NotificationSettingsController {
     public async bulkUpdate({ request, response, auth, i18n }: HttpContext): Promise<void> {
         const user = auth.user as User;
         const updates = request.input('settings', []);
+        const emailFrequency = request.input('emailFrequency');
 
         if (!Array.isArray(updates)) {
             return response.badRequest({
                 error: i18n.t('messages.notification_settings.invalid_payload'),
             });
+        }
+
+        // Update email frequency if provided
+        if (emailFrequency !== undefined && Object.values(EmailFrequencyEnum).includes(emailFrequency)) {
+            user.emailFrequency = emailFrequency;
+            await user.save();
         }
 
         const results = [];
@@ -152,6 +160,7 @@ export default class NotificationSettingsController {
 
         return response.ok({
             settings: results,
+            emailFrequency: user.emailFrequency,
         });
     }
 }

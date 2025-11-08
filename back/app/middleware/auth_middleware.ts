@@ -11,11 +11,11 @@ export default class AuthMiddleware {
             guards?: (keyof Authenticators)[];
         } = {}
     ): Promise<any> {
-        logger.info('AuthMiddleware - START', { url: ctx.request.url() });
+        logger.debug('AuthMiddleware - START', { url: ctx.request.url() });
         ctx.user = await ctx.auth.authenticateUsing(options.guards);
-        logger.info('AuthMiddleware - User authenticated', { userId: ctx.user.id });
+        logger.debug('AuthMiddleware - User authenticated', { userId: ctx.user.id });
         const result = await next();
-        logger.info('AuthMiddleware - COMPLETE');
+        logger.debug('AuthMiddleware - COMPLETE');
         return result;
     }
 }

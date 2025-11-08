@@ -7,6 +7,7 @@ import { EmailFrequencyEnum } from '#types/enum/email_frequency_enum';
 import BrevoMailService from '#services/brevo_mail_service';
 import EmailTemplateService from '#services/email_template_service';
 import i18nManager from '@adonisjs/i18n/services/main';
+import logger from '@adonisjs/core/services/logger';
 
 @inject()
 export default class EmailBatchService {
@@ -65,7 +66,7 @@ export default class EmailBatchService {
      * Process and send all pending emails that are due
      * This should be called by a cron job
      */
-    async processPendingEmails(): Promise<void> {
+    async processPendingEmails(): Promise<{ emailsSent: number; usersNotified: number; failures: number }> {
         const now = DateTime.now();
 
         // Get all pending emails that are scheduled for now or earlier
@@ -85,6 +86,10 @@ export default class EmailBatchService {
             userEmails.push(pending);
             emailsByUser.set(pending.userId, userEmails);
         }
+
+        let emailsSent = 0;
+        let usersNotified = 0;
+        let failures = 0;
 
         // Send batch emails
         for (const [userId, userPendingEmails] of emailsByUser.entries()) {
@@ -106,11 +111,17 @@ export default class EmailBatchService {
                     pending.sentAt = DateTime.now();
                     await pending.save();
                 }
+
+                emailsSent += userPendingEmails.length;
+                usersNotified++;
             } catch (error) {
                 console.error(`Failed to send email to user ${userId}:`, error);
+                failures++;
                 // Continue with other users, will retry next run
             }
         }
+
+        return { emailsSent, usersNotified, failures };
     }
 
     /**
@@ -121,8 +132,21 @@ export default class EmailBatchService {
         const locale = 'fr';
         const i18n = i18nManager.locale(locale);
 
+        logger.debug('Rendering single notification email', {
+            userId: user.id,
+            notificationId: notification.id,
+            notificationType: notification.type,
+        });
+
         // Render the email using the template service
         const { subject, htmlContent, textContent } = await this.emailTemplateService.renderSingleNotification(notification, i18n, locale);
+
+        logger.debug('Email template rendered', {
+            userId: user.id,
+            subject,
+            htmlContentLength: htmlContent.length,
+            textContentLength: textContent?.length || 0,
+        });
 
         // Send the email with both HTML and text versions
         await this.brevoMailService.sendTransactionalEmail({
@@ -130,6 +154,13 @@ export default class EmailBatchService {
             subject,
             htmlContent,
             textContent,
+        });
+
+        logger.info('Single notification email sent', {
+            userId: user.id,
+            userEmail: user.email,
+            notificationType: notification.type,
+            subject,
         });
     }
 
@@ -141,8 +172,21 @@ export default class EmailBatchService {
         const locale = 'fr';
         const i18n = i18nManager.locale(locale);
 
+        logger.debug('Rendering digest email', {
+            userId: user.id,
+            notificationCount: notifications.length,
+            notificationTypes: notifications.map((n) => n.type),
+        });
+
         // Render the email using the template service
         const { subject, htmlContent, textContent } = await this.emailTemplateService.renderDigestNotifications(notifications, i18n, locale);
+
+        logger.debug('Digest email template rendered', {
+            userId: user.id,
+            subject,
+            htmlContentLength: htmlContent.length,
+            textContentLength: textContent?.length || 0,
+        });
 
         // Send the email with both HTML and text versions
         await this.brevoMailService.sendTransactionalEmail({
@@ -150,6 +194,13 @@ export default class EmailBatchService {
             subject,
             htmlContent,
             textContent,
+        });
+
+        logger.info('Digest email sent', {
+            userId: user.id,
+            userEmail: user.email,
+            notificationCount: notifications.length,
+            subject,
         });
     }
 

@@ -32,7 +32,9 @@
 
     onMount(async () => {
         try {
-            settings = await settingsService.getSettings();
+            const response = await settingsService.getSettings();
+            settings = response.settings || [];
+            emailFrequency = response.emailFrequency || 'daily';
             if (settings.length === 0) {
                 error = "Aucun paramètre de notification trouvé. Vous n'êtes peut-être pas connecté.";
             }
@@ -65,7 +67,7 @@
 
         saving = true;
         try {
-            const bulkPayload = settings
+            const settingsPayload = settings
                 .map((setting) => ({
                     type: setting.type || setting.notificationType,
                     inAppEnabled: setting.inAppEnabled,
@@ -74,7 +76,10 @@
                 }))
                 .filter((payload): payload is { type: string; inAppEnabled: boolean; emailEnabled: boolean; pushEnabled: boolean } => payload.type !== undefined);
 
-            await settingsService.bulkUpdate(bulkPayload);
+            await settingsService.bulkUpdate({
+                settings: settingsPayload,
+                emailFrequency,
+            });
             showToast('Paramètres enregistrés avec succès', 'success');
         } catch (error) {
             console.error('Failed to save settings:', error);

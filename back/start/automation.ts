@@ -3,6 +3,8 @@ import logger from '@adonisjs/core/services/logger';
 import DeliverableAutomationService from '#services/deliverable_automation_service';
 import SettingsService from '#services/settings_service';
 import EmailBatchService from '#services/email_batch_service';
+import SchedulingService from '#services/scheduling_service';
+import { JobTypeEnum } from '#types';
 
 const startAutomation = async () => {
     if (app.inTest || process.env.NODE_ENV === 'test') {
@@ -13,40 +15,67 @@ const startAutomation = async () => {
         const automationService = await app.container.make(DeliverableAutomationService);
         const settingsService = await app.container.make(SettingsService);
         const emailBatchService = await app.container.make(EmailBatchService);
+        const schedulingService = await app.container.make(SchedulingService);
 
         const runSweep = async () => {
-            try {
-                await automationService.runDeadlineSweep();
-            } catch (error) {
-                logger.error('automation.deadline.sweep_failed', {
-                    error: error instanceof Error ? error.message : error,
-                });
+            // Check if scheduling is globally paused
+            const isPaused = await schedulingService.isSchedulingPaused();
+            if (isPaused) {
+                logger.info('Scheduling is globally paused, skipping all jobs');
+                return;
             }
 
-            try {
-                await automationService.runRevocationSweep();
-            } catch (error) {
-                logger.error('automation.revocation.sweep_failed', {
-                    error: error instanceof Error ? error.message : error,
-                });
+            // Run deadline sweep if scheduled
+            if (await schedulingService.shouldJobRun(JobTypeEnum.DEADLINE_SWEEP)) {
+                const deadlineExecution = await schedulingService.startJobExecution(JobTypeEnum.DEADLINE_SWEEP);
+                try {
+                    const result = await automationService.runDeadlineSweep();
+                    await schedulingService.completeJobExecution(deadlineExecution, result);
+                } catch (error) {
+                    await schedulingService.failJobExecution(deadlineExecution, error instanceof Error ? error : String(error));
+                    logger.error('automation.deadline.sweep_failed', {
+                        error: error instanceof Error ? error.message : error,
+                    });
+                }
             }
 
-            try {
-                await emailBatchService.processPendingEmails();
-            } catch (error) {
-                logger.error('automation.email.batch_failed', {
-                    error: error instanceof Error ? error.message : error,
-                });
+            // Run revocation sweep if scheduled
+            if (await schedulingService.shouldJobRun(JobTypeEnum.REVOCATION_SWEEP)) {
+                const revocationExecution = await schedulingService.startJobExecution(JobTypeEnum.REVOCATION_SWEEP);
+                try {
+                    const result = await automationService.runRevocationSweep();
+                    await schedulingService.completeJobExecution(revocationExecution, result);
+                } catch (error) {
+                    await schedulingService.failJobExecution(revocationExecution, error instanceof Error ? error : String(error));
+                    logger.error('automation.revocation.sweep_failed', {
+                        error: error instanceof Error ? error.message : error,
+                    });
+                }
+            }
+
+            // Run email batch if scheduled
+            if (await schedulingService.shouldJobRun(JobTypeEnum.EMAIL_BATCH)) {
+                const emailExecution = await schedulingService.startJobExecution(JobTypeEnum.EMAIL_BATCH);
+                try {
+                    const result = await emailBatchService.processPendingEmails();
+                    await schedulingService.completeJobExecution(emailExecution, result);
+                } catch (error) {
+                    await schedulingService.failJobExecution(emailExecution, error instanceof Error ? error : String(error));
+                    logger.error('automation.email.batch_failed', {
+                        error: error instanceof Error ? error.message : error,
+                    });
+                }
             }
         };
 
         const scheduleNext = async () => {
-            const settings = await settingsService.getOrganizationSettings();
-            const interval = automationService.getRevocationSweepIntervalMs(settings.workflowAutomation?.revocationCheckFrequencyHours ?? 24);
+            // Check every minute to see if any job needs to run
+            // This allows for fine-grained scheduling based on individual job intervals
+            const checkIntervalMs = 60 * 1000; // 1 minute
             setTimeout(async () => {
                 await runSweep();
                 await scheduleNext();
-            }, interval);
+            }, checkIntervalMs);
         };
 
         // Temporarily disabled for debugging
