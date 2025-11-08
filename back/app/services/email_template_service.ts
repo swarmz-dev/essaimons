@@ -20,8 +20,8 @@ export default class EmailTemplateService {
         }
 
         // Translate notification title and message
-        const translatedTitle = i18n.t(notification.titleKey, notification.interpolationData || {});
-        const translatedMessage = i18n.t(notification.bodyKey, notification.interpolationData || {});
+        const translatedTitle = i18n.t(`messages.${notification.titleKey}`, notification.interpolationData || {});
+        const translatedMessage = i18n.t(`messages.${notification.bodyKey}`, notification.interpolationData || {});
 
         // Template variables
         const variables = {
@@ -60,8 +60,8 @@ export default class EmailTemplateService {
 
         // Translate all notifications
         const translatedNotifications = notifications.map((n) => ({
-            title: i18n.t(n.titleKey, n.interpolationData || {}),
-            message: i18n.t(n.bodyKey, n.interpolationData || {}),
+            title: i18n.t(`messages.${n.titleKey}`, n.interpolationData || {}),
+            message: i18n.t(`messages.${n.bodyKey}`, n.interpolationData || {}),
             actionUrl: n.actionUrl || null,
         }));
 
