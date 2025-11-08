@@ -15,9 +15,16 @@ import {
     PropositionCommentScopeEnum,
     PropositionCommentVisibilityEnum,
 } from '#types';
+import env from '#start/env';
 
 export default class extends BaseSeeder {
     async run() {
+        // Skip in production environment
+        if (env.get('NODE_ENV') === 'production') {
+            console.log('[DeadlineReminderTestSeeder] Skipping in production environment');
+            return;
+        }
+
         // Get or create test users
         const creator = await User.firstOrCreate(
             { email: 'deadline-test-creator@example.com' },

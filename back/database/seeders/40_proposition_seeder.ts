@@ -19,6 +19,7 @@ import {
     PropositionVoteStatusEnum,
 } from '#types';
 import { DateTime } from 'luxon';
+import env from '#start/env';
 
 interface SeedProposition {
     title: string;
@@ -40,6 +41,12 @@ interface SeedProposition {
 
 export default class extends BaseSeeder {
     public async run(): Promise<void> {
+        // Skip in production environment
+        if (env.get('NODE_ENV') === 'production') {
+            console.log('[PropositionSeeder] Skipping in production environment');
+            return;
+        }
+
         const users: User[] = await User.query().orderBy('created_at', 'asc');
         if (users.length < 3) {
             console.warn('[PropositionSeeder] Not enough users to seed propositions. Need at least 3 users: admin, initiator, and rescue.');
