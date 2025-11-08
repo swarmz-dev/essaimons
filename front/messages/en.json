@@ -1315,6 +1315,16 @@
             "attachments": "No attachments available."
         }
     },
+    "notification": {
+        "weekly_vote_digest": {
+            "title": "Weekly vote summary",
+            "message": "Here's a summary of votes requiring your attention this week"
+        },
+        "content-report-reviewed": {
+            "title": "Your report has been reviewed",
+            "message": "Your report about {contentType} has been reviewed with status: {status}"
+        }
+    },
     "notifications": {
         "title": "Notifications",
         "mark_all_read": "Mark all as read",

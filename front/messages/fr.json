@@ -1316,6 +1316,16 @@
             "attachments": "Aucune pièce jointe disponible."
         }
     },
+    "notification": {
+        "weekly_vote_digest": {
+            "title": "Résumé hebdomadaire des votes",
+            "message": "Voici un résumé des votes nécessitant votre attention cette semaine"
+        },
+        "content-report-reviewed": {
+            "title": "Votre signalement a été examiné",
+            "message": "Votre signalement concernant {contentType} a été examiné avec le statut : {status}"
+        }
+    },
     "notifications": {
         "title": "Notifications",
         "mark_all_read": "Tout marquer comme lu",
