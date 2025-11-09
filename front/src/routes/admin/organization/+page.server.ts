@@ -14,7 +14,9 @@ export const load: PageServerLoad<{ settings: SerializedOrganizationSettings }> 
             description: {},
             sourceCodeUrl: {},
             copyright: {},
+            keywords: {},
             logo: null,
+            favicon: null,
             propositionDefaults: {
                 clarificationOffsetDays: 7,
                 amendmentOffsetDays: 15,
@@ -55,7 +57,9 @@ export const load: PageServerLoad<{ settings: SerializedOrganizationSettings }> 
                 description: {},
                 sourceCodeUrl: {},
                 copyright: {},
+                keywords: {},
                 logo: null,
+                favicon: null,
                 propositionDefaults: {
                     clarificationOffsetDays: 7,
                     amendmentOffsetDays: 15,

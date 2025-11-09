@@ -390,10 +390,16 @@
                 "description": "Description",
                 "source-code": "Lien vers le code source",
                 "copyright": "Copyright",
+                "keywords": "Mots-clés SEO",
+                "keywords-placeholder": "démocratie, participation, gouvernance (séparés par des virgules)",
                 "logo": {
                     "title": "Logo",
                     "placeholder": "Téléversez un logo carré (PNG, JPG, SVG, WEBP)",
                     "remove": "Supprimer le logo"
+                },
+                "favicon": {
+                    "title": "Favicon",
+                    "placeholder": "Téléversez un favicon (PNG, JPG, SVG, WEBP, ICO)"
                 },
                 "default-locale": "Langue par défaut de l'application",
                 "default-locale-tooltip": "La langue par défaut est affichée aux visiteurs non connectés et lorsque la langue du navigateur n'est pas disponible. Laissez vide pour utiliser la langue de repli.",

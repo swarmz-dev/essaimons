@@ -33,6 +33,9 @@
         if (!html) {
             return 0;
         }
+        if (typeof document === 'undefined') {
+            return 0;
+        }
         const template = document.createElement('template');
         template.innerHTML = html;
         return (template.content.textContent ?? '').trim().length;

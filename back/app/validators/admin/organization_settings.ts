@@ -3,6 +3,7 @@ import vine from '@vinejs/vine';
 const translationSchema = vine.record(vine.string().trim().maxLength(2000));
 const descriptionSchema = vine.record(vine.string().trim().maxLength(10000)); // Higher limit for HTML content
 const sourceCodeUrlSchema = vine.record(vine.string().trim().maxLength(2000).url());
+const keywordsSchema = vine.record(vine.string().trim().maxLength(500)); // Keywords for SEO
 const permissionMatrixSchema = vine.record(vine.record(vine.record(vine.boolean())));
 
 export const updateOrganizationSettingsValidator = vine.compile(
@@ -13,10 +14,17 @@ export const updateOrganizationSettingsValidator = vine.compile(
         description: descriptionSchema.optional(),
         sourceCodeUrl: sourceCodeUrlSchema.optional(),
         copyright: translationSchema.optional(),
+        keywords: keywordsSchema.optional(),
         logo: vine
             .file({
                 size: '4mb',
                 extnames: ['png', 'jpg', 'jpeg', 'webp', 'svg'],
+            })
+            .optional(),
+        favicon: vine
+            .file({
+                size: '1mb',
+                extnames: ['png', 'jpg', 'jpeg', 'webp', 'svg', 'ico'],
             })
             .optional(),
         propositionDefaults: vine

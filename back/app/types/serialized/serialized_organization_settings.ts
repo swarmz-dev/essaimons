@@ -16,7 +16,9 @@ export type SerializedOrganizationSettings = {
     description: Record<string, string>;
     sourceCodeUrl: Record<string, string>;
     copyright: Record<string, string>;
+    keywords: Record<string, string>;
     logo: SerializedFile | null;
+    favicon: SerializedFile | null;
     propositionDefaults: {
         clarificationOffsetDays: number;
         amendmentOffsetDays: number;

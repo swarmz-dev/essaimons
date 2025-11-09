@@ -25,6 +25,61 @@
 
     let { children }: Props = $props();
 
+    // Get favicon URL from organization settings with cache busting
+    const faviconUrl = $derived.by(() => {
+        const favicon = page.data.organization?.favicon;
+        if (!favicon?.id) {
+            return '/icons/favicon.ico';
+        }
+        const timestamp = favicon.updatedAt ? new Date(favicon.updatedAt).getTime() : favicon.id;
+        return `/assets/organization/logo/${favicon.id}?v=${timestamp}`;
+    });
+
+    // Get organization metadata from settings
+    const orgMetaTitle = $derived.by(() => {
+        const currentLang = page.data.language;
+        const fallbackLang = page.data.organization?.fallbackLocale || 'fr';
+        return page.data.organization?.name?.[currentLang] || page.data.organization?.name?.[fallbackLang] || m['home.meta.title']();
+    });
+
+    const orgMetaDescription = $derived.by(() => {
+        const currentLang = page.data.language;
+        const fallbackLang = page.data.organization?.fallbackLocale || 'fr';
+        // Get plain text from HTML description
+        const htmlDesc = page.data.organization?.description?.[currentLang] || page.data.organization?.description?.[fallbackLang] || '';
+        if (!htmlDesc) return m['home.meta.description']();
+
+        // Simple HTML tag removal for meta description
+        const plainText = htmlDesc
+            .replace(/<[^>]*>/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        return plainText.substring(0, 160); // Limit to 160 chars for meta description
+    });
+
+    const orgKeywords = $derived.by(() => {
+        const currentLang = page.data.language;
+        const fallbackLang = page.data.organization?.fallbackLocale || 'fr';
+        const keywords = page.data.organization?.keywords?.[currentLang] || page.data.organization?.keywords?.[fallbackLang];
+
+        // If no keywords are set, return empty array
+        if (!keywords || keywords.trim().length === 0) {
+            return [];
+        }
+
+        // Split by comma and trim whitespace
+        return keywords
+            .split(',')
+            .map((k: string) => k.trim())
+            .filter((k: string) => k.length > 0);
+    });
+
+    const orgLogoUrl = $derived.by(() => {
+        const logo = page.data.organization?.logo;
+        if (!logo?.id) return undefined;
+        return `${PUBLIC_API_REAL_URI}/api/static/organization/logo/${logo.id}`;
+    });
+
     const flash = initFlash(currentPage);
     let notificationSSE: NotificationSSEService | null = null;
 
@@ -33,6 +88,16 @@
         document.documentElement.classList.toggle('dark', theme === 'dark');
         if (theme !== 'light' && theme !== 'dark') {
             localStorage.setItem('theme', 'light');
+        }
+    });
+
+    // Update favicon dynamically when organization settings change
+    $effect(() => {
+        if (typeof document !== 'undefined') {
+            const link = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+            if (link) {
+                link.href = faviconUrl;
+            }
         }
     });
 
@@ -77,7 +142,13 @@
     });
 </script>
 
-<Meta title={m['home.meta.title']()} description={m['home.meta.description']()} keywords={m['home.meta.keywords']().split(', ')} />
+<svelte:head>
+    <link rel="icon" type="image/png" href="/icons/favicon.ico" />
+    <title>{orgMetaTitle}</title>
+    <meta name="description" content={orgMetaDescription} />
+</svelte:head>
+
+<Meta title={orgMetaTitle} description={orgMetaDescription} keywords={orgKeywords} organizationLogoUrl={orgLogoUrl} organizationName={orgMetaTitle} />
 
 <div class="app">
     <main class="flex min-h-screen flex-col">

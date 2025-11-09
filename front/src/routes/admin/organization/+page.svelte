@@ -44,10 +44,10 @@
     const fallbackSourceCodeUrlSchema = zod
         .string()
         .trim()
-        .min(1)
         .max(maxSourceCodeUrlLength)
         .superRefine((value, ctx) => {
-            if (!isValidUrl(value)) {
+            // Only validate URL format if a value is provided
+            if (value && !isValidUrl(value)) {
                 ctx.addIssue({ code: zod.ZodIssueCode.custom, message: 'invalid' });
             }
         });
@@ -75,10 +75,6 @@
         const issue = result.error.issues[0];
         if (!issue) {
             return null;
-        }
-
-        if (isFallback && issue.code === zod.ZodIssueCode.too_small) {
-            return m['admin.organization.validation.source-code-url.required']({ locale: localeLabel });
         }
 
         if (issue.code === zod.ZodIssueCode.too_big) {
@@ -116,12 +112,19 @@
     let descriptionByLocale: Record<string, string> = $state(ensureMap(settings.description));
     let sourceCodeUrlByLocale: Record<string, string> = $state(ensureMap(settings.sourceCodeUrl));
     let copyrightByLocale: Record<string, string> = $state(ensureMap(settings.copyright));
+    let keywordsByLocale: Record<string, string> = $state(ensureMap(settings.keywords));
     let logoPreview: string | null = $state(initialLogoUrl);
     let logoInputRef: HTMLInputElement | undefined = $state();
     let pendingLogoFile: File | null = $state(null);
     let showCropper: boolean = $state(false);
     let croppedFile: File | null = $state(null);
     let croppedPreviewUrl: string | null = $state(null);
+
+    const initialFaviconUrl: string | null = settings.favicon ? `/assets/organization/logo/${settings.favicon.id}?no-cache=true` : null;
+    let faviconPreview: string | null = $state(initialFaviconUrl);
+    let faviconInputRef: HTMLInputElement | undefined = $state();
+    let selectedFaviconFile: File | null = $state(null);
+
     let isSubmitting: boolean = $state(false);
     let activeTab: 'general' | 'propositions' = $state('general');
     let clarificationOffsetDays: string = $state(String(settings.propositionDefaults?.clarificationOffsetDays ?? 7));
@@ -255,12 +258,15 @@
 
     $effect(() => {
         const nextErrors: Record<string, string | null> = {};
+        let hasAnyErrors = false;
         for (const locale of locales) {
             const value = sourceCodeUrlByLocale[locale.code] ?? '';
-            nextErrors[locale.code] = resolveSourceCodeUrlError(value, fallbackLocale === locale.code, getLocaleLabel(locale.code));
+            const error = resolveSourceCodeUrlError(value, fallbackLocale === locale.code, getLocaleLabel(locale.code));
+            nextErrors[locale.code] = error;
+            if (error) hasAnyErrors = true;
         }
         sourceCodeUrlErrors = nextErrors;
-        hasSourceCodeUrlErrors = Object.values(nextErrors).some((message) => Boolean(message));
+        hasSourceCodeUrlErrors = hasAnyErrors;
     });
 
     const updateMapValue = (map: Record<string, string>, localeCode: string, value: string, setter: (next: Record<string, string>) => void): void => {
@@ -548,6 +554,19 @@
         }
     };
 
+    const handleFaviconChange = (event: Event): void => {
+        const input = event.currentTarget as HTMLInputElement;
+        const file = input.files?.[0];
+        if (!file) {
+            selectedFaviconFile = null;
+            faviconPreview = initialFaviconUrl;
+            return;
+        }
+        selectedFaviconFile = file;
+        const previewUrl = URL.createObjectURL(file);
+        faviconPreview = previewUrl;
+    };
+
     $effect(() => {
         if (!logoPreview) {
             if (croppedPreviewUrl) {
@@ -674,6 +693,11 @@
         if (croppedFile) {
             formData.delete('logo');
             formData.append('logo', croppedFile, croppedFile.name);
+        }
+
+        if (selectedFaviconFile) {
+            formData.delete('favicon');
+            formData.append('favicon', selectedFaviconFile, selectedFaviconFile.name);
         }
 
         return async ({ result, update }) => {
@@ -899,6 +923,39 @@
                                         value={copyrightByLocale[locale.code]}
                                         required={fallbackLocale === locale.code}
                                         oninput={(event) => updateMapValue(copyrightByLocale, locale.code, (event.currentTarget as HTMLInputElement).value, (next) => (copyrightByLocale = next))}
+                                    />
+                                </div>
+                            </div>
+                        {/each}
+                    </section>
+
+                    <section class="space-y-6">
+                        <h3 class="text-sm font-semibold text-muted-foreground">{m['admin.organization.fields.keywords']()}</h3>
+                        {#each locales as locale}
+                            {@const IconComponent = localeIcon(locale.code)}
+                            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
+                                <div class="flex items-center gap-2 sm:w-44">
+                                    {#if IconComponent}
+                                        <span class="grid size-7 place-items-center overflow-hidden rounded-full bg-muted">
+                                            <IconComponent />
+                                        </span>
+                                    {:else}
+                                        <span class="text-2xl">{locale.code.toUpperCase()}</span>
+                                    {/if}
+                                    <div class="flex flex-col leading-tight">
+                                        <span class="text-sm font-semibold text-foreground/85">{getLocaleLabel(locale.code)}</span>
+                                        {#if fallbackLocale === locale.code}
+                                            <span class="text-xs text-muted-foreground">{m['admin.organization.fields.fallback-badge']()}</span>
+                                        {/if}
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <Input
+                                        id={`keywords-${locale.code}`}
+                                        name={`keywords[${locale.code}]`}
+                                        placeholder={m['admin.organization.fields.keywords-placeholder']()}
+                                        value={keywordsByLocale[locale.code]}
+                                        oninput={(event) => updateMapValue(keywordsByLocale, locale.code, (event.currentTarget as HTMLInputElement).value, (next) => (keywordsByLocale = next))}
                                     />
                                 </div>
                             </div>
@@ -1147,7 +1204,7 @@
             </div>
 
             <div class="space-y-6">
-                <div class:hidden={activeTab !== 'general'}>
+                <div class:hidden={activeTab !== 'general'} class="space-y-6">
                     <FieldLabel forId="logo" label={m['admin.organization.fields.logo.title']()} info={m['admin.organization.fields.logo.placeholder']()}>
                         <Input type="file" name="logo" id="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" onchange={handleLogoChange} bind:ref={logoInputRef} />
                     </FieldLabel>
@@ -1159,6 +1216,21 @@
                                 <img src={logoPreview} alt={nameByLocale[fallbackLocale]?.trim() || m['admin.organization.fields.logo.title']()} class="h-full w-full object-cover" />
                             {:else}
                                 <span class="text-xs text-muted-foreground">{m['common.logo.alt']()}</span>
+                            {/if}
+                        </div>
+                    </div>
+
+                    <FieldLabel forId="favicon" label={m['admin.organization.fields.favicon.title']()} info={m['admin.organization.fields.favicon.placeholder']()}>
+                        <Input type="file" name="favicon" id="favicon" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon" onchange={handleFaviconChange} bind:ref={faviconInputRef} />
+                    </FieldLabel>
+
+                    <div class="space-y-3">
+                        <p class="text-sm font-semibold text-muted-foreground">{m['admin.organization.fields.favicon.title']()}</p>
+                        <div class="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-border/60 bg-white/70 shadow-inner dark:bg-slate-900/70">
+                            {#if faviconPreview}
+                                <img src={faviconPreview} alt={m['admin.organization.fields.favicon.title']()} class="h-full w-full object-contain" />
+                            {:else}
+                                <span class="text-xs text-muted-foreground">Icon</span>
                             {/if}
                         </div>
                     </div>

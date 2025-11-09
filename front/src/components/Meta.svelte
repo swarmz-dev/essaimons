@@ -29,18 +29,27 @@
         keywords: string[];
         pathname?: string;
         additionalOpenGraphImages?: OpenGraphImage[];
+        organizationLogoUrl?: string;
+        organizationName?: string;
     };
 
-    let { title, description, keywords, pathname = '', additionalOpenGraphImages = [] }: Props = $props();
+    let { title, description, keywords, pathname = '', additionalOpenGraphImages = [], organizationLogoUrl, organizationName }: Props = $props();
 
-    let baseImage: OpenGraphImage = {
-        url: `${PUBLIC_FRONT_URI}/assets/logo-1200x1200.webp`,
-        width: 1200,
-        height: 1200,
-        alt: `${m['common.logo.alt']()}`,
-    };
+    const baseImage = $derived(
+        organizationLogoUrl
+            ? {
+                  url: organizationLogoUrl,
+                  alt: organizationName || m['common.logo.alt'](),
+              }
+            : {
+                  url: `${PUBLIC_FRONT_URI}/assets/logo-1200x1200.webp`,
+                  width: 1200,
+                  height: 1200,
+                  alt: organizationName || m['common.logo.alt'](),
+              }
+    );
 
-    const meta: Meta = {
+    const meta = $derived({
         title,
         description,
         keywords,
@@ -56,7 +65,7 @@
             description,
             url: `${PUBLIC_FRONT_URI}${get(location)}`,
             locale: get(language),
-            siteName: 'Adonis & Svelte Starter Kit',
+            siteName: organizationName || 'Adonis & Svelte Starter Kit',
             images: [baseImage, ...additionalOpenGraphImages],
         },
         twitter: {
@@ -67,7 +76,7 @@
             image: additionalOpenGraphImages[0]?.url ?? baseImage.url,
             imageAlt: additionalOpenGraphImages[0]?.alt ?? title,
         } satisfies Twitter,
-    };
+    });
 </script>
 
 <MetaTags {...meta} />

@@ -17,7 +17,7 @@ export default class OrganizationSettingsController {
 
         const fallbackLocale = payload.fallbackLocale.trim().toLowerCase();
 
-        const requiredFields: Array<keyof typeof payload> = ['name', 'description', 'sourceCodeUrl', 'copyright'];
+        const requiredFields: Array<keyof typeof payload> = ['name', 'description', 'copyright'];
 
         for (const field of requiredFields) {
             const translations = (payload as any)[field] as Record<string, string> | undefined;
@@ -27,14 +27,17 @@ export default class OrganizationSettingsController {
                     error: i18n.t('messages.admin.organization.update.error.missing', { locale: fallbackLocale, field }),
                 });
             }
-            if (field === 'sourceCodeUrl') {
-                try {
-                    new URL(value);
-                } catch (error) {
-                    return response.badRequest({
-                        error: i18n.t('messages.admin.organization.update.error.invalid-url', { locale: fallbackLocale }),
-                    });
-                }
+        }
+
+        // Validate sourceCodeUrl if provided (but don't require it)
+        const sourceCodeUrl = payload.sourceCodeUrl?.[fallbackLocale]?.trim();
+        if (sourceCodeUrl) {
+            try {
+                new URL(sourceCodeUrl);
+            } catch (error) {
+                return response.badRequest({
+                    error: i18n.t('messages.admin.organization.update.error.invalid-url', { locale: fallbackLocale }),
+                });
             }
         }
 
@@ -45,6 +48,7 @@ export default class OrganizationSettingsController {
                 description: payload.description ?? {},
                 sourceCodeUrl: payload.sourceCodeUrl ?? {},
                 copyright: payload.copyright ?? {},
+                keywords: payload.keywords ?? {},
             },
         };
 
@@ -64,7 +68,7 @@ export default class OrganizationSettingsController {
             settingsPayload.workflowAutomation = payload.workflowAutomation;
         }
 
-        const settings = await this.settingsService.updateOrganizationSettings(settingsPayload, payload.logo);
+        const settings = await this.settingsService.updateOrganizationSettings(settingsPayload, payload.logo, payload.favicon);
 
         return response.ok({
             settings,

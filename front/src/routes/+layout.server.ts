@@ -100,7 +100,9 @@ export const load: LayoutServerLoad = loadFlash(
             description: {},
             sourceCodeUrl: {},
             copyright: {},
+            keywords: {},
             logo: null,
+            favicon: null,
             propositionDefaults: {
                 clarificationOffsetDays: 7,
                 amendmentOffsetDays: 15,

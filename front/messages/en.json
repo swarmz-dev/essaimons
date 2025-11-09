@@ -390,10 +390,16 @@
                 "description": "Description",
                 "source-code": "Source code link",
                 "copyright": "Copyright",
+                "keywords": "SEO Keywords",
+                "keywords-placeholder": "democracy, participation, governance (comma-separated)",
                 "logo": {
                     "title": "Logo",
                     "placeholder": "Upload a square logo (PNG, JPG, SVG, WEBP)",
                     "remove": "Remove current logo"
+                },
+                "favicon": {
+                    "title": "Favicon",
+                    "placeholder": "Upload a favicon (PNG, JPG, SVG, WEBP, ICO)"
                 },
                 "default-locale": "Default application language",
                 "default-locale-tooltip": "The default language is shown to unauthenticated visitors and when the browser language is not available. Leave empty to use the fallback language.",

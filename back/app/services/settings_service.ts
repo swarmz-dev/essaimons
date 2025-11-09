@@ -40,7 +40,9 @@ interface OrganizationSettingsValue {
     description: Record<string, string>;
     sourceCodeUrl: Record<string, string>;
     copyright: Record<string, string>;
+    keywords: Record<string, string>;
     logoFileId: string | null;
+    faviconFileId: string | null;
     propositionDefaults?: {
         clarificationOffsetDays: number;
         amendmentOffsetDays: number;
@@ -354,6 +356,14 @@ export default class SettingsService {
             }
         }
 
+        let favicon: SerializedFile | null = null;
+        if (value?.faviconFileId) {
+            const file = await File.find(value.faviconFileId);
+            if (file) {
+                favicon = file.apiSerialize();
+            }
+        }
+
         const storedCatalog = this.normalizePermissionMatrix(value?.permissionCatalog);
         const permissionCatalog = this.mergePermissions(DEFAULT_PERMISSIONS, storedCatalog ?? {});
         const storedPermissions = this.normalizePermissionMatrix(value?.permissions);
@@ -368,7 +378,9 @@ export default class SettingsService {
             description: value?.description ?? {},
             sourceCodeUrl: value?.sourceCodeUrl ?? {},
             copyright: value?.copyright ?? {},
+            keywords: value?.keywords ?? {},
             logo,
+            favicon,
             propositionDefaults: normalizeOffsets(value?.propositionDefaults),
             permissions: { perStatus: permissions },
             permissionCatalog: { perStatus: this.clonePermissionMatrix(permissionCatalog) },
@@ -396,7 +408,7 @@ export default class SettingsService {
         return this.cachedPermissions;
     }
 
-    public async updateOrganizationSettings(payload: UpdateOrganizationSettingsPayload, logoFile?: MultipartFile | null): Promise<SerializedOrganizationSettings> {
+    public async updateOrganizationSettings(payload: UpdateOrganizationSettingsPayload, logoFile?: MultipartFile | null, faviconFile?: MultipartFile | null): Promise<SerializedOrganizationSettings> {
         const trx = await db.transaction();
 
         try {
@@ -424,7 +436,9 @@ export default class SettingsService {
                 description: {},
                 sourceCodeUrl: {},
                 copyright: {},
+                keywords: {},
                 logoFileId: null,
+                faviconFileId: null,
                 propositionDefaults: { ...DEFAULT_PROPOSITION_DEFAULTS },
                 permissions: { perStatus: this.mergePermissions(DEFAULT_PERMISSIONS) },
                 permissionCatalog: { perStatus: this.mergePermissions(DEFAULT_PERMISSIONS) },
@@ -445,7 +459,9 @@ export default class SettingsService {
                         description: currentValue.description ?? {},
                         sourceCodeUrl: currentValue.sourceCodeUrl ?? {},
                         copyright: currentValue.copyright ?? {},
+                        keywords: currentValue.keywords ?? {},
                         logoFileId: currentValue.logoFileId ?? null,
+                        faviconFileId: currentValue.faviconFileId ?? null,
                         propositionDefaults: currentValue.propositionDefaults ?? { ...DEFAULT_PROPOSITION_DEFAULTS },
                         deadlineReminders: currentValue.deadlineReminders ?? { ...DEFAULT_DEADLINE_REMINDERS },
                         permissions: { perStatus: existingPermissions },
@@ -499,6 +515,7 @@ export default class SettingsService {
             value.description = filterMap(payload.translations.description);
             value.sourceCodeUrl = filterUrlMap(payload.translations.sourceCodeUrl);
             value.copyright = filterMap(payload.translations.copyright);
+            value.keywords = filterMap(payload.translations.keywords ?? {});
 
             if (payload.permissions) {
                 const overrides = this.normalizePermissionMatrix(payload.permissions);
@@ -600,6 +617,43 @@ export default class SettingsService {
                 );
 
                 value.logoFileId = storedLogo.id;
+            }
+
+            if (faviconFile && faviconFile.tmpPath) {
+                if (value.faviconFileId) {
+                    const existing = await File.find(value.faviconFileId, { client: trx });
+                    if (existing) {
+                        await this.fileService.delete(existing);
+                        await existing.delete();
+                    }
+                    value.faviconFileId = null;
+                }
+
+                const originalExtension = path.extname(faviconFile.clientName);
+                const baseName = path.basename(faviconFile.clientName, originalExtension);
+                const sanitizedName = `${cuid()}-${this.slugifyService.slugify(baseName)}${originalExtension}`;
+                const key = `organization/favicon/${sanitizedName}`;
+                const uploadMeta = await this.fileService.storeMultipartFile(faviconFile, key);
+                const resolvedMime =
+                    uploadMeta.mimeType ||
+                    (faviconFile.type && faviconFile.subtype ? `${faviconFile.type}/${faviconFile.subtype}` : null) ||
+                    faviconFile.headers?.['content-type'] ||
+                    mime.lookup(sanitizedName) ||
+                    'application/octet-stream';
+
+                const storedFavicon = await File.create(
+                    {
+                        name: sanitizedName,
+                        path: key,
+                        extension: originalExtension,
+                        mimeType: resolvedMime,
+                        size: uploadMeta.size,
+                        type: FileTypeEnum.ORGANIZATION_LOGO,
+                    },
+                    { client: trx }
+                );
+
+                value.faviconFileId = storedFavicon.id;
             }
 
             record.merge({ value: value as unknown as Record<string, unknown> });
