@@ -7,8 +7,16 @@ import DeadlineReminderService from '#services/deadline_reminder_service';
 import { JobTypeEnum } from '#types';
 
 const startAutomation = async () => {
+    // Skip automation in test mode
     if (app.inTest || process.env.NODE_ENV === 'test') {
         logger.info('Skipping automation in test mode');
+        return;
+    }
+
+    // Skip automation during migrations (ace commands that don't start the HTTP server)
+    // The app is considered ready when booted and not in a command context
+    if (!app.isBooted) {
+        logger.info('Skipping automation - app not fully booted');
         return;
     }
     try {
