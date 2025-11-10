@@ -8,6 +8,8 @@ Run `npm install` once at the root to hydrate all workspaces. Start services wit
 
 **Important:** Do not execute `node ace` commands directly (e.g., `node ace migration:run`, `node ace test`) as they may hang indefinitely. Instead, ask the user to run these commands manually when needed.
 
+**Critical:** After completing any coding task, ALWAYS run `make build-prod` to verify there are no TypeScript errors in production builds. This command builds both backend and frontend for production and will catch type errors that may not appear during development.
+
 ## Coding Style & Naming Conventions
 All comments must be written in english.
 TypeScript is the default language, formatted by Prettier (`make format` or `make format-check`). Keep two-space indentation, semicolons suppressed, and imports alphabetized when possible. Backend modules should use the Adonis import aliases (e.g., `import User from '#models/user'`). Frontend components follow Svelte’s PascalCase file names in `src/lib` and route-level `+page.svelte` conventions. Environment templates live in `back/.env.example` and `front/.env.example`; update them whenever a new variable is introduced.
