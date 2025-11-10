@@ -36,6 +36,12 @@ export const updateOrganizationSettingsValidator = vine.compile(
                 evaluationOffsetDays: vine.number().min(0).max(365).optional(),
             })
             .optional(),
+        deadlineReminders: vine
+            .object({
+                contributorHoursBeforeDeadline: vine.number().min(1).max(168).optional(),
+                initiatorHoursBeforeDeadline: vine.number().min(1).max(168).optional(),
+            })
+            .optional(),
         permissions: vine
             .object({
                 perStatus: permissionMatrixSchema.optional(),

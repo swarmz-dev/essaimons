@@ -26,6 +26,10 @@ export type SerializedOrganizationSettings = {
         mandateOffsetDays: number;
         evaluationOffsetDays: number;
     };
+    deadlineReminders: {
+        contributorHoursBeforeDeadline: number;
+        initiatorHoursBeforeDeadline: number;
+    };
     permissions: {
         perStatus: SerializedStatusPermissions;
     };

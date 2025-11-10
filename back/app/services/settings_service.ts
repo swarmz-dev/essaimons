@@ -11,6 +11,7 @@ import File from '#models/file';
 import Setting from '#models/setting';
 import { FileTypeEnum } from '#types/enum/file_type_enum';
 import type { SerializedOrganizationSettings } from '#types/serialized/serialized_organization_settings';
+import type { SerializedFile } from '#types/serialized/serialized_file';
 import type { MultipartFile } from '@adonisjs/bodyparser/types';
 
 const ORGANIZATION_SETTINGS_KEY = 'organization';
@@ -69,6 +70,7 @@ interface UpdateOrganizationSettingsPayload {
         description: Record<string, string>;
         sourceCodeUrl: Record<string, string>;
         copyright: Record<string, string>;
+        keywords?: Record<string, string>;
     };
     propositionDefaults?: Partial<OrganizationSettingsValue['propositionDefaults']>;
     deadlineReminders?: Partial<OrganizationSettingsValue['deadlineReminders']>;
@@ -349,6 +351,26 @@ export default class SettingsService {
             };
         };
 
+        const normalizeDeadlineReminders = (input?: Partial<OrganizationSettingsValue['deadlineReminders']>): SerializedOrganizationSettings['deadlineReminders'] => {
+            const fallback = { ...DEFAULT_DEADLINE_REMINDERS };
+            if (!input) {
+                return fallback;
+            }
+
+            const normalize = (value: unknown, defaultValue: number): number => {
+                const parsed = Number(value);
+                if (Number.isFinite(parsed) && parsed >= 0) {
+                    return Math.floor(parsed);
+                }
+                return defaultValue;
+            };
+
+            return {
+                contributorHoursBeforeDeadline: normalize(input.contributorHoursBeforeDeadline, fallback.contributorHoursBeforeDeadline),
+                initiatorHoursBeforeDeadline: normalize(input.initiatorHoursBeforeDeadline, fallback.initiatorHoursBeforeDeadline),
+            };
+        };
+
         if (value?.logoFileId) {
             const file = await File.find(value.logoFileId);
             if (file) {
@@ -382,6 +404,7 @@ export default class SettingsService {
             logo,
             favicon,
             propositionDefaults: normalizeOffsets(value?.propositionDefaults),
+            deadlineReminders: normalizeDeadlineReminders(value?.deadlineReminders),
             permissions: { perStatus: permissions },
             permissionCatalog: { perStatus: this.clonePermissionMatrix(permissionCatalog) },
             workflowAutomation,
