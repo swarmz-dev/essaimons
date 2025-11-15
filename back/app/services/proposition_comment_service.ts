@@ -112,7 +112,7 @@ export default class PropositionCommentService {
         }
 
         // Send notification before deleting
-        await this.propositionNotificationService.notifyCommentDeleted(proposition, comment).catch((error: Error) => {
+        await this.propositionNotificationService.notifyCommentDeleted(proposition, comment, actor.id).catch((error: Error) => {
             logger.error({ err: error, commentId: comment.id }, 'Failed to send comment delete notification');
         });
 

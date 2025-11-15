@@ -6,6 +6,7 @@ import PropositionMandate from '#models/proposition_mandate';
 import MandateDeliverable from '#models/mandate_deliverable';
 import PropositionEvent from '#models/proposition_event';
 import PropositionComment from '#models/proposition_comment';
+import User from '#models/user';
 import { PropositionStatusEnum } from '#types/enum/proposition_status_enum';
 import { PropositionCommentScopeEnum } from '#types/enum/proposition_comment_scope_enum';
 import transmit from '@adonisjs/transmit/services/main';
@@ -201,6 +202,10 @@ export default class PropositionNotificationService {
 
         const evaluators = [proposition.creatorId, ...proposition.rescueInitiators.map((u: any) => u.id)];
 
+        // Get the username from the mandate holder
+        const holder = deliverable.mandate.holder;
+        const username = holder ? holder.username : 'Unknown';
+
         await this.notificationService.create(
             {
                 type: NotificationTypeEnum.DELIVERABLE_UPLOADED,
@@ -213,6 +218,7 @@ export default class PropositionNotificationService {
                     mandateTitle: deliverable.mandate.title,
                     deliverableId: deliverable.id,
                     deliverableLabel: deliverable.label,
+                    username,
                 },
                 entityType: 'deliverable',
                 entityId: deliverable.id,
@@ -287,6 +293,9 @@ export default class PropositionNotificationService {
             return;
         }
 
+        // Load the author to get username
+        const author = await User.findOrFail(authorId);
+
         // Determine notification type based on comment scope
         let notificationType = NotificationTypeEnum.COMMENT_ADDED;
         let titleKey = 'notifications.comment_added.title';
@@ -309,6 +318,7 @@ export default class PropositionNotificationService {
                     commentId: comment.id,
                     scope: comment.scope,
                     section: comment.section,
+                    username: author.username,
                 },
                 entityType: 'proposition',
                 entityId: proposition.id,
@@ -341,6 +351,9 @@ export default class PropositionNotificationService {
             return;
         }
 
+        // Load the editor to get username
+        const editor = await User.findOrFail(editorId);
+
         await this.notificationService.create(
             {
                 type: NotificationTypeEnum.CLARIFICATION_UPDATED,
@@ -351,6 +364,7 @@ export default class PropositionNotificationService {
                     propositionTitle: proposition.title,
                     commentId: comment.id,
                     section: comment.section,
+                    username: editor.username,
                 },
                 entityType: 'proposition',
                 entityId: proposition.id,
@@ -367,7 +381,7 @@ export default class PropositionNotificationService {
         });
     }
 
-    public async notifyCommentDeleted(proposition: Proposition, comment: any): Promise<void> {
+    public async notifyCommentDeleted(proposition: Proposition, comment: any, deleterId: string): Promise<void> {
         // Only send notifications for clarification deletions
         if (comment.scope !== PropositionCommentScopeEnum.CLARIFICATION) {
             return;
@@ -382,6 +396,9 @@ export default class PropositionNotificationService {
             return;
         }
 
+        // Load the deleter to get username
+        const deleter = await User.findOrFail(deleterId);
+
         await this.notificationService.create(
             {
                 type: NotificationTypeEnum.CLARIFICATION_DELETED,
@@ -391,6 +408,7 @@ export default class PropositionNotificationService {
                     propositionId: proposition.id,
                     propositionTitle: proposition.title,
                     section: comment.section,
+                    username: deleter.username,
                 },
                 entityType: 'proposition',
                 entityId: proposition.id,
