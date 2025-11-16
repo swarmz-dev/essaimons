@@ -1,5 +1,6 @@
 import { createReadStream } from 'node:fs';
 import type { Readable } from 'node:stream';
+import { Agent as HttpsAgent } from 'node:https';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import type { StorageDriver } from './storage_driver.js';
 
@@ -16,6 +17,13 @@ export default class S3StorageDriver implements StorageDriver {
     private client: S3Client;
 
     constructor(private readonly config: S3DriverConfig) {
+        // Create HTTPS agent that forces IPv4 to avoid IPv6 connectivity issues
+        const agent = new HttpsAgent({
+            family: 4, // Force IPv4
+            timeout: 10000,
+            keepAlive: true,
+        });
+
         this.client = new S3Client({
             region: config.region,
             endpoint: config.endpoint,
@@ -23,6 +31,11 @@ export default class S3StorageDriver implements StorageDriver {
             credentials: {
                 accessKeyId: config.accessKeyId,
                 secretAccessKey: config.secretAccessKey,
+            },
+            requestHandler: {
+                httpsAgent: agent,
+                connectionTimeout: 10000,
+                requestTimeout: 10000,
             },
         });
     }

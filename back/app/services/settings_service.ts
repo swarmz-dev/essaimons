@@ -13,6 +13,7 @@ import { FileTypeEnum } from '#types/enum/file_type_enum';
 import type { SerializedOrganizationSettings } from '#types/serialized/serialized_organization_settings';
 import type { SerializedFile } from '#types/serialized/serialized_file';
 import type { MultipartFile } from '@adonisjs/bodyparser/types';
+import logger from '@adonisjs/core/services/logger';
 
 const ORGANIZATION_SETTINGS_KEY = 'organization';
 
@@ -609,8 +610,15 @@ export default class SettingsService {
                 if (value.logoFileId) {
                     const existing = await File.find(value.logoFileId, { client: trx });
                     if (existing) {
-                        await this.fileService.delete(existing);
-                        await existing.delete();
+                        try {
+                            await this.fileService.delete(existing);
+                            await existing.delete();
+                        } catch (deleteError) {
+                            logger.error({ err: deleteError, existingLogoId: existing.id }, 'Failed to delete existing logo from storage, continuing with upload');
+                            // Continue with upload even if delete fails - we'll just have orphaned files
+                            // The database record will be replaced below
+                            await existing.delete(); // At least remove the database record
+                        }
                     }
                     value.logoFileId = null;
                 }
@@ -646,8 +654,15 @@ export default class SettingsService {
                 if (value.faviconFileId) {
                     const existing = await File.find(value.faviconFileId, { client: trx });
                     if (existing) {
-                        await this.fileService.delete(existing);
-                        await existing.delete();
+                        try {
+                            await this.fileService.delete(existing);
+                            await existing.delete();
+                        } catch (deleteError) {
+                            logger.error({ err: deleteError, existingFaviconId: existing.id }, 'Failed to delete existing favicon from storage, continuing with upload');
+                            // Continue with upload even if delete fails - we'll just have orphaned files
+                            // The database record will be replaced below
+                            await existing.delete(); // At least remove the database record
+                        }
                     }
                     value.faviconFileId = null;
                 }
@@ -657,6 +672,7 @@ export default class SettingsService {
                 const sanitizedName = `${cuid()}-${this.slugifyService.slugify(baseName)}${originalExtension}`;
                 const key = `organization/favicon/${sanitizedName}`;
                 const uploadMeta = await this.fileService.storeMultipartFile(faviconFile, key);
+
                 const resolvedMime =
                     uploadMeta.mimeType ||
                     (faviconFile.type && faviconFile.subtype ? `${faviconFile.type}/${faviconFile.subtype}` : null) ||
@@ -688,6 +704,7 @@ export default class SettingsService {
 
             return this.serializeOrganizationSettings(value);
         } catch (error) {
+            logger.error({ err: error, payload, logoFile: logoFile?.clientName, faviconFile: faviconFile?.clientName }, 'Failed to update organization settings');
             await trx.rollback();
             throw error;
         }
