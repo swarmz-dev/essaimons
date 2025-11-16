@@ -1,8 +1,8 @@
 <script lang="ts">
     import { Button } from '#lib/components/ui/button';
     import { m } from '#lib/paraglide/messages';
-    import type { PropositionVote, WorkflowRole } from '#lib/types/proposition';
-    import { PropositionVoteMethodEnum } from 'backend/types';
+    import type { PropositionVote, WorkflowRole, VoteOption } from '#lib/types/proposition';
+    import { PropositionVoteMethodEnum, PropositionVotePhaseEnum } from 'backend/types';
     import { Plus, Pencil, Trash2, CheckCircle } from '@lucide/svelte';
 
     const {
@@ -49,7 +49,7 @@
         getVoteTimeRemaining: (vote: PropositionVote, currentTime: Date) => { text: string; color: string } | null;
         formatDateTime: (value?: string) => string;
         translateVoteMethod: (method: PropositionVoteMethodEnum) => string;
-        translateVotePhase: (phase: string) => string;
+        translateVotePhase: (phase: PropositionVotePhaseEnum) => string;
         onBallotSelectionChange: (voteId: string, type: 'radio' | 'checkbox' | 'rating', value: any) => void;
     }>();
 
@@ -243,7 +243,7 @@
                                                 </div>
                                                 <select
                                                     class="rounded border border-border/60 bg-background px-2 py-1 text-sm"
-                                                    value={(ballotSelections[vote.id] || {})[option.id] ?? ''}
+                                                    value={(ballotSelections[vote.id] || {})[option.id]?.toString() ?? ''}
                                                     onchange={(e) => {
                                                         const target = e.target as HTMLSelectElement;
                                                         const currentRatings = ballotSelections[vote.id] || {};
@@ -262,7 +262,7 @@
                                         {/each}
                                     </div>
                                     {@const ratings = ballotSelections[vote.id] || {}}
-                                    {@const allRated = vote.options.every((opt) => ratings[opt.id] !== undefined)}
+                                    {@const allRated = vote.options.every((opt: VoteOption) => ratings[opt.id] !== undefined)}
                                     <Button class="mt-3 w-full" onclick={() => onCastBallot(vote)} disabled={!allRated || isCastingVote[vote.id]}>
                                         {isCastingVote[vote.id] ? 'Envoi...' : 'Confirmer mon vote'}
                                     </Button>

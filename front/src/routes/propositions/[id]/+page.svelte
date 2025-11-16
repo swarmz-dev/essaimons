@@ -2387,11 +2387,11 @@
             {translateVotePhase}
             onBallotSelectionChange={(voteId, type, value) => {
                 if (type === 'radio') {
-                    ballotSelections[voteId] = value;
+                    ballotSelections = { ...ballotSelections, [voteId]: value };
                 } else if (type === 'checkbox') {
-                    ballotSelections[voteId] = value;
+                    ballotSelections = { ...ballotSelections, [voteId]: value };
                 } else if (type === 'rating') {
-                    ballotSelections[voteId] = value;
+                    ballotSelections = { ...ballotSelections, [voteId]: value };
                 }
             }}
         />
