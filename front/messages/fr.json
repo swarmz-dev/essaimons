@@ -1221,6 +1221,33 @@
                 "published": "Le vote a été publié avec succès.",
                 "opened": "Le vote a été ouvert avec succès.",
                 "closed": "Le vote a été clôturé avec succès."
+            },
+            "dates": {
+                "opens": "Ouverture",
+                "closes": "Clôture"
+            },
+            "actions": {
+                "publish": "Publier",
+                "open": "Ouvrir",
+                "close": "Clôturer",
+                "vote-title": "Voter",
+                "confirm": "Confirmer mon vote",
+                "submitting": "Envoi...",
+                "revoke": "Révoquer mon vote"
+            },
+            "status": {
+                "voted": "Vote enregistré",
+                "voted-message": "Votre vote a bien été pris en compte"
+            },
+            "instructions": {
+                "multi-choice": "Sélectionnez jusqu'à {max} option{plural}",
+                "majority-judgment": "Évaluez chaque option de 0 (insuffisant) à 5 (excellent)"
+            },
+            "results": {
+                "title": "Résultats",
+                "votes-count": "{count} vote{plural}",
+                "median": "Médiane",
+                "average": "Moyenne"
             }
         },
         "mandate": {

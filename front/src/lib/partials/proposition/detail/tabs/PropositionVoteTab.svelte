@@ -90,10 +90,10 @@
                             <p class="text-xs text-muted-foreground">{m['proposition-detail.vote.method']({ method: translateVoteMethod(vote.method as PropositionVoteMethodEnum) })}</p>
                             <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                 {#if vote.openAt}
-                                    <span>Ouverture : {formatDateTime(vote.openAt)}</span>
+                                    <span>{m['proposition-detail.votes.dates.opens']()} : {formatDateTime(vote.openAt)}</span>
                                 {/if}
                                 {#if vote.closeAt}
-                                    <span>Clôture : {formatDateTime(vote.closeAt)}</span>
+                                    <span>{m['proposition-detail.votes.dates.closes']()} : {formatDateTime(vote.closeAt)}</span>
                                 {/if}
                             </div>
                             {#if getVoteTimeRemaining(vote, currentTime)}
@@ -116,17 +116,17 @@
                                 {#if vote.status === 'draft'}
                                     <Button size="sm" variant="default" class="gap-1" onclick={() => onPublishVote(vote.id)}>
                                         <CheckCircle class="size-3.5" />
-                                        Publier
+                                        {m['proposition-detail.votes.actions.publish']()}
                                     </Button>
                                 {/if}
                                 {#if workflowRole === 'admin' && vote.status === 'scheduled'}
                                     <Button size="sm" variant="default" class="gap-1" onclick={() => onOpenVote(vote.id)}>
                                         <CheckCircle class="size-3.5" />
-                                        Ouvrir
+                                        {m['proposition-detail.votes.actions.open']()}
                                     </Button>
                                 {/if}
                                 {#if canCloseVote(vote)}
-                                    <Button size="sm" variant="outline" class="gap-1" onclick={() => onCloseVote(vote.id)}>Clôturer</Button>
+                                    <Button size="sm" variant="outline" class="gap-1" onclick={() => onCloseVote(vote.id)}>{m['proposition-detail.votes.actions.close']()}</Button>
                                 {/if}
                                 {#if workflowRole === 'admin' && (vote.status === 'draft' || vote.status === 'scheduled')}
                                     <Button size="sm" variant="ghost" class="gap-1 text-destructive hover:text-destructive" onclick={() => onDeleteVote(vote.id)}>
@@ -159,12 +159,14 @@
                     {#if vote.status === 'open' && canParticipateVote}
                         {#if userBallots[vote.id]}
                             <div class="mt-4 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
-                                ✓ Vous avez déjà voté
-                                <Button size="sm" variant="ghost" class="ml-2 text-xs text-destructive hover:text-destructive" onclick={() => onRevokeBallot(vote.id)}>Révoquer mon vote</Button>
+                                ✓ {m['proposition-detail.votes.status.voted-message']()}
+                                <Button size="sm" variant="ghost" class="ml-2 text-xs text-destructive hover:text-destructive" onclick={() => onRevokeBallot(vote.id)}>
+                                    {m['proposition-detail.votes.actions.revoke']()}
+                                </Button>
                             </div>
                         {:else}
                             <div class="mt-4 rounded-lg border border-border/40 bg-background/50 p-4">
-                                <h4 class="mb-3 text-sm font-semibold text-foreground">Voter</h4>
+                                <h4 class="mb-3 text-sm font-semibold text-foreground">{m['proposition-detail.votes.actions.vote-title']()}</h4>
 
                                 {#if vote.method === PropositionVoteMethodEnum.BINARY}
                                     <!-- Binary vote: radio buttons -->
@@ -189,11 +191,13 @@
                                         {/each}
                                     </div>
                                     <Button class="mt-3 w-full" onclick={() => onCastBallot(vote)} disabled={!ballotSelections[vote.id] || isCastingVote[vote.id]}>
-                                        {isCastingVote[vote.id] ? 'Envoi...' : 'Confirmer mon vote'}
+                                        {isCastingVote[vote.id] ? m['proposition-detail.votes.actions.submitting']() : m['proposition-detail.votes.actions.confirm']()}
                                     </Button>
                                 {:else if vote.method === PropositionVoteMethodEnum.MULTI_CHOICE}
                                     <!-- Multi-choice: checkboxes with max selections -->
-                                    <p class="mb-2 text-xs text-muted-foreground">Sélectionnez jusqu'à {vote.maxSelections ?? 1} option{(vote.maxSelections ?? 1) > 1 ? 's' : ''}</p>
+                                    <p class="mb-2 text-xs text-muted-foreground">
+                                        {m['proposition-detail.votes.instructions.multi-choice']({ max: vote.maxSelections ?? 1, plural: (vote.maxSelections ?? 1) > 1 ? 's' : '' })}
+                                    </p>
                                     <div class="space-y-2">
                                         {#each vote.options as option (option.id)}
                                             {@const selected = ballotSelections[vote.id] || []}
@@ -227,11 +231,11 @@
                                         {/each}
                                     </div>
                                     <Button class="mt-3 w-full" onclick={() => onCastBallot(vote)} disabled={!ballotSelections[vote.id]?.length || isCastingVote[vote.id]}>
-                                        {isCastingVote[vote.id] ? 'Envoi...' : 'Confirmer mon vote'}
+                                        {isCastingVote[vote.id] ? m['proposition-detail.votes.actions.submitting']() : m['proposition-detail.votes.actions.confirm']()}
                                     </Button>
                                 {:else if vote.method === PropositionVoteMethodEnum.MAJORITY_JUDGMENT}
                                     <!-- Majority judgment: rating dropdown for each option -->
-                                    <p class="mb-2 text-xs text-muted-foreground">Évaluez chaque option de 0 (insuffisant) à 5 (excellent)</p>
+                                    <p class="mb-2 text-xs text-muted-foreground">{m['proposition-detail.votes.instructions.majority-judgment']()}</p>
                                     <div class="space-y-2">
                                         {#each vote.options as option (option.id)}
                                             <div class="flex items-center gap-3 rounded-md border border-border/30 bg-background px-3 py-2">
@@ -264,7 +268,7 @@
                                     {@const ratings = ballotSelections[vote.id] || {}}
                                     {@const allRated = vote.options.every((opt: VoteOption) => ratings[opt.id] !== undefined)}
                                     <Button class="mt-3 w-full" onclick={() => onCastBallot(vote)} disabled={!allRated || isCastingVote[vote.id]}>
-                                        {isCastingVote[vote.id] ? 'Envoi...' : 'Confirmer mon vote'}
+                                        {isCastingVote[vote.id] ? m['proposition-detail.votes.actions.submitting']() : m['proposition-detail.votes.actions.confirm']()}
                                     </Button>
                                 {/if}
                             </div>
@@ -275,7 +279,12 @@
                     {#if vote.status === 'closed' && voteResults[vote.id]}
                         {@const results = voteResults[vote.id]}
                         <div class="mt-4 rounded-lg border border-border/40 bg-background/50 p-4">
-                            <h4 class="mb-3 text-sm font-semibold text-foreground">Résultats ({results.totalVotes} vote{results.totalVotes > 1 ? 's' : ''})</h4>
+                            <h4 class="mb-3 text-sm font-semibold text-foreground">
+                                {m['proposition-detail.votes.results.title']()} ({m['proposition-detail.votes.results.votes-count']({
+                                    count: results.totalVotes,
+                                    plural: results.totalVotes > 1 ? 's' : '',
+                                })})
+                            </h4>
 
                             {#if vote.method === PropositionVoteMethodEnum.BINARY || vote.method === PropositionVoteMethodEnum.MULTI_CHOICE}
                                 {@const optionCounts = results.optionCounts || {}}
@@ -304,7 +313,9 @@
                                         <div class="rounded-md border border-border/30 bg-background px-3 py-2">
                                             <div class="flex items-center justify-between text-sm">
                                                 <span class="font-medium text-foreground">{option.label}</span>
-                                                <span class="text-xs text-muted-foreground">Médiane: {median} | Moyenne: {average.toFixed(1)}</span>
+                                                <span class="text-xs text-muted-foreground">
+                                                    {m['proposition-detail.votes.results.median']()}: {median} | {m['proposition-detail.votes.results.average']()}: {average.toFixed(1)}
+                                                </span>
                                             </div>
                                         </div>
                                     {/each}

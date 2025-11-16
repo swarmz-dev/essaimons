@@ -1220,6 +1220,33 @@
                 "published": "The vote has been successfully published.",
                 "opened": "The vote has been successfully opened.",
                 "closed": "The vote has been successfully closed."
+            },
+            "dates": {
+                "opens": "Opens",
+                "closes": "Closes"
+            },
+            "actions": {
+                "publish": "Publish",
+                "open": "Open",
+                "close": "Close",
+                "vote-title": "Vote",
+                "confirm": "Confirm my vote",
+                "submitting": "Submitting...",
+                "revoke": "Revoke my vote"
+            },
+            "status": {
+                "voted": "Vote recorded",
+                "voted-message": "Your vote has been successfully recorded"
+            },
+            "instructions": {
+                "multi-choice": "Select up to {max} option{plural}",
+                "majority-judgment": "Rate each option from 0 (insufficient) to 5 (excellent)"
+            },
+            "results": {
+                "title": "Results",
+                "votes-count": "{count} vote{plural}",
+                "median": "Median",
+                "average": "Average"
             }
         },
         "mandate": {
